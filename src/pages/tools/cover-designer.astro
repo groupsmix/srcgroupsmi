@@ -1,0 +1,392 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="AI Cover Designer — GroupsMix"
+  description="Generate AI image prompts and text overlays for stunning group covers. Choose your style, theme, and platform."
+  canonical="https://groupsmix.com/tools/cover-designer"
+>
+<style is:inline>
+        .cover-container { max-width:var(--container-sm);margin:0 auto;padding:var(--space-8) var(--space-4); }
+        .cover-hero { text-align:center;padding:var(--space-8) var(--space-4);background:linear-gradient(135deg,rgba(236,72,153,0.12),rgba(139,92,246,0.1),transparent);border-radius:var(--radius-xl);margin-bottom:var(--space-6);border:1px solid rgba(236,72,153,0.2); }
+        .cover-hero__icon { font-size:56px;margin-bottom:var(--space-3);display:block; }
+        .cover-hero h1 { background:linear-gradient(135deg,#ec4899,#8B5CF6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:var(--space-2); }
+        .cover-form { background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5); }
+        .cover-form textarea { width:100%;min-height:80px;background:var(--bg-input);border:2px solid var(--border-primary);border-radius:var(--radius-md);padding:var(--space-4);color:var(--text-primary);font-size:var(--text-base);resize:vertical;transition:all 0.3s;font-family:inherit; }
+        .cover-form textarea::placeholder { color:var(--text-muted); }
+        .cover-form textarea:focus { border-color:#ec4899;box-shadow:0 0 0 4px rgba(236,72,153,0.15);outline:none; }
+        .cover-form select, .cover-form input[type="text"] { width:100%;height:48px;padding:0 var(--space-4);background:var(--bg-input);border:2px solid var(--border-primary);border-radius:var(--radius-md);color:var(--text-primary);font-size:var(--text-sm);cursor:pointer;transition:all 0.3s; }
+        .cover-form select:focus, .cover-form input[type="text"]:focus { border-color:#ec4899;box-shadow:0 0 0 4px rgba(236,72,153,0.15);outline:none; }
+        .cover-form input[type="text"]::placeholder { color:var(--text-muted); }
+        .option-grid { display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3); }
+        @media(max-width:500px) { .option-grid { grid-template-columns:1fr; } }
+        .custom-input-wrap { margin-top:var(--space-2);display:none; }
+        .gen-cover-btn { width:100%;height:56px;margin-top:var(--space-4);border:none;border-radius:14px;cursor:pointer;font-size:var(--text-lg);font-weight:700;color:#fff;background:linear-gradient(135deg,#ec4899,#8B5CF6);box-shadow:0 4px 20px rgba(236,72,153,0.4);transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:var(--space-2); }
+        .gen-cover-btn:hover { transform:translateY(-2px);box-shadow:0 8px 30px rgba(236,72,153,0.5); }
+        .gen-cover-btn:disabled { opacity:0.6;cursor:not-allowed;transform:none; }
+
+        .cover-loading { display:none;text-align:center;padding:var(--space-8); }
+        .cover-loading__text { font-size:var(--text-base);font-weight:600;color:#f472b6;min-height:24px; }
+
+        .cover-result { display:none;animation:slideUp 0.6s ease; }
+        @keyframes slideUp { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+
+        .cover-preview { background:linear-gradient(145deg,#1a1a2e,#16161f);border:2px solid rgba(236,72,153,0.3);border-radius:var(--radius-xl);overflow:hidden;margin-bottom:var(--space-5); }
+        .cover-preview__canvas { width:100%;aspect-ratio:16/9;position:relative;overflow:hidden; }
+        .cover-preview__bg { width:100%;height:100%;object-fit:cover; }
+        .cover-overlay { position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:var(--space-6);text-align:center; }
+        .cover-overlay__title { font-size:var(--text-2xl);font-weight:800;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,0.5);margin-bottom:var(--space-2); }
+        .cover-overlay__subtitle { font-size:var(--text-sm);color:rgba(255,255,255,0.85);text-shadow:0 1px 5px rgba(0,0,0,0.5); }
+        .cover-preview__footer { padding:var(--space-4);display:flex;gap:var(--space-2);justify-content:center;flex-wrap:wrap; }
+
+        .prompt-section { background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-4); }
+        .prompt-section__title { font-size:var(--text-sm);font-weight:700;color:#f472b6;margin-bottom:var(--space-2);display:flex;align-items:center;gap:var(--space-1); }
+        .prompt-section__text { font-size:var(--text-sm);color:var(--text-secondary);line-height:1.7;white-space:pre-wrap;background:var(--bg-tertiary);padding:var(--space-4);border-radius:var(--radius-md); }
+        .prompt-section__footer { display:flex;gap:var(--space-2);margin-top:var(--space-3);justify-content:flex-end; }
+        .copy-prompt-btn { height:36px;padding:0 14px;border-radius:10px;font-weight:600;font-size:var(--text-sm);background:linear-gradient(135deg,#ec4899,#8B5CF6);color:#fff;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;gap:var(--space-1); }
+        .copy-prompt-btn:hover { transform:translateY(-1px); }
+
+        .text-overlay-section { background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-4); }
+        .overlay-item { padding:var(--space-3) var(--space-4);background:var(--bg-tertiary);border-radius:var(--radius-md);margin-bottom:var(--space-2); }
+        .overlay-item__label { font-size:var(--text-xs);font-weight:700;color:#f472b6;text-transform:uppercase;margin-bottom:4px; }
+        .overlay-item__text { font-size:var(--text-sm);color:var(--text-primary);font-weight:600; }
+
+        .cover-actions { display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap;margin-top:var(--space-5); }
+        .dl-cover-btn { height:44px;padding:0 20px;border-radius:12px;font-weight:600;font-size:var(--text-sm);background:#10b981;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;gap:var(--space-2);transition:all 0.3s; }
+        .dl-cover-btn:hover { background:#059669;transform:translateY(-2px); }
+    </style>
+
+
+        <div class="cover-container">
+            <div class="cover-hero">
+                <span class="cover-hero__icon">&#x1F3A8;</span>
+                <h1>AI Cover Designer</h1>
+                <p style="color:var(--text-secondary)">Generate AI image prompts and text overlays for stunning group covers</p>
+            </div>
+            <div class="cover-form" id="input-section">
+                <div class="form-group">
+                    <label class="form-label" style="color:#f472b6">What is your group about?</label>
+                    <textarea id="cover-topic" rows="3" placeholder="e.g. Tech startup community, fitness motivation group, cooking recipes club..."></textarea>
+                </div>
+                <div class="option-grid">
+                    <div class="form-group">
+                        <label class="form-label" style="color:#f472b6;font-size:var(--text-sm)">Style</label>
+                        <select id="cover-style">
+                            <option value="modern">Modern &amp; Clean</option>
+                            <option value="gradient">Gradient Abstract</option>
+                            <option value="minimalist">Minimalist</option>
+                            <option value="bold">Bold &amp; Vibrant</option>
+                            <option value="dark">Dark &amp; Professional</option>
+                            <option value="neon">Neon Glow</option>
+                            <option value="nature">Nature &amp; Organic</option>
+                            <option value="retro">Retro / Vintage</option>
+                            <option value="custom">Custom (type your own)</option>
+                        </select>
+                        <div class="custom-input-wrap" id="custom-style-wrap">
+                            <input type="text" id="custom-style" placeholder="e.g. cyberpunk, watercolor, geometric...">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="color:#f472b6;font-size:var(--text-sm)">Color Scheme</label>
+                        <select id="cover-color">
+                            <option value="auto">Auto (based on topic)</option>
+                            <option value="blue-purple">Blue &amp; Purple</option>
+                            <option value="red-orange">Red &amp; Orange</option>
+                            <option value="green-teal">Green &amp; Teal</option>
+                            <option value="pink-rose">Pink &amp; Rose</option>
+                            <option value="dark-gold">Dark &amp; Gold</option>
+                            <option value="monochrome">Monochrome</option>
+                            <option value="custom">Custom (type your own)</option>
+                        </select>
+                        <div class="custom-input-wrap" id="custom-color-wrap">
+                            <input type="text" id="custom-color" placeholder="e.g. sunset orange and navy blue...">
+                        </div>
+                    </div>
+                </div>
+                <div class="option-grid">
+                    <div class="form-group">
+                        <label class="form-label" style="color:#f472b6;font-size:var(--text-sm)">Platform Size</label>
+                        <select id="cover-platform">
+                            <option value="whatsapp">WhatsApp (640x360)</option>
+                            <option value="telegram">Telegram (1280x720)</option>
+                            <option value="facebook">Facebook (1640x856)</option>
+                            <option value="discord">Discord (960x540)</option>
+                            <option value="linkedin">LinkedIn (1584x396)</option>
+                            <option value="youtube">YouTube (2560x1440)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="color:#f472b6;font-size:var(--text-sm)">Mood</label>
+                        <select id="cover-mood">
+                            <option value="professional">Professional</option>
+                            <option value="energetic">Energetic</option>
+                            <option value="calm">Calm &amp; Relaxing</option>
+                            <option value="luxury">Luxury &amp; Premium</option>
+                            <option value="fun">Fun &amp; Playful</option>
+                            <option value="inspirational">Inspirational</option>
+                            <option value="custom">Custom (type your own)</option>
+                        </select>
+                        <div class="custom-input-wrap" id="custom-mood-wrap">
+                            <input type="text" id="custom-mood" placeholder="e.g. mysterious, warm, futuristic...">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="color:#f472b6;font-size:var(--text-sm)">Output Language</label>
+                    <select id="lang-select">
+                        <option value="en">English</option>
+                        <option value="ar">&#x0627;&#x0644;&#x0639;&#x0631;&#x0628;&#x064A;&#x0629; (Arabic)</option>
+                        <option value="fr">Fran&#231;ais (French)</option>
+                        <option value="es">Espa&#241;ol (Spanish)</option>
+                        <option value="tr">T&#252;rk&#231;e (Turkish)</option>
+                        <option value="pt">Portugu&#234;s (Portuguese)</option>
+                        <option value="de">Deutsch (German)</option>
+                        <option value="id">Bahasa Indonesia</option>
+                        <option value="hi">&#x0939;&#x093F;&#x0928;&#x094D;&#x0926;&#x0940; (Hindi)</option>
+                        <option value="ur">&#x0627;&#x0631;&#x062F;&#x0648; (Urdu)</option>
+                        <option value="zh">&#x4E2D;&#x6587; (Chinese)</option>
+                        <option value="ru">&#x0420;&#x0443;&#x0441;&#x0441;&#x043A;&#x0438;&#x0439; (Russian)</option>
+                        <option value="ja">&#x65E5;&#x672C;&#x8A9E; (Japanese)</option>
+                        <option value="ko">&#xD55C;&#xAD6D;&#xC5B4; (Korean)</option>
+                        <option value="it">Italiano (Italian)</option>
+                        <option value="nl">Nederlands (Dutch)</option>
+                        <option value="pl">Polski (Polish)</option>
+                        <option value="ms">Bahasa Melayu</option>
+                        <option value="th">&#x0E44;&#x0E17;&#x0E22; (Thai)</option>
+                        <option value="vi">Ti&#7871;ng Vi&#7879;t (Vietnamese)</option>
+                        <option value="sw">Kiswahili (Swahili)</option>
+                        <option value="bn">&#x09AC;&#x09BE;&#x0982;&#x09B2;&#x09BE; (Bengali)</option>
+                    </select>
+                </div>
+                <button class="gen-cover-btn" id="gen-btn">&#x1F3A8; Design My Cover</button>
+            </div>
+            <div class="cover-loading" id="cover-loading">
+                <div style="width:60px;height:60px;margin:0 auto var(--space-4);border:4px solid rgba(236,72,153,0.2);border-top-color:#ec4899;border-radius:50%;animation:spin 1s linear infinite;"></div>
+                <div class="cover-loading__text" id="cover-load-text">Designing your masterpiece...</div>
+            </div>
+            <div class="cover-result" id="cover-result">
+                <div class="cover-preview" id="cover-preview">
+                    <div class="cover-preview__canvas" id="cover-canvas"></div>
+                    <div class="cover-preview__footer">
+                        <button class="dl-cover-btn" id="dl-cover">&#x1F4E5; Download Preview</button>
+                        <button class="copy-prompt-btn" id="copy-all">&#x1F4CB; Copy All</button>
+                    </div>
+                </div>
+                <div class="prompt-section">
+                    <div class="prompt-section__title">&#x1F5BC;&#xFE0F; AI Image Prompt (use in Midjourney, DALL-E, Ideogram, etc.)</div>
+                    <div class="prompt-section__text" id="image-prompt"></div>
+                    <div class="prompt-section__footer">
+                        <button class="copy-prompt-btn" id="copy-prompt">&#x1F4CB; Copy Prompt</button>
+                    </div>
+                </div>
+                <div class="text-overlay-section">
+                    <div class="prompt-section__title">&#x1F4DD; Text Overlays (add to your cover image)</div>
+                    <div id="overlays-list"></div>
+                </div>
+                <div class="cover-actions">
+                    <button class="gen-cover-btn" style="width:auto;padding:0 24px;height:48px;font-size:var(--text-base)" id="more-btn">&#x1F504; Design Another</button>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    (function() {
+        'use strict';
+        var loadTexts = ['Designing your masterpiece...','Choosing the perfect colors...','Generating AI image prompt...','Creating text overlays...'];
+        var currentData = null;
+
+        // Rate limiting
+        var requestLog = [];
+        var RATE_COOLDOWN = 30000;
+        var RATE_WINDOW = 300000;
+        var RATE_MAX = 5;
+        var lastRequestTime = 0;
+        function checkRateLimit() {
+            var now = Date.now();
+            if (now - lastRequestTime < RATE_COOLDOWN) { UI.toast('Please wait ' + Math.ceil((RATE_COOLDOWN - (now - lastRequestTime)) / 1000) + ' seconds before trying again.', 'error'); return false; }
+            requestLog = requestLog.filter(function(t) { return now - t < RATE_WINDOW; });
+            if (requestLog.length >= RATE_MAX) { UI.toast('Too many requests. Please wait a few minutes.', 'error'); return false; }
+            return true;
+        }
+
+        // Custom field toggles
+        document.getElementById('cover-style').addEventListener('change', function() {
+            document.getElementById('custom-style-wrap').style.display = this.value === 'custom' ? 'block' : 'none';
+        });
+        document.getElementById('cover-color').addEventListener('change', function() {
+            document.getElementById('custom-color-wrap').style.display = this.value === 'custom' ? 'block' : 'none';
+        });
+        document.getElementById('cover-mood').addEventListener('change', function() {
+            document.getElementById('custom-mood-wrap').style.display = this.value === 'custom' ? 'block' : 'none';
+        });
+
+        // Language persistence
+        var langSel = document.getElementById('lang-select');
+        var savedLang = localStorage.getItem('gm_tool_lang');
+        if (savedLang && langSel.querySelector('option[value="' + savedLang + '"]')) langSel.value = savedLang;
+        langSel.addEventListener('change', function() { localStorage.setItem('gm_tool_lang', this.value); });
+
+        document.getElementById('gen-btn').addEventListener('click', generate);
+        document.getElementById('more-btn').addEventListener('click', function() {
+            document.getElementById('cover-result').style.display = 'none';
+            document.getElementById('input-section').style.display = '';
+            document.getElementById('input-section').scrollIntoView({behavior:'smooth', block:'start'});
+        });
+        document.getElementById('copy-prompt').addEventListener('click', function() {
+            if (currentData) UI.copyToClipboard(currentData.image_prompt || '');
+        });
+        document.getElementById('copy-all').addEventListener('click', function() {
+            if (currentData) {
+                var text = 'AI Image Prompt:\n' + (currentData.image_prompt || '') + '\n\nText Overlays:';
+                (currentData.text_overlays || []).forEach(function(o) { text += '\n- ' + o.label + ': ' + o.text; });
+                UI.copyToClipboard(text);
+            }
+        });
+        document.getElementById('dl-cover').addEventListener('click', downloadPreview);
+
+        async function generate() {
+            var topic = document.getElementById('cover-topic').value.trim();
+            if (!topic) { UI.toast('Please describe your group.', 'error'); return; }
+            if (!checkRateLimit()) return;
+            lastRequestTime = Date.now();
+            requestLog.push(Date.now());
+
+            var style = document.getElementById('cover-style').value;
+            if (style === 'custom') style = document.getElementById('custom-style').value.trim() || 'modern';
+            var color = document.getElementById('cover-color').value;
+            if (color === 'custom') color = document.getElementById('custom-color').value.trim() || 'auto';
+            var platform = document.getElementById('cover-platform').value;
+            var mood = document.getElementById('cover-mood').value;
+            if (mood === 'custom') mood = document.getElementById('custom-mood').value.trim() || 'professional';
+
+            var btn = document.getElementById('gen-btn');
+            btn.disabled = true;
+            document.getElementById('input-section').style.display = 'none';
+            document.getElementById('cover-loading').style.display = 'block';
+            document.getElementById('cover-result').style.display = 'none';
+            document.getElementById('cover-loading').scrollIntoView({behavior:'smooth', block:'start'});
+
+            var msgIdx = 0;
+            var loadEl = document.getElementById('cover-load-text');
+            var msgInt = setInterval(function() {
+                msgIdx = (msgIdx + 1) % loadTexts.length;
+                loadEl.textContent = loadTexts[msgIdx];
+            }, 1500);
+
+            try {
+                var res = await fetch('/api/groq', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tool: 'cover-designer',
+                        lang: document.getElementById('lang-select').value,
+                        prompt: 'Group topic: ' + topic + '\nStyle: ' + style + '\nColor scheme: ' + color + '\nPlatform: ' + platform + '\nMood: ' + mood + '\nGenerate a cover design.'
+                    })
+                });
+                if (!res.ok) throw new Error('AI unavailable');
+                var reader = res.body.getReader();
+                var decoder = new TextDecoder();
+                var fullText = '';
+                var sseBuffer = '';
+                while (true) {
+                    var result = await reader.read();
+                    if (result.done) break;
+                    sseBuffer += decoder.decode(result.value, { stream: true });
+                    var sseLines = sseBuffer.split('\n');
+                    sseBuffer = sseLines.pop() || '';
+                    for (var i = 0; i < sseLines.length; i++) {
+                        var line = sseLines[i].trim();
+                        if (!line.startsWith('data: ')) continue;
+                        var data = line.slice(6).trim();
+                        if (data === '[DONE]') continue;
+                        try { var parsed = JSON.parse(data); if (parsed.text) fullText += parsed.text; } catch(e) {}
+                    }
+                }
+                if (sseBuffer.trim()) { var lastLine = sseBuffer.trim(); if (lastLine.startsWith('data: ')) { var ld = lastLine.slice(6).trim(); if (ld !== '[DONE]') { try { var lp = JSON.parse(ld); if (lp.text) fullText += lp.text; } catch(e) {} } } }
+                var cleaned = fullText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+                var jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+                if (jsonMatch) { renderResult(JSON.parse(jsonMatch[0])); }
+                else { throw new Error('Parse failed'); }
+            } catch (err) {
+                console.error('Cover gen failed, using fallback:', err);
+                renderResult(fallbackCover(topic, style, color, mood));
+                UI.toast('Design generated (offline mode)', 'info');
+            } finally {
+                clearInterval(msgInt);
+                document.getElementById('cover-loading').style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+
+        function fallbackCover(topic, style, color, mood) {
+            var t = topic.charAt(0).toUpperCase() + topic.slice(1);
+            return {
+                image_prompt: 'A ' + style + ' ' + mood + ' banner design for a ' + topic + ' community group. ' + (color !== 'auto' ? 'Color scheme: ' + color + '. ' : '') + 'Clean composition with abstract elements, subtle gradients, and modern typography space. Professional social media cover, high quality, 4K resolution. --ar 16:9 --v 6',
+                gradient_css: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                title: t,
+                subtitle: 'Join our community',
+                text_overlays: [
+                    { label: 'Main Title', text: t },
+                    { label: 'Subtitle', text: 'Join the community' },
+                    { label: 'CTA', text: 'Tap to Join Now' }
+                ]
+            };
+        }
+
+        function renderResult(data) {
+            currentData = data;
+            // Render preview canvas
+            var canvas = document.getElementById('cover-canvas');
+            var gradient = data.gradient_css || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            canvas.innerHTML = '<div style="width:100%;height:100%;background:' + gradient + ';display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center"><div style="font-size:28px;font-weight:800;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,0.3);margin-bottom:8px">' + Security.sanitize(data.title || 'Your Group') + '</div><div style="font-size:14px;color:rgba(255,255,255,0.85);text-shadow:0 1px 5px rgba(0,0,0,0.3)">' + Security.sanitize(data.subtitle || 'Join our community') + '</div></div>';
+
+            // Render image prompt
+            document.getElementById('image-prompt').textContent = data.image_prompt || '';
+
+            // Render text overlays
+            var list = document.getElementById('overlays-list');
+            list.innerHTML = '';
+            (data.text_overlays || []).forEach(function(o) {
+                var div = document.createElement('div');
+                div.className = 'overlay-item';
+                div.innerHTML = '<div class="overlay-item__label">' + Security.sanitize(o.label) + '</div><div class="overlay-item__text">' + Security.sanitize(o.text) + '</div>';
+                list.appendChild(div);
+            });
+
+            document.getElementById('cover-result').style.display = 'block';
+            document.getElementById('input-section').style.display = '';
+            document.getElementById('cover-result').scrollIntoView({behavior:'smooth', block:'start'});
+            UI.toast('Cover design generated!', 'success');
+        }
+
+        function downloadPreview() {
+            var canvas = document.createElement('canvas');
+            canvas.width = 1280;
+            canvas.height = 720;
+            var ctx = canvas.getContext('2d');
+            // Draw gradient background
+            var grd = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            grd.addColorStop(0, '#667eea');
+            grd.addColorStop(1, '#764ba2');
+            ctx.fillStyle = grd;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Draw title
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 56px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(currentData ? (currentData.title || 'Your Group') : 'Your Group', canvas.width/2, canvas.height/2 - 20);
+            // Draw subtitle
+            ctx.font = '28px Inter, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.85)';
+            ctx.fillText(currentData ? (currentData.subtitle || '') : '', canvas.width/2, canvas.height/2 + 30);
+            // Download
+            var link = document.createElement('a');
+            link.download = 'groupsmix-cover.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            UI.toast('Cover preview downloaded!', 'success');
+        }
+    })();
+    </script>
+</Fragment>
+</BaseLayout>

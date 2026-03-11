@@ -1,0 +1,396 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Seller Profile — GroupsMix Marketplace"
+  description="View seller profile, listings, and reviews on GroupsMix Marketplace."
+>
+<style is:inline>
+        .seller-page {
+            max-width: var(--container-lg);
+            margin: 0 auto;
+            padding: var(--space-8) var(--space-4);
+        }
+        .seller-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-6);
+            padding: var(--space-6);
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-xl);
+            margin-bottom: var(--space-6);
+        }
+        .seller-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: var(--radius-full);
+            background: var(--gradient-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--text-2xl);
+            font-weight: var(--font-bold);
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .seller-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: var(--radius-full);
+            object-fit: cover;
+        }
+        .seller-info { flex: 1; }
+        .seller-name {
+            font-size: var(--text-xl);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--space-1);
+        }
+        .seller-meta {
+            display: flex;
+            gap: var(--space-4);
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+            flex-wrap: wrap;
+        }
+        .seller-meta__item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-1);
+        }
+        .seller-rating-stars {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            color: var(--accent-gold);
+        }
+        .seller-rating-stars svg {
+            width: 16px;
+            height: 16px;
+        }
+        .seller-tabs {
+            display: flex;
+            gap: var(--space-1);
+            margin-bottom: var(--space-6);
+            border-bottom: 2px solid var(--border-primary);
+        }
+        .seller-tab {
+            padding: var(--space-3) var(--space-4);
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .seller-tab:hover { color: var(--text-primary); }
+        .seller-tab--active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+        .seller-listings-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-4);
+        }
+        .review-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            margin-bottom: var(--space-3);
+        }
+        .review-card__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-2);
+        }
+        .review-card__rating {
+            display: flex;
+            gap: 2px;
+            color: var(--accent-gold);
+        }
+        .review-card__rating svg { width: 14px; height: 14px; }
+        .review-card__date {
+            color: var(--text-tertiary);
+            font-size: var(--text-xs);
+        }
+        .review-card__text {
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+            line-height: 1.6;
+        }
+        .review-form {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            margin-bottom: var(--space-6);
+        }
+        .review-form__title {
+            font-size: var(--text-lg);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--space-4);
+        }
+        .star-rating-input {
+            display: flex;
+            gap: var(--space-1);
+            margin-bottom: var(--space-4);
+        }
+        .star-rating-input__star {
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            padding: 0;
+            transition: color 0.2s, transform 0.1s;
+        }
+        .star-rating-input__star:hover {
+            color: var(--accent-gold);
+            transform: scale(1.1);
+        }
+        .star-rating-input__star svg[fill="currentColor"] {
+            color: var(--accent-gold);
+        }
+        @media (max-width: 899px) {
+            .seller-listings-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 599px) {
+            .seller-header { flex-direction: column; text-align: center; }
+            .seller-meta { justify-content: center; }
+            .seller-listings-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+
+
+        <div class="seller-page">
+            <div id="seller-loading" style="text-align:center;padding:var(--space-16)">
+                <div class="skeleton" style="width:80px;height:80px;border-radius:50%;margin:0 auto var(--space-4)"></div>
+                <div class="skeleton skeleton-title" style="width:200px;margin:0 auto var(--space-2)"></div>
+                <div class="skeleton skeleton-text" style="width:300px;margin:0 auto"></div>
+            </div>
+            <div id="seller-content" class="hidden">
+                <!-- Seller Header -->
+                <div class="seller-header" id="seller-header"></div>
+
+                <!-- Tabs -->
+                <div class="seller-tabs">
+                    <button class="seller-tab seller-tab--active" data-tab="listings" id="tab-listings">Listings</button>
+                    <button class="seller-tab" data-tab="reviews" id="tab-reviews">Reviews</button>
+                </div>
+
+                <!-- Tab Content -->
+                <div id="tab-content-listings">
+                    <div id="seller-listings-container" class="seller-listings-grid"></div>
+                </div>
+                <div id="tab-content-reviews" class="hidden">
+                    <div id="review-form-container"></div>
+                    <div id="seller-reviews-container"></div>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    document.addEventListener('DOMContentLoaded', initSellerPage);
+
+    var sellerProfile = null;
+    var sellerReviews = [];
+    var reviewRating = 0;
+
+    async function initSellerPage() {
+        var params = new URLSearchParams(window.location.search);
+        var sellerId = params.get('id');
+        if (!sellerId) {
+            document.getElementById('seller-loading').innerHTML =
+                '<div style="text-align:center;padding:var(--space-8)">' +
+                '<h2 style="margin-bottom:var(--space-3)">Seller Not Found</h2>' +
+                '<p style="color:var(--text-secondary);margin-bottom:var(--space-4)">No seller ID provided.</p>' +
+                '<a href="/marketplace" class="btn btn-primary">Back to Marketplace</a></div>';
+            return;
+        }
+
+        // Load seller profile
+        sellerProfile = await Marketplace.getSellerProfile(sellerId);
+        if (!sellerProfile) {
+            document.getElementById('seller-loading').innerHTML =
+                '<div style="text-align:center;padding:var(--space-8)">' +
+                '<h2 style="margin-bottom:var(--space-3)">Seller Not Found</h2>' +
+                '<p style="color:var(--text-secondary);margin-bottom:var(--space-4)">This seller profile could not be found.</p>' +
+                '<a href="/marketplace" class="btn btn-primary">Back to Marketplace</a></div>';
+            return;
+        }
+
+        renderSellerHeader();
+        renderSellerListings();
+        await loadReviews(sellerId);
+        renderReviewForm(sellerId);
+        initTabs();
+
+        document.getElementById('seller-loading').classList.add('hidden');
+        document.getElementById('seller-content').classList.remove('hidden');
+    }
+
+    function renderSellerHeader() {
+        var user = sellerProfile.user;
+        var name = Security.sanitize(user.display_name || 'Anonymous');
+        var initial = name.charAt(0).toUpperCase();
+        var avatar = user.photo_url
+            ? '<img src="' + Security.sanitize(user.photo_url) + '" alt="' + name + '">'
+            : initial;
+        var joined = user.created_at ? UI.formatDate(user.created_at) : '';
+        var starsHtml = renderStars(sellerProfile.avg_rating);
+
+        document.getElementById('seller-header').innerHTML =
+            '<div class="seller-avatar">' + avatar + '</div>' +
+            '<div class="seller-info">' +
+            '<div class="seller-name">' + name + '</div>' +
+            '<div class="seller-meta">' +
+            '<span class="seller-meta__item">' + starsHtml + ' ' + sellerProfile.avg_rating.toFixed(1) + ' (' + sellerProfile.review_count + ' reviews)</span>' +
+            '<span class="seller-meta__item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Joined ' + joined + '</span>' +
+            '<span class="seller-meta__item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> ' + sellerProfile.listings.length + ' listings</span>' +
+            '</div>' +
+            '</div>';
+    }
+
+    function renderStars(rating) {
+        var html = '<span class="seller-rating-stars">';
+        for (var i = 1; i <= 5; i++) {
+            var fill = i <= Math.round(rating) ? 'currentColor' : 'none';
+            html += '<svg viewBox="0 0 24 24" fill="' + fill + '" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+        }
+        html += '</span>';
+        return html;
+    }
+
+    function renderSellerListings() {
+        var container = document.getElementById('seller-listings-container');
+        if (!container) return;
+        var listings = sellerProfile.listings || [];
+        if (!listings.length) {
+            container.innerHTML = '<div style="text-align:center;padding:var(--space-8);grid-column:1/-1"><p style="color:var(--text-secondary)">No active listings</p></div>';
+            return;
+        }
+        container.innerHTML = listings.map(function(l) { return UI.marketplaceCard(l); }).join('');
+        UI.initInteractionToolbar(container);
+        container.querySelectorAll('.mk-listing-card__report').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var listingId = btn.dataset.listingId;
+                if (!listingId) return;
+                UI.confirmModal('Report this listing?', 'Are you sure you want to report this listing?', function() {
+                    Marketplace.reportListing(listingId);
+                });
+            });
+        });
+    }
+
+    async function loadReviews(sellerId) {
+        var result = await Marketplace.getSellerReviews(sellerId);
+        sellerReviews = result.data || [];
+        renderReviews();
+        // Update tab count
+        var tab = document.getElementById('tab-reviews');
+        if (tab) tab.textContent = 'Reviews (' + (result.count || sellerReviews.length) + ')';
+    }
+
+    function renderReviews() {
+        var container = document.getElementById('seller-reviews-container');
+        if (!container) return;
+        if (!sellerReviews.length) {
+            container.innerHTML = '<div style="text-align:center;padding:var(--space-8)"><p style="color:var(--text-secondary)">No reviews yet. Be the first to review this seller!</p></div>';
+            return;
+        }
+        container.innerHTML = sellerReviews.map(function(r) {
+            return '<div class="review-card">' +
+                '<div class="review-card__header">' +
+                '<div class="review-card__rating">' + renderStarsSmall(r.rating) + '</div>' +
+                '<span class="review-card__date">' + UI.formatDate(r.created_at) + '</span>' +
+                '</div>' +
+                '<div class="review-card__text">' + Security.sanitize(r.review_text || '') + '</div>' +
+                '</div>';
+        }).join('');
+    }
+
+    function renderStarsSmall(rating) {
+        var html = '';
+        for (var i = 1; i <= 5; i++) {
+            var fill = i <= rating ? 'currentColor' : 'none';
+            html += '<svg viewBox="0 0 24 24" fill="' + fill + '" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+        }
+        return html;
+    }
+
+    function renderReviewForm(sellerId) {
+        var container = document.getElementById('review-form-container');
+        if (!container) return;
+
+        // Don't show review form if not logged in or if reviewing yourself
+        var currentUserId = Auth.getUserId ? Auth.getUserId() : null;
+        if (!currentUserId) {
+            container.innerHTML = '<div class="review-form"><p style="color:var(--text-secondary)">Please <a href="#" onclick="Auth.requireAuth();return false" style="color:var(--accent-primary)">sign in</a> to leave a review.</p></div>';
+            return;
+        }
+        if (currentUserId === sellerId) {
+            container.innerHTML = '';
+            return;
+        }
+
+        container.innerHTML =
+            '<div class="review-form">' +
+            '<div class="review-form__title">Leave a Review</div>' +
+            '<div id="review-stars-container"></div>' +
+            '<div class="form-group">' +
+            '<textarea class="form-textarea" id="review-text" placeholder="Share your experience with this seller..." maxlength="500" rows="3"></textarea>' +
+            '<div class="form-help"><span id="review-char-count">0</span>/500</div>' +
+            '</div>' +
+            '<button type="button" class="btn btn-primary" id="submit-review-btn">Submit Review</button>' +
+            '</div>';
+
+        UI.starRatingInput('review-stars-container', function(rating) {
+            reviewRating = rating;
+        });
+
+        document.getElementById('review-text').addEventListener('input', function() {
+            document.getElementById('review-char-count').textContent = this.value.length;
+        });
+
+        document.getElementById('submit-review-btn').addEventListener('click', async function() {
+            if (reviewRating < 1) { UI.toast('Please select a rating', 'error'); return; }
+            var text = document.getElementById('review-text').value.trim();
+            var btn = document.getElementById('submit-review-btn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span>'; }
+
+            var result = await Marketplace.submitReview(sellerId, reviewRating, text);
+            if (result) {
+                await loadReviews(sellerId);
+                // Refresh seller profile to update rating
+                sellerProfile = await Marketplace.getSellerProfile(sellerId);
+                if (sellerProfile) renderSellerHeader();
+                container.innerHTML = '<div class="review-form"><p style="color:var(--success)">Thank you for your review!</p></div>';
+            } else if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Submit Review';
+            }
+        });
+    }
+
+    function initTabs() {
+        document.querySelectorAll('.seller-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.seller-tab').forEach(function(t) { t.classList.remove('seller-tab--active'); });
+                tab.classList.add('seller-tab--active');
+                var target = tab.dataset.tab;
+                document.getElementById('tab-content-listings').classList.toggle('hidden', target !== 'listings');
+                document.getElementById('tab-content-reviews').classList.toggle('hidden', target !== 'reviews');
+            });
+        });
+    }
+    </script>
+</Fragment>
+</BaseLayout>

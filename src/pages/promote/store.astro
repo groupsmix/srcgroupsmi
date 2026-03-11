@@ -1,0 +1,141 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Store | GroupsMix"
+  description="Shop official GroupsMix premium products, VIP memberships, and group boosts."
+  cssFiles={["/assets/css/smart-filter.css"]}
+  mainClass="page-container"
+  includeSmartFilter={true}
+>
+<style is:inline>
+        .store-hero{text-align:center;padding:var(--space-8) 0 var(--space-6)}
+        .store-hero__subtitle{color:var(--text-secondary);margin-top:var(--space-2);max-width:600px;margin-left:auto;margin-right:auto}
+        .store-badge{background:linear-gradient(135deg,#FFD700 0%,#FFA500 100%);color:#000;padding:var(--space-1) var(--space-2);border-radius:var(--radius-sm);font-size:var(--text-xs);font-weight:var(--font-bold);text-transform:uppercase;letter-spacing:.5px;display:inline-block;margin-bottom:var(--space-2)}
+        .store-badge--sub{background:var(--accent-primary);color:#fff}
+        .store-badge--boost{background:#10B981;color:#fff}
+        .store-badge--vip{background:linear-gradient(135deg,#8B5CF6,#6D28D9);color:#fff}
+        .price-tag{font-size:var(--text-2xl);font-weight:var(--font-bold);color:var(--text-primary);margin:var(--space-3) 0}
+        .price-tag__period{font-size:var(--text-sm);color:var(--text-tertiary);font-weight:normal}
+        .store-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-4)}
+        .store-card{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);padding:var(--space-6);text-align:center;transition:transform .2s ease,box-shadow .2s ease,opacity .3s ease}
+        .store-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+        .store-card--featured{border:2px solid var(--accent-primary);position:relative}
+        .store-card--featured::before{content:'Most Popular';position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent-primary);color:#fff;padding:2px 16px;border-radius:var(--radius-full);font-size:11px;font-weight:var(--font-bold);text-transform:uppercase;white-space:nowrap}
+        .store-card__icon{font-size:var(--text-5xl);margin-bottom:var(--space-4)}
+        .store-card__title{font-size:var(--text-lg);font-weight:var(--font-semibold);margin-bottom:var(--space-2)}
+        .store-card__desc{color:var(--text-secondary);font-size:var(--text-sm);min-height:40px;line-height:1.6;margin-bottom:var(--space-2)}
+        .store-card__features{list-style:none;padding:0;margin:0 0 var(--space-4);text-align:left}
+        .store-card__features li{padding:var(--space-1) 0;font-size:var(--text-sm);color:var(--text-secondary);display:flex;align-items:center;gap:var(--space-2)}
+        .store-card__features li::before{content:'\2713';color:var(--success);font-weight:var(--font-bold);flex-shrink:0}
+        .store-gxp-info{margin-top:var(--space-8);padding:var(--space-6);background:var(--bg-tertiary);border-radius:var(--radius-lg)}
+        .store-gxp-info__title{font-size:var(--text-lg);font-weight:var(--font-bold);margin-bottom:var(--space-3);text-align:center}
+        .gxp-tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin-top:var(--space-4)}
+        .gxp-tier{text-align:center;padding:var(--space-3);border-radius:var(--radius-md);background:var(--bg-card);border:1px solid var(--border-primary)}
+        .gxp-tier__name{font-weight:var(--font-semibold);font-size:var(--text-sm);margin-bottom:var(--space-1)}
+        .gxp-tier__range{font-size:var(--text-xs);color:var(--text-tertiary)}
+        .store-ad-section{margin-top:var(--space-8);padding:var(--space-6);background:var(--bg-tertiary);border-radius:var(--radius-lg);text-align:center}
+        @media(max-width:767px){.store-grid{grid-template-columns:1fr}.gxp-tiers{grid-template-columns:repeat(2,1fr)}}
+    </style>
+
+
+        <div class="content-wrapper">
+            <section class="store-hero">
+                <div style="font-size:var(--text-4xl);margin-bottom:var(--space-3)">&#128722;</div>
+                <h1>GroupsMix Store</h1>
+                <p class="store-hero__subtitle">Premium assets, verified checks, VIP memberships, and exclusive perks to make your group stand out.</p>
+            </section>
+            <div id="store-filter-container"></div>
+            <div class="store-grid" id="store-grid">
+                <div class="store-card" data-type="verified" data-price="19.99" data-vip="false">
+                    <div class="store-badge">Best Seller</div>
+                    <div class="store-card__icon">&#9989;</div>
+                    <h3 class="store-card__title">Verified Group Tick</h3>
+                    <p class="store-card__desc">Get the official blue checkmark next to your group&#39;s name across the entire platform.</p>
+                    <ul class="store-card__features"><li>Blue verified badge on your group card</li><li>Higher trust score in search results</li><li>Priority in category listings</li></ul>
+                    <div class="price-tag">$19.99<span class="price-tag__period">/one-time</span></div>
+                    <button class="btn btn-primary btn-full" data-toast="Store payments are currently being set up. Check back soon!">Purchase</button>
+                </div>
+                <div class="store-card store-card--featured" data-type="vip" data-price="9.99" data-vip="true">
+                    <div class="store-badge store-badge--vip">VIP</div>
+                    <div class="store-card__icon">&#128081;</div>
+                    <h3 class="store-card__title">VIP Membership</h3>
+                    <p class="store-card__desc">Ultimate visibility package with premium styling, priority ranking, and exclusive VIP badge.</p>
+                    <ul class="store-card__features"><li>Gold VIP badge on your group</li><li>Top placement in all listings</li><li>Featured in MarketPlus grid</li><li>Animated card border effect</li><li>+200 GXP bonus monthly</li></ul>
+                    <div class="price-tag">$9.99<span class="price-tag__period">/month</span></div>
+                    <button class="btn btn-primary btn-full" data-toast="Store payments are currently being set up. Check back soon!">Subscribe</button>
+                </div>
+                <div class="store-card" data-type="subscription" data-price="4.99" data-vip="false">
+                    <div class="store-badge store-badge--sub">Subscription</div>
+                    <div class="store-card__icon">&#10024;</div>
+                    <h3 class="store-card__title">Premium Styling</h3>
+                    <p class="store-card__desc">Animate your group card with a glowing border and custom background color.</p>
+                    <ul class="store-card__features"><li>Glowing animated card border</li><li>Custom accent color</li><li>+50 GXP bonus monthly</li></ul>
+                    <div class="price-tag">$4.99<span class="price-tag__period">/month</span></div>
+                    <button class="btn btn-primary btn-full" data-toast="Store payments are currently being set up. Check back soon!">Subscribe</button>
+                </div>
+                <div class="store-card" data-type="boost" data-price="2.99" data-vip="false">
+                    <div class="store-badge store-badge--boost">One-Time</div>
+                    <div class="store-card__icon">&#128640;</div>
+                    <h3 class="store-card__title">Search Boost Token</h3>
+                    <p class="store-card__desc">Bump your group&#39;s ranking in search results and category pages for 24 hours.</p>
+                    <ul class="store-card__features"><li>24-hour ranking boost</li><li>Highlighted in search results</li><li>+100 temporary GXP</li></ul>
+                    <div class="price-tag">$2.99<span class="price-tag__period">/each</span></div>
+                    <button class="btn btn-primary btn-full" data-toast="Store payments are currently being set up. Check back soon!">Purchase</button>
+                </div>
+            </div>
+            <div class="store-gxp-info">
+                <div class="store-gxp-info__title">&#9889; GXP Ranking System</div>
+                <p style="color:var(--text-secondary);font-size:var(--text-sm);text-align:center;max-width:600px;margin:0 auto">GroupsMix Experience Points (GXP) determine your group&#39;s visibility and ranking. Earn GXP through engagement, purchases, and community participation.</p>
+                <div class="gxp-tiers">
+                    <div class="gxp-tier"><div class="gxp-tier__name">&#127793; Starter</div><div class="gxp-tier__range">0 - 99 GXP</div></div>
+                    <div class="gxp-tier"><div class="gxp-tier__name">&#11088; Rising</div><div class="gxp-tier__range">100 - 499 GXP</div></div>
+                    <div class="gxp-tier"><div class="gxp-tier__name">&#128142; Premium</div><div class="gxp-tier__range">500 - 999 GXP</div></div>
+                    <div class="gxp-tier"><div class="gxp-tier__name">&#128081; Elite</div><div class="gxp-tier__range">1000+ GXP</div></div>
+                </div>
+            </div>
+            <div class="store-ad-section">
+                <h3 style="margin-bottom:var(--space-2)">Looking to Advertise?</h3>
+                <p style="color:var(--text-secondary);margin-bottom:var(--space-4)">We offer banner placements and sitewide takeovers for agencies and large networks.</p>
+                <a href="/advertise" class="btn btn-secondary">View Advertising Options</a>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!CONFIG.features.store) {
+                var main = document.getElementById('main-content');
+                if (main) { main.innerHTML = '<div class="content-wrapper" style="text-align:center;padding:var(--space-16) var(--space-4)"><div style="font-size:var(--text-5xl);margin-bottom:var(--space-4)">&#128722;</div><h1 style="margin-bottom:var(--space-3)">Store Coming Soon</h1><p style="color:var(--text-secondary);max-width:500px;margin:0 auto var(--space-6)">We are working hard to bring you premium assets, verified checks, and exclusive perks. Stay tuned!</p><a href="/" class="btn btn-primary">Back to Home</a></div>'; }
+                return;
+            }
+            SmartFilter.init('store-filter-container', function(filters) { applyStoreFilters(filters); });
+            document.querySelectorAll('[data-toast]').forEach(function(el) {
+                el.addEventListener('click', function(e) { e.preventDefault(); UI.toast(el.dataset.toast, 'info'); });
+            });
+        });
+        function applyStoreFilters(filters) {
+            var cards = document.querySelectorAll('#store-grid .store-card');
+            var visibleCount = 0;
+            cards.forEach(function(card) {
+                var price = parseFloat(card.getAttribute('data-price') || '0');
+                var isVip = card.getAttribute('data-vip') === 'true';
+                var show = true;
+                if (filters.priceMax < 100 && price > filters.priceMax) show = false;
+                if (filters.status.indexOf('vip') !== -1 && !isVip) show = false;
+                card.style.display = show ? '' : 'none';
+                if (show) visibleCount++;
+            });
+            var grid = document.getElementById('store-grid');
+            var emptyEl = document.getElementById('store-empty');
+            if (visibleCount === 0 && !emptyEl) {
+                var empty = document.createElement('div');
+                empty.id = 'store-empty';
+                empty.style.cssText = 'grid-column:1/-1;text-align:center;padding:var(--space-8);color:var(--text-tertiary)';
+                empty.textContent = 'No products match your filters';
+                grid.appendChild(empty);
+            } else if (visibleCount > 0 && emptyEl) { emptyEl.remove(); }
+        }
+    </script>
+</Fragment>
+</BaseLayout>

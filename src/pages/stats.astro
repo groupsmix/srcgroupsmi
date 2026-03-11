@@ -1,0 +1,44 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Platform Stats — GroupsMix"
+  description="GroupsMix platform statistics. See total groups, users, views, and more."
+>
+
+        <div class="container" style="max-width:var(--container-lg);padding:var(--space-8) var(--space-4)">
+            <h1 style="text-align:center;margin-bottom:var(--space-2)">📊 Platform Statistics</h1>
+            <p style="text-align:center;color:var(--text-secondary);margin-bottom:var(--space-8)">Real-time stats from
+                GroupsMix</p>
+            <div class="grid grid-4" id="stats-grid">
+                <div class="skeleton stat-card" style="height:100px"></div>
+                <div class="skeleton stat-card" style="height:100px"></div>
+                <div class="skeleton stat-card" style="height:100px"></div>
+                <div class="skeleton stat-card" style="height:100px"></div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const el = document.getElementById('stats-grid');
+            try {
+                const stats = await DB.stats.getGlobal();
+                if (!stats) { el.innerHTML = '<div style="text-align:center;color:var(--text-tertiary);grid-column:1/-1">Unable to load stats</div>'; return; }
+                const items = [
+                    { label: 'Total Groups', value: stats.total_groups || 0, icon: '📋' },
+                    { label: 'Total Users', value: stats.total_users || 0, icon: '👥' },
+                    { label: 'Total Views', value: stats.total_views || 0, icon: '👁' },
+                    { label: 'Countries', value: stats.total_countries || 0, icon: '🌍' },
+                    { label: 'Reviews', value: stats.total_reviews || 0, icon: '⭐' },
+                    { label: 'Categories', value: CONFIG.categories.length, icon: '📂' },
+                    { label: 'Platforms', value: CONFIG.platforms.length, icon: '📱' },
+                    { label: 'Languages', value: CONFIG.languages.length, icon: '🗣' }
+                ];
+                el.innerHTML = items.map(s => '<div class="stat-card"><div style="font-size:var(--text-2xl);margin-bottom:var(--space-1)">' + s.icon + '</div><div class="stat-card__value" id="stat-' + s.label.toLowerCase().replace(/\s/g, '-') + '">0</div><div class="stat-card__label">' + s.label + '</div></div>').join('');
+                items.forEach(s => UI.countUp(document.getElementById('stat-' + s.label.toLowerCase().replace(/\s/g, '-')), s.value));
+            } catch { el.innerHTML = '<div style="text-align:center;color:var(--text-tertiary);grid-column:1/-1">Unable to load</div>'; }
+        });
+    </script>
+</Fragment>
+</BaseLayout>

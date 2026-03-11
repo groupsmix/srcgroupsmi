@@ -1,0 +1,261 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="My Wallet — GroupsMix"
+  description="Manage your GMX Coins wallet. View balance, transactions, tips, and request withdrawals."
+  noIndex={true}
+  cssFiles={["/assets/css/fuel-community.css?v=20260310b"]}
+  includeFuel={true}
+  includeFuelComponents={true}
+>
+
+        <div class="fuel-wallet-page" style="padding:var(--space-8) var(--space-4)">
+            <h1 style="text-align:center;margin-bottom:var(--space-2)">My Wallet</h1>
+            <p style="text-align:center;color:var(--text-secondary);margin-bottom:var(--space-6);font-size:var(--text-sm)">Manage your GMX Coins, tips, and withdrawals</p>
+            <div id="wallet-content">
+                <div class="skeleton" style="height:160px;border-radius:var(--radius-lg);margin-bottom:var(--space-4)"></div>
+                <div class="skeleton" style="height:80px;border-radius:var(--radius-lg);margin-bottom:var(--space-4)"></div>
+                <div class="skeleton" style="height:300px;border-radius:var(--radius-lg)"></div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', async function () {
+            await Auth.waitForAuth();
+            if (!Auth.isLoggedIn()) { UI.authModal('signin'); return; }
+            initWalletPage();
+        });
+
+        var _walletTab = 'transactions';
+
+        async function initWalletPage() {
+            var el = document.getElementById('wallet-content');
+            try {
+                var wallet = await Wallet.getBalance();
+                if (!wallet) wallet = { coins_balance: 0, total_earned: 0, total_spent: 0, total_tipped: 0, total_received: 0 };
+
+                el.innerHTML =
+                    // Balance Header
+                    '<div class="fuel-wallet-header">' +
+                    '<div class="fuel-wallet-balance">' +
+                    '<div class="fuel-wallet-balance__amount">' + Wallet.formatCoins(wallet.coins_balance) + '</div>' +
+                    '<div class="fuel-wallet-balance__label">GMX Coins</div>' +
+                    '<div class="fuel-wallet-balance__usd">&asymp; $' + Wallet.coinsToUSD(wallet.coins_balance) + ' USD</div>' +
+                    '</div>' +
+                    '<div class="fuel-wallet-actions">' +
+                    '<button class="btn btn-primary btn-sm" id="wallet-buy-btn">Buy Coins</button>' +
+                    '<button class="btn btn-secondary btn-sm" id="wallet-withdraw-btn">Withdraw</button>' +
+                    '</div>' +
+                    '</div>' +
+
+                    // Stats
+                    '<div class="fuel-wallet-stats">' +
+                    '<div class="fuel-wallet-stat"><div class="fuel-wallet-stat__value" style="color:var(--fuel-green)">' + Wallet.formatCoins(wallet.total_earned) + '</div><div class="fuel-wallet-stat__label">Total Earned</div></div>' +
+                    '<div class="fuel-wallet-stat"><div class="fuel-wallet-stat__value" style="color:var(--fuel-red)">' + Wallet.formatCoins(wallet.total_spent) + '</div><div class="fuel-wallet-stat__label">Total Spent</div></div>' +
+                    '<div class="fuel-wallet-stat"><div class="fuel-wallet-stat__value" style="color:var(--fuel-purple)">' + Wallet.formatCoins(wallet.total_tipped) + '</div><div class="fuel-wallet-stat__label">Tips Sent</div></div>' +
+                    '<div class="fuel-wallet-stat"><div class="fuel-wallet-stat__value" style="color:var(--fuel-coin)">' + Wallet.formatCoins(wallet.total_received) + '</div><div class="fuel-wallet-stat__label">Tips Received</div></div>' +
+                    '</div>' +
+
+                    // Tabs
+                    '<div style="display:flex;gap:var(--space-2);margin-bottom:var(--space-4);flex-wrap:wrap">' +
+                    '<button class="btn btn-sm btn-primary wallet-tab" data-tab="transactions">Transactions</button>' +
+                    '<button class="btn btn-sm btn-ghost wallet-tab" data-tab="tips-received">Tips Received</button>' +
+                    '<button class="btn btn-sm btn-ghost wallet-tab" data-tab="tips-sent">Tips Sent</button>' +
+                    '<button class="btn btn-sm btn-ghost wallet-tab" data-tab="withdrawals">Withdrawals</button>' +
+                    '</div>' +
+
+                    // Tab Content
+                    '<div id="wallet-tab-content"></div>';
+
+                // Event listeners
+                document.getElementById('wallet-buy-btn').addEventListener('click', function () {
+                    UI.fuelCoinPurchaseModal();
+                });
+
+                document.getElementById('wallet-withdraw-btn').addEventListener('click', function () {
+                    openWithdrawModal(wallet);
+                });
+
+                document.querySelectorAll('.wallet-tab').forEach(function (tab) {
+                    tab.addEventListener('click', function () {
+                        document.querySelectorAll('.wallet-tab').forEach(function (t) {
+                            t.className = 'btn btn-sm btn-ghost wallet-tab';
+                        });
+                        tab.className = 'btn btn-sm btn-primary wallet-tab';
+                        _walletTab = tab.dataset.tab;
+                        renderWalletTab(_walletTab);
+                    });
+                });
+
+                renderWalletTab('transactions');
+
+            } catch (err) {
+                console.error('Wallet page error:', err.message);
+                el.innerHTML = '<div style="text-align:center;padding:var(--space-8);color:var(--text-secondary)">Unable to load wallet. Please try again.</div>';
+            }
+        }
+
+        function renderWalletTab(tab) {
+            var el = document.getElementById('wallet-tab-content');
+            el.innerHTML = '<div class="skeleton" style="height:200px;border-radius:var(--radius-lg)"></div>';
+            switch (tab) {
+                case 'transactions': renderTransactions(); break;
+                case 'tips-received': renderTipsReceived(); break;
+                case 'tips-sent': renderTipsSent(); break;
+                case 'withdrawals': renderWithdrawals(); break;
+            }
+        }
+
+        async function renderTransactions() {
+            var el = document.getElementById('wallet-tab-content');
+            try {
+                var result = await Wallet.getTransactions({ limit: 30 });
+                if (!result.data.length) {
+                    el.innerHTML = '<div class="fuel-wallet-txns"><div style="text-align:center;padding:var(--space-6);color:var(--text-tertiary)">No transactions yet. Buy coins or earn rewards to get started!</div></div>';
+                    return;
+                }
+                el.innerHTML = '<div class="fuel-wallet-txns"><div class="fuel-wallet-txns__title">Transaction History (' + result.count + ' total)</div>' +
+                    result.data.map(function (txn) { return UI.fuelTransactionRow(txn); }).join('') +
+                    '</div>';
+            } catch (err) {
+                el.innerHTML = '<div style="text-align:center;padding:var(--space-4);color:var(--text-tertiary)">Unable to load transactions</div>';
+            }
+        }
+
+        async function renderTipsReceived() {
+            var el = document.getElementById('wallet-tab-content');
+            try {
+                var result = await Tips.getReceivedTips({ limit: 30 });
+                if (!result.data.length) {
+                    el.innerHTML = '<div class="fuel-wallet-txns"><div style="text-align:center;padding:var(--space-6);color:var(--text-tertiary)">No tips received yet. Write great articles and the community will fuel you!</div></div>';
+                    return;
+                }
+                el.innerHTML = '<div class="fuel-wallet-txns"><div class="fuel-wallet-txns__title">Tips Received (' + result.count + ' total)</div>' +
+                    result.data.map(function (tip) {
+                        var info = (typeof TIP_TYPES !== 'undefined' && TIP_TYPES[tip.tip_type]) ? TIP_TYPES[tip.tip_type] : { name: tip.tip_type, color: '#6C63FF', icon: 'star' };
+                        var senderName = tip.is_anonymous ? 'Anonymous' : (tip.sender ? tip.sender.display_name : 'Someone');
+                        return '<div class="fuel-txn-row fuel-txn-row--credit">' +
+                            '<div class="fuel-txn-row__icon" style="background:color-mix(in srgb,' + info.color + ' 15%,transparent);color:' + info.color + '">' + WriterBadges.getBadgeIcon(info.icon) + '</div>' +
+                            '<div class="fuel-txn-row__info">' +
+                            '<div class="fuel-txn-row__type">' + Security.sanitize(info.name) + ' from ' + Security.sanitize(senderName) + '</div>' +
+                            '<div class="fuel-txn-row__desc">' + Security.sanitize(tip.message || '') + '</div>' +
+                            '</div>' +
+                            '<div class="fuel-txn-row__amount">+' + (tip.coins_amount || 0) + ' GMX</div>' +
+                            '<div class="fuel-txn-row__date">' + UI.formatDate(tip.created_at) + '</div>' +
+                            '</div>';
+                    }).join('') +
+                    '</div>';
+            } catch (err) {
+                el.innerHTML = '<div style="text-align:center;padding:var(--space-4);color:var(--text-tertiary)">Unable to load tips</div>';
+            }
+        }
+
+        async function renderTipsSent() {
+            var el = document.getElementById('wallet-tab-content');
+            try {
+                var result = await Tips.getSentTips({ limit: 30 });
+                if (!result.data.length) {
+                    el.innerHTML = '<div class="fuel-wallet-txns"><div style="text-align:center;padding:var(--space-6);color:var(--text-tertiary)">You haven\'t sent any tips yet. Fuel your favorite writers!</div></div>';
+                    return;
+                }
+                el.innerHTML = '<div class="fuel-wallet-txns"><div class="fuel-wallet-txns__title">Tips Sent (' + result.count + ' total)</div>' +
+                    result.data.map(function (tip) {
+                        var info = (typeof TIP_TYPES !== 'undefined' && TIP_TYPES[tip.tip_type]) ? TIP_TYPES[tip.tip_type] : { name: tip.tip_type, color: '#6C63FF', icon: 'star' };
+                        var receiverName = tip.receiver ? tip.receiver.display_name : 'Writer';
+                        return '<div class="fuel-txn-row fuel-txn-row--debit">' +
+                            '<div class="fuel-txn-row__icon" style="background:color-mix(in srgb,' + info.color + ' 15%,transparent);color:' + info.color + '">' + WriterBadges.getBadgeIcon(info.icon) + '</div>' +
+                            '<div class="fuel-txn-row__info">' +
+                            '<div class="fuel-txn-row__type">' + Security.sanitize(info.name) + ' to ' + Security.sanitize(receiverName) + '</div>' +
+                            '<div class="fuel-txn-row__desc">' + Security.sanitize(tip.message || '') + '</div>' +
+                            '</div>' +
+                            '<div class="fuel-txn-row__amount">-' + (tip.coins_amount || 0) + ' GMX</div>' +
+                            '<div class="fuel-txn-row__date">' + UI.formatDate(tip.created_at) + '</div>' +
+                            '</div>';
+                    }).join('') +
+                    '</div>';
+            } catch (err) {
+                el.innerHTML = '<div style="text-align:center;padding:var(--space-4);color:var(--text-tertiary)">Unable to load tips</div>';
+            }
+        }
+
+        async function renderWithdrawals() {
+            var el = document.getElementById('wallet-tab-content');
+            try {
+                var data = await Wallet.getWithdrawals();
+                if (!data.length) {
+                    el.innerHTML = '<div class="fuel-wallet-txns"><div style="text-align:center;padding:var(--space-6);color:var(--text-tertiary)">No withdrawal requests yet. Earn tips and request a withdrawal when you have 1,000+ coins.</div></div>';
+                    return;
+                }
+                var statusColors = { pending: 'var(--fuel-orange)', approved: 'var(--fuel-green)', rejected: 'var(--fuel-red)', completed: 'var(--fuel-blue)' };
+                el.innerHTML = '<div class="fuel-wallet-txns"><div class="fuel-wallet-txns__title">Withdrawal Requests</div>' +
+                    data.map(function (w) {
+                        return '<div class="fuel-txn-row">' +
+                            '<div class="fuel-txn-row__icon" style="background:color-mix(in srgb,' + (statusColors[w.status] || 'var(--fuel-primary)') + ' 15%,transparent);color:' + (statusColors[w.status] || 'var(--fuel-primary)') + '">' +
+                            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/></svg></div>' +
+                            '<div class="fuel-txn-row__info">' +
+                            '<div class="fuel-txn-row__type">Withdrawal - ' + w.coins_amount + ' GMX ($' + parseFloat(w.usd_amount).toFixed(2) + ')</div>' +
+                            '<div class="fuel-txn-row__desc">Via ' + Security.sanitize(w.payment_method || 'PayPal') + ' &middot; Status: <strong style="color:' + (statusColors[w.status] || 'inherit') + '">' + (w.status || 'pending').toUpperCase() + '</strong></div>' +
+                            '</div>' +
+                            '<div class="fuel-txn-row__date">' + UI.formatDate(w.created_at) + '</div>' +
+                            '</div>';
+                    }).join('') +
+                    '</div>';
+            } catch (err) {
+                el.innerHTML = '<div style="text-align:center;padding:var(--space-4);color:var(--text-tertiary)">Unable to load withdrawals</div>';
+            }
+        }
+
+        function openWithdrawModal(wallet) {
+            var balance = wallet ? wallet.coins_balance : 0;
+            if (balance < 1000) {
+                UI.toast('Minimum withdrawal is 1,000 GMX Coins ($7). Your balance: ' + balance + ' coins.', 'error');
+                return;
+            }
+            var content = '<div style="max-width:400px">' +
+                '<p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-4)">Request a withdrawal of your GMX Coins. Minimum: 1,000 coins ($7). You receive 70% ($0.007 per coin).</p>' +
+                '<div style="margin-bottom:var(--space-3)"><label style="font-size:var(--text-sm);font-weight:600;display:block;margin-bottom:4px">Coins to Withdraw</label>' +
+                '<input type="number" id="withdraw-amount" class="form-input" min="1000" max="' + balance + '" value="' + Math.min(balance, 1000) + '" placeholder="Min 1000"></div>' +
+                '<div style="font-size:var(--text-sm);color:var(--fuel-coin);margin-bottom:var(--space-3)" id="withdraw-usd">You receive: $' + Wallet.coinsToUSD(Math.min(balance, 1000)) + '</div>' +
+                '<div style="margin-bottom:var(--space-3)"><label style="font-size:var(--text-sm);font-weight:600;display:block;margin-bottom:4px">Payment Method</label>' +
+                '<select id="withdraw-method" class="form-input"><option value="paypal">PayPal</option><option value="wise">Wise (TransferWise)</option><option value="bank">Bank Transfer</option></select></div>' +
+                '<div style="margin-bottom:var(--space-4)"><label style="font-size:var(--text-sm);font-weight:600;display:block;margin-bottom:4px">Payment Email / Details</label>' +
+                '<input type="text" id="withdraw-details" class="form-input" placeholder="your@email.com"></div>' +
+                '<button class="btn btn-primary" id="withdraw-submit" style="width:100%">Submit Withdrawal Request</button>' +
+                '</div>';
+
+            UI.modal({ title: 'Request Withdrawal', content: content, size: 'small' });
+
+            var amountInput = document.getElementById('withdraw-amount');
+            if (amountInput) {
+                amountInput.addEventListener('input', function () {
+                    var val = parseInt(amountInput.value) || 0;
+                    var usdEl = document.getElementById('withdraw-usd');
+                    if (usdEl) usdEl.textContent = 'You receive: $' + Wallet.coinsToUSD(val);
+                });
+            }
+
+            var submitBtn = document.getElementById('withdraw-submit');
+            if (submitBtn) {
+                submitBtn.addEventListener('click', async function () {
+                    var amount = parseInt((document.getElementById('withdraw-amount') || {}).value) || 0;
+                    var method = (document.getElementById('withdraw-method') || {}).value || 'paypal';
+                    var details = (document.getElementById('withdraw-details') || {}).value || '';
+                    if (!details.trim()) { UI.toast('Please enter payment details', 'error'); return; }
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Submitting...';
+                    var result = await Wallet.requestWithdrawal(amount, method, { email: details.trim() });
+                    if (result) {
+                        UI.closeModal();
+                        initWalletPage(); // Refresh
+                    } else {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Submit Withdrawal Request';
+                    }
+                });
+            }
+        }
+    </script>
+</Fragment>
+</BaseLayout>

@@ -1,0 +1,742 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Advertise on GroupsMix — Reach Thousands"
+  description="Display your ads across GroupsMix and reach thousands of targeted users in your niche."
+>
+<style is:inline>
+        /* Minimal Header (same as promote) */
+        .promo-header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--space-6);
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-primary);
+        }
+        [data-theme="light"] .promo-header { background: rgba(255,255,255,0.85); }
+        .promo-header__logo {
+            font-family: var(--font-display);
+            font-weight: var(--font-extrabold);
+            font-size: var(--text-xl);
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex; align-items: center; gap: var(--space-2);
+        }
+        .promo-header__logo-icon {
+            width: 32px; height: 32px;
+            border-radius: 10px;
+            object-fit: contain;
+        }
+        .promo-header__back {
+            display: flex; align-items: center; gap: var(--space-2);
+            color: var(--text-secondary); text-decoration: none;
+            font-size: var(--text-sm); font-weight: var(--font-medium);
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border-primary);
+            transition: all 0.2s ease;
+        }
+        .promo-header__back:hover {
+            color: var(--accent-primary);
+            border-color: var(--accent-primary);
+            background: var(--accent-primary-light);
+        }
+
+        /* Hero */
+        .ad-hero { text-align: center; padding: var(--space-16) 0 var(--space-10); }
+        .ad-hero__badge {
+            display: inline-flex; align-items: center; gap: var(--space-2);
+            background: var(--accent-primary-light); color: var(--accent-primary);
+            padding: var(--space-1) var(--space-4); border-radius: var(--radius-full);
+            font-size: var(--text-xs); font-weight: var(--font-semibold);
+            margin-bottom: var(--space-4); text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .ad-hero__title {
+            font-family: var(--font-display);
+            font-size: clamp(1.75rem, 4vw, 2.75rem);
+            font-weight: var(--font-extrabold);
+            letter-spacing: -0.02em;
+            margin-bottom: var(--space-4);
+            line-height: var(--leading-tight);
+        }
+        .ad-hero__title-highlight {
+            background: var(--gradient-accent);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .ad-hero__subtitle {
+            color: var(--text-secondary);
+            font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+            max-width: 580px; margin: 0 auto;
+            line-height: var(--leading-relaxed);
+        }
+
+        /* Statistics Section */
+        .stats-section { padding: var(--space-8) 0 var(--space-12); }
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-4); max-width: 700px; margin: 0 auto;
+        }
+        .stat-card {
+            background: var(--bg-card); border: 1px solid var(--border-primary);
+            border-radius: var(--radius-xl); padding: var(--space-6); text-align: center;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: rgba(99,102,241,0.3); }
+        .stat-card__number {
+            font-family: var(--font-display); font-size: var(--text-3xl);
+            font-weight: var(--font-extrabold); color: var(--accent-primary);
+            margin-bottom: var(--space-1);
+        }
+        .stat-card__label { font-size: var(--text-sm); color: var(--text-secondary); }
+
+        /* How It Works */
+        .how-section { padding: var(--space-12) 0; border-top: 1px solid var(--border-primary); }
+        .how-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-6); max-width: 800px; margin: 0 auto;
+        }
+        .how-step { text-align: center; }
+        .how-step__num {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: var(--accent-primary-light); color: var(--accent-primary);
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-display); font-weight: var(--font-extrabold);
+            font-size: var(--text-lg); margin: 0 auto var(--space-4);
+        }
+        .how-step__title { font-weight: var(--font-bold); margin-bottom: var(--space-2); }
+        .how-step__desc { font-size: var(--text-sm); color: var(--text-secondary); line-height: var(--leading-relaxed); }
+
+        /* Packages with Scroll Arrows */
+        .packages-section { padding: var(--space-12) 0; border-top: 1px solid var(--border-primary); }
+        .scroll-container { position: relative; }
+        .scroll-container:hover .scroll-arrow { opacity: 1; }
+        .packages-scroll {
+            display: flex; gap: var(--space-4);
+            overflow-x: auto; scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; padding: var(--space-2) 0;
+        }
+        .packages-scroll::-webkit-scrollbar { display: none; }
+        .pkg-card {
+            flex: 0 0 280px; scroll-snap-align: start;
+            background: var(--bg-card); border: 2px solid var(--border-primary);
+            border-radius: var(--radius-xl); padding: var(--space-6);
+            text-align: center; cursor: pointer;
+            transition: all 0.3s ease; position: relative;
+        }
+        .pkg-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: rgba(99,102,241,0.3); }
+        .pkg-card.selected { border-color: var(--accent-primary); box-shadow: 0 0 0 2px var(--accent-primary); }
+        .pkg-card__check {
+            position: absolute; top: 12px; right: 12px;
+            width: 24px; height: 24px; border-radius: 50%;
+            border: 2px solid var(--border-primary);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; color: transparent; transition: all 0.2s;
+        }
+        .pkg-card.selected .pkg-card__check {
+            background: var(--accent-primary); border-color: var(--accent-primary); color: #fff;
+        }
+        .pkg-card__icon { font-size: 2rem; margin-bottom: var(--space-3); }
+        .pkg-card__name { font-family: var(--font-display); font-weight: var(--font-bold); font-size: var(--text-lg); margin-bottom: var(--space-2); }
+        .pkg-card__price {
+            font-size: var(--text-2xl); font-weight: var(--font-extrabold);
+            color: var(--accent-primary); margin-bottom: var(--space-1);
+        }
+        .pkg-card__period { font-size: var(--text-sm); color: var(--text-tertiary); margin-bottom: var(--space-4); }
+        .pkg-card__features { list-style: none; text-align: left; }
+        .pkg-card__features li {
+            font-size: var(--text-sm); color: var(--text-secondary);
+            padding: var(--space-1) 0; display: flex; align-items: center; gap: var(--space-2);
+        }
+        .pkg-card__features li .check { color: var(--success); font-weight: var(--font-bold); }
+
+        /* Scroll Arrows */
+        .scroll-arrow {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            z-index: 10; width: 44px; height: 44px;
+            border-radius: 50%; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: var(--text-lg); color: var(--text-primary);
+            background: rgba(22, 22, 31, 0.7);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            opacity: 0; transition: opacity 0.3s ease, background 0.2s;
+        }
+        .scroll-arrow:hover { background: rgba(99, 102, 241, 0.5); }
+        .scroll-arrow--left { left: -8px; }
+        .scroll-arrow--right { right: -8px; }
+        @media (max-width: 1023px) {
+            .scroll-arrow { display: none !important; }
+        }
+
+        /* Ad Preview Section */
+        .preview-section { padding: var(--space-12) 0; border-top: 1px solid var(--border-primary); }
+        .preview-window {
+            background: var(--bg-card); border: 1px solid var(--border-primary);
+            border-radius: var(--radius-xl); padding: var(--space-6);
+            max-width: 500px; margin: 0 auto;
+        }
+        .preview-window__label {
+            font-size: var(--text-xs); color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.05em;
+            margin-bottom: var(--space-4); text-align: center;
+        }
+        .preview-ad {
+            background: var(--bg-tertiary); border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg); padding: var(--space-4);
+            display: flex; gap: var(--space-4); align-items: center;
+        }
+        .preview-ad__image {
+            width: 80px; height: 80px; border-radius: var(--radius-md);
+            background: var(--accent-primary-light); display: flex;
+            align-items: center; justify-content: center; font-size: 2rem;
+            flex-shrink: 0;
+        }
+        .preview-ad__content { flex: 1; }
+        .preview-ad__title { font-weight: var(--font-bold); font-size: var(--text-sm); margin-bottom: var(--space-1); }
+        .preview-ad__desc { font-size: var(--text-xs); color: var(--text-secondary); line-height: var(--leading-relaxed); margin-bottom: var(--space-2); }
+        .preview-ad__tag {
+            display: inline-block; font-size: 10px; padding: 2px 8px;
+            background: var(--accent-primary-light); color: var(--accent-primary);
+            border-radius: var(--radius-full); font-weight: var(--font-semibold);
+        }
+
+        /* Order Form */
+        .order-section { padding: var(--space-12) 0; border-top: 1px solid var(--border-primary); }
+        .order-form {
+            max-width: 600px; margin: 0 auto;
+            background: var(--bg-card); border: 1px solid var(--border-primary);
+            border-radius: var(--radius-xl); padding: var(--space-8);
+        }
+        .order-form .form-group { margin-bottom: var(--space-4); }
+        .order-form .form-label { display: block; font-weight: var(--font-semibold); font-size: var(--text-sm); margin-bottom: var(--space-2); }
+        .order-form .form-input, .order-form .form-select, .order-form .form-textarea {
+            width: 100%; padding: 10px 14px; border-radius: var(--radius-lg);
+            border: 1px solid var(--border-primary); background: var(--bg-tertiary);
+            color: var(--text-primary); font-size: var(--text-sm);
+        }
+        .order-form .form-textarea { min-height: 80px; resize: vertical; }
+
+        /* Duration Options */
+        .duration-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2); }
+        .duration-option {
+            background: var(--bg-tertiary); border: 2px solid var(--border-primary);
+            border-radius: var(--radius-lg); padding: var(--space-3);
+            text-align: center; cursor: pointer; transition: all 0.2s;
+        }
+        .duration-option:hover { border-color: rgba(99,102,241,0.3); }
+        .duration-option.selected { border-color: var(--accent-primary); background: var(--accent-primary-light); }
+        .duration-option__weeks { font-weight: var(--font-bold); font-size: var(--text-sm); }
+        .duration-option__label { font-size: var(--text-xs); color: var(--text-tertiary); }
+
+        /* Payment Methods */
+        .payment-methods { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+        .payment-method {
+            padding: var(--space-2) var(--space-4); border: 2px solid var(--border-primary);
+            border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm);
+            transition: all 0.2s; background: var(--bg-tertiary);
+        }
+        .payment-method:hover { border-color: rgba(99,102,241,0.3); }
+        .payment-method.selected { border-color: var(--accent-primary); background: var(--accent-primary-light); }
+
+        /* Order Summary */
+        .order-summary {
+            background: var(--bg-tertiary); border-radius: var(--radius-lg);
+            padding: var(--space-4); margin-top: var(--space-6);
+        }
+        .order-summary__row {
+            display: flex; justify-content: space-between;
+            font-size: var(--text-sm); padding: var(--space-2) 0;
+            border-bottom: 1px solid var(--border-primary);
+        }
+        .order-summary__row:last-child { border-bottom: none; }
+        .order-summary__row--total { font-weight: var(--font-bold); color: var(--accent-primary); font-size: var(--text-base); }
+        .order-summary__label { color: var(--text-secondary); }
+
+        /* FAQ */
+        .faq-section { padding: var(--space-12) 0; border-top: 1px solid var(--border-primary); }
+        .faq-item {
+            border-bottom: 1px solid var(--border-primary);
+            padding: var(--space-4) 0;
+        }
+        .faq-item__q {
+            font-weight: var(--font-bold); font-size: var(--text-sm);
+            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+        }
+        .faq-item__a {
+            font-size: var(--text-sm); color: var(--text-secondary);
+            line-height: var(--leading-relaxed); padding-top: var(--space-3);
+            display: none;
+        }
+        .faq-item.open .faq-item__a { display: block; }
+        .faq-item__toggle { font-size: var(--text-lg); transition: transform 0.2s; }
+        .faq-item.open .faq-item__toggle { transform: rotate(45deg); }
+
+        /* Section Headers */
+        .section-header { text-align: center; margin-bottom: var(--space-8); }
+        .section-header__title { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: var(--font-extrabold); margin-bottom: var(--space-2); }
+        .section-header__subtitle { color: var(--text-secondary); font-size: var(--text-sm); }
+
+        /* Responsive */
+        @media (max-width: 767px) {
+            body { padding-top: 56px; }
+            .ad-hero { padding: var(--space-10) 0 var(--space-8); }
+            .stats-grid { grid-template-columns: 1fr; max-width: 300px; }
+            .how-grid { grid-template-columns: 1fr; max-width: 400px; }
+            .duration-grid { grid-template-columns: repeat(2, 1fr); }
+            .preview-ad { flex-direction: column; text-align: center; }
+            .preview-ad__features { text-align: left; }
+        }
+    </style>
+
+
+        <div class="container">
+
+            <!-- Hero -->
+            <section class="ad-hero">
+                <span class="ad-hero__badge">Advertising</span>
+                <h1 class="ad-hero__title">Reach Thousands with <span class="ad-hero__title-highlight">Smart Ads</span></h1>
+                <p class="ad-hero__subtitle">Display targeted ads across GroupsMix and connect with active communities in your exact niche.</p>
+            </section>
+
+            <!-- Statistics -->
+            <section class="stats-section">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card__number">50K+</div>
+                        <div class="stat-card__label">Monthly Visitors</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card__number">15K+</div>
+                        <div class="stat-card__label">Listed Groups</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card__number">95%</div>
+                        <div class="stat-card__label">Engagement Rate</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- How It Works -->
+            <section class="how-section">
+                <div class="section-header">
+                    <h2 class="section-header__title">How It Works</h2>
+                    <p class="section-header__subtitle">Three simple steps to start advertising</p>
+                </div>
+                <div class="how-grid">
+                    <div class="how-step">
+                        <div class="how-step__num">1</div>
+                        <div class="how-step__title">Choose a Package</div>
+                        <div class="how-step__desc">Select the ad placement that fits your budget and goals</div>
+                    </div>
+                    <div class="how-step">
+                        <div class="how-step__num">2</div>
+                        <div class="how-step__title">Target Your Niche</div>
+                        <div class="how-step__desc">Pick the exact category where your audience hangs out</div>
+                    </div>
+                    <div class="how-step">
+                        <div class="how-step__num">3</div>
+                        <div class="how-step__title">Go Live</div>
+                        <div class="how-step__desc">Submit payment and your ad goes live within 24 hours</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Packages with Scroll Arrows -->
+            <section class="packages-section">
+                <div class="section-header">
+                    <h2 class="section-header__title">Choose Your Package</h2>
+                    <p class="section-header__subtitle">Click a package to select it and continue to the order form below</p>
+                </div>
+                <div class="scroll-container" id="pkg-scroll-container">
+                    <button class="scroll-arrow scroll-arrow--left" id="pkg-arrow-left">&lsaquo;</button>
+                    <div class="packages-scroll" id="packages-scroll">
+                        <div class="pkg-card" data-pkg="sidebar" data-price="10">
+                            <span class="pkg-card__check">&#10003;</span>
+                            <div class="pkg-card__icon">&#128196;</div>
+                            <div class="pkg-card__name">Profile Sidebar</div>
+                            <div class="pkg-card__price">$10</div>
+                            <div class="pkg-card__period">per week</div>
+                            <ul class="pkg-card__features">
+                                <li><span class="check">&#10003;</span> Displayed on group profiles</li>
+                                <li><span class="check">&#10003;</span> Visible to targeted visitors</li>
+                                <li><span class="check">&#10003;</span> Click tracking included</li>
+                                <li><span class="check">&#10003;</span> Basic analytics dashboard</li>
+                            </ul>
+                        </div>
+                        <div class="pkg-card" data-pkg="homepage" data-price="25">
+                            <span class="pkg-card__check">&#10003;</span>
+                            <div class="pkg-card__icon">&#127968;</div>
+                            <div class="pkg-card__name">Homepage Banner</div>
+                            <div class="pkg-card__price">$25</div>
+                            <div class="pkg-card__period">per week</div>
+                            <ul class="pkg-card__features">
+                                <li><span class="check">&#10003;</span> Top of homepage placement</li>
+                                <li><span class="check">&#10003;</span> Maximum visibility</li>
+                                <li><span class="check">&#10003;</span> Click &amp; impression tracking</li>
+                                <li><span class="check">&#10003;</span> Advanced analytics</li>
+                            </ul>
+                        </div>
+                        <div class="pkg-card" data-pkg="sponsored" data-price="50">
+                            <span class="pkg-card__check">&#10003;</span>
+                            <div class="pkg-card__icon">&#11088;</div>
+                            <div class="pkg-card__name">Sponsored Listing</div>
+                            <div class="pkg-card__price">$50</div>
+                            <div class="pkg-card__period">per week</div>
+                            <ul class="pkg-card__features">
+                                <li><span class="check">&#10003;</span> Top of search results</li>
+                                <li><span class="check">&#10003;</span> Highlighted with "Sponsored" badge</li>
+                                <li><span class="check">&#10003;</span> Full analytics suite</li>
+                                <li><span class="check">&#10003;</span> Niche-specific targeting</li>
+                            </ul>
+                        </div>
+                        <div class="pkg-card" data-pkg="newsletter" data-price="35">
+                            <span class="pkg-card__check">&#10003;</span>
+                            <div class="pkg-card__icon">&#128231;</div>
+                            <div class="pkg-card__name">Newsletter Feature</div>
+                            <div class="pkg-card__price">$35</div>
+                            <div class="pkg-card__period">per send</div>
+                            <ul class="pkg-card__features">
+                                <li><span class="check">&#10003;</span> Featured in weekly newsletter</li>
+                                <li><span class="check">&#10003;</span> Reaches 10K+ subscribers</li>
+                                <li><span class="check">&#10003;</span> Open &amp; click tracking</li>
+                                <li><span class="check">&#10003;</span> Custom ad copy</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <button class="scroll-arrow scroll-arrow--right" id="pkg-arrow-right">&rsaquo;</button>
+                </div>
+            </section>
+
+            <!-- Ad Preview -->
+            <section class="preview-section">
+                <div class="section-header">
+                    <h2 class="section-header__title">Ad Preview</h2>
+                    <p class="section-header__subtitle">This is how your ad will look on the site</p>
+                </div>
+                <div class="preview-window">
+                    <div class="preview-window__label">Preview</div>
+                    <div class="preview-ad">
+                        <div class="preview-ad__image" id="preview-image">&#128226;</div>
+                        <div class="preview-ad__content">
+                            <div class="preview-ad__title" id="preview-title">Your Ad Title</div>
+                            <div class="preview-ad__desc" id="preview-desc">Your ad description will appear here. Fill in the form below to see a live preview.</div>
+                            <span class="preview-ad__tag" id="preview-niche">Select a niche</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Order Form -->
+            <section class="order-section" id="order-section">
+                <div class="section-header">
+                    <h2 class="section-header__title">Place Your Order</h2>
+                    <p class="section-header__subtitle">Fill in the details below to submit your ad</p>
+                </div>
+                <div class="order-form" id="ad-order-form">
+                    <div class="form-group">
+                        <label class="form-label">Selected Package</label>
+                        <div id="selected-pkg-display" style="padding:10px 14px;background:var(--bg-tertiary);border-radius:var(--radius-lg);font-size:var(--text-sm);color:var(--text-secondary)">No package selected — choose one above</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Duration</label>
+                        <div class="duration-grid" id="duration-grid">
+                            <div class="duration-option selected" data-weeks="1">
+                                <div class="duration-option__weeks">1 Week</div>
+                                <div class="duration-option__label">x1</div>
+                            </div>
+                            <div class="duration-option" data-weeks="2">
+                                <div class="duration-option__weeks">2 Weeks</div>
+                                <div class="duration-option__label">x2</div>
+                            </div>
+                            <div class="duration-option" data-weeks="4">
+                                <div class="duration-option__weeks">4 Weeks</div>
+                                <div class="duration-option__label">x4 &bull; Save 10%</div>
+                            </div>
+                            <div class="duration-option" data-weeks="8">
+                                <div class="duration-option__weeks">8 Weeks</div>
+                                <div class="duration-option__label">x8 &bull; Save 20%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Target Niche / Category</label>
+                        <select class="form-select" id="ad-category">
+                            <option value="">Select a niche...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Ad Title</label>
+                        <input type="text" class="form-input" id="ad-title" placeholder="Enter your ad headline" maxlength="60">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Ad Description</label>
+                        <textarea class="form-textarea" id="ad-description" placeholder="Describe what you're promoting..." maxlength="200"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Destination URL</label>
+                        <input type="url" class="form-input" id="ad-url" placeholder="https://your-link.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Your Name</label>
+                        <input type="text" class="form-input" id="ad-name" placeholder="Your name or company">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Your Email</label>
+                        <input type="email" class="form-input" id="ad-email" placeholder="you@email.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Payment Method</label>
+                        <div class="payment-methods" id="payment-methods">
+                            <div class="payment-method selected" data-method="btc">&#8383; Bitcoin</div>
+                            <div class="payment-method" data-method="usdt">&#128178; USDT</div>
+                            <div class="payment-method" data-method="sol">&#9788; Solana</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="wallet-display-group">
+                        <label class="form-label">Send Payment To:</label>
+                        <div class="form-input" id="ad-wallet-address" style="word-break:break-all;height:auto;cursor:pointer;font-size:var(--text-sm)" title="Click to copy">Loading...</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Transaction Hash *</label>
+                        <input type="text" class="form-input" id="ad-tx-hash" placeholder="Paste your transaction hash after payment">
+                    </div>
+
+                    <!-- Order Summary -->
+                    <div class="order-summary" id="order-summary">
+                        <div class="order-summary__row">
+                            <span class="order-summary__label">Package</span>
+                            <span id="summary-pkg">—</span>
+                        </div>
+                        <div class="order-summary__row">
+                            <span class="order-summary__label">Duration</span>
+                            <span id="summary-duration">1 week</span>
+                        </div>
+                        <div class="order-summary__row">
+                            <span class="order-summary__label">Niche</span>
+                            <span id="summary-niche">—</span>
+                        </div>
+                        <div class="order-summary__row order-summary__row--total">
+                            <span>Total</span>
+                            <span id="summary-total">$0</span>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary btn-full btn-lg" id="submit-ad-btn" style="margin-top:var(--space-6)">Submit Ad Order</button>
+                </div>
+            </section>
+
+            <!-- FAQ -->
+            <section class="faq-section">
+                <div class="section-header">
+                    <h2 class="section-header__title">Frequently Asked Questions</h2>
+                </div>
+                <div style="max-width:700px;margin:0 auto">
+                    <div class="faq-item">
+                        <div class="faq-item__q">How long until my ad goes live? <span class="faq-item__toggle">+</span></div>
+                        <div class="faq-item__a">Most ads are reviewed and approved within 24 hours of payment confirmation.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-item__q">Can I change my ad after submitting? <span class="faq-item__toggle">+</span></div>
+                        <div class="faq-item__a">Yes, you can request changes by contacting our support team before the ad goes live.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-item__q">What niches are available? <span class="faq-item__toggle">+</span></div>
+                        <div class="faq-item__a">All categories on GroupsMix are available for niche targeting, including Technology, Gaming, Education, Crypto, and many more.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-item__q">Do you offer refunds? <span class="faq-item__toggle">+</span></div>
+                        <div class="faq-item__a">Refunds are available if your ad has not yet been published. Once live, we offer credit towards future campaigns.</div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    (function() {
+        'use strict';
+
+        var selectedPkg = null;
+        var selectedWeeks = 1;
+        var selectedMethod = 'btc';
+        var pkgPrices = { sidebar: 10, homepage: 25, sponsored: 50, newsletter: 35 };
+        var discounts = { 1: 0, 2: 0, 4: 0.10, 8: 0.20 };
+
+        // Populate categories
+        var catEl = document.getElementById('ad-category');
+        if (catEl && typeof CONFIG !== 'undefined' && CONFIG.categories) {
+            CONFIG.categories.forEach(function(c) {
+                var o = document.createElement('option');
+                o.value = c.id;
+                o.textContent = c.emoji + ' ' + c.name;
+                catEl.appendChild(o);
+            });
+        }
+
+        // Package selection
+        document.querySelectorAll('.pkg-card').forEach(function(card) {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.pkg-card').forEach(function(c) { c.classList.remove('selected'); });
+                card.classList.add('selected');
+                selectedPkg = card.dataset.pkg;
+                updateSummary();
+                document.getElementById('order-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+
+        // Duration selection
+        document.querySelectorAll('.duration-option').forEach(function(opt) {
+            opt.addEventListener('click', function() {
+                document.querySelectorAll('.duration-option').forEach(function(o) { o.classList.remove('selected'); });
+                opt.classList.add('selected');
+                selectedWeeks = parseInt(opt.dataset.weeks);
+                updateSummary();
+            });
+        });
+
+        // Payment method selection
+        document.querySelectorAll('.payment-method').forEach(function(m) {
+            m.addEventListener('click', function() {
+                document.querySelectorAll('.payment-method').forEach(function(pm) { pm.classList.remove('selected'); });
+                m.classList.add('selected');
+                selectedMethod = m.dataset.method;
+                updateWallet();
+            });
+        });
+
+        function updateWallet() {
+            var el = document.getElementById('ad-wallet-address');
+            if (el) el.textContent = (typeof CONFIG !== 'undefined' && CONFIG.cryptoWallets && CONFIG.cryptoWallets[selectedMethod]) ? CONFIG.cryptoWallets[selectedMethod] : 'Not configured — contact admin';
+        }
+        updateWallet();
+
+        document.getElementById('ad-wallet-address')?.addEventListener('click', function() {
+            if (typeof UI !== 'undefined') UI.copyToClipboard(this.textContent);
+        });
+
+        function getTotal() {
+            if (!selectedPkg) return 0;
+            var base = pkgPrices[selectedPkg] || 0;
+            var discount = discounts[selectedWeeks] || 0;
+            return Math.round(base * selectedWeeks * (1 - discount));
+        }
+
+        function updateSummary() {
+            var pkgNames = { sidebar: 'Profile Sidebar', homepage: 'Homepage Banner', sponsored: 'Sponsored Listing', newsletter: 'Newsletter Feature' };
+            document.getElementById('summary-pkg').textContent = selectedPkg ? pkgNames[selectedPkg] : '—';
+            document.getElementById('summary-duration').textContent = selectedWeeks + (selectedWeeks === 1 ? ' week' : ' weeks');
+            document.getElementById('summary-total').textContent = '$' + getTotal();
+            document.getElementById('selected-pkg-display').textContent = selectedPkg ? pkgNames[selectedPkg] + ' — $' + pkgPrices[selectedPkg] + '/week' : 'No package selected — choose one above';
+
+            var niche = document.getElementById('ad-category')?.value;
+            var nicheText = '—';
+            if (niche && catEl) {
+                var opt = catEl.querySelector('option[value="' + niche + '"]');
+                if (opt) nicheText = opt.textContent;
+            }
+            document.getElementById('summary-niche').textContent = nicheText;
+        }
+
+        // Niche change
+        document.getElementById('ad-category')?.addEventListener('change', function() {
+            updateSummary();
+            var opt = this.options[this.selectedIndex];
+            document.getElementById('preview-niche').textContent = opt && opt.value ? opt.textContent : 'Select a niche';
+        });
+
+        // Live preview updates
+        document.getElementById('ad-title')?.addEventListener('input', function() {
+            document.getElementById('preview-title').textContent = this.value || 'Your Ad Title';
+        });
+        document.getElementById('ad-description')?.addEventListener('input', function() {
+            document.getElementById('preview-desc').textContent = this.value || 'Your ad description will appear here. Fill in the form below to see a live preview.';
+        });
+
+        // Scroll arrows
+        var scrollEl = document.getElementById('packages-scroll');
+        var leftArrow = document.getElementById('pkg-arrow-left');
+        var rightArrow = document.getElementById('pkg-arrow-right');
+        if (scrollEl && leftArrow && rightArrow) {
+            var scrollDist = 296;
+            var firstCard = scrollEl.querySelector('.pkg-card');
+            if (firstCard) scrollDist = firstCard.offsetWidth + 16;
+            leftArrow.addEventListener('click', function() { scrollEl.scrollBy({ left: -scrollDist, behavior: 'smooth' }); });
+            rightArrow.addEventListener('click', function() { scrollEl.scrollBy({ left: scrollDist, behavior: 'smooth' }); });
+        }
+
+        // FAQ toggles
+        document.querySelectorAll('.faq-item__q').forEach(function(q) {
+            q.addEventListener('click', function() {
+                q.parentElement.classList.toggle('open');
+            });
+        });
+
+        // Submit ad order
+        document.getElementById('submit-ad-btn')?.addEventListener('click', async function() {
+            if (typeof Auth !== 'undefined' && !Auth.requireAuth()) return;
+
+            if (!selectedPkg) { if (typeof UI !== 'undefined') UI.toast('Please select a package', 'error'); return; }
+            var niche = document.getElementById('ad-category')?.value;
+            if (!niche) { if (typeof UI !== 'undefined') UI.toast('Please select a target niche', 'error'); return; }
+            var title = document.getElementById('ad-title')?.value?.trim();
+            if (!title) { if (typeof UI !== 'undefined') UI.toast('Please enter an ad title', 'error'); return; }
+            var desc = document.getElementById('ad-description')?.value?.trim();
+            var url = document.getElementById('ad-url')?.value?.trim();
+            var name = document.getElementById('ad-name')?.value?.trim();
+            var email = document.getElementById('ad-email')?.value?.trim();
+            var txHash = document.getElementById('ad-tx-hash')?.value?.trim();
+            if (!txHash) { if (typeof UI !== 'undefined') UI.toast('Please enter the transaction hash', 'error'); return; }
+            if (typeof Security !== 'undefined' && !Security.isValidTxHash(txHash, selectedMethod)) { if (typeof UI !== 'undefined') UI.toast('Invalid transaction hash format', 'error'); return; }
+
+            var btn = document.getElementById('submit-ad-btn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Processing...'; }
+
+            var amount = getTotal();
+            var result = await DB.payments.submit({
+                type: 'advertising',
+                service: 'ad_' + selectedPkg,
+                currency: selectedMethod,
+                amount: amount,
+                tx_hash: txHash,
+                wallet_address: typeof CONFIG !== 'undefined' && CONFIG.cryptoWallets ? CONFIG.cryptoWallets[selectedMethod] || '' : '',
+                niche: niche,
+                ad_title: title,
+                ad_description: desc || '',
+                ad_url: url || '',
+                ad_name: name || '',
+                ad_email: email || '',
+                duration_weeks: selectedWeeks
+            });
+
+            if (result) {
+                if (typeof UI !== 'undefined') UI.toast('Ad order submitted! We will review and activate it within 24 hours.', 'success');
+                if (btn) { btn.disabled = false; btn.textContent = 'Submit Ad Order'; }
+            } else {
+                if (btn) { btn.disabled = false; btn.textContent = 'Submit Ad Order'; }
+            }
+        });
+
+    })();
+    </script>
+</Fragment>
+</BaseLayout>

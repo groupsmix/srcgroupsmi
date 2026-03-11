@@ -1,0 +1,122 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Write Article — GroupsMix"
+  description="Write and publish articles on GroupsMix. Share your knowledge with the community."
+  cssFiles={["/assets/css/articles.css?v=20260310b"]}
+>
+
+        <div class="write-article">
+            <!-- Header -->
+            <div class="write-article__header">
+                <div class="write-article__header-left" style="display:flex;align-items:center;gap:var(--space-3)">
+                    <a href="/articles" class="btn btn-ghost btn-sm" title="Back to Articles">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    </a>
+                    <h1 class="write-article__title">Write Article</h1>
+                    <div class="write-article__status">
+                        <span id="save-status-dot" class="write-article__status-dot"></span>
+                        <span id="save-status-text">Ready</span>
+                    </div>
+                </div>
+                <div class="write-article__actions">
+                    <button id="btn-preview" class="btn btn-ghost btn-sm" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        Preview
+                    </button>
+                    <button id="btn-save-draft" class="btn btn-secondary btn-sm" type="button">Save Draft</button>
+                    <button id="btn-publish" class="btn btn-primary btn-sm" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                        Publish
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cover Image Upload -->
+            <div id="cover-upload" class="cover-upload" role="button" tabindex="0" aria-label="Upload cover image">
+                <img id="cover-preview" class="cover-upload__preview" style="display:none" alt="Cover preview">
+                <div class="cover-upload__overlay">Click to change cover image</div>
+                <div class="cover-upload__icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                </div>
+                <span class="cover-upload__text">Click to upload cover image (recommended: 1200x630)</span>
+                <input type="file" id="cover-file-input" class="cover-upload__input" accept="image/*">
+            </div>
+
+            <!-- Title -->
+            <input type="text" id="article-title" class="write-article__title-input" placeholder="Article Title..." maxlength="200" autocomplete="off">
+
+            <!-- Excerpt -->
+            <textarea id="article-excerpt" class="write-article__excerpt-input" placeholder="Write a short excerpt or summary (optional, AI can generate this)..." maxlength="300" rows="2"></textarea>
+
+            <!-- Meta Row -->
+            <div class="write-article__meta-row">
+                <div class="write-article__meta-field">
+                    <label class="write-article__meta-label" for="meta-category">Category</label>
+                    <select id="meta-category" class="write-article__meta-select">
+                        <option value="general">Select Category</option>
+                    </select>
+                </div>
+                <div class="write-article__meta-field">
+                    <label class="write-article__meta-label" for="meta-language">Language</label>
+                    <select id="meta-language" class="write-article__meta-select">
+                        <option value="en">English</option>
+                        <option value="ar">العربية (Arabic)</option>
+                    </select>
+                </div>
+                <div class="write-article__meta-field">
+                    <label class="write-article__meta-label">Tags</label>
+                    <div id="tags-container" class="tags-input">
+                        <input type="text" id="tags-field" class="tags-input__field" placeholder="Add tags (press Enter)..." maxlength="30">
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Writing Assistant Panel -->
+            <div class="ai-assistant-panel">
+                <div class="ai-assistant-panel__header">
+                    <div class="ai-assistant-panel__title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 0-4 4c0 2 2 3 2 6H8"/><path d="M12 2a4 4 0 0 1 4 4c0 2-2 3-2 6h2"/><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/></svg>
+                        AI Writing Assistant
+                    </div>
+                </div>
+                <div class="ai-assistant-panel__actions">
+                    <button id="ai-suggest-titles" class="ai-assistant-btn" type="button">Suggest Titles</button>
+                    <button id="ai-auto-tags" class="ai-assistant-btn" type="button">Auto Tags</button>
+                    <button id="ai-auto-excerpt" class="ai-assistant-btn" type="button">Auto Excerpt</button>
+                    <button id="ai-auto-category" class="ai-assistant-btn" type="button">Auto Category</button>
+                    <button id="ai-improve" class="ai-assistant-btn" type="button">Improve Writing</button>
+                </div>
+                <div id="ai-suggestions" class="ai-assistant-panel__suggestions" style="display:none"></div>
+            </div>
+
+            <!-- Quill Editor -->
+            <div class="write-article__editor-wrap">
+                <div id="article-editor"></div>
+            </div>
+
+            <!-- Footer Stats -->
+            <div class="write-article__footer">
+                <div class="write-article__word-count">
+                    <span id="word-count">0 words</span>
+                    <span id="char-count">0 chars</span>
+                    <span id="reading-time">0 min read</span>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', async () => {
+            await Auth.waitForAuth();
+            if (!Auth.isLoggedIn()) {
+                UI.toast('Please sign in to write articles.', 'warning');
+                UI.authModal('signin');
+                return;
+            }
+            ArticleEditor.init();
+        });
+    </script>
+</Fragment>
+</BaseLayout>

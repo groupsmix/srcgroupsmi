@@ -1,0 +1,285 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Viral Content Creator — GroupsMix"
+  description="Generate viral posts for your group. AI creates debate starters, educational content, and join promos."
+  canonical="https://groupsmix.com/tools/viral-post"
+>
+<style is:inline>
+        .viral-container { max-width:var(--container-sm);margin:0 auto;padding:var(--space-8) var(--space-4); }
+        .viral-hero { text-align:center;padding:var(--space-8) var(--space-4);background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(239,68,68,0.08),rgba(139,92,246,0.1));border-radius:var(--radius-xl);margin-bottom:var(--space-6);border:1px solid rgba(245,158,11,0.2); }
+        .viral-hero__icon { font-size:56px;margin-bottom:var(--space-3);display:block; }
+        .viral-hero h1 { background:linear-gradient(135deg,#f59e0b,#ef4444,#8B5CF6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:var(--space-2); }
+        .viral-form { background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5); }
+        .viral-form textarea { width:100%;min-height:80px;background:var(--bg-input);border:2px solid var(--border-primary);border-radius:var(--radius-md);padding:var(--space-4);color:var(--text-primary);font-size:var(--text-base);resize:vertical;transition:all 0.3s;font-family:inherit; }
+        .viral-form textarea::placeholder { color:var(--text-muted); }
+        .viral-form textarea:focus { border-color:#f59e0b;box-shadow:0 0 0 4px rgba(245,158,11,0.15);outline:none; }
+        .viral-form select, .viral-form input[type="text"] { width:100%;height:48px;padding:0 var(--space-4);background:var(--bg-input);border:2px solid var(--border-primary);border-radius:var(--radius-md);color:var(--text-primary);font-size:var(--text-base);cursor:pointer;transition:all 0.3s; }
+        .viral-form select:focus, .viral-form input[type="text"]:focus { border-color:#f59e0b;box-shadow:0 0 0 4px rgba(245,158,11,0.15);outline:none; }
+        .viral-form input[type="text"]::placeholder { color:var(--text-muted); }
+        .option-grid { display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3); }
+        @media(max-width:500px) { .option-grid { grid-template-columns:1fr; } }
+        .custom-input-wrap { margin-top:var(--space-2);display:none; }
+        .generate-btn { width:100%;height:56px;margin-top:var(--space-4);border:none;border-radius:14px;cursor:pointer;font-size:var(--text-lg);font-weight:700;color:#fff;background:linear-gradient(135deg,#f59e0b,#ef4444);box-shadow:0 4px 20px rgba(245,158,11,0.4);transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:var(--space-2); }
+        .generate-btn:hover { transform:translateY(-2px);box-shadow:0 8px 30px rgba(245,158,11,0.5); }
+        .generate-btn:disabled { opacity:0.6;cursor:not-allowed;transform:none; }
+
+        .viral-loading { display:none;text-align:center;padding:var(--space-8); }
+        .viral-loading__text { font-size:var(--text-base);font-weight:600;color:#fbbf24;min-height:24px; }
+
+        .viral-result { display:none;animation:slideUp 0.6s ease; }
+        @keyframes slideUp { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+        .post-cards { display:flex;flex-direction:column;gap:var(--space-4); }
+        .post-card { background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);overflow:hidden;transition:all 0.3s; }
+        .post-card:hover { border-color:rgba(245,158,11,0.3);box-shadow:0 8px 30px rgba(0,0,0,0.2); }
+        .post-card__header { padding:var(--space-3) var(--space-4);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-primary); }
+        .post-card__badge { display:inline-flex;align-items:center;gap:var(--space-1);padding:4px 12px;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:700; }
+        .badge-magnet { background:rgba(239,68,68,0.15);color:#ef4444; }
+        .badge-debate { background:rgba(245,158,11,0.15);color:#f59e0b; }
+        .badge-gift { background:rgba(16,185,129,0.15);color:#10b981; }
+        .post-card__body { padding:var(--space-4);white-space:pre-wrap;font-size:var(--text-sm);line-height:1.7;color:var(--text-secondary); }
+        .post-card__footer { padding:var(--space-3) var(--space-4);border-top:1px solid var(--border-primary);display:flex;gap:var(--space-2); }
+        .copy-post-btn { height:36px;padding:0 14px;border-radius:10px;font-weight:600;font-size:var(--text-sm);background:var(--gradient-accent);color:#fff;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;gap:var(--space-1); }
+        .copy-post-btn:hover { transform:translateY(-1px); }
+
+        .viral-actions { display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap;margin-top:var(--space-5); }
+    </style>
+
+
+        <div class="viral-container">
+            <div class="viral-hero">
+                <span class="viral-hero__icon">&#x1F4E2;</span>
+                <h1>Viral Content Creator</h1>
+                <p style="color:var(--text-secondary)">Generate 3 ready-to-post viral messages for your group</p>
+            </div>
+            <div class="viral-form" id="input-section">
+                <div class="form-group">
+                    <label class="form-label" style="color:#fbbf24">What is your group about?</label>
+                    <textarea id="viral-topic" rows="3" placeholder="e.g. Tech discussions, fitness motivation, cooking recipes..."></textarea>
+                </div>
+                <div class="option-grid">
+                    <div class="form-group">
+                        <label class="form-label" style="color:#fbbf24;font-size:var(--text-sm)">Goal</label>
+                        <select id="viral-goal">
+                            <option value="engagement">Boost Engagement</option>
+                            <option value="members">Attract New Members</option>
+                            <option value="icebreaker">Break the Ice</option>
+                            <option value="educate">Educate &amp; Inform</option>
+                            <option value="custom">Custom (type your own)</option>
+                        </select>
+                        <div class="custom-input-wrap" id="custom-goal-wrap">
+                            <input type="text" id="custom-goal" placeholder="e.g. promote an event, share tips...">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="color:#fbbf24;font-size:var(--text-sm)">Tone</label>
+                        <select id="viral-tone">
+                            <option value="auto">Auto</option>
+                            <option value="funny">Funny &amp; Witty</option>
+                            <option value="serious">Serious &amp; Professional</option>
+                            <option value="emotional">Emotional &amp; Inspiring</option>
+                            <option value="provocative">Provocative &amp; Bold</option>
+                            <option value="custom">Custom (type your own)</option>
+                        </select>
+                        <div class="custom-input-wrap" id="custom-tone-wrap">
+                            <input type="text" id="custom-tone" placeholder="e.g. sarcastic, motivational...">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="color:#fbbf24">Output Language</label>
+                    <select id="lang-select" style="width:100%;height:44px;padding:0 var(--space-3);background:var(--bg-input);border:2px solid var(--border-primary);border-radius:var(--radius-md);color:var(--text-primary);font-size:var(--text-sm);cursor:pointer;transition:border-color 0.3s;">
+                        <option value="en">English</option>
+                        <option value="ar">العربية (Arabic)</option>
+                        <option value="fr">Français (French)</option>
+                        <option value="es">Español (Spanish)</option>
+                        <option value="tr">Türkçe (Turkish)</option>
+                        <option value="pt">Português (Portuguese)</option>
+                        <option value="de">Deutsch (German)</option>
+                        <option value="id">Bahasa Indonesia</option>
+                        <option value="hi">हिन्दी (Hindi)</option>
+                        <option value="ur">اردو (Urdu)</option>
+                        <option value="zh">中文 (Chinese)</option>
+                        <option value="ru">Русский (Russian)</option>
+                        <option value="ja">日本語 (Japanese)</option>
+                        <option value="ko">한국어 (Korean)</option>
+                        <option value="it">Italiano (Italian)</option>
+                        <option value="nl">Nederlands (Dutch)</option>
+                        <option value="pl">Polski (Polish)</option>
+                        <option value="ms">Bahasa Melayu</option>
+                        <option value="th">ไทย (Thai)</option>
+                        <option value="vi">Tiếng Việt (Vietnamese)</option>
+                        <option value="sw">Kiswahili (Swahili)</option>
+                        <option value="bn">বাংলা (Bengali)</option>
+                    </select>
+                </div>
+                <button class="generate-btn" id="gen-btn">&#x1F525; Create Trend Now</button>
+            </div>
+            <div class="viral-loading" id="viral-loading">
+                <div style="width:60px;height:60px;margin:0 auto var(--space-4);border:4px solid rgba(245,158,11,0.2);border-top-color:#f59e0b;border-radius:50%;animation:spin 1s linear infinite;"></div>
+                <div class="viral-loading__text" id="viral-load-text">Searching for out-of-the-box ideas...</div>
+            </div>
+            <div class="viral-result" id="viral-result">
+                <div class="post-cards" id="post-cards"></div>
+                <div class="viral-actions">
+                    <button class="btn btn-ghost btn-sm" id="gen-more">&#x1F504; Generate More</button>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    (function() {
+        'use strict';
+        var loadTexts = ['Searching for out-of-the-box ideas...','Crafting curiosity-triggering words...','Adding visual appeal touch...','Polishing the viral formula...'];
+
+        // Rate limiting: max 5 requests per 5 minutes, 30s cooldown
+        var requestLog = [];
+        var RATE_COOLDOWN = 30000;
+        var RATE_WINDOW = 300000;
+        var RATE_MAX = 5;
+        var lastRequestTime = 0;
+        function checkRateLimit() {
+            var now = Date.now();
+            if (now - lastRequestTime < RATE_COOLDOWN) { UI.toast('Please wait ' + Math.ceil((RATE_COOLDOWN - (now - lastRequestTime)) / 1000) + ' seconds before trying again.', 'error'); return false; }
+            requestLog = requestLog.filter(function(t) { return now - t < RATE_WINDOW; });
+            if (requestLog.length >= RATE_MAX) { UI.toast('Too many requests. Please wait a few minutes.', 'error'); return false; }
+            return true;
+        }
+
+        var cardTypes = [
+            { label: 'The Magnet', badge: 'badge-magnet', icon: '\uD83E\uDDF2', desc: 'Short, powerful post that forces people to comment or join' },
+            { label: 'The Debate', badge: 'badge-debate', icon: '\uD83D\uDCA1', desc: 'Smart question that opens a long discussion' },
+            { label: 'The Gift', badge: 'badge-gift', icon: '\uD83C\uDF81', desc: 'Valuable tip that members will share with friends' }
+        ];
+
+        // Custom goal/tone toggle
+        document.getElementById('viral-goal').addEventListener('change', function() {
+            document.getElementById('custom-goal-wrap').style.display = this.value === 'custom' ? 'block' : 'none';
+        });
+        document.getElementById('viral-tone').addEventListener('change', function() {
+            document.getElementById('custom-tone-wrap').style.display = this.value === 'custom' ? 'block' : 'none';
+        });
+
+        // Language persistence
+        var langSel = document.getElementById('lang-select');
+        var savedLang = localStorage.getItem('gm_tool_lang');
+        if (savedLang && langSel.querySelector('option[value="' + savedLang + '"]')) langSel.value = savedLang;
+        langSel.addEventListener('change', function() { localStorage.setItem('gm_tool_lang', this.value); });
+
+        document.getElementById('gen-btn').addEventListener('click', generate);
+        document.getElementById('gen-more').addEventListener('click', function() {
+            document.getElementById('viral-result').style.display = 'none';
+            document.getElementById('input-section').style.display = '';
+            document.getElementById('input-section').scrollIntoView({behavior:'smooth', block:'start'});
+            generate();
+        });
+
+        async function generate() {
+            var topic = document.getElementById('viral-topic').value.trim();
+            if (!topic) { UI.toast('Please describe your group topic.', 'error'); return; }
+            if (!checkRateLimit()) return;
+            lastRequestTime = Date.now();
+            requestLog.push(Date.now());
+            var goal = document.getElementById('viral-goal').value;
+            var btn = document.getElementById('gen-btn');
+            btn.disabled = true;
+            document.getElementById('input-section').style.display = 'none';
+            document.getElementById('viral-loading').style.display = 'block';
+            document.getElementById('viral-result').style.display = 'none';
+            document.getElementById('viral-loading').scrollIntoView({behavior:'smooth', block:'start'});
+
+            var msgIdx = 0;
+            var loadEl = document.getElementById('viral-load-text');
+            var msgInt = setInterval(function() {
+                msgIdx = (msgIdx + 1) % loadTexts.length;
+                loadEl.textContent = loadTexts[msgIdx];
+            }, 1500);
+
+            try {
+                var goalText = {engagement:'boost engagement and comments',members:'attract new members to join',icebreaker:'break the ice and start conversations',educate:'educate and share valuable information'}[goal];
+                if (!goalText) goalText = document.getElementById('custom-goal').value.trim() || 'boost engagement';
+                var tone = document.getElementById('viral-tone').value;
+                if (tone === 'custom') tone = document.getElementById('custom-tone').value.trim() || 'auto';
+                var res = await fetch('/api/groq', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tool: 'viral-post',
+                        lang: document.getElementById('lang-select').value,
+                        prompt: 'Topic: ' + topic + '\nGoal: ' + goalText + '\nTone: ' + tone + '\nCreate 3 viral posts.'
+                    })
+                });
+                if (!res.ok) throw new Error('AI unavailable');
+                var reader = res.body.getReader();
+                var decoder = new TextDecoder();
+                var fullText = '';
+                var sseBuffer = '';
+                while (true) {
+                    var result = await reader.read();
+                    if (result.done) break;
+                    sseBuffer += decoder.decode(result.value, { stream: true });
+                    var sseLines = sseBuffer.split('\n');
+                    sseBuffer = sseLines.pop() || '';
+                    for (var i = 0; i < sseLines.length; i++) {
+                        var line = sseLines[i].trim();
+                        if (!line.startsWith('data: ')) continue;
+                        var data = line.slice(6).trim();
+                        if (data === '[DONE]') continue;
+                        try { var parsed = JSON.parse(data); if (parsed.text) fullText += parsed.text; } catch(e) {}
+                    }
+                }
+                if (sseBuffer.trim()) { var lastLine = sseBuffer.trim(); if (lastLine.startsWith('data: ')) { var ld = lastLine.slice(6).trim(); if (ld !== '[DONE]') { try { var lp = JSON.parse(ld); if (lp.text) fullText += lp.text; } catch(e) {} } } }
+                var cleaned = fullText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+                var jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+                if (jsonMatch) { renderPosts(JSON.parse(jsonMatch[0]).posts); }
+                else { throw new Error('Parse failed'); }
+            } catch (err) {
+                console.error('Viral gen failed, using fallback:', err);
+                renderPosts(fallbackPosts(topic, goal));
+                UI.toast('Posts generated (offline mode)', 'info');
+            } finally {
+                clearInterval(msgInt);
+                document.getElementById('viral-loading').style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+
+        function fallbackPosts(topic, goal) {
+            return [
+                { type: 'magnet', text: '\uD83D\uDD25 HOT TAKE on ' + topic + ':\n\nMost people get this completely wrong...\n\nDrop a \uD83D\uDC4D if you agree or \uD83D\uDC4E if you disagree!\n\n#' + topic.replace(/\s+/g,'') },
+                { type: 'debate', text: '\uD83E\uDD14 Quick question for the group:\n\nIf you could change ONE thing about ' + topic + ', what would it be and why?\n\nThe best answer gets pinned! \uD83D\uDCCC\n\nGo! \u2B07\uFE0F' },
+                { type: 'gift', text: '\uD83D\uDCA1 FREE TIP about ' + topic + ':\n\nHere\'s something most people don\'t know...\n\n\u2705 Save this post\n\u2705 Share it with someone who needs it\n\u2705 Thank me later \uD83D\uDE09\n\nMore tips daily in this group!' }
+            ];
+        }
+
+        function renderPosts(posts) {
+            var container = document.getElementById('post-cards');
+            container.innerHTML = '';
+            posts.forEach(function(post, idx) {
+                var type = cardTypes[idx] || cardTypes[0];
+                var card = document.createElement('div');
+                card.className = 'post-card';
+                card.innerHTML = '<div class="post-card__header"><span class="post-card__badge ' + type.badge + '">' + type.icon + ' ' + type.label + '</span><span style="font-size:var(--text-xs);color:var(--text-tertiary)">' + type.desc + '</span></div><div class="post-card__body" id="post-text-' + idx + '"></div><div class="post-card__footer"><button class="copy-post-btn" data-idx="' + idx + '">\uD83D\uDCCB Copy</button></div>';
+                container.appendChild(card);
+                document.getElementById('post-text-' + idx).textContent = post.text || '';
+            });
+            container.querySelectorAll('.copy-post-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var idx = this.dataset.idx;
+                    var text = document.getElementById('post-text-' + idx).textContent;
+                    UI.copyToClipboard(text);
+                    this.textContent = '\u2705 Copied!';
+                    var b = this;
+                    setTimeout(function() { b.textContent = '\uD83D\uDCCB Copy'; }, 2000);
+                });
+            });
+            document.getElementById('viral-result').style.display = 'block';
+            document.getElementById('input-section').style.display = '';
+            document.getElementById('viral-result').scrollIntoView({behavior:'smooth', block:'start'});
+            UI.toast('3 viral posts ready!', 'success');
+        }
+    })();
+    </script>
+</Fragment>
+</BaseLayout>

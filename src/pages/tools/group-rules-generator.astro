@@ -1,0 +1,319 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Rules &amp; Welcome Generator — GroupsMix"
+  description="Generate professional group rules and welcome messages with AI. Choose tone, platform, and get ready-to-paste content."
+  canonical="https://groupsmix.com/tools/group-rules-generator"
+>
+<style is:inline>
+        .rules-container { max-width:var(--container-sm);margin:0 auto;padding:var(--space-8) var(--space-4); }
+        .rules-hero { text-align:center;padding:var(--space-8) var(--space-4);background:linear-gradient(135deg,rgba(139,92,246,0.1),rgba(99,102,241,0.08),transparent);border-radius:var(--radius-xl);margin-bottom:var(--space-6);border:1px solid rgba(139,92,246,0.15); }
+        .rules-hero__icon { font-size:56px;margin-bottom:var(--space-3);display:block; }
+        .rules-hero h1 { margin-bottom:var(--space-2); }
+        .rules-form { background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5); }
+        .tone-chips { display:flex;flex-wrap:wrap;gap:var(--space-2); }
+        .tone-chip { padding:var(--space-2) var(--space-3);border:2px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer;background:var(--bg-input);transition:all 0.2s;user-select:none;font-weight:500; }
+        .tone-chip:hover { border-color:var(--accent-primary); }
+        .tone-chip.active { background:var(--accent-primary);color:#fff;border-color:var(--accent-primary); }
+        .type-chips { display:flex;flex-wrap:wrap;gap:var(--space-2); }
+        .type-chip { padding:var(--space-2) var(--space-3);border:2px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer;background:var(--bg-input);transition:all 0.2s;user-select:none; }
+        .type-chip:hover { border-color:var(--accent-primary); }
+        .type-chip.active { background:var(--accent-primary);color:#fff;border-color:var(--accent-primary); }
+        .gen-btn { width:100%;height:56px;margin-top:var(--space-4);border:none;border-radius:14px;cursor:pointer;font-size:var(--text-lg);font-weight:700;color:#fff;background:var(--gradient-accent);box-shadow:0 4px 20px rgba(99,102,241,0.4);transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:var(--space-2); }
+        .gen-btn:hover { transform:translateY(-2px);box-shadow:0 8px 30px rgba(99,102,241,0.5); }
+        .gen-btn:disabled { opacity:0.6;cursor:not-allowed;transform:none; }
+
+        .rules-loading { display:none;text-align:center;padding:var(--space-8); }
+        .rules-loading__text { font-size:var(--text-base);font-weight:600;color:#a78bfa;min-height:24px; }
+
+        .rules-result { display:none;animation:slideUp 0.6s ease; }
+        @keyframes slideUp { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+        .tab-bar { display:flex;gap:var(--space-1);margin-bottom:var(--space-4);background:var(--bg-tertiary);border-radius:var(--radius-md);padding:4px; }
+        .tab-btn { flex:1;padding:var(--space-3);border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:600;font-size:var(--text-sm);background:transparent;color:var(--text-secondary);transition:all 0.3s; }
+        .tab-btn.active { background:var(--accent-primary);color:#fff; }
+        .tab-content { display:none; }
+        .tab-content.active { display:block; }
+        .output-box { background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-md);padding:var(--space-4);white-space:pre-wrap;font-size:var(--text-sm);line-height:1.7;color:var(--text-secondary);min-height:200px;max-height:500px;overflow-y:auto; }
+        .rules-actions { display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap;margin-top:var(--space-5); }
+        .wa-format-btn { height:44px;padding:0 20px;border-radius:12px;font-weight:600;font-size:var(--text-sm);background:#25D366;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;gap:var(--space-2);transition:all 0.3s; }
+        .wa-format-btn:hover { background:#128C7E;transform:translateY(-2px); }
+    </style>
+
+
+        <div class="rules-container">
+            <div class="rules-hero">
+                <span class="rules-hero__icon">&#x1F4CB;</span>
+                <h1>Rules &amp; Welcome Generator</h1>
+                <p style="color:var(--text-secondary)">Generate professional group rules and welcome messages in seconds</p>
+            </div>
+            <div class="rules-form" id="input-section">
+                <div class="form-group">
+                    <label class="form-label">Group Type</label>
+                    <div class="type-chips" id="type-chips">
+                        <span class="type-chip active" data-val="buy-sell">&#x1F6D2; Buy &amp; Sell</span>
+                        <span class="type-chip" data-val="discussion">&#x1F4AC; Discussion</span>
+                        <span class="type-chip" data-val="family">&#x1F46A; Family</span>
+                        <span class="type-chip" data-val="study">&#x1F4DA; Study</span>
+                        <span class="type-chip" data-val="gaming">&#x1F3AE; Gaming</span>
+                        <span class="type-chip" data-val="fitness">&#x1F4AA; Fitness</span>
+                        <span class="type-chip" data-val="tech">&#x1F4BB; Tech</span>
+                        <span class="type-chip" data-val="news">&#x1F4F0; News</span>
+                        <span class="type-chip" data-val="crypto">&#x1F4B0; Crypto</span>
+                        <span class="type-chip" data-val="art">&#x1F3A8; Art &amp; Design</span>
+                        <span class="type-chip" data-val="food">&#x1F355; Food &amp; Cooking</span>
+                        <span class="type-chip" data-val="travel">&#x2708;&#xFE0F; Travel</span>
+                        <span class="type-chip" data-val="custom">&#x270F;&#xFE0F; Custom</span>
+                    </div>
+                    <div id="custom-type-wrap" style="margin-top:var(--space-2);display:none">
+                        <input type="text" class="form-input" id="custom-type" placeholder="Type your own group type..." maxlength="100">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Voice Tone</label>
+                    <div class="tone-chips" id="tone-chips">
+                        <span class="tone-chip" data-val="strict">&#x1F6AB; Strict</span>
+                        <span class="tone-chip active" data-val="friendly">&#x1F60A; Friendly</span>
+                        <span class="tone-chip" data-val="professional">&#x1F454; Professional</span>
+                        <span class="tone-chip" data-val="humorous">&#x1F602; Humorous</span>
+                        <span class="tone-chip" data-val="inspirational">&#x2B50; Inspirational</span>
+                        <span class="tone-chip" data-val="custom">&#x270F;&#xFE0F; Custom</span>
+                    </div>
+                    <div id="custom-tone-wrap" style="margin-top:var(--space-2);display:none">
+                        <input type="text" class="form-input" id="custom-tone" placeholder="Type your own tone..." maxlength="100">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Group Name (optional)</label>
+                    <input type="text" class="form-input" id="group-name" placeholder="My Awesome Group" maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Output Language</label>
+                    <select id="lang-select" style="width:100%;height:44px;padding:0 var(--space-3);background:var(--bg-input);border:2px solid var(--border-primary);border-radius:var(--radius-md);color:var(--text-primary);font-size:var(--text-sm);cursor:pointer;transition:border-color 0.3s;">
+                        <option value="en">English</option>
+                        <option value="ar">العربية (Arabic)</option>
+                        <option value="fr">Français (French)</option>
+                        <option value="es">Español (Spanish)</option>
+                        <option value="tr">Türkçe (Turkish)</option>
+                        <option value="pt">Português (Portuguese)</option>
+                        <option value="de">Deutsch (German)</option>
+                        <option value="id">Bahasa Indonesia</option>
+                        <option value="hi">हिन्दी (Hindi)</option>
+                        <option value="ur">اردو (Urdu)</option>
+                        <option value="zh">中文 (Chinese)</option>
+                        <option value="ru">Русский (Russian)</option>
+                        <option value="ja">日本語 (Japanese)</option>
+                        <option value="ko">한국어 (Korean)</option>
+                        <option value="it">Italiano (Italian)</option>
+                        <option value="nl">Nederlands (Dutch)</option>
+                        <option value="pl">Polski (Polish)</option>
+                        <option value="ms">Bahasa Melayu</option>
+                        <option value="th">ไทย (Thai)</option>
+                        <option value="vi">Tiếng Việt (Vietnamese)</option>
+                        <option value="sw">Kiswahili (Swahili)</option>
+                        <option value="bn">বাংলা (Bengali)</option>
+                    </select>
+                </div>
+                <button class="gen-btn" id="gen-btn">&#x2696;&#xFE0F; Generate Group Constitution</button>
+            </div>
+            <div class="rules-loading" id="rules-loading">
+                <div style="width:60px;height:60px;margin:0 auto var(--space-4);border:4px solid rgba(139,92,246,0.2);border-top-color:#8B5CF6;border-radius:50%;animation:spin 1s linear infinite;"></div>
+                <div class="rules-loading__text" id="rules-load-text">Drafting privacy clauses...</div>
+            </div>
+            <div class="rules-result" id="rules-result">
+                <div class="tab-bar">
+                    <button class="tab-btn active" data-tab="rules">&#x1F4DC; Rules</button>
+                    <button class="tab-btn" data-tab="welcome">&#x1F44B; Welcome Message</button>
+                </div>
+                <div class="tab-content active" id="tab-rules">
+                    <div class="output-box" id="rules-output"></div>
+                </div>
+                <div class="tab-content" id="tab-welcome">
+                    <div class="output-box" id="welcome-output"></div>
+                </div>
+                <div class="rules-actions">
+                    <button class="btn btn-primary btn-sm" id="copy-current">&#x1F4CB; Copy</button>
+                    <button class="wa-format-btn" id="wa-format">&#x1F4F1; WhatsApp Format</button>
+                    <button class="btn btn-ghost btn-sm" id="regen-btn">&#x1F504; Regenerate</button>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    (function() {
+        'use strict';
+        var selectedType = 'buy-sell';
+        var selectedTone = 'friendly';
+        var activeTab = 'rules';
+        var loadTexts = ['Drafting privacy clauses...','Formatting welcome paragraphs...','Adding appropriate emojis...','Polishing the constitution...'];
+
+        // Rate limiting: max 5 requests per 5 minutes, 30s cooldown
+        var requestLog = [];
+        var RATE_COOLDOWN = 30000;
+        var RATE_WINDOW = 300000;
+        var RATE_MAX = 5;
+        var lastRequestTime = 0;
+        function checkRateLimit() {
+            var now = Date.now();
+            if (now - lastRequestTime < RATE_COOLDOWN) { UI.toast('Please wait ' + Math.ceil((RATE_COOLDOWN - (now - lastRequestTime)) / 1000) + ' seconds before trying again.', 'error'); return false; }
+            requestLog = requestLog.filter(function(t) { return now - t < RATE_WINDOW; });
+            if (requestLog.length >= RATE_MAX) { UI.toast('Too many requests. Please wait a few minutes.', 'error'); return false; }
+            return true;
+        }
+
+        // Chip selectors
+        document.querySelectorAll('#type-chips .type-chip').forEach(function(chip) {
+            chip.addEventListener('click', function() {
+                document.querySelectorAll('#type-chips .type-chip').forEach(function(c) { c.classList.remove('active'); });
+                chip.classList.add('active');
+                selectedType = chip.dataset.val;
+                document.getElementById('custom-type-wrap').style.display = selectedType === 'custom' ? 'block' : 'none';
+            });
+        });
+        document.querySelectorAll('#tone-chips .tone-chip').forEach(function(chip) {
+            chip.addEventListener('click', function() {
+                document.querySelectorAll('#tone-chips .tone-chip').forEach(function(c) { c.classList.remove('active'); });
+                chip.classList.add('active');
+                selectedTone = chip.dataset.val;
+                document.getElementById('custom-tone-wrap').style.display = selectedTone === 'custom' ? 'block' : 'none';
+            });
+        });
+
+        // Tabs
+        document.querySelectorAll('.tab-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+                document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+                btn.classList.add('active');
+                activeTab = btn.dataset.tab;
+                document.getElementById('tab-' + activeTab).classList.add('active');
+            });
+        });
+
+        // Language persistence
+        var langSel = document.getElementById('lang-select');
+        var savedLang = localStorage.getItem('gm_tool_lang');
+        if (savedLang && langSel.querySelector('option[value="' + savedLang + '"]')) langSel.value = savedLang;
+        langSel.addEventListener('change', function() { localStorage.setItem('gm_tool_lang', this.value); });
+
+        document.getElementById('gen-btn').addEventListener('click', generate);
+        document.getElementById('regen-btn').addEventListener('click', function() {
+            document.getElementById('rules-result').style.display = 'none';
+            document.getElementById('input-section').style.display = '';
+            document.getElementById('input-section').scrollIntoView({behavior:'smooth', block:'start'});
+            generate();
+        });
+        document.getElementById('copy-current').addEventListener('click', function() {
+            var text = activeTab === 'rules' ? document.getElementById('rules-output').textContent : document.getElementById('welcome-output').textContent;
+            UI.copyToClipboard(text);
+        });
+        document.getElementById('wa-format').addEventListener('click', function() {
+            var text = activeTab === 'rules' ? document.getElementById('rules-output').textContent : document.getElementById('welcome-output').textContent;
+            var waText = text.replace(/^([A-Z\u{1F300}-\u{1FAFF}].+)$/gmu, '*$1*');
+            UI.copyToClipboard(waText);
+            UI.toast('Copied in WhatsApp format!', 'success');
+        });
+
+        async function generate() {
+            var groupName = document.getElementById('group-name').value.trim() || 'Our Group';
+            if (!checkRateLimit()) return;
+            lastRequestTime = Date.now();
+            requestLog.push(Date.now());
+            var btn = document.getElementById('gen-btn');
+            btn.disabled = true;
+            document.getElementById('input-section').style.display = 'none';
+            document.getElementById('rules-loading').style.display = 'block';
+            document.getElementById('rules-result').style.display = 'none';
+            document.getElementById('rules-loading').scrollIntoView({behavior:'smooth', block:'start'});
+
+            var msgIdx = 0;
+            var loadEl = document.getElementById('rules-load-text');
+            var msgInt = setInterval(function() {
+                msgIdx = (msgIdx + 1) % loadTexts.length;
+                loadEl.textContent = loadTexts[msgIdx];
+            }, 1500);
+
+            try {
+                var res = await fetch('/api/groq', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tool: 'group-rules-generator',
+                        lang: document.getElementById('lang-select').value,
+                        prompt: 'Group: ' + groupName + '\nType: ' + (selectedType === 'custom' ? (document.getElementById('custom-type').value.trim() || 'general') : selectedType) + '\nTone: ' + (selectedTone === 'custom' ? (document.getElementById('custom-tone').value.trim() || 'friendly') : selectedTone) + '\nGenerate rules and welcome message.'
+                    })
+                });
+                if (!res.ok) throw new Error('AI unavailable');
+                var reader = res.body.getReader();
+                var decoder = new TextDecoder();
+                var fullText = '';
+                var sseBuffer = '';
+                while (true) {
+                    var result = await reader.read();
+                    if (result.done) break;
+                    sseBuffer += decoder.decode(result.value, { stream: true });
+                    var sseLines = sseBuffer.split('\n');
+                    sseBuffer = sseLines.pop() || '';
+                    for (var i = 0; i < sseLines.length; i++) {
+                        var line = sseLines[i].trim();
+                        if (!line.startsWith('data: ')) continue;
+                        var data = line.slice(6).trim();
+                        if (data === '[DONE]') continue;
+                        try { var parsed = JSON.parse(data); if (parsed.text) fullText += parsed.text; } catch(e) {}
+                    }
+                }
+                if (sseBuffer.trim()) { var lastLine = sseBuffer.trim(); if (lastLine.startsWith('data: ')) { var ld = lastLine.slice(6).trim(); if (ld !== '[DONE]') { try { var lp = JSON.parse(ld); if (lp.text) fullText += lp.text; } catch(e) {} } } }
+                var cleaned = fullText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+                var jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+                if (jsonMatch) { var d = JSON.parse(jsonMatch[0]); renderResult(d.rules, d.welcome); }
+                else { throw new Error('Parse failed'); }
+            } catch (err) {
+                console.error('Rules gen failed, using fallback:', err);
+                renderResult(fallbackRules(groupName, selectedType, selectedTone), fallbackWelcome(groupName, selectedTone));
+                UI.toast('Generated (offline mode)', 'info');
+            } finally {
+                clearInterval(msgInt);
+                document.getElementById('rules-loading').style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+
+        function fallbackRules(name, type, tone) {
+            var strict = tone === 'strict';
+            var div = '\u2501'.repeat(30);
+            var r = '\uD83D\uDCDC ' + name.toUpperCase() + ' \u2014 GROUP RULES\n' + div + '\n\n';
+            r += '\uD83E\uDD1D 1. Be respectful to all members at all times.\n';
+            r += '\uD83D\uDEAB 2. No spam, ads, or self-promotion without permission.\n';
+            r += '\uD83D\uDCAC 3. Stay on topic \u2014 keep discussions relevant to ' + type + '.\n';
+            r += '\uD83D\uDD12 4. Do not share personal information of other members.\n';
+            r += '\uD83D\uDCF8 5. Only share media relevant to the group.\n';
+            if (strict) {
+                r += '\u26A0\uFE0F 6. First violation: Warning. Second: 24h mute. Third: Removal.\n';
+                r += '\uD83D\uDEAB 7. No political or religious debates.\n';
+                r += '\uD83D\uDD17 8. All links must be pre-approved by admins.\n';
+            } else {
+                r += '\uD83D\uDE4F 6. Violations result in a friendly reminder first.\n';
+            }
+            r += '\n' + div + '\nBy joining, you agree to follow these rules.\nGenerated with GroupsMix \u2014 groupsmix.com';
+            return r;
+        }
+
+        function fallbackWelcome(name, tone) {
+            if (tone === 'strict') {
+                return '\uD83D\uDC4B Welcome to ' + name + '!\n\nPlease read our rules carefully before participating.\n\n\u2705 Introduce yourself\n\u2705 Read the pinned rules\n\u2705 Be respectful\n\nViolations will be dealt with promptly.\n\nEnjoy your stay!';
+            }
+            return '\uD83C\uDF89 Welcome to ' + name + '! \uD83C\uDF89\n\nWe\'re so glad you\'re here! \uD83D\uDE0A\n\n\uD83D\uDC49 Say hi and introduce yourself!\n\uD83D\uDC49 Check out our pinned rules\n\uD83D\uDC49 Don\'t be shy \u2014 jump into the conversation!\n\nWe\'re a friendly community and we\'re excited to have you. Let\'s grow together! \uD83D\uDE80\n\nIf you need anything, reach out to an admin. \uD83D\uDC99';
+        }
+
+        function renderResult(rules, welcome) {
+            document.getElementById('rules-output').textContent = rules;
+            document.getElementById('welcome-output').textContent = welcome;
+            document.getElementById('rules-result').style.display = 'block';
+            document.getElementById('input-section').style.display = '';
+            document.getElementById('rules-result').scrollIntoView({behavior:'smooth', block:'start'});
+            UI.toast('Constitution generated!', 'success');
+        }
+    })();
+    </script>
+</Fragment>
+</BaseLayout>

@@ -1,0 +1,206 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="WhatsApp Direct Message — GroupsMix"
+  description="Send WhatsApp messages to any number without saving contacts. Quick, easy, and instant messaging tool."
+  canonical="https://groupsmix.com/tools/whatsapp-direct"
+>
+<style is:inline>
+        .wa-container { max-width:var(--container-sm);margin:0 auto;padding:var(--space-8) var(--space-4); }
+        .wa-hero { text-align:center;padding:var(--space-8) var(--space-4);background:linear-gradient(135deg,rgba(37,211,102,0.12),rgba(139,92,246,0.1),transparent);border-radius:var(--radius-xl);margin-bottom:var(--space-6);border:1px solid rgba(37,211,102,0.2); }
+        .wa-hero__icon { font-size:56px;margin-bottom:var(--space-3);display:block; }
+        .wa-hero h1 { background:linear-gradient(135deg,#25D366,#8B5CF6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:var(--space-2); }
+        .wa-form { background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5); }
+        .phone-row { display:flex;gap:var(--space-2);align-items:flex-end; }
+        .country-select { width:130px;flex-shrink:0; }
+        .country-select select { width:100%;height:52px;padding:0 var(--space-3);background:var(--bg-input);border:2px solid var(--border-primary);border-radius:var(--radius-md);color:var(--text-primary);font-size:var(--text-sm);cursor:pointer;transition:all 0.3s; }
+        .country-select select:focus { border-color:#25D366;box-shadow:0 0 0 4px rgba(37,211,102,0.15);outline:none; }
+        .phone-input { flex:1; }
+        .phone-input input { width:100%;height:52px;padding:0 var(--space-4);background:var(--bg-input);border:2px solid var(--border-primary);border-radius:var(--radius-md);color:var(--text-primary);font-size:var(--text-lg);font-weight:600;transition:all 0.3s;letter-spacing:1px; }
+        .phone-input input:focus { border-color:#25D366;box-shadow:0 0 0 4px rgba(37,211,102,0.15);outline:none; }
+        .phone-input input::placeholder { color:var(--text-muted);font-weight:400;letter-spacing:0; }
+        .wa-form textarea { width:100%;min-height:70px;background:var(--bg-input);border:2px solid var(--border-primary);border-radius:var(--radius-md);padding:var(--space-3);color:var(--text-primary);font-size:var(--text-sm);resize:vertical;transition:all 0.3s;font-family:inherit; }
+        .wa-form textarea:focus { border-color:#25D366;box-shadow:0 0 0 4px rgba(37,211,102,0.15);outline:none; }
+        .wa-form textarea::placeholder { color:var(--text-muted); }
+        .quick-msgs { display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:var(--space-2); }
+        .quick-msg { padding:var(--space-2) var(--space-3);background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.2);border-radius:var(--radius-full);font-size:var(--text-xs);color:#25D366;cursor:pointer;transition:all 0.2s;font-weight:500; }
+        .quick-msg:hover { background:rgba(37,211,102,0.2);transform:translateY(-1px); }
+        .wa-send-btn { width:100%;height:60px;margin-top:var(--space-4);border:none;border-radius:14px;cursor:pointer;font-size:var(--text-xl);font-weight:800;color:#fff;background:#25D366;box-shadow:0 4px 20px rgba(37,211,102,0.4);transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:var(--space-2); }
+        .wa-send-btn:hover { background:#128C7E;transform:translateY(-2px);box-shadow:0 8px 30px rgba(37,211,102,0.5); }
+        .wa-send-btn:disabled { opacity:0.6;cursor:not-allowed;transform:none; }
+        .error-text { color:var(--error);font-size:var(--text-xs);margin-top:var(--space-1);display:none; }
+    </style>
+
+
+        <div class="wa-container">
+            <div class="wa-hero">
+                <span class="wa-hero__icon">&#x1F4AC;</span>
+                <h1>WhatsApp Direct Message</h1>
+                <p style="color:var(--text-secondary)">Send messages to any number without saving it as a contact</p>
+            </div>
+            <div class="wa-form">
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <div style="display:flex;gap:var(--space-2);margin-bottom:var(--space-2)">
+                        <button type="button" class="mode-btn active" id="mode-select" data-mode="select" style="flex:1;height:40px;border-radius:var(--radius-md);font-weight:600;font-size:var(--text-sm);cursor:pointer;transition:all 0.2s;border:2px solid #25D366;background:rgba(37,211,102,0.15);color:#25D366;">Select Country</button>
+                        <button type="button" class="mode-btn" id="mode-manual" data-mode="manual" style="flex:1;height:40px;border-radius:var(--radius-md);font-weight:600;font-size:var(--text-sm);cursor:pointer;transition:all 0.2s;border:2px solid var(--border-primary);background:transparent;color:var(--text-secondary);">Enter Full Number</button>
+                    </div>
+                    <div id="select-mode">
+                    <div class="phone-row">
+                        <div class="country-select">
+                            <select id="country-code">
+                                <option value="1">&#x1F1FA;&#x1F1F8; +1</option>
+                                <option value="44">&#x1F1EC;&#x1F1E7; +44</option>
+                                <option value="91">&#x1F1EE;&#x1F1F3; +91</option>
+                                <option value="966">&#x1F1F8;&#x1F1E6; +966</option>
+                                <option value="971">&#x1F1E6;&#x1F1EA; +971</option>
+                                <option value="20">&#x1F1EA;&#x1F1EC; +20</option>
+                                <option value="962">&#x1F1EF;&#x1F1F4; +962</option>
+                                <option value="212">&#x1F1F2;&#x1F1E6; +212</option>
+                                <option value="213">&#x1F1E9;&#x1F1FF; +213</option>
+                                <option value="216">&#x1F1F9;&#x1F1F3; +216</option>
+                                <option value="218">&#x1F1F1;&#x1F1FE; +218</option>
+                                <option value="249">&#x1F1F8;&#x1F1E9; +249</option>
+                                <option value="964">&#x1F1EE;&#x1F1F6; +964</option>
+                                <option value="965">&#x1F1F0;&#x1F1FC; +965</option>
+                                <option value="968">&#x1F1F4;&#x1F1F2; +968</option>
+                                <option value="970">&#x1F1F5;&#x1F1F8; +970</option>
+                                <option value="973">&#x1F1E7;&#x1F1ED; +973</option>
+                                <option value="974">&#x1F1F6;&#x1F1E6; +974</option>
+                                <option value="961">&#x1F1F1;&#x1F1E7; +961</option>
+                                <option value="963">&#x1F1F8;&#x1F1FE; +963</option>
+                                <option value="967">&#x1F1FE;&#x1F1EA; +967</option>
+                                <option value="55">&#x1F1E7;&#x1F1F7; +55</option>
+                                <option value="49">&#x1F1E9;&#x1F1EA; +49</option>
+                                <option value="33">&#x1F1EB;&#x1F1F7; +33</option>
+                                <option value="34">&#x1F1EA;&#x1F1F8; +34</option>
+                                <option value="39">&#x1F1EE;&#x1F1F9; +39</option>
+                                <option value="90">&#x1F1F9;&#x1F1F7; +90</option>
+                                <option value="92">&#x1F1F5;&#x1F1F0; +92</option>
+                                <option value="234">&#x1F1F3;&#x1F1EC; +234</option>
+                                <option value="254">&#x1F1F0;&#x1F1EA; +254</option>
+                                <option value="27">&#x1F1FF;&#x1F1E6; +27</option>
+                                <option value="60">&#x1F1F2;&#x1F1FE; +60</option>
+                                <option value="62">&#x1F1EE;&#x1F1E9; +62</option>
+                                <option value="63">&#x1F1F5;&#x1F1ED; +63</option>
+                                <option value="86">&#x1F1E8;&#x1F1F3; +86</option>
+                                <option value="81">&#x1F1EF;&#x1F1F5; +81</option>
+                                <option value="82">&#x1F1F0;&#x1F1F7; +82</option>
+                            </select>
+                        </div>
+                        <div class="phone-input">
+                            <input type="tel" id="phone-number" placeholder="Enter phone number" maxlength="15">
+                        </div>
+                    </div>
+                    </div>
+                    <div id="manual-mode" style="display:none">
+                        <div class="phone-input">
+                            <input type="tel" id="full-phone-number" placeholder="Enter full number with country code (e.g. +212612345678)" maxlength="20" style="width:100%;height:52px;padding:0 var(--space-4);background:var(--bg-input);border:2px solid var(--border-primary);border-radius:var(--radius-md);color:var(--text-primary);font-size:var(--text-lg);font-weight:600;transition:all 0.3s;letter-spacing:1px;">
+                        </div>
+                        <p style="margin-top:var(--space-1);font-size:var(--text-xs);color:var(--text-muted)">Include the + and country code, e.g. +1 for US, +44 for UK, +212 for Morocco</p>
+                    </div>
+                    <div class="error-text" id="phone-error">Please enter a valid phone number</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Message (optional)</label>
+                    <textarea id="wa-message" placeholder="Write a message to start the conversation (optional)..." rows="3"></textarea>
+                    <div class="quick-msgs">
+                        <span class="quick-msg" data-msg="Hi! I came from your group...">&#x1F44B; Hi from group</span>
+                        <span class="quick-msg" data-msg="Hello! I'm interested in joining...">&#x1F31F; Interested in joining</span>
+                        <span class="quick-msg" data-msg="Hi! I have a question about...">&#x2753; Have a question</span>
+                        <span class="quick-msg" data-msg="Hello! I saw your post and...">&#x1F4F1; Saw your post</span>
+                    </div>
+                </div>
+                <button class="wa-send-btn" id="send-btn">&#x1F680; Start Chat Now</button>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    (function() {
+        'use strict';
+
+        // Quick message buttons
+        document.querySelectorAll('.quick-msg').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.getElementById('wa-message').value = this.dataset.msg;
+                document.getElementById('wa-message').focus();
+            });
+        });
+
+        // Mode toggle
+        var currentMode = 'select';
+        document.getElementById('mode-select').addEventListener('click', function() {
+            currentMode = 'select';
+            document.getElementById('select-mode').style.display = '';
+            document.getElementById('manual-mode').style.display = 'none';
+            this.style.border = '2px solid #25D366';
+            this.style.background = 'rgba(37,211,102,0.15)';
+            this.style.color = '#25D366';
+            var other = document.getElementById('mode-manual');
+            other.style.border = '2px solid var(--border-primary)';
+            other.style.background = 'transparent';
+            other.style.color = 'var(--text-secondary)';
+        });
+        document.getElementById('mode-manual').addEventListener('click', function() {
+            currentMode = 'manual';
+            document.getElementById('select-mode').style.display = 'none';
+            document.getElementById('manual-mode').style.display = '';
+            this.style.border = '2px solid #25D366';
+            this.style.background = 'rgba(37,211,102,0.15)';
+            this.style.color = '#25D366';
+            var other = document.getElementById('mode-select');
+            other.style.border = '2px solid var(--border-primary)';
+            other.style.background = 'transparent';
+            other.style.color = 'var(--text-secondary)';
+        });
+
+        document.getElementById('send-btn').addEventListener('click', sendMessage);
+        document.getElementById('phone-number').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+        document.getElementById('full-phone-number').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        function sendMessage() {
+            var message = document.getElementById('wa-message').value.trim();
+            var errorEl = document.getElementById('phone-error');
+            var fullNumber = '';
+
+            if (currentMode === 'manual') {
+                var rawFull = document.getElementById('full-phone-number').value.trim();
+                // Strip +, spaces, dashes, parentheses
+                fullNumber = rawFull.replace(/[\s\-\(\)\.\+]/g, '');
+                if (!fullNumber || fullNumber.length < 7 || !/^\d+$/.test(fullNumber)) {
+                    errorEl.style.display = 'block';
+                    document.getElementById('full-phone-number').focus();
+                    return;
+                }
+            } else {
+                var countryCode = document.getElementById('country-code').value;
+                var phoneRaw = document.getElementById('phone-number').value.trim();
+                // Clean phone number - remove spaces, dashes, parentheses, leading zeros
+                var phone = phoneRaw.replace(/[\s\-\(\)\.]/g, '').replace(/^0+/, '');
+                if (!phone || phone.length < 5 || !/^\d+$/.test(phone)) {
+                    errorEl.style.display = 'block';
+                    document.getElementById('phone-number').focus();
+                    return;
+                }
+                fullNumber = countryCode + phone;
+            }
+            errorEl.style.display = 'none';
+
+            var waUrl = 'https://wa.me/' + fullNumber;
+            if (message) {
+                waUrl += '?text=' + encodeURIComponent(message);
+            }
+
+            UI.toast('Opening WhatsApp chat...', 'success');
+            window.open(waUrl, '_blank');
+        }
+    })();
+    </script>
+</Fragment>
+</BaseLayout>

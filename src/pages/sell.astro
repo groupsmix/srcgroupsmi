@@ -1,0 +1,448 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Sell — GroupsMix Marketplace"
+  description="List your social media account, channel, group, or service for sale on GroupsMix Marketplace."
+>
+<style is:inline>
+        .sell-page {
+            max-width: var(--container-md);
+            margin: 0 auto;
+            padding: var(--space-8) var(--space-4);
+        }
+        .sell-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-xl);
+            padding: var(--space-8);
+        }
+        .sell-steps {
+            display: flex;
+            gap: var(--space-4);
+            margin-bottom: var(--space-8);
+        }
+        .sell-steps > * + * { margin-left: var(--space-4); }
+        @supports (gap: 1px) { .sell-steps > * + * { margin-left: 0; } }
+        .sell-step {
+            flex: 1;
+            text-align: center;
+            padding: var(--space-3);
+            border-radius: var(--radius-md);
+            background: var(--bg-tertiary);
+            color: var(--text-tertiary);
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+        }
+        .sell-step--active {
+            background: var(--accent-primary);
+            color: #fff;
+        }
+        .sell-step--done {
+            background: var(--success-light);
+            color: var(--success);
+        }
+        .sell-preview {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            margin-top: var(--space-6);
+        }
+        .sell-preview__row {
+            display: flex;
+            justify-content: space-between;
+            padding: var(--space-2) 0;
+            border-bottom: 1px solid var(--border-primary);
+            font-size: var(--text-sm);
+        }
+        .sell-preview__row:last-child { border-bottom: none; }
+        .sell-preview__label { color: var(--text-tertiary); }
+        .sell-preview__value { color: var(--text-primary); font-weight: var(--font-semibold); }
+        /* Category selector */
+        .category-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-2);
+            margin-bottom: var(--space-4);
+        }
+        .category-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-4) var(--space-2);
+            border: 2px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+            transition: all 0.2s ease;
+        }
+        .category-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
+            transform: translateY(-1px);
+        }
+        .category-btn--active {
+            border-color: var(--accent-primary);
+            background: var(--accent-primary-light, rgba(99,102,241,0.08));
+            color: var(--accent-primary);
+        }
+        .category-btn svg {
+            width: 32px;
+            height: 32px;
+        }
+        .platform-selector {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-2);
+            margin-bottom: var(--space-4);
+        }
+        .platform-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-1);
+            padding: var(--space-3) var(--space-2);
+            border: 2px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: var(--text-xs);
+            transition: all 0.2s ease;
+        }
+        .platform-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
+        }
+        .platform-btn--active {
+            border-color: var(--accent-primary);
+            background: var(--accent-primary-light, rgba(99,102,241,0.08));
+            color: var(--accent-primary);
+        }
+        .platform-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+        .custom-platform-input {
+            margin-top: var(--space-2);
+        }
+        .custom-platform-input .form-input {
+            margin-bottom: var(--space-1);
+        }
+        .custom-platform-hint {
+            color: var(--text-tertiary);
+            font-size: var(--text-xs);
+        }
+        .ai-checking {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-3);
+            background: var(--info-light);
+            color: var(--info);
+            border-radius: var(--radius-md);
+            font-size: var(--text-sm);
+            margin-bottom: var(--space-4);
+        }
+        .ai-checking .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid currentColor;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 640px) {
+            .sell-steps { flex-direction: column; }
+            .sell-card { padding: var(--space-4); }
+            .category-selector { grid-template-columns: repeat(2, 1fr); }
+            .platform-selector { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+
+
+        <div class="sell-page">
+            <h1 style="text-align:center;margin-bottom:var(--space-2)">
+                <svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.2em;height:1.2em;vertical-align:-0.125em"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+                Sell on Marketplace
+            </h1>
+            <p style="text-align:center;color:var(--text-secondary);margin-bottom:var(--space-8)">List your social media account, channel, group, or service — fast and free</p>
+
+            <div class="sell-steps" id="sell-steps">
+                <div class="sell-step sell-step--active" id="sell-step-1">1. Details</div>
+                <div class="sell-step" id="sell-step-2">2. Preview</div>
+                <div class="sell-step" id="sell-step-3">3. Done</div>
+            </div>
+
+            <div class="sell-card">
+                <form id="sell-form" novalidate>
+                    <!-- Step 1: Details -->
+                    <div id="sell-s1">
+                        <div class="form-group">
+                            <label class="form-label">Category *</label>
+                            <div class="category-selector" id="category-selector"></div>
+                            <input type="hidden" id="sell-category" required>
+                        </div>
+                        <div class="form-group" id="platform-group" style="display:none">
+                            <label class="form-label">Platform *</label>
+                            <div class="platform-selector" id="platform-selector"></div>
+                            <div id="custom-platform-wrapper" class="custom-platform-input" style="display:none">
+                                <input type="text" class="form-input" id="sell-custom-platform" placeholder="Enter platform name (e.g. BeReal, Lemon8)" maxlength="50">
+                                <div class="custom-platform-hint">Type a social media platform name. AI will verify it.</div>
+                            </div>
+                            <input type="hidden" id="sell-platform" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="sell-title">Title *</label>
+                            <input type="text" class="form-input" id="sell-title" placeholder="e.g. Telegram channel 50K subscribers" required minlength="5" maxlength="100">
+                            <div class="form-help">5–100 characters. Describe what you're selling.</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="sell-description">Description *</label>
+                            <textarea class="form-textarea" id="sell-description" placeholder="Describe your listing in detail — niche, stats, audience, etc." required minlength="20" maxlength="1000" rows="4"></textarea>
+                            <div class="form-help"><span id="sell-desc-count">0</span>/1000 characters</div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="flex:1">
+                                <label class="form-label" for="sell-price">Price (USD) *</label>
+                                <input type="number" class="form-input" id="sell-price" placeholder="0.00" min="0" step="0.01" required>
+                                <div class="form-help">Set to 0 for "Contact for price"</div>
+                            </div>
+                            <div class="form-group" style="flex:1">
+                                <label class="form-label" for="sell-contact">Contact Link *</label>
+                                <input type="url" class="form-input" id="sell-contact" placeholder="https://t.me/yourusername" required>
+                                <div class="form-help">How buyers can reach you</div>
+                            </div>
+                        </div>
+                        <div id="sell-ai-status"></div>
+                        <button type="button" class="btn btn-primary btn-full" id="sell-next-btn">Preview Listing</button>
+                    </div>
+
+                    <!-- Step 2: Preview -->
+                    <div id="sell-s2" class="hidden">
+                        <h3 style="margin-bottom:var(--space-4)">Preview Your Listing</h3>
+                        <div class="sell-preview" id="sell-preview-content"></div>
+                        <div style="display:flex;gap:var(--space-3);margin-top:var(--space-6)">
+                            <button type="button" class="btn btn-secondary" id="sell-back-btn" style="flex:1">Back</button>
+                            <button type="submit" class="btn btn-primary" id="sell-submit-btn" style="flex:2">Publish Listing</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Done -->
+                    <div id="sell-s3" class="hidden">
+                        <div style="text-align:center;padding:var(--space-8) 0">
+                            <div style="font-size:var(--text-4xl);margin-bottom:var(--space-4)">
+                                <svg class="svg-icon svg-icon--xl" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:2em;height:2em;color:var(--success)"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            </div>
+                            <h2>Listing Published!</h2>
+                            <p style="color:var(--text-secondary);margin:var(--space-4) 0">Your listing is now live on the marketplace.</p>
+                            <div style="display:flex;gap:var(--space-3);justify-content:center;margin-top:var(--space-6)">
+                                <a href="/sell" class="btn btn-secondary">Create Another</a>
+                                <a href="/marketplace" class="btn btn-primary">View Marketplace</a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    document.addEventListener('DOMContentLoaded', initSellPage);
+
+    var sellData = { platform: '', category: '', custom_platform: '', title: '', description: '', price: 0, contact_link: '' };
+
+    async function initSellPage() {
+        // Require authentication
+        await Auth.waitForAuth();
+        if (!Auth.requireAuth()) return;
+
+        renderCategorySelector();
+        document.getElementById('sell-description').addEventListener('input', function() {
+            document.getElementById('sell-desc-count').textContent = this.value.length;
+        });
+        document.getElementById('sell-next-btn').addEventListener('click', goToPreview);
+        document.getElementById('sell-back-btn').addEventListener('click', goBack);
+        document.getElementById('sell-form').addEventListener('submit', submitListing);
+    }
+
+    function renderCategorySelector() {
+        var container = document.getElementById('category-selector');
+        if (!container) return;
+        var categories = Marketplace.getCategories();
+        container.innerHTML = categories.map(function(cat) {
+            return '<button type="button" class="category-btn" data-category="' + cat.id + '">' +
+                cat.icon +
+                '<span>' + cat.name + '</span>' +
+                '</button>';
+        }).join('');
+        container.querySelectorAll('.category-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                container.querySelectorAll('.category-btn').forEach(function(b) { b.classList.remove('category-btn--active'); });
+                btn.classList.add('category-btn--active');
+                var catId = btn.dataset.category;
+                document.getElementById('sell-category').value = catId;
+                sellData.category = catId;
+                sellData.platform = '';
+                sellData.custom_platform = '';
+                document.getElementById('sell-platform').value = '';
+                var customInput = document.getElementById('sell-custom-platform');
+                if (customInput) customInput.value = '';
+                renderPlatformSelector(catId);
+            });
+        });
+    }
+
+    function renderPlatformSelector(categoryId) {
+        var group = document.getElementById('platform-group');
+        var container = document.getElementById('platform-selector');
+        var customWrapper = document.getElementById('custom-platform-wrapper');
+        if (!group || !container) return;
+
+        group.style.display = '';
+
+        if (categoryId === 'other') {
+            // Show only the custom platform text input
+            container.innerHTML = '';
+            if (customWrapper) customWrapper.style.display = '';
+            // Set platform to the custom text value
+            var customInput = document.getElementById('sell-custom-platform');
+            if (customInput) {
+                customInput.addEventListener('input', function() {
+                    var val = this.value.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+                    document.getElementById('sell-platform').value = val || 'other';
+                    sellData.platform = val || 'other';
+                    sellData.custom_platform = this.value.trim();
+                });
+            }
+            return;
+        }
+
+        if (customWrapper) customWrapper.style.display = 'none';
+        var platforms = Marketplace.getMarketplacePlatforms(categoryId);
+        if (!platforms.length) {
+            container.innerHTML = '<p style="color:var(--text-tertiary);font-size:var(--text-sm)">No platforms in this category.</p>';
+            return;
+        }
+        container.innerHTML = platforms.map(function(p) {
+            return '<button type="button" class="platform-btn" data-platform="' + p.id + '">' +
+                p.icon +
+                '<span>' + p.name + '</span>' +
+                '</button>';
+        }).join('');
+        container.querySelectorAll('.platform-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                container.querySelectorAll('.platform-btn').forEach(function(b) { b.classList.remove('platform-btn--active'); });
+                btn.classList.add('platform-btn--active');
+                document.getElementById('sell-platform').value = btn.dataset.platform;
+                sellData.platform = btn.dataset.platform;
+                sellData.custom_platform = '';
+            });
+        });
+    }
+
+    async function goToPreview() {
+        // Validate fields
+        var category = document.getElementById('sell-category').value;
+        var platform = document.getElementById('sell-platform').value;
+        var customPlatform = (document.getElementById('sell-custom-platform') || {}).value || '';
+        var title = document.getElementById('sell-title').value.trim();
+        var description = document.getElementById('sell-description').value.trim();
+        var price = document.getElementById('sell-price').value;
+        var contact = document.getElementById('sell-contact').value.trim();
+
+        if (!category) { UI.toast('Please select a category', 'error'); return; }
+        if (!platform && category !== 'other') { UI.toast('Please select a platform', 'error'); return; }
+        if (category === 'other' && !customPlatform.trim()) { UI.toast('Please enter a platform name', 'error'); return; }
+        if (!title || title.length < 5) { UI.toast('Title must be at least 5 characters', 'error'); return; }
+        if (!description || description.length < 20) { UI.toast('Description must be at least 20 characters', 'error'); return; }
+        if (!contact) { UI.toast('Please provide a contact link', 'error'); return; }
+
+        var aiStatus = document.getElementById('sell-ai-status');
+
+        // For "Other" category: validate custom platform name via AI
+        if (category === 'other' && customPlatform.trim()) {
+            aiStatus.innerHTML = '<div class="ai-checking"><div class="spinner"></div> Verifying platform with AI...</div>';
+            var platformCheck = await Marketplace.validatePlatformWithAI(customPlatform.trim());
+            if (!platformCheck.valid) {
+                aiStatus.innerHTML = '';
+                UI.toast(platformCheck.message || '\u0646\u062D\u0646 \u0646\u0642\u0628\u0644 \u0641\u0642\u0637 \u062E\u062F\u0645\u0627\u062A \u0648\u0645\u0646\u0635\u0627\u062A \u0627\u0644\u062A\u0648\u0627\u0635\u0644 \u0627\u0644\u0627\u062C\u062A\u0645\u0627\u0639\u064A', 'error');
+                return;
+            }
+            // Set platform to custom name
+            sellData.platform = customPlatform.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+            sellData.custom_platform = customPlatform.trim();
+        }
+
+        // AI content validation
+        aiStatus.innerHTML = '<div class="ai-checking"><div class="spinner"></div> Checking content with AI filter...</div>';
+
+        var validation = await Marketplace.validateWithAI(title, description);
+        if (!validation.valid) {
+            aiStatus.innerHTML = '';
+            UI.toast(validation.message || '\u0646\u062D\u0646 \u0646\u0642\u0628\u0644 \u0641\u0642\u0637 \u062E\u062F\u0645\u0627\u062A \u0648\u0645\u0646\u0635\u0627\u062A \u0627\u0644\u062A\u0648\u0627\u0635\u0644 \u0627\u0644\u0627\u062C\u062A\u0645\u0627\u0639\u064A', 'error');
+            return;
+        }
+        aiStatus.innerHTML = '';
+
+        // Store data
+        sellData.category = category;
+        sellData.title = title;
+        sellData.description = description;
+        sellData.price = parseFloat(price) || 0;
+        sellData.contact_link = contact;
+
+        // Render preview
+        var preview = document.getElementById('sell-preview-content');
+        var platformName = sellData.custom_platform || (platform.charAt(0).toUpperCase() + platform.slice(1));
+        var categoryName = category.charAt(0).toUpperCase() + category.slice(1).replace('_', ' ');
+        preview.innerHTML =
+            '<div class="sell-preview__row"><span class="sell-preview__label">Category</span><span class="sell-preview__value">' + Security.sanitize(categoryName) + '</span></div>' +
+            '<div class="sell-preview__row"><span class="sell-preview__label">Platform</span><span class="sell-preview__value">' + Security.sanitize(platformName) + '</span></div>' +
+            '<div class="sell-preview__row"><span class="sell-preview__label">Title</span><span class="sell-preview__value">' + Security.sanitize(title) + '</span></div>' +
+            '<div class="sell-preview__row"><span class="sell-preview__label">Description</span><span class="sell-preview__value">' + Security.sanitize(description) + '</span></div>' +
+            '<div class="sell-preview__row"><span class="sell-preview__label">Price</span><span class="sell-preview__value">' + (sellData.price > 0 ? UI.formatCurrency(sellData.price) : 'Contact for price') + '</span></div>' +
+            '<div class="sell-preview__row"><span class="sell-preview__label">Contact</span><span class="sell-preview__value">' + Security.sanitize(contact) + '</span></div>';
+
+        // Switch steps
+        setStep(2);
+    }
+
+    function goBack() {
+        setStep(1);
+    }
+
+    async function submitListing(e) {
+        e.preventDefault();
+        var btn = document.getElementById('sell-submit-btn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Publishing...'; }
+
+        var result = await Marketplace.submit(sellData);
+        if (result) {
+            setStep(3);
+        } else if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Publish Listing';
+        }
+    }
+
+    function setStep(step) {
+        document.getElementById('sell-s1').classList.toggle('hidden', step !== 1);
+        document.getElementById('sell-s2').classList.toggle('hidden', step !== 2);
+        document.getElementById('sell-s3').classList.toggle('hidden', step !== 3);
+        for (var i = 1; i <= 3; i++) {
+            var el = document.getElementById('sell-step-' + i);
+            if (!el) continue;
+            el.className = 'sell-step';
+            if (i < step) el.classList.add('sell-step--done');
+            else if (i === step) el.classList.add('sell-step--active');
+        }
+    }
+    </script>
+</Fragment>
+</BaseLayout>

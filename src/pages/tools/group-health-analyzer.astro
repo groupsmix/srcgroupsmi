@@ -1,0 +1,301 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="AI Group DNA Analyzer — GroupsMix"
+  description="Extract your group's DNA with AI. Get a beautiful ID card with personality analysis, radar chart, and actionable tips."
+  canonical="https://groupsmix.com/tools/group-health-analyzer"
+>
+<style is:inline>
+        .dna-bg { position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden; }
+        .dna-bg .particle { position:absolute;width:4px;height:4px;background:rgba(139,92,246,0.3);border-radius:50%;animation:floatP 8s infinite ease-in-out; }
+        @keyframes floatP { 0%,100%{transform:translateY(0) scale(1);opacity:0.3;} 50%{transform:translateY(-60px) scale(1.5);opacity:0.7;} }
+        .dna-container { max-width:var(--container-sm);margin:0 auto;padding:var(--space-8) var(--space-4);position:relative;z-index:1; }
+        .dna-hero { text-align:center;padding:var(--space-8) var(--space-4);background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(99,102,241,0.1),transparent);border-radius:var(--radius-xl);margin-bottom:var(--space-6);border:1px solid rgba(139,92,246,0.2); }
+        .dna-hero__icon { font-size:56px;margin-bottom:var(--space-3);display:block; }
+        .dna-hero h1 { background:linear-gradient(135deg,#8B5CF6,#6366F1,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:var(--space-2); }
+        .glass-input-wrap { background:rgba(139,92,246,0.08);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(139,92,246,0.25);border-radius:var(--radius-lg);padding:var(--space-5); }
+        .glass-input-wrap textarea { width:100%;min-height:100px;background:rgba(255,255,255,0.05);border:2px solid rgba(139,92,246,0.3);border-radius:var(--radius-md);padding:var(--space-4);color:var(--text-primary);font-size:var(--text-base);resize:vertical;transition:all 0.3s;font-family:inherit; }
+        .glass-input-wrap textarea::placeholder { color:var(--text-muted); }
+        .glass-input-wrap textarea:focus { border-color:#8B5CF6;box-shadow:0 0 0 4px rgba(139,92,246,0.15);outline:none; }
+        .dna-extract-btn { width:100%;height:56px;margin-top:var(--space-4);border:none;border-radius:14px;cursor:pointer;font-size:var(--text-lg);font-weight:700;color:#fff;position:relative;overflow:hidden;background:linear-gradient(135deg,#8B5CF6,#6366F1);box-shadow:0 4px 20px rgba(139,92,246,0.4);transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:var(--space-2); }
+        .dna-extract-btn:hover { transform:translateY(-2px);box-shadow:0 8px 30px rgba(139,92,246,0.5); }
+        .dna-extract-btn:disabled { opacity:0.6;cursor:not-allowed;transform:none; }
+        .dna-extract-btn::after { content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(45deg,transparent,rgba(255,255,255,0.1),transparent);animation:shimmer 3s infinite; }
+        @keyframes shimmer { 0%{transform:translateX(-100%);} 100%{transform:translateX(100%);} }
+        .dna-loading { display:none;text-align:center;padding:var(--space-8); }
+        .dna-loading__helix { width:80px;height:80px;margin:0 auto var(--space-4);border:4px solid rgba(139,92,246,0.2);border-top-color:#8B5CF6;border-radius:50%;animation:spin 1s linear infinite; }
+        @keyframes spin { to{transform:rotate(360deg);} }
+        .dna-loading__text { font-size:var(--text-lg);font-weight:600;color:#a78bfa;min-height:28px;transition:opacity 0.3s; }
+        .dna-result { display:none;animation:slideUp 0.6s ease; }
+        @keyframes slideUp { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+        .id-card { background:linear-gradient(145deg,#1a1a2e,#16161f);border:2px solid rgba(139,92,246,0.3);border-radius:var(--radius-xl);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5),0 0 40px rgba(139,92,246,0.1); }
+        .id-card__header { background:linear-gradient(135deg,#8B5CF6,#6366F1);padding:var(--space-4) var(--space-5);display:flex;align-items:center;justify-content:space-between; }
+        .id-card__header-title { color:#fff;font-size:var(--text-lg);font-weight:700;display:flex;align-items:center;gap:var(--space-2); }
+        .id-card__header-badge { background:rgba(255,255,255,0.2);padding:4px 12px;border-radius:var(--radius-full);color:#fff;font-size:var(--text-xs);font-weight:600; }
+        .id-card__body { padding:var(--space-6); }
+        .id-card__icon-row { display:flex;align-items:center;gap:var(--space-4);margin-bottom:var(--space-5); }
+        .id-card__auto-icon { width:72px;height:72px;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;font-size:36px;background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(99,102,241,0.15));border:2px solid rgba(139,92,246,0.3);flex-shrink:0; }
+        .id-card__title-text h3 { font-size:var(--text-xl);margin-bottom:var(--space-1);color:#a78bfa; }
+        .id-card__title-text p { color:var(--text-secondary);font-size:var(--text-sm); }
+        .radar-wrap { margin:var(--space-5) auto;max-width:300px; }
+        .radar-wrap svg { width:100%;height:auto; }
+        .radar-label { font-size:11px;fill:var(--text-secondary);font-weight:600; }
+        .radar-polygon-bg { fill:rgba(139,92,246,0.05);stroke:rgba(139,92,246,0.15);stroke-width:1; }
+        .radar-polygon { fill:rgba(139,92,246,0.25);stroke:#8B5CF6;stroke-width:2;transition:all 1s ease; }
+        .radar-dot { fill:#a78bfa;transition:all 1s ease; }
+        .radar-grid { stroke:rgba(139,92,246,0.1);stroke-width:1;fill:none; }
+        .dna-tip { background:linear-gradient(135deg,rgba(139,92,246,0.1),rgba(99,102,241,0.08));border:1px solid rgba(139,92,246,0.2);border-radius:var(--radius-md);padding:var(--space-4);margin-top:var(--space-5);display:flex;gap:var(--space-3);align-items:flex-start; }
+        .dna-tip__icon { font-size:24px;flex-shrink:0; }
+        .dna-tip__text { font-size:var(--text-sm);color:var(--text-secondary);line-height:1.6; }
+        .dna-tip__text strong { color:#a78bfa; }
+        .id-card__footer { padding:var(--space-4) var(--space-5);border-top:1px solid rgba(139,92,246,0.15);display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap; }
+        .wa-share-btn { height:44px;padding:0 20px;border-radius:12px;font-weight:600;font-size:var(--text-sm);background:#25D366;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;gap:var(--space-2);transition:all 0.3s; }
+        .wa-share-btn:hover { background:#128C7E;transform:translateY(-2px); }
+        @media(max-width:480px) { .id-card__icon-row{flex-direction:column;text-align:center;} .radar-wrap{max-width:260px;} }
+    </style>
+
+
+        <div class="dna-container">
+            <div class="dna-hero">
+                <span class="dna-hero__icon">&#x1F9EC;</span>
+                <h1>AI Group DNA Analyzer</h1>
+                <p style="color:var(--text-secondary)">Extract the unique DNA of your group and get its identity card</p>
+            </div>
+            <div class="glass-input-wrap" id="input-section">
+                <label style="font-weight:600;font-size:var(--text-sm);color:#a78bfa;display:block;margin-bottom:var(--space-2)">Group Name &amp; Description</label>
+                <textarea id="dna-input" rows="4" placeholder="Paste your group name and description here to analyze its DNA... or paste the group invite link" maxlength="3000"></textarea>
+                <div class="form-group" style="margin-top:var(--space-3)">
+                    <label style="font-weight:600;font-size:var(--text-sm);color:#a78bfa;display:block;margin-bottom:var(--space-2)">Output Language</label>
+                    <select id="lang-select" style="width:100%;height:44px;padding:0 var(--space-3);background:var(--bg-input);border:2px solid var(--border-primary);border-radius:var(--radius-md);color:var(--text-primary);font-size:var(--text-sm);cursor:pointer;transition:border-color 0.3s;">
+                        <option value="en">English</option>
+                        <option value="ar">العربية (Arabic)</option>
+                        <option value="fr">Français (French)</option>
+                        <option value="es">Español (Spanish)</option>
+                        <option value="tr">Türkçe (Turkish)</option>
+                        <option value="pt">Português (Portuguese)</option>
+                        <option value="de">Deutsch (German)</option>
+                        <option value="id">Bahasa Indonesia</option>
+                        <option value="hi">हिन्दी (Hindi)</option>
+                        <option value="ur">اردو (Urdu)</option>
+                        <option value="zh">中文 (Chinese)</option>
+                        <option value="ru">Русский (Russian)</option>
+                        <option value="ja">日本語 (Japanese)</option>
+                        <option value="ko">한국어 (Korean)</option>
+                        <option value="it">Italiano (Italian)</option>
+                        <option value="nl">Nederlands (Dutch)</option>
+                        <option value="pl">Polski (Polish)</option>
+                        <option value="ms">Bahasa Melayu</option>
+                        <option value="th">ไทย (Thai)</option>
+                        <option value="vi">Tiếng Việt (Vietnamese)</option>
+                        <option value="sw">Kiswahili (Swahili)</option>
+                        <option value="bn">বাংলা (Bengali)</option>
+                    </select>
+                </div>
+                <button class="dna-extract-btn" id="dna-btn">Extract DNA &#x2728;</button>
+            </div>
+            <div class="dna-loading" id="dna-loading">
+                <div class="dna-loading__helix"></div>
+                <div class="dna-loading__text" id="loading-text">Scanning voice tone...</div>
+            </div>
+            <div class="dna-result" id="dna-result">
+                <div class="id-card" id="id-card">
+                    <div class="id-card__header">
+                        <div class="id-card__header-title">&#x1F9EC; Group DNA Card</div>
+                        <div class="id-card__header-badge">GroupsMix AI</div>
+                    </div>
+                    <div class="id-card__body">
+                        <div class="id-card__icon-row">
+                            <div class="id-card__auto-icon" id="card-icon"></div>
+                            <div class="id-card__title-text">
+                                <h3 id="card-title"></h3>
+                                <p id="card-subtitle"></p>
+                            </div>
+                        </div>
+                        <div class="radar-wrap" id="radar-wrap"></div>
+                        <div class="dna-tip">
+                            <div class="dna-tip__icon">&#x1F4A1;</div>
+                            <div class="dna-tip__text" id="card-tip"></div>
+                        </div>
+                    </div>
+                    <div class="id-card__footer">
+                        <button class="wa-share-btn" id="share-wa">&#x1F4AC; Share on WhatsApp</button>
+                        <button class="btn btn-secondary btn-sm" id="copy-result">&#x1F4CB; Copy Result</button>
+                        <button class="btn btn-ghost btn-sm" id="try-again">&#x1F504; Try Another</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    (function() {
+        'use strict';
+        var bgEl = document.getElementById('dna-bg');
+        for (var i = 0; i < 30; i++) {
+            var p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.top = Math.random() * 100 + '%';
+            p.style.animationDelay = (Math.random() * 8) + 's';
+            p.style.animationDuration = (6 + Math.random() * 6) + 's';
+            bgEl.appendChild(p);
+        }
+        var loadingMessages = ['Scanning voice tone...','Measuring interaction heat...','Analyzing engagement patterns...','Generating visual identity...','Extracting group personality...'];
+
+        // Rate limiting: max 5 requests per 5 minutes, 30s cooldown
+        var requestLog = [];
+        var RATE_COOLDOWN = 30000;
+        var RATE_WINDOW = 300000;
+        var RATE_MAX = 5;
+        var lastRequestTime = 0;
+        function checkRateLimit() {
+            var now = Date.now();
+            if (now - lastRequestTime < RATE_COOLDOWN) { UI.toast('Please wait ' + Math.ceil((RATE_COOLDOWN - (now - lastRequestTime)) / 1000) + ' seconds before trying again.', 'error'); return false; }
+            requestLog = requestLog.filter(function(t) { return now - t < RATE_WINDOW; });
+            if (requestLog.length >= RATE_MAX) { UI.toast('Too many requests. Please wait a few minutes.', 'error'); return false; }
+            return true;
+        }
+
+        // Language persistence
+        var langSel = document.getElementById('lang-select');
+        var savedLang = localStorage.getItem('gm_tool_lang');
+        if (savedLang && langSel.querySelector('option[value="' + savedLang + '"]')) langSel.value = savedLang;
+        langSel.addEventListener('change', function() { localStorage.setItem('gm_tool_lang', this.value); });
+
+        document.getElementById('dna-btn').addEventListener('click', startAnalysis);
+        document.getElementById('try-again').addEventListener('click', function() {
+            document.getElementById('dna-result').style.display = 'none';
+            document.getElementById('input-section').style.display = '';
+            document.getElementById('dna-input').value = '';
+            document.getElementById('dna-input').focus();
+            document.getElementById('input-section').scrollIntoView({behavior:'smooth', block:'start'});
+        });
+        document.getElementById('copy-result').addEventListener('click', function() {
+            var t = document.getElementById('card-title').textContent;
+            var s = document.getElementById('card-subtitle').textContent;
+            var tip = document.getElementById('card-tip').textContent;
+            UI.copyToClipboard('Group DNA: ' + t + '\n' + s + '\nTip: ' + tip + '\n\nAnalyzed by GroupsMix AI - groupsmix.com/tools/group-health-analyzer');
+        });
+        document.getElementById('share-wa').addEventListener('click', function() {
+            var t = document.getElementById('card-title').textContent;
+            var s = document.getElementById('card-subtitle').textContent;
+            var text = encodeURIComponent('Our group DNA:\n\n' + t + '\n' + s + '\n\nGet yours: https://groupsmix.com/tools/group-health-analyzer');
+            window.open('https://wa.me/?text=' + text, '_blank');
+        });
+
+        async function startAnalysis() {
+            var input = document.getElementById('dna-input').value.trim();
+            if (!input) { UI.toast('Please enter a group name and description.', 'error'); return; }
+            if (!checkRateLimit()) return;
+            lastRequestTime = Date.now();
+            requestLog.push(Date.now());
+            var btn = document.getElementById('dna-btn');
+            btn.disabled = true;
+            document.getElementById('input-section').style.display = 'none';
+            document.getElementById('dna-loading').style.display = 'block';
+            document.getElementById('dna-result').style.display = 'none';
+            document.getElementById('dna-loading').scrollIntoView({behavior:'smooth', block:'start'});
+            var msgIdx = 0;
+            var loadingEl = document.getElementById('loading-text');
+            var msgInterval = setInterval(function() {
+                msgIdx = (msgIdx + 1) % loadingMessages.length;
+                loadingEl.style.opacity = '0';
+                setTimeout(function() { loadingEl.textContent = loadingMessages[msgIdx]; loadingEl.style.opacity = '1'; }, 200);
+            }, 1500);
+            try {
+                var res = await fetch('/api/groq', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tool: 'group-health-analyzer',
+                        lang: document.getElementById('lang-select').value,
+                        prompt: 'Analyze this group DNA:\n\n' + input
+                    })
+                });
+                if (!res.ok) throw new Error('AI unavailable');
+                var reader = res.body.getReader();
+                var decoder = new TextDecoder();
+                var fullText = '';
+                var sseBuffer = '';
+                while (true) {
+                    var result = await reader.read();
+                    if (result.done) break;
+                    sseBuffer += decoder.decode(result.value, { stream: true });
+                    var sseLines = sseBuffer.split('\n');
+                    sseBuffer = sseLines.pop() || '';
+                    for (var li = 0; li < sseLines.length; li++) {
+                        var line = sseLines[li].trim();
+                        if (!line.startsWith('data: ')) continue;
+                        var data = line.slice(6).trim();
+                        if (data === '[DONE]') continue;
+                        try { var parsed = JSON.parse(data); if (parsed.text) fullText += parsed.text; } catch(e) {}
+                    }
+                }
+                if (sseBuffer.trim()) { var lastLine = sseBuffer.trim(); if (lastLine.startsWith('data: ')) { var ld = lastLine.slice(6).trim(); if (ld !== '[DONE]') { try { var lp = JSON.parse(ld); if (lp.text) fullText += lp.text; } catch(e) {} } } }
+                var cleaned = fullText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+                var jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+                if (jsonMatch) { renderResult(JSON.parse(jsonMatch[0])); }
+                else { throw new Error('Parse failed'); }
+            } catch (err) {
+                console.error('DNA analysis failed, using fallback:', err);
+                renderResult(generateFallback(input));
+                UI.toast('Analysis complete (offline mode)', 'info');
+            } finally {
+                clearInterval(msgInterval);
+                document.getElementById('dna-loading').style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+
+        function generateFallback(input) {
+            var l = input.toLowerCase();
+            var icon = '\u2B50', title = 'Active Community Hub';
+            var pr = 50+Math.floor(Math.random()*30), fu = 40+Math.floor(Math.random()*40);
+            var en = 45+Math.floor(Math.random()*35), sa = 55+Math.floor(Math.random()*30);
+            if (l.includes('tech')||l.includes('programming')||l.includes('dev')) { icon='\uD83D\uDCBB'; title='Tech Innovators Circle'; pr=85; en=70; }
+            else if (l.includes('business')||l.includes('entrepreneur')) { icon='\uD83D\uDCBC'; title='Elite Business Network'; pr=90; sa=80; }
+            else if (l.includes('fun')||l.includes('meme')||l.includes('joke')) { icon='\uD83D\uDD25'; title='Blazing Fun Arena'; fu=95; en=85; }
+            else if (l.includes('learn')||l.includes('study')||l.includes('education')) { icon='\uD83E\uDDE0'; title='Knowledge Powerhouse'; pr=80; sa=85; }
+            else if (l.includes('trade')||l.includes('crypto')) { icon='\uD83D\uDCB0'; title='Trading Signal Hub'; en=80; pr=75; }
+            else if (l.includes('fitness')||l.includes('gym')) { icon='\uD83D\uDCAA'; title='Fitness Warriors Squad'; en=85; fu=70; }
+            return { icon:icon, title:title, subtitle:'A vibrant community with unique identity and strong member bond',
+                scores:{professionalism:pr,fun:fu,engagement:en,safety:sa},
+                tip:'Post a weekly discussion topic to boost engagement by 40%. Consistency builds community habit.' };
+        }
+
+        function renderResult(dna) {
+            document.getElementById('card-icon').textContent = dna.icon || '\u2B50';
+            document.getElementById('card-title').textContent = dna.title || 'Unique Community';
+            document.getElementById('card-subtitle').textContent = dna.subtitle || 'A group with its own personality';
+            document.getElementById('card-tip').innerHTML = '<strong>DNA Tip:</strong> ' + Security.sanitize(dna.tip || 'Keep your group active!');
+            drawRadar(dna.scores || {professionalism:60,fun:60,engagement:60,safety:60});
+            document.getElementById('dna-result').style.display = 'block';
+            document.getElementById('input-section').style.display = '';
+            document.getElementById('dna-result').scrollIntoView({behavior:'smooth', block:'start'});
+            UI.toast('DNA extraction complete!', 'success');
+        }
+
+        function drawRadar(scores) {
+            var cx=150,cy=150,r=100;
+            var labels=['Professionalism','Fun','Engagement','Safety'];
+            var keys=['professionalism','fun','engagement','safety'];
+            var angles=labels.map(function(_,i){return(Math.PI*2*i/labels.length)-Math.PI/2;});
+            var gridHtml='';
+            [0.25,0.5,0.75,1].forEach(function(scale){
+                var pts=angles.map(function(a){return(cx+Math.cos(a)*r*scale)+','+(cy+Math.sin(a)*r*scale);}).join(' ');
+                gridHtml+='<polygon points="'+pts+'" class="radar-grid"/>';
+            });
+            var bgPts=angles.map(function(a){return(cx+Math.cos(a)*r)+','+(cy+Math.sin(a)*r);}).join(' ');
+            var dataPts=angles.map(function(a,i){var v=(scores[keys[i]]||50)/100;return(cx+Math.cos(a)*r*v)+','+(cy+Math.sin(a)*r*v);}).join(' ');
+            var dotsHtml=angles.map(function(a,i){var v=(scores[keys[i]]||50)/100;return'<circle class="radar-dot" cx="'+(cx+Math.cos(a)*r*v)+'" cy="'+(cy+Math.sin(a)*r*v)+'" r="4"/>';}).join('');
+            var labelsHtml=angles.map(function(a,i){
+                var lx=cx+Math.cos(a)*(r+25),ly=cy+Math.sin(a)*(r+25);
+                var anchor='middle';if(lx<cx-10)anchor='end';if(lx>cx+10)anchor='start';
+                return'<text x="'+lx+'" y="'+ly+'" text-anchor="'+anchor+'" dominant-baseline="middle" class="radar-label">'+labels[i]+' ('+(scores[keys[i]]||50)+')</text>';
+            }).join('');
+            document.getElementById('radar-wrap').innerHTML='<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">'+gridHtml+'<polygon points="'+bgPts+'" class="radar-polygon-bg"/><polygon points="'+dataPts+'" class="radar-polygon"/>'+dotsHtml+labelsHtml+'</svg>';
+        }
+    })();
+    </script>
+</Fragment>
+</BaseLayout>

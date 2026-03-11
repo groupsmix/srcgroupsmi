@@ -1,0 +1,58 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Settings — GroupsMix"
+  description="GroupsMix account settings."
+  noIndex={true}
+>
+
+        <div class="container" style="max-width:var(--container-sm);padding:var(--space-8) var(--space-4)">
+            <h1 style="margin-bottom:var(--space-6)">⚙️ Settings</h1>
+            <div class="card" style="margin-bottom:var(--space-4)">
+                <div class="card__body" style="padding:var(--space-6)">
+                    <h3 style="margin-bottom:var(--space-4)">Appearance</h3>
+                    <div class="form-group"><label class="form-label">Theme</label>
+                        <div style="display:flex;gap:var(--space-3)"><button class="btn btn-secondary btn-sm"
+                                id="theme-dark">🌙 Dark</button><button class="btn btn-secondary btn-sm"
+                                id="theme-light">☀️ Light</button></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card" style="margin-bottom:var(--space-4)">
+                <div class="card__body" style="padding:var(--space-6)">
+                    <h3 style="margin-bottom:var(--space-4)">Data</h3>
+                    <div style="display:flex;gap:var(--space-3);flex-wrap:wrap">
+                        <button class="btn btn-secondary btn-sm" id="clear-cache">🗑️ Clear Cache</button>
+                        <button class="btn btn-secondary btn-sm" id="clear-saved">🗑️ Clear Saved Groups</button>
+                        <button class="btn btn-secondary btn-sm" id="clear-recent">🗑️ Clear Recently Viewed</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card__body" style="padding:var(--space-6)">
+                    <h3 style="margin-bottom:var(--space-4);color:var(--error)">Danger Zone</h3>
+                    <button class="btn btn-danger btn-sm" id="sign-out-btn">🚪 Sign Out</button>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Auth guard: await Auth.waitForAuth() so the Auth module
+            // has fully processed INITIAL_SESSION before checking login.
+            await Auth.waitForAuth();
+            if (!Auth.isLoggedIn()) { UI.authModal('signin'); }
+            document.getElementById('theme-dark')?.addEventListener('click', () => { Theme.set('dark'); UI.toast('Dark theme applied', 'success'); });
+            document.getElementById('theme-light')?.addEventListener('click', () => { Theme.set('light'); UI.toast('Light theme applied', 'success'); });
+            document.getElementById('clear-cache')?.addEventListener('click', () => { CACHE.clear(); UI.toast('Cache cleared', 'success'); });
+            document.getElementById('clear-saved')?.addEventListener('click', () => { Saved.clear(); UI.toast('Saved groups cleared', 'success'); });
+            document.getElementById('clear-recent')?.addEventListener('click', () => { RecentlyViewed.clear(); UI.toast('Recently viewed cleared', 'success'); });
+            document.getElementById('sign-out-btn')?.addEventListener('click', () => {
+                UI.confirmModal('Sign Out', 'Are you sure you want to sign out?', async () => { await Auth.signOut(); window.location.href = '/'; });
+            });
+        });
+    </script>
+</Fragment>
+</BaseLayout>

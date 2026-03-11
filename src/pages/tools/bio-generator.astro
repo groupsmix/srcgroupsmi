@@ -1,0 +1,299 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="AI Bio &amp; Description Generator — GroupsMix"
+  description="Generate professional group descriptions with AI. Choose your tone, type, and language for the perfect bio."
+  canonical="https://groupsmix.com/tools/bio-generator"
+>
+<style is:inline>
+        .bio-container { max-width:var(--container-sm);margin:0 auto;padding:var(--space-8) var(--space-4); }
+        .bio-hero { text-align:center;padding:var(--space-8) var(--space-4);background:linear-gradient(135deg,rgba(16,185,129,0.12),rgba(139,92,246,0.1),transparent);border-radius:var(--radius-xl);margin-bottom:var(--space-6);border:1px solid rgba(16,185,129,0.2); }
+        .bio-hero__icon { font-size:56px;margin-bottom:var(--space-3);display:block; }
+        .bio-hero h1 { background:linear-gradient(135deg,#10b981,#8B5CF6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:var(--space-2); }
+        .bio-form { background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5); }
+        .bio-form textarea { width:100%;min-height:80px;background:var(--bg-input);border:2px solid var(--border-primary);border-radius:var(--radius-md);padding:var(--space-4);color:var(--text-primary);font-size:var(--text-base);resize:vertical;transition:all 0.3s;font-family:inherit; }
+        .bio-form textarea::placeholder { color:var(--text-muted); }
+        .bio-form textarea:focus { border-color:#10b981;box-shadow:0 0 0 4px rgba(16,185,129,0.15);outline:none; }
+        .bio-form select, .bio-form input[type="text"] { width:100%;height:48px;padding:0 var(--space-4);background:var(--bg-input);border:2px solid var(--border-primary);border-radius:var(--radius-md);color:var(--text-primary);font-size:var(--text-sm);cursor:pointer;transition:all 0.3s; }
+        .bio-form select:focus, .bio-form input[type="text"]:focus { border-color:#10b981;box-shadow:0 0 0 4px rgba(16,185,129,0.15);outline:none; }
+        .bio-form input[type="text"]::placeholder { color:var(--text-muted); }
+        .option-grid { display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3); }
+        @media(max-width:500px) { .option-grid { grid-template-columns:1fr; } }
+        .custom-input-wrap { margin-top:var(--space-2);display:none; }
+        .gen-bio-btn { width:100%;height:56px;margin-top:var(--space-4);border:none;border-radius:14px;cursor:pointer;font-size:var(--text-lg);font-weight:700;color:#fff;background:linear-gradient(135deg,#10b981,#8B5CF6);box-shadow:0 4px 20px rgba(16,185,129,0.4);transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:var(--space-2); }
+        .gen-bio-btn:hover { transform:translateY(-2px);box-shadow:0 8px 30px rgba(16,185,129,0.5); }
+        .gen-bio-btn:disabled { opacity:0.6;cursor:not-allowed;transform:none; }
+
+        .bio-loading { display:none;text-align:center;padding:var(--space-8); }
+        .bio-loading__text { font-size:var(--text-base);font-weight:600;color:#34d399;min-height:24px; }
+
+        .bio-result { display:none;animation:slideUp 0.6s ease; }
+        @keyframes slideUp { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+        .bio-card { background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-3);transition:all 0.3s; }
+        .bio-card:hover { border-color:rgba(16,185,129,0.3);box-shadow:0 8px 30px rgba(0,0,0,0.15); }
+        .bio-card__label { font-size:var(--text-xs);font-weight:700;color:#34d399;text-transform:uppercase;margin-bottom:var(--space-2);display:flex;align-items:center;gap:var(--space-1); }
+        .bio-card__text { font-size:var(--text-sm);color:var(--text-secondary);line-height:1.8;white-space:pre-wrap; }
+        .bio-card__footer { display:flex;gap:var(--space-2);margin-top:var(--space-3);justify-content:flex-end; }
+        .copy-bio-btn { height:36px;padding:0 14px;border-radius:10px;font-weight:600;font-size:var(--text-sm);background:linear-gradient(135deg,#10b981,#8B5CF6);color:#fff;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;gap:var(--space-1); }
+        .copy-bio-btn:hover { transform:translateY(-1px); }
+        .bio-actions { display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap;margin-top:var(--space-5); }
+    </style>
+
+
+        <div class="bio-container">
+            <div class="bio-hero">
+                <span class="bio-hero__icon">&#x1F4DD;</span>
+                <h1>AI Bio &amp; Description Generator</h1>
+                <p style="color:var(--text-secondary)">Generate professional group descriptions with emojis, rules, and CTAs included</p>
+            </div>
+            <div class="bio-form" id="input-section">
+                <div class="form-group">
+                    <label class="form-label" style="color:#34d399">What is your group about?</label>
+                    <textarea id="bio-topic" rows="3" placeholder="e.g. Tech discussions for developers, fitness motivation community, cooking recipes sharing..."></textarea>
+                </div>
+                <div class="option-grid">
+                    <div class="form-group">
+                        <label class="form-label" style="color:#34d399;font-size:var(--text-sm)">Tone</label>
+                        <select id="bio-tone">
+                            <option value="professional">Professional</option>
+                            <option value="friendly">Friendly &amp; Casual</option>
+                            <option value="funny">Funny &amp; Playful</option>
+                            <option value="inspirational">Inspirational</option>
+                            <option value="strict">Strict &amp; Serious</option>
+                            <option value="luxury">Luxury &amp; Exclusive</option>
+                            <option value="custom">Custom (type your own)</option>
+                        </select>
+                        <div class="custom-input-wrap" id="custom-tone-wrap">
+                            <input type="text" id="custom-tone" placeholder="e.g. minimalist, energetic, mysterious...">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="color:#34d399;font-size:var(--text-sm)">Type</label>
+                        <select id="bio-type">
+                            <option value="description">Group Description</option>
+                            <option value="about">About Section</option>
+                            <option value="welcome">Welcome Message</option>
+                            <option value="promo">Promotional Bio</option>
+                            <option value="rules-intro">Rules Introduction</option>
+                            <option value="custom">Custom (type your own)</option>
+                        </select>
+                        <div class="custom-input-wrap" id="custom-type-wrap">
+                            <input type="text" id="custom-type" placeholder="e.g. pinned announcement, invite text...">
+                        </div>
+                    </div>
+                </div>
+                <div class="option-grid">
+                    <div class="form-group">
+                        <label class="form-label" style="color:#34d399;font-size:var(--text-sm)">Platform</label>
+                        <select id="bio-platform">
+                            <option value="any">Any Platform</option>
+                            <option value="whatsapp">WhatsApp</option>
+                            <option value="telegram">Telegram</option>
+                            <option value="discord">Discord</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="reddit">Reddit</option>
+                            <option value="slack">Slack</option>
+                            <option value="linkedin">LinkedIn</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="color:#34d399;font-size:var(--text-sm)">Include</label>
+                        <select id="bio-include">
+                            <option value="all">Emojis + Rules + CTA</option>
+                            <option value="emojis-cta">Emojis + CTA only</option>
+                            <option value="plain">Plain text (no emojis)</option>
+                            <option value="emojis">Emojis only</option>
+                            <option value="rules">Rules only</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="color:#34d399;font-size:var(--text-sm)">Output Language</label>
+                    <select id="lang-select">
+                        <option value="en">English</option>
+                        <option value="ar">&#x0627;&#x0644;&#x0639;&#x0631;&#x0628;&#x064A;&#x0629; (Arabic)</option>
+                        <option value="fr">Fran&#231;ais (French)</option>
+                        <option value="es">Espa&#241;ol (Spanish)</option>
+                        <option value="tr">T&#252;rk&#231;e (Turkish)</option>
+                        <option value="pt">Portugu&#234;s (Portuguese)</option>
+                        <option value="de">Deutsch (German)</option>
+                        <option value="id">Bahasa Indonesia</option>
+                        <option value="hi">&#x0939;&#x093F;&#x0928;&#x094D;&#x0926;&#x0940; (Hindi)</option>
+                        <option value="ur">&#x0627;&#x0631;&#x062F;&#x0648; (Urdu)</option>
+                        <option value="zh">&#x4E2D;&#x6587; (Chinese)</option>
+                        <option value="ru">&#x0420;&#x0443;&#x0441;&#x0441;&#x043A;&#x0438;&#x0439; (Russian)</option>
+                        <option value="ja">&#x65E5;&#x672C;&#x8A9E; (Japanese)</option>
+                        <option value="ko">&#xD55C;&#xAD6D;&#xC5B4; (Korean)</option>
+                        <option value="it">Italiano (Italian)</option>
+                        <option value="nl">Nederlands (Dutch)</option>
+                        <option value="pl">Polski (Polish)</option>
+                        <option value="ms">Bahasa Melayu</option>
+                        <option value="th">&#x0E44;&#x0E17;&#x0E22; (Thai)</option>
+                        <option value="vi">Ti&#7871;ng Vi&#7879;t (Vietnamese)</option>
+                        <option value="sw">Kiswahili (Swahili)</option>
+                        <option value="bn">&#x09AC;&#x09BE;&#x0982;&#x09B2;&#x09BE; (Bengali)</option>
+                    </select>
+                </div>
+                <button class="gen-bio-btn" id="gen-btn">&#x1F4DD; Generate Bio</button>
+            </div>
+            <div class="bio-loading" id="bio-loading">
+                <div style="width:60px;height:60px;margin:0 auto var(--space-4);border:4px solid rgba(16,185,129,0.2);border-top-color:#10b981;border-radius:50%;animation:spin 1s linear infinite;"></div>
+                <div class="bio-loading__text" id="bio-load-text">Crafting the perfect words...</div>
+            </div>
+            <div class="bio-result" id="bio-result">
+                <div id="bios-list"></div>
+                <div class="bio-actions">
+                    <button class="gen-bio-btn" style="width:auto;padding:0 24px;height:48px;font-size:var(--text-base)" id="more-btn">&#x1F504; Generate More</button>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    (function() {
+        'use strict';
+        var loadTexts = ['Crafting the perfect words...','Adding personality and flair...','Optimizing for engagement...','Polishing the final draft...'];
+
+        // Rate limiting
+        var requestLog = [];
+        var RATE_COOLDOWN = 30000;
+        var RATE_WINDOW = 300000;
+        var RATE_MAX = 5;
+        var lastRequestTime = 0;
+        function checkRateLimit() {
+            var now = Date.now();
+            if (now - lastRequestTime < RATE_COOLDOWN) { UI.toast('Please wait ' + Math.ceil((RATE_COOLDOWN - (now - lastRequestTime)) / 1000) + ' seconds before trying again.', 'error'); return false; }
+            requestLog = requestLog.filter(function(t) { return now - t < RATE_WINDOW; });
+            if (requestLog.length >= RATE_MAX) { UI.toast('Too many requests. Please wait a few minutes.', 'error'); return false; }
+            return true;
+        }
+
+        // Custom tone/type toggle
+        document.getElementById('bio-tone').addEventListener('change', function() {
+            document.getElementById('custom-tone-wrap').style.display = this.value === 'custom' ? 'block' : 'none';
+        });
+        document.getElementById('bio-type').addEventListener('change', function() {
+            document.getElementById('custom-type-wrap').style.display = this.value === 'custom' ? 'block' : 'none';
+        });
+
+        // Language persistence
+        var langSel = document.getElementById('lang-select');
+        var savedLang = localStorage.getItem('gm_tool_lang');
+        if (savedLang && langSel.querySelector('option[value="' + savedLang + '"]')) langSel.value = savedLang;
+        langSel.addEventListener('change', function() { localStorage.setItem('gm_tool_lang', this.value); });
+
+        document.getElementById('gen-btn').addEventListener('click', generate);
+        document.getElementById('more-btn').addEventListener('click', function() {
+            document.getElementById('bio-result').style.display = 'none';
+            document.getElementById('input-section').style.display = '';
+            document.getElementById('input-section').scrollIntoView({behavior:'smooth', block:'start'});
+            generate();
+        });
+
+        async function generate() {
+            var topic = document.getElementById('bio-topic').value.trim();
+            if (!topic) { UI.toast('Please describe your group.', 'error'); return; }
+            if (!checkRateLimit()) return;
+            lastRequestTime = Date.now();
+            requestLog.push(Date.now());
+
+            var tone = document.getElementById('bio-tone').value;
+            if (tone === 'custom') tone = document.getElementById('custom-tone').value.trim() || 'professional';
+            var type = document.getElementById('bio-type').value;
+            if (type === 'custom') type = document.getElementById('custom-type').value.trim() || 'description';
+            var platform = document.getElementById('bio-platform').value;
+            var include = document.getElementById('bio-include').value;
+
+            var btn = document.getElementById('gen-btn');
+            btn.disabled = true;
+            document.getElementById('input-section').style.display = 'none';
+            document.getElementById('bio-loading').style.display = 'block';
+            document.getElementById('bio-result').style.display = 'none';
+            document.getElementById('bio-loading').scrollIntoView({behavior:'smooth', block:'start'});
+
+            var msgIdx = 0;
+            var loadEl = document.getElementById('bio-load-text');
+            var msgInt = setInterval(function() {
+                msgIdx = (msgIdx + 1) % loadTexts.length;
+                loadEl.textContent = loadTexts[msgIdx];
+            }, 1500);
+
+            try {
+                var res = await fetch('/api/groq', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tool: 'bio-generator',
+                        lang: document.getElementById('lang-select').value,
+                        prompt: 'Group topic: ' + topic + '\nTone: ' + tone + '\nType: ' + type + '\nPlatform: ' + platform + '\nInclude: ' + include + '\nGenerate 3 professional group bios/descriptions.'
+                    })
+                });
+                if (!res.ok) throw new Error('AI unavailable');
+                var reader = res.body.getReader();
+                var decoder = new TextDecoder();
+                var fullText = '';
+                var sseBuffer = '';
+                while (true) {
+                    var result = await reader.read();
+                    if (result.done) break;
+                    sseBuffer += decoder.decode(result.value, { stream: true });
+                    var sseLines = sseBuffer.split('\n');
+                    sseBuffer = sseLines.pop() || '';
+                    for (var i = 0; i < sseLines.length; i++) {
+                        var line = sseLines[i].trim();
+                        if (!line.startsWith('data: ')) continue;
+                        var data = line.slice(6).trim();
+                        if (data === '[DONE]') continue;
+                        try { var parsed = JSON.parse(data); if (parsed.text) fullText += parsed.text; } catch(e) {}
+                    }
+                }
+                if (sseBuffer.trim()) { var lastLine = sseBuffer.trim(); if (lastLine.startsWith('data: ')) { var ld = lastLine.slice(6).trim(); if (ld !== '[DONE]') { try { var lp = JSON.parse(ld); if (lp.text) fullText += lp.text; } catch(e) {} } } }
+                var cleaned = fullText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+                var jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+                if (jsonMatch) { renderBios(JSON.parse(jsonMatch[0]).bios); }
+                else { throw new Error('Parse failed'); }
+            } catch (err) {
+                console.error('Bio gen failed, using fallback:', err);
+                renderBios(fallbackBios(topic, tone, type));
+                UI.toast('Generated (offline mode)', 'info');
+            } finally {
+                clearInterval(msgInt);
+                document.getElementById('bio-loading').style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+
+        function fallbackBios(topic, tone, type) {
+            var t = topic.charAt(0).toUpperCase() + topic.slice(1);
+            return [
+                '\uD83C\uDF1F Welcome to the ultimate ' + t + ' community! Join thousands of passionate members for daily discussions, expert tips, and real connections. No spam, just value. Jump in now!',
+                '\uD83D\uDE80 ' + t + ' | Premium Community\n\nWe are a growing community of ' + t + ' enthusiasts. Here you will find:\n\u2022 Daily content & discussions\n\u2022 Expert advice & tips\n\u2022 Networking opportunities\n\nRules: Be respectful. No spam. Stay on topic.\n\nJoin us and level up!',
+                '\uD83D\uDCA1 Your #1 space for ' + t + '.\n\nWhether you are a beginner or expert, this is where the magic happens. Real people, real conversations, real growth.\n\n\u27A1\uFE0F Tap Join and say hello!'
+            ];
+        }
+
+        function renderBios(bios) {
+            var list = document.getElementById('bios-list');
+            list.innerHTML = '';
+            var labels = ['Option A', 'Option B', 'Option C'];
+            (bios || []).forEach(function(bio, i) {
+                var div = document.createElement('div');
+                div.className = 'bio-card';
+                div.innerHTML = '<div class="bio-card__label">\u270F\uFE0F ' + (labels[i] || 'Option ' + (i+1)) + '</div><div class="bio-card__text">' + Security.sanitize(bio) + '</div><div class="bio-card__footer"><button class="copy-bio-btn" data-idx="' + i + '">\uD83D\uDCCB Copy</button></div>';
+                list.appendChild(div);
+            });
+            list.querySelectorAll('.copy-bio-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var idx = parseInt(this.dataset.idx);
+                    UI.copyToClipboard(bios[idx] || '');
+                });
+            });
+            document.getElementById('bio-result').style.display = 'block';
+            document.getElementById('input-section').style.display = '';
+            document.getElementById('bio-result').scrollIntoView({behavior:'smooth', block:'start'});
+            UI.toast('Bios generated!', 'success');
+        }
+    })();
+    </script>
+</Fragment>
+</BaseLayout>

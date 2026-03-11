@@ -1,0 +1,210 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Search Groups — GroupsMix"
+  description="Search and find the best social media groups across WhatsApp, Telegram, Discord and more."
+  canonical="https://groupsmix.com/search"
+  ogTitle="Search Groups — GroupsMix"
+  ogDescription="Search and find the best social media groups across WhatsApp, Telegram, Discord and more."
+  ogUrl="https://groupsmix.com/search"
+>
+<style is:inline>
+        .search-hero {
+            padding: var(--space-8) 0;
+        }
+
+        .search-hero__input-wrap {
+            position: relative;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        .search-hero__input {
+            width: 100%;
+            height: 52px;
+            padding: 0 52px 0 20px;
+            border-radius: var(--radius-full);
+            font-size: var(--text-lg);
+            background: var(--bg-card);
+            border: 2px solid var(--border-primary);
+        }
+
+        .search-hero__input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .search-hero__btn {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-full);
+            background: var(--accent-primary);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: var(--text-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-4);
+            flex-wrap: wrap;
+            gap: var(--space-2);
+        }
+
+        .results-count {
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+        }
+    </style>
+
+
+        <div class="container">
+            <section class="search-hero">
+                <h1 style="text-align:center;margin-bottom:var(--space-6)">🔍 Search Groups</h1>
+                <div class="search-hero__input-wrap">
+                    <input type="search" id="search-input" class="search-hero__input" placeholder="Search groups..."
+                        aria-label="Search groups" autofocus>
+                    <button id="search-btn" class="search-hero__btn" aria-label="Search">🔍</button>
+                </div>
+            </section>
+            <div id="filter-container"></div>
+            <div class="results-header" id="results-header" style="display:none">
+                <span class="results-count" id="results-count"></span>
+            </div>
+            <div id="results-container">
+                <div class="grid grid-4">
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                </div>
+            </div>
+            <div id="pagination-container"></div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', () => { initPage(); });
+
+        let currentPage = 1;
+        let currentFilters = { platform: '', category: '', country: '', sort: 'ranking' };
+        let currentQuery = '';
+
+        async function initPage() {
+            const params = new URLSearchParams(window.location.search);
+            currentQuery = params.get('q') || '';
+            currentFilters.platform = params.get('platform') || '';
+            currentFilters.category = params.get('category') || '';
+            currentFilters.country = params.get('country') || '';
+            currentFilters.sort = params.get('sort') || 'ranking';
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) searchInput.value = currentQuery;
+            document.getElementById('filter-container').innerHTML = UI.searchFilters(currentFilters);
+            UI.initFilters(onFilterChange);
+            document.getElementById('search-btn')?.addEventListener('click', onSearch);
+            searchInput?.addEventListener('keyup', (e) => { if (e.key === 'Enter') onSearch(); });
+            const debouncedSearch = UI.debounce(onSearch, CONFIG.debounceDelay);
+            searchInput?.addEventListener('input', debouncedSearch);
+            await loadResults();
+        }
+
+        function onSearch() {
+            currentQuery = document.getElementById('search-input')?.value?.trim() || '';
+            currentPage = 1;
+            updateUrl();
+            loadResults();
+        }
+
+        function onFilterChange(filters) {
+            Object.assign(currentFilters, filters);
+            currentPage = 1;
+            updateUrl();
+            loadResults();
+        }
+
+        function updateUrl() {
+            const params = new URLSearchParams();
+            if (currentQuery) params.set('q', currentQuery);
+            if (currentFilters.platform) params.set('platform', currentFilters.platform);
+            if (currentFilters.category) params.set('category', currentFilters.category);
+            if (currentFilters.country) params.set('country', currentFilters.country);
+            if (currentFilters.sort && currentFilters.sort !== 'ranking') params.set('sort', currentFilters.sort);
+            const qs = params.toString();
+            history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : ''));
+        }
+
+        async function loadResults() {
+            UI.groupGridSkeleton(12, 'results-container');
+            document.getElementById('pagination-container').innerHTML = '';
+            const offset = (currentPage - 1) * CONFIG.perPage;
+            const timeout = setTimeout(() => UI.timeoutState('results-container'), CONFIG.timeoutDuration);
+            try {
+                let result;
+                if (currentQuery) {
+                    // Feature 7: AI Smart Search — parse natural language queries
+                    let searchOpts = { ...currentFilters, limit: CONFIG.perPage, offset };
+                    if (window.AIFeatures && window.AIFeatures.SmartSearch) {
+                        const parsed = window.AIFeatures.SmartSearch.parse(currentQuery);
+                        if (parsed) {
+                            if (parsed.platform && !searchOpts.platform) searchOpts.platform = parsed.platform;
+                            if (parsed.category && !searchOpts.category) searchOpts.category = parsed.category;
+                            if (parsed.country && !searchOpts.country) searchOpts.country = parsed.country;
+                            if (parsed.query) {
+                                result = await DB.groups.search(parsed.query, searchOpts);
+                            } else {
+                                result = await DB.groups.getApproved(searchOpts);
+                            }
+                        }
+                    }
+                    if (!result) {
+                        result = await DB.groups.search(currentQuery, searchOpts);
+                    }
+                } else {
+                    result = await DB.groups.getApproved({ ...currentFilters, limit: CONFIG.perPage, offset });
+                }
+                clearTimeout(timeout);
+                const header = document.getElementById('results-header');
+                const countEl = document.getElementById('results-count');
+                if (header && countEl) {
+                    header.style.display = '';
+                    countEl.textContent = (result.count || 0) + ' group' + (result.count !== 1 ? 's' : '') + ' found';
+                }
+                if (!result.data?.length) {
+                    UI.emptyState('results-container', '📭', 'No Groups Found',
+                        currentQuery ? 'No results for "' + Security.sanitize(currentQuery) + '". Try different keywords.' : 'Try adjusting your filters.',
+                        'Clear Filters', '/search');
+                    return;
+                }
+                UI.groupGrid(result.data, 'results-container');
+                const totalPages = Math.ceil((result.count || 0) / CONFIG.perPage);
+                if (totalPages > 1) {
+                    document.getElementById('pagination-container').innerHTML = UI.pagination(currentPage, totalPages);
+                    UI.initPagination('pagination-container', (page) => { currentPage = page; loadResults(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+                }
+            } catch {
+                clearTimeout(timeout);
+                UI.errorState('results-container', loadResults);
+            }
+        }
+    </script>
+</Fragment>
+</BaseLayout>

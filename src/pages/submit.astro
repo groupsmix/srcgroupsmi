@@ -1,0 +1,387 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Submit a Group — GroupsMix"
+  description="Submit your social media group to GroupsMix. Share your WhatsApp, Telegram, Discord group with thousands."
+  ogTitle="Submit a Group — GroupsMix"
+  ogDescription="Submit and promote your social media group on GroupsMix."
+>
+<style is:inline>
+        .submit-page {
+            max-width: var(--container-md);
+            margin: 0 auto;
+            padding: var(--space-8) var(--space-4);
+        }
+
+        .submit-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-xl);
+            padding: var(--space-8);
+        }
+
+        .submit-steps {
+            display: flex;
+            /* Issue #17 fix: gap with margin fallback for older browsers */
+            gap: var(--space-4);
+            margin-bottom: var(--space-8);
+        }
+
+        /* Issue #17 fix: margin-based gap fallback */
+        .submit-steps > * + * {
+            margin-left: var(--space-4);
+        }
+        @supports (gap: 1px) {
+            .submit-steps > * + * {
+                margin-left: 0;
+            }
+        }
+
+        .submit-step {
+            flex: 1;
+            text-align: center;
+            padding: var(--space-3);
+            border-radius: var(--radius-md);
+            background: var(--bg-tertiary);
+            color: var(--text-tertiary);
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+        }
+
+        .submit-step--active {
+            background: var(--accent-primary);
+            color: #fff;
+        }
+
+        .submit-step--done {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .submit-preview {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            margin-top: var(--space-6);
+        }
+
+        .submit-preview__title {
+            font-weight: var(--font-semibold);
+            margin-bottom: var(--space-2);
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
+        }
+
+        .honeypot {
+            position: absolute;
+            left: -9999px;
+            opacity: 0;
+            height: 0;
+            width: 0;
+        }
+
+        @media (max-width: 640px) {
+            .submit-steps {
+                flex-direction: column;
+            }
+
+            .submit-card {
+                padding: var(--space-4);
+            }
+        }
+    </style>
+
+
+        <div class="submit-page">
+            <h1 style="text-align:center;margin-bottom:var(--space-2)"><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.2em;height:1.2em;vertical-align:-0.125em"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Submit Your Group</h1>
+            <p style="text-align:center;color:var(--text-secondary);margin-bottom:var(--space-8)">Share your community
+                with the world — it's fast, free, and easy</p>
+            <div class="submit-steps" id="submit-steps">
+                <div class="submit-step submit-step--active" id="step-1-indicator">1. Details</div>
+                <div class="submit-step" id="step-2-indicator">2. Preview</div>
+                <div class="submit-step" id="step-3-indicator">3. Done</div>
+            </div>
+            <div class="submit-card">
+                <form id="submit-form">
+                    <div id="step-1">
+                        <div class="form-row">
+                            <div class="form-group" style="flex:1"><label class="form-label"
+                                    for="group-platform">Platform *</label>
+                                <select class="form-select" id="group-platform" required>
+                                    <option value="">Select Platform</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex:1"><label class="form-label" for="group-type">Type
+                                    *</label>
+                                <select class="form-select" id="group-type" required>
+                                    <option value="">Select Type</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group"><label class="form-label" for="group-name">Group Name *</label>
+                            <input type="text" class="form-input" id="group-name" placeholder="My Awesome Group"
+                                required minlength="3" maxlength="100">
+                            <div class="form-help">3–100 characters</div>
+                        </div>
+                        <div class="form-group"><label class="form-label" for="group-link">Invite Link *</label>
+                            <input type="url" class="form-input" id="group-link"
+                                placeholder="https://chat.whatsapp.com/..." required>
+                            <div class="form-help" id="link-help">Must be a valid invite link for the selected platform
+                            </div>
+                        </div>
+                        <div class="form-group"><label class="form-label" for="group-description">Description *</label>
+                            <textarea class="form-textarea" id="group-description" placeholder="Describe your group..."
+                                required minlength="20" maxlength="500"></textarea>
+                            <div class="form-help"><span id="desc-count">0</span>/500 characters</div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="flex:1"><label class="form-label"
+                                    for="group-category">Category *</label>
+                                <select class="form-select" id="group-category" required>
+                                    <option value="">Select Category</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex:1"><label class="form-label"
+                                    for="group-country">Country</label>
+                                <select class="form-select" id="group-country">
+                                    <option value="GLOBAL">Global</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="flex:1"><label class="form-label"
+                                    for="group-language">Language</label>
+                                <select class="form-select" id="group-language">
+                                    <option value="English">English</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex:1"><label class="form-label" for="group-city">City
+                                    (optional)</label>
+                                <input type="text" class="form-input" id="group-city" placeholder="e.g. New York"
+                                    maxlength="50">
+                            </div>
+                        </div>
+                        <div class="form-group"><label class="form-label">Tags (up to 5)</label>
+                            <div class="tag-input" id="tag-input"><input type="text" class="tag-input__field"
+                                    id="tag-field" placeholder="Type and press Enter"></div>
+                            <div class="form-help"><span id="tag-count">0</span>/5 tags</div>
+                        </div>
+                        <input type="text" name="website_url" class="honeypot" tabindex="-1" autocomplete="off">
+                        <div class="form-group" id="turnstile-wrapper" style="display:none"><div id="turnstile-widget"></div></div>
+                        <button type="button" class="btn btn-primary btn-full" id="next-step-btn">Preview →</button>
+                    </div>
+                    <div id="step-2" class="hidden">
+                        <div class="submit-preview" id="preview-content"></div>
+                        <!-- Issue #17 fix: added margin fallback for inline gap -->
+                        <div class="step2-actions" style="display:flex;gap:var(--space-3);margin-top:var(--space-6)">
+                            <button type="button" class="btn btn-secondary" id="back-btn" style="flex:1;margin-right:var(--space-3)">← Back</button>
+                                                        <button type="submit" class="btn btn-primary" id="submit-btn" style="flex:2"><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Submit
+                                                            Group</button>
+                        </div>
+                    </div>
+                    <div id="step-3" class="hidden">
+                        <div style="text-align:center;padding:var(--space-8) 0">
+                            <div style="font-size:var(--text-4xl);margin-bottom:var(--space-4)"><svg class="svg-icon svg-icon--xl" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:2em;height:2em"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+                            <h2>Group Submitted!</h2>
+                            <p style="color:var(--text-secondary);margin:var(--space-4) 0">Your group is under review.
+                                You'll be notified once approved.</p>
+                            <!-- Issue #17 fix: added margin fallback for inline gap -->
+                            <div
+                                style="display:flex;gap:var(--space-3);justify-content:center;margin-top:var(--space-6)">
+                                <a href="/submit" class="btn btn-secondary">Submit Another</a>
+                                <a href="/my-groups" class="btn btn-primary">View My Groups</a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', () => { initPage(); });
+        let tags = [];
+
+        var turnstileToken = null;
+
+        function initPage() {
+            populateSelects();
+            document.getElementById('group-platform')?.addEventListener('change', updateTypes);
+            document.getElementById('group-description')?.addEventListener('input', function () { document.getElementById('desc-count').textContent = this.value.length; });
+            document.getElementById('next-step-btn')?.addEventListener('click', goToPreview);
+            document.getElementById('back-btn')?.addEventListener('click', goBack);
+            document.getElementById('submit-form')?.addEventListener('submit', submitGroup);
+            initTagInput();
+            // ── Turnstile CAPTCHA: poll for SDK readiness ──────────
+            // The SDK loads with async/defer and may not be available
+            // when DOMContentLoaded fires. We poll every 200 ms for up
+            // to 10 seconds, then render the widget once the SDK is ready.
+            if (CONFIG.turnstileSiteKey) {
+                var _tsAttempts = 0, _tsMaxAttempts = 50; // 50 × 200 ms = 10 s
+                (function pollTurnstile() {
+                    if (typeof turnstile !== 'undefined') {
+                        document.getElementById('turnstile-wrapper').style.display = '';
+                        turnstile.render('#turnstile-widget', {
+                            sitekey: CONFIG.turnstileSiteKey,
+                            callback: function(token) { turnstileToken = token; }
+                        });
+                    } else if (++_tsAttempts < _tsMaxAttempts) {
+                        setTimeout(pollTurnstile, 200);
+                    } else {
+                        // SDK never loaded — keep token null so CAPTCHA check blocks submission.
+                        // Show a warning so the user knows to retry.
+                        turnstileToken = null;
+                        var wrapper = document.getElementById('turnstile-wrapper');
+                        if (wrapper) {
+                            wrapper.style.display = '';
+                            wrapper.innerHTML = '<div style="color:var(--warning);font-size:var(--text-sm);text-align:center;padding:var(--space-2)">CAPTCHA failed to load. Please refresh the page and try again.</div>';
+                        }
+                    }
+                })();
+            }
+        }
+
+        function populateSelects() {
+            const ps = document.getElementById('group-platform');
+            CONFIG.platforms.forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; ps.appendChild(o); });
+            const cs = document.getElementById('group-category');
+            CONFIG.categories.forEach(c => { const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; cs.appendChild(o); });
+            const co = document.getElementById('group-country');
+            CONFIG.countries.slice(1).forEach(c => { const o = document.createElement('option'); o.value = c.code; o.textContent = c.flag + ' ' + c.name; co.appendChild(o); });
+            const la = document.getElementById('group-language');
+            CONFIG.languages.slice(1).forEach(l => { const o = document.createElement('option'); o.value = l; o.textContent = l; la.appendChild(o); });
+        }
+
+        function updateTypes() {
+            const platform = CONFIG.platforms.find(p => p.id === document.getElementById('group-platform').value);
+            const ts = document.getElementById('group-type');
+            ts.innerHTML = '<option value="">Select Type</option>';
+            if (platform) {
+                platform.types.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t.charAt(0).toUpperCase() + t.slice(1); ts.appendChild(o); });
+                }
+        }
+
+        function initTagInput() {
+            const field = document.getElementById('tag-field');
+            field?.addEventListener('keydown', (e) => {
+                if ((e.key === 'Enter' || e.key === ',') && field.value.trim()) {
+                    e.preventDefault();
+                    const val = field.value.trim().toLowerCase().slice(0, 20);
+                    if (tags.length >= 5) { UI.toast('Maximum 5 tags', 'warning'); return; }
+                    if (tags.includes(val)) { UI.toast('Tag already added', 'warning'); return; }
+                    tags.push(val);
+                    field.value = '';
+                    renderTags();
+                }
+            });
+        }
+
+        function renderTags() {
+            const container = document.getElementById('tag-input');
+            const field = document.getElementById('tag-field');
+            container.querySelectorAll('.tag-input__tag').forEach(t => t.remove());
+            tags.forEach(t => {
+                const span = document.createElement('span');
+                span.className = 'tag-input__tag';
+                span.innerHTML = Security.sanitize(t) + ' <button type="button" class="tag-input__remove" data-tag="' + t + '">✕</button>';
+                container.insertBefore(span, field);
+            });
+            container.querySelectorAll('.tag-input__remove').forEach(btn => {
+                btn.addEventListener('click', () => { tags = tags.filter(t => t !== btn.dataset.tag); renderTags(); });
+            });
+            document.getElementById('tag-count').textContent = tags.length;
+        }
+
+        function goToPreview() {
+            if (!Auth.requireAuth()) return;
+            const honeypot = document.querySelector('.honeypot');
+            if (honeypot && honeypot.value) { UI.toast('Submission blocked.', 'error'); return; }
+            const name = document.getElementById('group-name')?.value?.trim();
+            const link = document.getElementById('group-link')?.value?.trim();
+            const desc = document.getElementById('group-description')?.value?.trim();
+            const platform = document.getElementById('group-platform')?.value;
+            const type = document.getElementById('group-type')?.value;
+            const category = document.getElementById('group-category')?.value;
+            if (!platform) { UI.toast('Please select a platform', 'error'); return; }
+            if (!type) { UI.toast('Please select a type', 'error'); return; }
+            if (!name || name.length < 3) { UI.toast('Group name must be at least 3 characters', 'error'); return; }
+            if (!link || !Security.isValidUrl(link, platform)) { UI.toast('Please enter a valid invite link for ' + platform, 'error'); return; }
+            if (!desc || desc.length < 20) { UI.toast('Description must be at least 20 characters', 'error'); return; }
+            if (!category) { UI.toast('Please select a category', 'error'); return; }
+            const pc = CONFIG.platforms.find(p => p.id === platform);
+            const cc = CONFIG.categories.find(c => c.id === category);
+            document.getElementById('preview-content').innerHTML =
+                '<div class="submit-preview__title">Preview</div>' +
+                '<div style="margin-bottom:var(--space-2)"><strong>' + Security.sanitize(name) + '</strong></div>' +
+                '<div style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-2)">' + (pc?.emoji || '') + ' ' + Security.sanitize(pc?.name || '') + ' · ' + Security.sanitize(type) + ' · ' + (cc?.emoji || '') + ' ' + Security.sanitize(cc?.name || '') + '</div>' +
+                '<div style="font-size:var(--text-sm);margin-bottom:var(--space-2)">' + Security.sanitize(desc) + '</div>' +
+                (tags.length ? '<div style="display:flex;gap:4px;flex-wrap:wrap">' + tags.map(t => '<span class="tag">' + Security.sanitize(t) + '</span>').join('') + '</div>' : '');
+            setStep(2);
+        }
+
+        function goBack() { setStep(1); }
+
+        function setStep(n) {
+            document.getElementById('step-1').classList.toggle('hidden', n !== 1);
+            document.getElementById('step-2').classList.toggle('hidden', n !== 2);
+            document.getElementById('step-3').classList.toggle('hidden', n !== 3);
+            for (let i = 1; i <= 3; i++) {
+                const ind = document.getElementById('step-' + i + '-indicator');
+                if (!ind) continue;
+                ind.classList.remove('submit-step--active', 'submit-step--done');
+                if (i === n) ind.classList.add('submit-step--active');
+                else if (i < n) ind.classList.add('submit-step--done');
+            }
+        }
+
+        async function submitGroup(e) {
+            e.preventDefault();
+            if (!Security.checkBehavioral()) { UI.toast('Please interact with the form naturally.', 'error'); return; }
+            if (CONFIG.turnstileSiteKey && !turnstileToken) { UI.toast('Please complete the CAPTCHA verification.', 'error'); return; }
+            const btn = document.getElementById('submit-btn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Submitting...'; }
+            // ── Server-side validation (rate limit + Turnstile) ──
+            var sv = await Security.serverValidate({ turnstileToken: turnstileToken, action: 'submit' });
+            if (!sv.ok) { UI.toast(sv.errors?.[0] || 'Validation failed. Please try again.', 'error'); if (btn) { btn.disabled = false; btn.innerHTML = ICONS.upload + ' Submit Group'; } return; }
+            const data = {
+                name: document.getElementById('group-name').value.trim(),
+                link: document.getElementById('group-link').value.trim(),
+                platform: document.getElementById('group-platform').value,
+                platform_type: document.getElementById('group-type').value,
+                category: document.getElementById('group-category').value,
+                country: document.getElementById('group-country').value || 'GLOBAL',
+                language: document.getElementById('group-language').value || 'English',
+                city: document.getElementById('group-city')?.value?.trim() || '',
+                description: document.getElementById('group-description').value.trim(),
+                tags
+            };
+            // Feature 9: AI Auto-Moderate — check trust score before submission
+            if (window.AIFeatures && window.AIFeatures.AutoModerate) {
+                try {
+                    var modResult = await window.AIFeatures.AutoModerate.check(data);
+                    if (modResult && modResult.trustScore < 30) {
+                        UI.toast('Your submission was flagged as potentially problematic. Please review your description and try again.', 'error');
+                        if (btn) { btn.disabled = false; btn.innerHTML = ICONS.upload + ' Submit Group'; }
+                        return;
+                    }
+                    if (modResult && modResult.trustScore < 60 && modResult.flags && modResult.flags.length) {
+                        data.ai_flags = modResult.flags;
+                        data.ai_trust_score = modResult.trustScore;
+                    }
+                } catch (modErr) {
+                    console.warn('AI moderation check skipped:', modErr);
+                }
+            }
+            const result = await DB.pending.submit(data);
+            if (result) {
+                setStep(3);
+                UI.toast('Group submitted for review!', 'success');
+                try { await DB.user.addGXP(Auth.getUserId(), 15); } catch { }
+            } else {
+                if (btn) { btn.disabled = false; btn.innerHTML = ICONS.upload + ' Submit Group'; }
+            }
+        }
+    </script>
+</Fragment>
+</BaseLayout>

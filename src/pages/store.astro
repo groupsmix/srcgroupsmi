@@ -1,0 +1,83 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Store | GroupsMix"
+  description="Shop official GroupsMix premium products, guides, templates, courses, and tools to grow your digital community."
+  cssFiles={["/assets/css/store.css?v=20260310b"]}
+  mainClass="page-container"
+  includeStore={true}
+>
+
+        <div class="content-wrapper">
+            <!-- Hero -->
+            <section class="store-hero">
+                <div class="store-hero__icon">&#128722;</div>
+                <h1 id="store-hero-title">GroupsMix Store</h1>
+                <p class="store-hero__subtitle" id="store-hero-subtitle">Professional tools & resources to grow your digital community.</p>
+            </section>
+
+            <!-- AI Search -->
+            <div id="store-search-container"></div>
+
+            <!-- Filters -->
+            <div id="store-filters-container"></div>
+
+            <!-- Product Grid -->
+            <div id="store-product-grid"></div>
+
+            <!-- AI Recommendations -->
+            <section id="store-recommendations" class="store-section" style="display:none"></section>
+
+            <!-- Smart Bundles -->
+            <section id="store-bundles" class="store-section" style="display:none"></section>
+
+            <!-- GXP Info -->
+            <div class="store-gxp-info">
+                <div class="store-gxp-info__title">&#9889; GXP Ranking System</div>
+                <p style="color:var(--text-secondary);font-size:var(--text-sm);text-align:center;max-width:600px;margin:0 auto">GroupsMix Experience Points (GXP) determine your group&#39;s visibility and ranking. Earn GXP through engagement, purchases, and community participation.</p>
+                <div class="gxp-tiers">
+                    <div class="gxp-tier"><div class="gxp-tier__name">&#127793; Starter</div><div class="gxp-tier__range">0 - 99 GXP</div></div>
+                    <div class="gxp-tier"><div class="gxp-tier__name">&#11088; Rising</div><div class="gxp-tier__range">100 - 499 GXP</div></div>
+                    <div class="gxp-tier"><div class="gxp-tier__name">&#128142; Premium</div><div class="gxp-tier__range">500 - 999 GXP</div></div>
+                    <div class="gxp-tier"><div class="gxp-tier__name">&#128081; Elite</div><div class="gxp-tier__range">1000+ GXP</div></div>
+                </div>
+            </div>
+
+            <!-- Advertise CTA -->
+            <div class="store-ad-section">
+                <h3 style="margin-bottom:var(--space-2)">Looking to Advertise?</h3>
+                <p style="color:var(--text-secondary);margin-bottom:var(--space-4)">We offer banner placements and sitewide takeovers for agencies and large networks.</p>
+                <a href="/advertise" class="btn btn-secondary">View Advertising Options</a>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Feature flag check
+            if (typeof CONFIG !== 'undefined' && CONFIG.features && !CONFIG.features.store) {
+                var main = document.getElementById('main-content');
+                if (main) {
+                    main.innerHTML = '<div class="content-wrapper" style="text-align:center;padding:var(--space-16) var(--space-4)">' +
+                        '<div style="font-size:var(--text-5xl);margin-bottom:var(--space-4)">&#128722;</div>' +
+                        '<h1 style="margin-bottom:var(--space-3)">Store Coming Soon</h1>' +
+                        '<p style="color:var(--text-secondary);max-width:500px;margin:0 auto var(--space-6)">We are working hard to bring you premium products and exclusive resources. Stay tuned!</p>' +
+                        '<a href="/" class="btn btn-primary">Back to Home</a></div>';
+                }
+                return;
+            }
+
+            // Bilingual hero text
+            var isArabic = (navigator.language || '').substring(0, 2) === 'ar';
+            if (isArabic) {
+                var heroTitle = document.getElementById('store-hero-title');
+                var heroSub = document.getElementById('store-hero-subtitle');
+                if (heroTitle) heroTitle.textContent = '\u0645\u062A\u062C\u0631 GroupsMix';
+                if (heroSub) heroSub.textContent = '\u0623\u062F\u0648\u0627\u062A \u0648\u0645\u0648\u0627\u0631\u062F \u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629 \u0644\u062A\u0646\u0645\u064A\u0629 \u0645\u062C\u062A\u0645\u0639\u0643 \u0627\u0644\u0631\u0642\u0645\u064A';
+                document.documentElement.setAttribute('dir', 'rtl');
+            }
+        });
+    </script>
+</Fragment>
+</BaseLayout>

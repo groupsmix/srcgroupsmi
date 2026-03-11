@@ -1,0 +1,216 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Link Shortener &amp; QR Generator — GroupsMix"
+  description="Shorten your group links and generate beautiful QR codes. Clean URLs and premium QR codes for your community."
+  canonical="https://groupsmix.com/tools/link-generator"
+>
+<style is:inline>
+        .link-container { max-width:var(--container-sm);margin:0 auto;padding:var(--space-8) var(--space-4); }
+        .link-hero { text-align:center;padding:var(--space-8) var(--space-4);background:linear-gradient(135deg,rgba(139,92,246,0.1),rgba(255,255,255,0.05),transparent);border-radius:var(--radius-xl);margin-bottom:var(--space-6);border:1px solid rgba(139,92,246,0.15); }
+        .link-hero__icon { font-size:56px;margin-bottom:var(--space-3);display:block; }
+        .link-hero h1 { margin-bottom:var(--space-2); }
+        .link-form { background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5); }
+        .link-form input[type="url"], .link-form input[type="text"] { width:100%;height:52px;background:var(--bg-input);border:2px solid var(--border-primary);border-radius:var(--radius-md);padding:0 var(--space-4);color:var(--text-primary);font-size:var(--text-base);transition:all 0.3s; }
+        .link-form input:focus { border-color:var(--accent-primary);box-shadow:0 0 0 4px rgba(139,92,246,0.15);outline:none; }
+        .link-form input::placeholder { color:var(--text-muted); }
+        .custom-toggle { display:flex;align-items:center;gap:var(--space-2);margin-top:var(--space-3);cursor:pointer;user-select:none; }
+        .custom-toggle input { width:18px;height:18px;accent-color:var(--accent-primary); }
+        .custom-toggle label { font-size:var(--text-sm);color:var(--text-secondary);cursor:pointer; }
+        .custom-slug { margin-top:var(--space-2);display:none; }
+        .gen-link-btn { width:100%;height:56px;margin-top:var(--space-4);border:none;border-radius:14px;cursor:pointer;font-size:var(--text-lg);font-weight:700;color:#fff;background:var(--gradient-accent);box-shadow:0 4px 20px rgba(99,102,241,0.4);transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:var(--space-2); }
+        .gen-link-btn:hover { transform:translateY(-2px);box-shadow:0 8px 30px rgba(99,102,241,0.5); }
+        .gen-link-btn:disabled { opacity:0.6;cursor:not-allowed;transform:none; }
+
+        .link-loading { display:none;text-align:center;padding:var(--space-6); }
+        .link-loading__text { font-size:var(--text-sm);color:var(--text-muted);margin-top:var(--space-3); }
+
+        .link-result { display:none;animation:slideUp 0.6s ease; }
+        @keyframes slideUp { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+        .result-grid { display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4); }
+        @media(max-width:600px) { .result-grid { grid-template-columns:1fr; } }
+        .result-panel { background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5);text-align:center; }
+        .result-panel__title { font-size:var(--text-sm);font-weight:700;color:var(--text-secondary);margin-bottom:var(--space-3);display:flex;align-items:center;justify-content:center;gap:var(--space-2); }
+        .short-link { font-size:var(--text-lg);font-weight:700;color:var(--accent-primary);word-break:break-all;margin-bottom:var(--space-3);padding:var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-md); }
+        .copy-link-btn { height:44px;padding:0 20px;border-radius:12px;font-weight:600;font-size:var(--text-sm);background:#10b981;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;gap:var(--space-2);transition:all 0.3s;margin:0 auto; }
+        .copy-link-btn:hover { background:#059669;transform:translateY(-2px); }
+        .qr-canvas { margin:0 auto var(--space-3);display:block;border-radius:var(--radius-md);max-width:200px; }
+        .qr-actions { display:flex;gap:var(--space-2);justify-content:center;flex-wrap:wrap; }
+        .qr-dl-btn { height:40px;padding:0 16px;border-radius:10px;font-weight:600;font-size:var(--text-sm);background:var(--gradient-accent);color:#fff;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;gap:var(--space-1); }
+        .qr-dl-btn:hover { transform:translateY(-1px); }
+        .wa-share-btn { height:40px;padding:0 16px;border-radius:10px;font-weight:600;font-size:var(--text-sm);background:#25D366;color:#fff;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;gap:var(--space-1); }
+        .wa-share-btn:hover { background:#128C7E; }
+        .link-actions { display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap;margin-top:var(--space-5); }
+    </style>
+
+
+        <div class="link-container">
+            <div class="link-hero">
+                <span class="link-hero__icon">&#x26A1;</span>
+                <h1>Link Shortener &amp; QR Generator</h1>
+                <p style="color:var(--text-secondary)">Create clean short links and premium QR codes for your group</p>
+            </div>
+            <div class="link-form" id="input-section">
+                <label class="form-label">Paste your long group link here</label>
+                <input type="url" id="link-input" placeholder="https://chat.whatsapp.com/your-long-invite-link...">
+                <div class="custom-toggle">
+                    <input type="checkbox" id="custom-check">
+                    <label for="custom-check">Customize link name?</label>
+                </div>
+                <div class="custom-slug" id="custom-slug">
+                    <input type="text" id="slug-input" placeholder="my-awesome-group" maxlength="30" style="margin-top:var(--space-2)">
+                </div>
+                <button class="gen-link-btn" id="gen-btn">&#x26A1; Generate Link &amp; QR</button>
+            </div>
+            <div class="link-loading" id="link-loading">
+                <div style="width:50px;height:50px;margin:0 auto;border:4px solid rgba(139,92,246,0.2);border-top-color:#8B5CF6;border-radius:50%;animation:spin 1s linear infinite;"></div>
+                <div class="link-loading__text">Encrypting and converting link...</div>
+            </div>
+            <div class="link-result" id="link-result">
+                <div class="result-grid">
+                    <div class="result-panel">
+                        <div class="result-panel__title">&#x1F517; Short Link</div>
+                        <div class="short-link" id="short-link"></div>
+                        <button class="copy-link-btn" id="copy-link">&#x1F4CB; Copy Link</button>
+                    </div>
+                    <div class="result-panel">
+                        <div class="result-panel__title">&#x1F4F1; QR Code</div>
+                        <canvas id="qr-canvas" class="qr-canvas" width="200" height="200"></canvas>
+                        <div class="qr-actions">
+                            <button class="qr-dl-btn" id="dl-qr">&#x1F4E5; Download QR</button>
+                            <button class="wa-share-btn" id="share-wa">&#x1F4AC; Share</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="link-actions">
+                    <button class="btn btn-ghost btn-sm" id="new-link">&#x1F504; Shorten Another</button>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    (function() {
+        'use strict';
+        var currentShortUrl = '';
+
+        document.getElementById('custom-check').addEventListener('change', function() {
+            document.getElementById('custom-slug').style.display = this.checked ? 'block' : 'none';
+        });
+
+        document.getElementById('gen-btn').addEventListener('click', generateLink);
+        document.getElementById('new-link').addEventListener('click', function() {
+            document.getElementById('link-result').style.display = 'none';
+            document.getElementById('input-section').style.display = '';
+            document.getElementById('link-input').value = '';
+            document.getElementById('link-input').focus();
+            document.getElementById('input-section').scrollIntoView({behavior:'smooth', block:'start'});
+        });
+        document.getElementById('copy-link').addEventListener('click', function() {
+            UI.copyToClipboard(currentShortUrl);
+        });
+        document.getElementById('dl-qr').addEventListener('click', function() {
+            var canvas = document.getElementById('qr-canvas');
+            var link = document.createElement('a');
+            link.download = 'groupsmix-qr.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            UI.toast('QR code downloaded!', 'success');
+        });
+        document.getElementById('share-wa').addEventListener('click', function() {
+            var text = encodeURIComponent('Join our group: ' + currentShortUrl + '\n\nGenerated by GroupsMix - groupsmix.com');
+            window.open('https://wa.me/?text=' + text, '_blank');
+        });
+
+        async function generateLink() {
+            var url = document.getElementById('link-input').value.trim();
+            if (!url) { UI.toast('Please paste a link.', 'error'); return; }
+            if (!url.match(/^https?:\/\//)) url = 'https://' + url;
+
+            var btn = document.getElementById('gen-btn');
+            btn.disabled = true;
+            document.getElementById('input-section').style.display = 'none';
+            document.getElementById('link-loading').style.display = 'block';
+            document.getElementById('link-result').style.display = 'none';
+            document.getElementById('link-loading').scrollIntoView({behavior:'smooth', block:'start'});
+
+            var slug = '';
+            if (document.getElementById('custom-check').checked) {
+                slug = document.getElementById('slug-input').value.trim().replace(/[^a-zA-Z0-9-]/g, '').toLowerCase();
+            }
+
+            try {
+                var res = await fetch('/api/shorten', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url, slug: slug || undefined })
+                });
+                if (!res.ok) throw new Error('API unavailable');
+                var data = await res.json();
+                currentShortUrl = data.shortUrl || data.short_url || data.url || generateClientShort(url, slug);
+            } catch (err) {
+                console.error('Shorten failed, using client fallback:', err);
+                currentShortUrl = generateClientShort(url, slug);
+            }
+
+            document.getElementById('short-link').textContent = currentShortUrl;
+            generateQR(url);
+            document.getElementById('link-loading').style.display = 'none';
+            document.getElementById('link-result').style.display = 'block';
+            document.getElementById('input-section').style.display = '';
+            document.getElementById('link-result').scrollIntoView({behavior:'smooth', block:'start'});
+            btn.disabled = false;
+            UI.toast('Link & QR generated!', 'success');
+        }
+
+        function generateClientShort(url, slug) {
+            if (slug) return 'groupsmix.com/g/' + slug;
+            var hash = 0;
+            for (var i = 0; i < url.length; i++) { hash = ((hash << 5) - hash) + url.charCodeAt(i); hash |= 0; }
+            return 'groupsmix.com/g/' + Math.abs(hash).toString(36).slice(0, 6);
+        }
+
+        function generateQR(url) {
+            var canvas = document.getElementById('qr-canvas');
+            var ctx = canvas.getContext('2d');
+            var size = 200;
+            canvas.width = size;
+            canvas.height = size;
+
+            try {
+                // Use real QR code library
+                var qr = qrcode(0, 'M');
+                qr.addData(url);
+                qr.make();
+
+                var moduleCount = qr.getModuleCount();
+                var cellSize = size / moduleCount;
+
+                // Draw background
+                ctx.fillStyle = '#1a1a2e';
+                ctx.fillRect(0, 0, size, size);
+
+                // Draw QR modules
+                ctx.fillStyle = '#8B5CF6';
+                for (var row = 0; row < moduleCount; row++) {
+                    for (var col = 0; col < moduleCount; col++) {
+                        if (qr.isDark(row, col)) {
+                            ctx.fillRect(col * cellSize, row * cellSize, cellSize + 0.5, cellSize + 0.5);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('QR generation failed:', e);
+                // Fallback: show URL as text
+                ctx.fillStyle = '#1a1a2e';
+                ctx.fillRect(0, 0, size, size);
+                ctx.fillStyle = '#8B5CF6';
+                ctx.font = 'bold 14px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('QR Error', size/2, size/2);
+            }
+        }
+    })();
+    </script>
+</Fragment>
+</BaseLayout>

@@ -1,0 +1,397 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="AI Privacy Auditor — GroupsMix"
+  description="Audit your group's privacy and security settings with AI. Get a security score, vulnerabilities, and actionable recommendations."
+  canonical="https://groupsmix.com/tools/privacy-auditor"
+>
+<style is:inline>
+        .priv-container { max-width:var(--container-sm);margin:0 auto;padding:var(--space-8) var(--space-4); }
+        .priv-hero { text-align:center;padding:var(--space-8) var(--space-4);background:linear-gradient(135deg,rgba(16,185,129,0.12),rgba(139,92,246,0.1),transparent);border-radius:var(--radius-xl);margin-bottom:var(--space-6);border:1px solid rgba(16,185,129,0.2); }
+        .priv-hero__icon { font-size:56px;margin-bottom:var(--space-3);display:block; }
+        .priv-hero h1 { background:linear-gradient(135deg,#10b981,#8B5CF6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:var(--space-2); }
+        .priv-form { background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5); }
+        .scanner-option { display:flex;align-items:center;justify-content:space-between;padding:var(--space-3) var(--space-4);background:var(--bg-tertiary);border-radius:var(--radius-md);margin-bottom:var(--space-3);border:1px solid var(--border-primary); }
+        .scanner-option__label { font-weight:600;font-size:var(--text-sm);color:var(--text-primary); }
+        .scanner-option__desc { font-size:var(--text-xs);color:var(--text-muted); }
+        .toggle-wrap { display:flex;gap:var(--space-2); }
+        .toggle-btn { padding:var(--space-2) var(--space-3);border:2px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:600;cursor:pointer;background:var(--bg-input);transition:all 0.2s;color:var(--text-secondary); }
+        .toggle-btn.active { background:var(--accent-primary);color:#fff;border-color:var(--accent-primary); }
+        .audit-btn { width:100%;height:56px;margin-top:var(--space-4);border:none;border-radius:14px;cursor:pointer;font-size:var(--text-lg);font-weight:700;color:#fff;background:linear-gradient(135deg,#10b981,#8B5CF6);box-shadow:0 4px 20px rgba(16,185,129,0.4);transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:var(--space-2);animation:pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{box-shadow:0 4px 20px rgba(16,185,129,0.4);} 50%{box-shadow:0 4px 30px rgba(16,185,129,0.6);} }
+        .audit-btn:hover { transform:translateY(-2px); }
+        .audit-btn:disabled { opacity:0.6;cursor:not-allowed;transform:none;animation:none; }
+
+        .priv-loading { display:none;text-align:center;padding:var(--space-8); }
+        .priv-loading__text { font-size:var(--text-base);font-weight:600;color:#34d399;min-height:24px; }
+
+        .priv-result { display:none;animation:slideUp 0.6s ease; }
+        @keyframes slideUp { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+
+        .gauge-wrap { text-align:center;margin-bottom:var(--space-6); }
+        .gauge-svg { width:200px;height:120px; }
+        .gauge-score { font-size:var(--text-3xl);font-weight:800;margin-top:var(--space-2); }
+        .gauge-label { font-size:var(--text-sm);color:var(--text-secondary);margin-top:var(--space-1); }
+
+        .vuln-section { margin-bottom:var(--space-5); }
+        .vuln-title { font-size:var(--text-lg);font-weight:700;margin-bottom:var(--space-3);display:flex;align-items:center;gap:var(--space-2); }
+        .vuln-item { display:flex;align-items:flex-start;gap:var(--space-3);padding:var(--space-3) var(--space-4);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-md);margin-bottom:var(--space-2); }
+        .vuln-item__icon { font-size:20px;flex-shrink:0; }
+        .vuln-item__text { font-size:var(--text-sm);color:var(--text-secondary);line-height:1.5; }
+
+        .rec-section { margin-bottom:var(--space-5); }
+        .rec-item { display:flex;align-items:flex-start;gap:var(--space-3);padding:var(--space-3) var(--space-4);background:linear-gradient(135deg,rgba(16,185,129,0.08),transparent);border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius-md);margin-bottom:var(--space-2); }
+        .rec-item__step { width:28px;height:28px;background:#10b981;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:var(--text-xs);font-weight:700;flex-shrink:0; }
+        .rec-item__text { font-size:var(--text-sm);color:var(--text-secondary);line-height:1.5; }
+
+        .badge-section { text-align:center;margin-top:var(--space-5);padding:var(--space-4);background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(139,92,246,0.08));border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius-md); }
+        .badge-text { font-size:var(--text-xs);color:#34d399;font-weight:600; }
+
+        .priv-actions { display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap;margin-top:var(--space-5); }
+    </style>
+
+
+        <div class="priv-container">
+            <div class="priv-hero">
+                <span class="priv-hero__icon">&#x1F512;</span>
+                <h1>AI Privacy Auditor</h1>
+                <p style="color:var(--text-secondary)">Scan your group settings and get a professional security report</p>
+            </div>
+            <div class="priv-form" id="input-section">
+                <div class="scanner-option">
+                    <div><div class="scanner-option__label">Group Visibility</div><div class="scanner-option__desc">Is your group public or private?</div></div>
+                    <div class="toggle-wrap" data-key="visibility">
+                        <span class="toggle-btn active" data-val="public">Public</span>
+                        <span class="toggle-btn" data-val="private">Private</span>
+                    </div>
+                </div>
+                <div class="scanner-option">
+                    <div><div class="scanner-option__label">Member Invites</div><div class="scanner-option__desc">Can members add new members?</div></div>
+                    <div class="toggle-wrap" data-key="invites">
+                        <span class="toggle-btn active" data-val="yes">Yes</span>
+                        <span class="toggle-btn" data-val="no">No</span>
+                    </div>
+                </div>
+                <div class="scanner-option">
+                    <div><div class="scanner-option__label">Links Allowed</div><div class="scanner-option__desc">Are links allowed in messages?</div></div>
+                    <div class="toggle-wrap" data-key="links">
+                        <span class="toggle-btn active" data-val="yes">Yes</span>
+                        <span class="toggle-btn" data-val="no">No</span>
+                    </div>
+                </div>
+                <div class="scanner-option">
+                    <div><div class="scanner-option__label">Admin Approval</div><div class="scanner-option__desc">Do posts need admin approval?</div></div>
+                    <div class="toggle-wrap" data-key="approval">
+                        <span class="toggle-btn" data-val="yes">Yes</span>
+                        <span class="toggle-btn active" data-val="no">No</span>
+                    </div>
+                </div>
+                <div class="scanner-option">
+                    <div><div class="scanner-option__label">Platform</div><div class="scanner-option__desc">Which platform is the group on?</div></div>
+                    <select id="platform-select" style="min-width:160px;height:38px;padding:0 var(--space-3);background:var(--bg-input);border:2px solid var(--border-primary);border-radius:var(--radius-md);color:var(--text-primary);font-size:var(--text-sm);cursor:pointer;transition:border-color 0.3s;">
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="telegram">Telegram</option>
+                        <option value="discord">Discord</option>
+                        <option value="facebook">Facebook</option>
+                        <option value="slack">Slack</option>
+                        <option value="reddit">Reddit</option>
+                        <option value="linkedin">LinkedIn</option>
+                        <option value="signal">Signal</option>
+                        <option value="viber">Viber</option>
+                    </select>
+                </div>
+                <!-- Dynamic platform-specific settings -->
+                <div id="platform-settings"></div>
+                <div class="scanner-option">
+                    <div><div class="scanner-option__label">Output Language</div><div class="scanner-option__desc">Language for the audit report</div></div>
+                    <select id="lang-select" style="min-width:160px;height:38px;padding:0 var(--space-3);background:var(--bg-input);border:2px solid var(--border-primary);border-radius:var(--radius-md);color:var(--text-primary);font-size:var(--text-sm);cursor:pointer;transition:border-color 0.3s;">
+                        <option value="en">English</option>
+                        <option value="ar">العربية (Arabic)</option>
+                        <option value="fr">Français (French)</option>
+                        <option value="es">Español (Spanish)</option>
+                        <option value="tr">Türkçe (Turkish)</option>
+                        <option value="pt">Português (Portuguese)</option>
+                        <option value="de">Deutsch (German)</option>
+                        <option value="id">Bahasa Indonesia</option>
+                        <option value="hi">हिन्दी (Hindi)</option>
+                        <option value="ur">اردو (Urdu)</option>
+                        <option value="zh">中文 (Chinese)</option>
+                        <option value="ru">Русский (Russian)</option>
+                        <option value="ja">日本語 (Japanese)</option>
+                        <option value="ko">한국어 (Korean)</option>
+                        <option value="it">Italiano (Italian)</option>
+                        <option value="nl">Nederlands (Dutch)</option>
+                        <option value="pl">Polski (Polish)</option>
+                        <option value="ms">Bahasa Melayu</option>
+                        <option value="th">ไทย (Thai)</option>
+                        <option value="vi">Tiếng Việt (Vietnamese)</option>
+                        <option value="sw">Kiswahili (Swahili)</option>
+                        <option value="bn">বাংলা (Bengali)</option>
+                    </select>
+                </div>
+                <button class="audit-btn" id="audit-btn">&#x1F6E1;&#xFE0F; Analyze Protection Level</button>
+            </div>
+            <div class="priv-loading" id="priv-loading">
+                <div style="width:60px;height:60px;margin:0 auto var(--space-4);border:4px solid rgba(16,185,129,0.2);border-top-color:#10b981;border-radius:50%;animation:spin 1s linear infinite;"></div>
+                <div class="priv-loading__text" id="priv-load-text">Scanning permission settings...</div>
+            </div>
+            <div class="priv-result" id="priv-result">
+                <div class="gauge-wrap" id="gauge-wrap"></div>
+                <div class="vuln-section" id="vuln-section">
+                    <div class="vuln-title">&#x26A0;&#xFE0F; Vulnerabilities Detected</div>
+                    <div id="vuln-list"></div>
+                </div>
+                <div class="rec-section" id="rec-section">
+                    <div class="vuln-title">&#x2705; AI Recommendations</div>
+                    <div id="rec-list"></div>
+                </div>
+                <div class="badge-section">
+                    <div style="font-size:32px;margin-bottom:var(--space-2)">&#x1F6E1;&#xFE0F;</div>
+                    <div class="badge-text">Checked by GroupsMix AI</div>
+                    <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:4px">Add this badge to your group description</div>
+                </div>
+                <div class="priv-actions">
+                    <button class="btn btn-primary btn-sm" id="copy-report">&#x1F4CB; Copy Report</button>
+                    <button class="btn btn-ghost btn-sm" id="audit-again">&#x1F504; Audit Again</button>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    (function() {
+        'use strict';
+        var settings = { visibility:'public', invites:'yes', links:'yes', approval:'no', platform:'whatsapp', bot_protection:'no', two_step:'no', media_filter:'no', role_permissions:'basic', join_approval:'no', phone_visible:'yes', message_history:'visible' };
+
+        // Platform-specific settings definitions
+        var platformSettings = {
+            whatsapp: [
+                { key:'phone_visible', label:'Phone Number Visible', desc:'Can members see each other\'s phone numbers?', options:['yes','no'] },
+                { key:'message_history', label:'Message History', desc:'Is message history visible to new members?', options:['visible','hidden'] },
+                { key:'two_step', label:'2-Step Verification', desc:'Is 2-step verification enforced for admins?', options:['yes','no'] }
+            ],
+            telegram: [
+                { key:'bot_protection', label:'Anti-Bot Protection', desc:'Is CAPTCHABot or similar bot protection active?', options:['yes','no'] },
+                { key:'join_approval', label:'Join Request Approval', desc:'Do new members need admin approval?', options:['yes','no'] },
+                { key:'media_filter', label:'Media Restriction', desc:'Is media sharing restricted?', options:['yes','no'] }
+            ],
+            discord: [
+                { key:'role_permissions', label:'Role Permissions', desc:'How granular are role permissions?', options:['basic','advanced'] },
+                { key:'two_step', label:'2FA for Mods', desc:'Is 2FA required for moderators?', options:['yes','no'] },
+                { key:'media_filter', label:'AutoMod Active', desc:'Is Discord AutoMod enabled?', options:['yes','no'] }
+            ],
+            facebook: [
+                { key:'join_approval', label:'Membership Questions', desc:'Are membership questions enabled?', options:['yes','no'] },
+                { key:'media_filter', label:'Post Screening', desc:'Are posts screened before publishing?', options:['yes','no'] },
+                { key:'phone_visible', label:'Profile Info Visible', desc:'Can members see all profile details?', options:['yes','no'] }
+            ],
+            slack: [
+                { key:'two_step', label:'SSO / 2FA', desc:'Is single sign-on or 2FA enforced?', options:['yes','no'] },
+                { key:'bot_protection', label:'App Restrictions', desc:'Are external app installations restricted?', options:['yes','no'] },
+                { key:'media_filter', label:'File Sharing Policy', desc:'Is file sharing restricted to certain types?', options:['yes','no'] }
+            ],
+            reddit: [
+                { key:'join_approval', label:'Approved Users Only', desc:'Is the subreddit restricted to approved users?', options:['yes','no'] },
+                { key:'bot_protection', label:'AutoModerator', desc:'Is AutoModerator configured?', options:['yes','no'] },
+                { key:'media_filter', label:'Spam Filter Level', desc:'Is the spam filter set to high?', options:['yes','no'] }
+            ],
+            linkedin: [
+                { key:'join_approval', label:'Join Screening', desc:'Are new members screened by admins?', options:['yes','no'] },
+                { key:'media_filter', label:'Content Moderation', desc:'Is content actively moderated?', options:['yes','no'] },
+                { key:'phone_visible', label:'Member List Visible', desc:'Can non-members see the member list?', options:['yes','no'] }
+            ],
+            signal: [
+                { key:'join_approval', label:'Invite Link Control', desc:'Is the invite link managed by admins only?', options:['yes','no'] },
+                { key:'two_step', label:'Admin PIN Protection', desc:'Is registration PIN enforced?', options:['yes','no'] },
+                { key:'message_history', label:'Disappearing Messages', desc:'Are disappearing messages enabled?', options:['yes','no'] }
+            ],
+            viber: [
+                { key:'join_approval', label:'Admin Approval', desc:'Do new members need admin approval?', options:['yes','no'] },
+                { key:'phone_visible', label:'Number Visibility', desc:'Are phone numbers visible to all members?', options:['yes','no'] },
+                { key:'media_filter', label:'Anti-Spam Filter', desc:'Is the anti-spam filter active?', options:['yes','no'] }
+            ]
+        };
+
+        function renderPlatformSettings(platform) {
+            var container = document.getElementById('platform-settings');
+            container.innerHTML = '';
+            var items = platformSettings[platform] || [];
+            items.forEach(function(item) {
+                var div = document.createElement('div');
+                div.className = 'scanner-option';
+                div.innerHTML = '<div><div class="scanner-option__label">' + item.label + '</div><div class="scanner-option__desc">' + item.desc + '</div></div><div class="toggle-wrap" data-key="' + item.key + '"><span class="toggle-btn' + (item.options[0] === 'yes' || item.options[0] === 'visible' || item.options[0] === 'basic' ? ' active' : '') + '" data-val="' + item.options[0] + '">' + item.options[0].charAt(0).toUpperCase() + item.options[0].slice(1) + '</span><span class="toggle-btn' + (item.options[0] !== 'yes' && item.options[0] !== 'visible' && item.options[0] !== 'basic' ? ' active' : '') + '" data-val="' + item.options[1] + '">' + item.options[1].charAt(0).toUpperCase() + item.options[1].slice(1) + '</span></div>';
+                container.appendChild(div);
+                // Set default
+                settings[item.key] = item.options[0];
+                // Bind toggle events
+                div.querySelectorAll('.toggle-btn').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        div.querySelectorAll('.toggle-btn').forEach(function(b) { b.classList.remove('active'); });
+                        btn.classList.add('active');
+                        settings[item.key] = btn.dataset.val;
+                    });
+                });
+            });
+        }
+
+        // Platform select change handler
+        document.getElementById('platform-select').addEventListener('change', function() {
+            settings.platform = this.value;
+            renderPlatformSettings(this.value);
+        });
+        // Initial render
+        renderPlatformSettings('whatsapp');
+        var loadTexts = ['Scanning permission settings...','Analyzing member data leak risks...','Evaluating auto-moderation strength...','Calculating protection score...'];
+
+        // Rate limiting: max 5 requests per 5 minutes, 30s cooldown
+        var requestLog = [];
+        var RATE_COOLDOWN = 30000;
+        var RATE_WINDOW = 300000;
+        var RATE_MAX = 5;
+        var lastRequestTime = 0;
+        function checkRateLimit() {
+            var now = Date.now();
+            if (now - lastRequestTime < RATE_COOLDOWN) { UI.toast('Please wait ' + Math.ceil((RATE_COOLDOWN - (now - lastRequestTime)) / 1000) + ' seconds before trying again.', 'error'); return false; }
+            requestLog = requestLog.filter(function(t) { return now - t < RATE_WINDOW; });
+            if (requestLog.length >= RATE_MAX) { UI.toast('Too many requests. Please wait a few minutes.', 'error'); return false; }
+            return true;
+        }
+
+        document.querySelectorAll('.priv-form > .scanner-option .toggle-wrap').forEach(function(wrap) {
+            wrap.querySelectorAll('.toggle-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    wrap.querySelectorAll('.toggle-btn').forEach(function(b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                    settings[wrap.dataset.key] = btn.dataset.val;
+                });
+            });
+        });
+
+        // Language persistence
+        var langSel = document.getElementById('lang-select');
+        var savedLang = localStorage.getItem('gm_tool_lang');
+        if (savedLang && langSel.querySelector('option[value="' + savedLang + '"]')) langSel.value = savedLang;
+        langSel.addEventListener('change', function() { localStorage.setItem('gm_tool_lang', this.value); });
+
+        document.getElementById('audit-btn').addEventListener('click', startAudit);
+        document.getElementById('audit-again').addEventListener('click', function() {
+            document.getElementById('priv-result').style.display = 'none';
+            document.getElementById('input-section').style.display = '';
+            document.getElementById('input-section').scrollIntoView({behavior:'smooth', block:'start'});
+        });
+        document.getElementById('copy-report').addEventListener('click', function() {
+            var score = document.querySelector('.gauge-score');
+            var vulns = document.getElementById('vuln-list').textContent;
+            var recs = document.getElementById('rec-list').textContent;
+            UI.copyToClipboard('Security Audit Report\nScore: ' + (score ? score.textContent : '') + '\n\nVulnerabilities:\n' + vulns + '\n\nRecommendations:\n' + recs + '\n\nAudited by GroupsMix AI - groupsmix.com/tools/privacy-auditor');
+        });
+
+        async function startAudit() {
+            if (!checkRateLimit()) return;
+            lastRequestTime = Date.now();
+            requestLog.push(Date.now());
+            var btn = document.getElementById('audit-btn');
+            btn.disabled = true;
+            document.getElementById('input-section').style.display = 'none';
+            document.getElementById('priv-loading').style.display = 'block';
+            document.getElementById('priv-result').style.display = 'none';
+            document.getElementById('priv-loading').scrollIntoView({behavior:'smooth', block:'start'});
+
+            var msgIdx = 0;
+            var loadEl = document.getElementById('priv-load-text');
+            var msgInt = setInterval(function() {
+                msgIdx = (msgIdx + 1) % loadTexts.length;
+                loadEl.textContent = loadTexts[msgIdx];
+            }, 1200);
+
+            try {
+                var res = await fetch('/api/groq', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tool: 'privacy-auditor',
+                        lang: document.getElementById('lang-select').value,
+                        prompt: 'Audit these group settings:\nPlatform: ' + settings.platform + '\nVisibility: ' + settings.visibility + '\nMember invites: ' + settings.invites + '\nLinks allowed: ' + settings.links + '\nAdmin approval: ' + settings.approval + '\nBot protection: ' + settings.bot_protection + '\n2-Step/2FA: ' + settings.two_step + '\nMedia filter: ' + settings.media_filter + '\nRole permissions: ' + settings.role_permissions + '\nJoin approval: ' + settings.join_approval + '\nPhone/profile visible: ' + settings.phone_visible + '\nMessage history: ' + settings.message_history
+                    })
+                });
+                if (!res.ok) throw new Error('AI unavailable');
+                var reader = res.body.getReader();
+                var decoder = new TextDecoder();
+                var fullText = '';
+                var sseBuffer = '';
+                while (true) {
+                    var result = await reader.read();
+                    if (result.done) break;
+                    sseBuffer += decoder.decode(result.value, { stream: true });
+                    var sseLines = sseBuffer.split('\n');
+                    sseBuffer = sseLines.pop() || '';
+                    for (var i = 0; i < sseLines.length; i++) {
+                        var line = sseLines[i].trim();
+                        if (!line.startsWith('data: ')) continue;
+                        var data = line.slice(6).trim();
+                        if (data === '[DONE]') continue;
+                        try { var parsed = JSON.parse(data); if (parsed.text) fullText += parsed.text; } catch(e) {}
+                    }
+                }
+                if (sseBuffer.trim()) { var lastLine = sseBuffer.trim(); if (lastLine.startsWith('data: ')) { var ld = lastLine.slice(6).trim(); if (ld !== '[DONE]') { try { var lp = JSON.parse(ld); if (lp.text) fullText += lp.text; } catch(e) {} } } }
+                var cleaned = fullText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+                var jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+                if (jsonMatch) { renderResult(JSON.parse(jsonMatch[0])); }
+                else { throw new Error('Parse failed'); }
+            } catch (err) {
+                console.error('Audit failed, using fallback:', err);
+                renderResult(fallbackAudit());
+                UI.toast('Audit complete (offline mode)', 'info');
+            } finally {
+                clearInterval(msgInt);
+                document.getElementById('priv-loading').style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+
+        function fallbackAudit() {
+            var score = 100;
+            var vulns = [];
+            var recs = [];
+            if (settings.visibility === 'public') { score -= 20; vulns.push({icon:'\u{1F441}\u{FE0F}',text:'Group is public - anyone can find and view content without joining.'}); recs.push({text:'Consider making your group private if sensitive topics are discussed.'}); }
+            if (settings.invites === 'yes') { score -= 15; vulns.push({icon:'\u{1F465}',text:'Any member can add new members - risk of spam bots being added.'}); recs.push({text:'Restrict member invites to admins only to prevent unauthorized additions.'}); }
+            if (settings.links === 'yes') { score -= 15; vulns.push({icon:'\u{1F517}',text:'Open links allow potential phishing attacks and malware distribution.'}); recs.push({text:'Enable link restrictions or use a bot to auto-filter suspicious URLs.'}); }
+            if (settings.approval === 'no') { score -= 10; vulns.push({icon:'\u{1F4AC}',text:'No message approval means spam can reach all members instantly.'}); recs.push({text:'Enable admin approval for messages in ' + settings.platform + ' settings.'}); }
+            if (vulns.length === 0) { vulns.push({icon:'\u2705',text:'No significant vulnerabilities detected. Great job!'}); }
+            score = Math.max(score, 15);
+            return { score: score, vulnerabilities: vulns, recommendations: recs };
+        }
+
+        function renderResult(data) {
+            var score = data.score || 50;
+            var color = score >= 70 ? '#10b981' : score >= 40 ? '#f59e0b' : '#ef4444';
+            var gaugeHtml = '<svg class="gauge-svg" viewBox="0 0 200 120"><path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="12" stroke-linecap="round"/><path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="' + color + '" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + (251.3 * score / 100) + ' 251.3" style="transition:stroke-dasharray 1.5s ease"/></svg><div class="gauge-score" style="color:' + color + '">' + score + '%</div><div class="gauge-label">Security Score</div>';
+            document.getElementById('gauge-wrap').innerHTML = gaugeHtml;
+
+            var vulnList = document.getElementById('vuln-list');
+            vulnList.innerHTML = '';
+            (data.vulnerabilities || []).forEach(function(v) {
+                var div = document.createElement('div');
+                div.className = 'vuln-item';
+                div.innerHTML = '<span class="vuln-item__icon">' + Security.sanitize(v.icon || '\u26A0\uFE0F') + '</span><div class="vuln-item__text">' + Security.sanitize(v.text) + '</div>';
+                vulnList.appendChild(div);
+            });
+
+            var recList = document.getElementById('rec-list');
+            recList.innerHTML = '';
+            (data.recommendations || []).forEach(function(r, i) {
+                var div = document.createElement('div');
+                div.className = 'rec-item';
+                div.innerHTML = '<div class="rec-item__step">' + (i + 1) + '</div><div class="rec-item__text">' + Security.sanitize(r.text) + '</div>';
+                recList.appendChild(div);
+            });
+
+            document.getElementById('priv-result').style.display = 'block';
+            document.getElementById('input-section').style.display = '';
+            document.getElementById('priv-result').scrollIntoView({behavior:'smooth', block:'start'});
+            UI.toast('Security audit complete!', 'success');
+        }
+    })();
+    </script>
+</Fragment>
+</BaseLayout>

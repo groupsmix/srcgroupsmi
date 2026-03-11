@@ -1,0 +1,156 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Free AI Tools — GroupsMix"
+  description="9 powerful AI-driven tools for group admins: AI content creator, scam detector, privacy auditor, cover designer, and more."
+>
+<style is:inline>
+        .tools-hero {
+            text-align: center;
+            padding: var(--space-8) var(--space-4);
+            background: linear-gradient(135deg, var(--accent-primary-light), transparent);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--space-8);
+        }
+        .tools-hero__count {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-1) var(--space-3);
+            background: var(--accent-primary);
+            color: #fff;
+            border-radius: var(--radius-full);
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+            margin-bottom: var(--space-3);
+        }
+        .tools-section {
+            margin-bottom: var(--space-8);
+        }
+        .tools-section__title {
+            font-size: var(--text-lg);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--space-4);
+            padding-bottom: var(--space-2);
+            border-bottom: 2px solid var(--accent-primary);
+            display: inline-block;
+        }
+        .tool-card {
+            text-align: center;
+            padding: var(--space-5);
+            transition: all 0.2s;
+        }
+        .tool-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+        .tool-card__icon {
+            font-size: var(--text-4xl);
+            margin-bottom: var(--space-3);
+            display: block;
+        }
+        .tool-card__badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            font-size: 10px;
+            font-weight: var(--font-bold);
+            text-transform: uppercase;
+            margin-top: var(--space-2);
+        }
+        .tool-card__badge--ai { background: linear-gradient(135deg, #6200ea, #9c47ff); color: #fff; }
+        .tool-card__badge--new { background: var(--success); color: #fff; }
+        .tool-card__badge--popular { background: var(--accent-primary); color: #fff; }
+    </style>
+
+
+        <div class="container" style="max-width:var(--container-lg);padding:var(--space-8) var(--space-4)">
+
+            <div class="tools-hero">
+                <span class="tools-hero__count">🧰 7 Elite Tools</span>
+                <h1 style="margin-bottom:var(--space-2)">AI-Powered Tools for Group Admins</h1>
+                <p style="color:var(--text-secondary);max-width:600px;margin:0 auto">Professional tools powered by AI to grow, protect, and manage your community — all free, no signup required.</p>
+            </div>
+
+            <!-- AI-Powered Tools -->
+            <div class="tools-section">
+                <div class="tools-section__title">🤖 AI-Powered</div>
+                <div class="grid grid-3">
+                    <a href="/pages/tools/name-generator.html" class="card card--clickable tool-card">
+                        <div class="card__body">
+                            <span class="tool-card__icon">💡</span>
+                            <h3>AI Name Generator</h3>
+                            <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-top:var(--space-2)">AI generates creative, catchy group names based on your category and style</p>
+                            <span class="tool-card__badge tool-card__badge--ai">AI</span>
+                        </div>
+                    </a>
+                    <a href="/pages/tools/bio-generator.html" class="card card--clickable tool-card">
+                        <div class="card__body">
+                            <span class="tool-card__icon">📝</span>
+                            <h3>AI Bio & Description</h3>
+                            <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-top:var(--space-2)">Generate professional group descriptions with AI — emojis, rules, and CTAs included</p>
+                            <span class="tool-card__badge tool-card__badge--ai">AI</span>
+                        </div>
+                    </a>
+                    <a href="/pages/tools/viral-post.html" class="card card--clickable tool-card">
+                        <div class="card__body">
+                            <span class="tool-card__icon">📢</span>
+                            <h3>AI Viral Post Creator</h3>
+                            <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-top:var(--space-2)">Generate 3 types of viral posts: debate starters, educational content, and join promos</p>
+                            <span class="tool-card__badge tool-card__badge--new">New</span>
+                        </div>
+                    </a>
+                    <a href="/pages/tools/group-rules-generator.html" class="card card--clickable tool-card">
+                        <div class="card__body">
+                            <span class="tool-card__icon">📜</span>
+                            <h3>AI Rules Generator</h3>
+                            <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-top:var(--space-2)">Generate professional group rules tailored to your platform and community type</p>
+                            <span class="tool-card__badge tool-card__badge--popular">Popular</span>
+                        </div>
+                    </a>
+                    <a href="/pages/tools/privacy-auditor.html" class="card card--clickable tool-card">
+                        <div class="card__body">
+                            <span class="tool-card__icon">🛡️</span>
+                            <h3>AI Privacy Auditor</h3>
+                            <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-top:var(--space-2)">Get a full security audit with score, vulnerabilities, and actionable fixes</p>
+                            <span class="tool-card__badge tool-card__badge--new">New</span>
+                        </div>
+                    </a>
+                    <a href="/pages/tools/cover-designer.html" class="card card--clickable tool-card">
+                        <div class="card__body">
+                            <span class="tool-card__icon">🎨</span>
+                            <h3>AI Cover Designer</h3>
+                            <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-top:var(--space-2)">Generate AI image prompts and text overlays for stunning group covers</p>
+                            <span class="tool-card__badge tool-card__badge--new">New</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Essential Utilities -->
+            <div class="tools-section">
+                <div class="tools-section__title">⚡ Essential Utilities</div>
+                <div class="grid grid-3">
+                    <a href="/pages/tools/whatsapp-direct.html" class="card card--clickable tool-card">
+                        <div class="card__body">
+                            <span class="tool-card__icon">💬</span>
+                            <h3>WhatsApp Direct Message</h3>
+                            <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-top:var(--space-2)">Send a message to any number without saving it as a contact</p>
+                            <span class="tool-card__badge tool-card__badge--popular">Popular</span>
+                        </div>
+                    </a>
+                    <a href="/pages/tools/link-generator.html" class="card card--clickable tool-card">
+                        <div class="card__body">
+                            <span class="tool-card__icon">🔗</span>
+                            <h3>Smart Link Shortener</h3>
+                            <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-top:var(--space-2)">Turn long group invite links into short, shareable URLs</p>
+                            <span class="tool-card__badge tool-card__badge--popular">Popular</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    
+</BaseLayout>

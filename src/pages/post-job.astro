@@ -1,0 +1,561 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Post a Job | GroupsMix"
+  description="Post a job listing on GroupsMix. AI-powered validation ensures quality listings. Reach community managers, developers, designers, and marketers."
+  ogTitle="Post a Job | GroupsMix"
+  ogDescription="Post your job listing and reach thousands of skilled community professionals."
+  cssFiles={["/assets/css/jobs.css?v=20260310b"]}
+  includeJobs={true}
+>
+
+        <div class="post-job-page">
+            <div style="text-align:center;margin-bottom:var(--space-6)">
+                <span class="jobs-hero__badge">
+                    <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    AI-Powered
+                </span>
+                <h1 style="margin-top:var(--space-2)">Post a Job</h1>
+                <p style="color:var(--text-secondary);max-width:500px;margin:var(--space-2) auto 0">Create a professional job listing in minutes. Our AI helps you write better descriptions and validates quality automatically.</p>
+            </div>
+
+            <!-- Steps -->
+            <div class="submit-steps" id="post-job-steps" style="display:flex;gap:var(--space-4);margin-bottom:var(--space-6);max-width:500px;margin-left:auto;margin-right:auto">
+                <div class="submit-step submit-step--active" id="pj-step-1-ind">1. Job Details</div>
+                <div class="submit-step" id="pj-step-2-ind">2. Preview</div>
+                <div class="submit-step" id="pj-step-3-ind">3. Done</div>
+            </div>
+
+            <div class="post-job-card">
+                <form id="post-job-form" novalidate>
+                    <!-- Step 1: Job Details -->
+                    <div id="pj-step-1">
+                        <!-- Job Title -->
+                        <div class="form-group">
+                            <label class="form-label" for="pj-title">Job Title *</label>
+                            <input type="text" class="form-input" id="pj-title" placeholder="e.g., Senior Discord Community Manager" required minlength="5" maxlength="150">
+                            <div class="form-help">5-150 characters. Be specific about the role.</div>
+                        </div>
+
+                        <!-- Company Name -->
+                        <div class="form-group">
+                            <label class="form-label" for="pj-company">Company / Project Name *</label>
+                            <input type="text" class="form-input" id="pj-company" placeholder="e.g., Apex Gaming Hub" required minlength="2" maxlength="100">
+                        </div>
+
+                        <!-- Description + AI Enhance -->
+                        <div class="form-group">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-1)">
+                                <label class="form-label" for="pj-description" style="margin-bottom:0">Job Description *</label>
+                                <button type="button" class="post-job__ai-btn" id="btn-ai-enhance">
+                                    <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                                    Enhance with AI
+                                </button>
+                            </div>
+                            <textarea class="form-textarea" id="pj-description" placeholder="Describe the role, responsibilities, and what you're looking for. You can write a simple description and let AI enhance it!" required minlength="20" maxlength="5000" style="min-height:160px"></textarea>
+                            <div class="form-help"><span id="pj-desc-count">0</span>/5000 characters</div>
+                            <div id="ai-enhance-status" style="display:none"></div>
+                            <div id="ai-enhanced-preview" style="display:none" class="post-job__enhanced-preview"></div>
+                        </div>
+
+                        <!-- Salary Range -->
+                        <div class="salary-row">
+                            <div class="form-group">
+                                <label class="form-label" for="pj-salary-min">Salary Min (USD)</label>
+                                <input type="number" class="form-input" id="pj-salary-min" placeholder="e.g., 2000" min="0" step="100">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="pj-salary-max">Salary Max (USD)</label>
+                                <input type="number" class="form-input" id="pj-salary-max" placeholder="e.g., 4000" min="0" step="100">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="pj-salary-currency">Currency</label>
+                                <select class="form-select" id="pj-salary-currency">
+                                    <option value="USD">USD ($)</option>
+                                    <option value="EUR">EUR (&euro;)</option>
+                                    <option value="GBP">GBP (&pound;)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Job Type + Location Type -->
+                        <div style="display:flex;gap:var(--space-3)">
+                            <div class="form-group" style="flex:1">
+                                <label class="form-label" for="pj-job-type">Job Type *</label>
+                                <select class="form-select" id="pj-job-type" required>
+                                    <option value="full-time">Full-Time</option>
+                                    <option value="part-time">Part-Time</option>
+                                    <option value="freelance">Freelance</option>
+                                    <option value="contract">Contract</option>
+                                    <option value="internship">Internship</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex:1">
+                                <label class="form-label" for="pj-location-type">Location Type *</label>
+                                <select class="form-select" id="pj-location-type" required>
+                                    <option value="remote">🌍 Remote</option>
+                                    <option value="onsite">📍 On-Site</option>
+                                    <option value="hybrid">🏢 Hybrid</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Location + Region (conditional) -->
+                        <div style="display:flex;gap:var(--space-3)">
+                            <div class="form-group" style="flex:1" id="pj-location-group">
+                                <label class="form-label" for="pj-location">City / Country</label>
+                                <input type="text" class="form-input" id="pj-location" placeholder="e.g., New York, Dubai, London">
+                                <div class="form-help">Required for On-Site and Hybrid positions</div>
+                            </div>
+                            <div class="form-group" style="flex:1" id="pj-region-group">
+                                <label class="form-label" for="pj-region">Region</label>
+                                <select class="form-select" id="pj-region">
+                                    <option value="worldwide">🌎 Worldwide</option>
+                                    <option value="us">US Only</option>
+                                    <option value="eu">EU Only</option>
+                                    <option value="mena">MENA</option>
+                                    <option value="asia">Asia</option>
+                                    <option value="latam">LATAM</option>
+                                </select>
+                                <div class="form-help">Where remote candidates should be located</div>
+                            </div>
+                        </div>
+
+                        <!-- Platform -->
+                        <div class="form-group">
+                            <label class="form-label">Platform(s)</label>
+                            <div style="display:flex;flex-wrap:wrap;gap:var(--space-2)" id="pj-platform-chips">
+                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="discord" name="pj-platform" style="width:14px;height:14px;accent-color:var(--accent-primary)"> Discord</label>
+                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="telegram" name="pj-platform" style="width:14px;height:14px;accent-color:var(--accent-primary)"> Telegram</label>
+                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="whatsapp" name="pj-platform" style="width:14px;height:14px;accent-color:var(--accent-primary)"> WhatsApp</label>
+                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="slack" name="pj-platform" style="width:14px;height:14px;accent-color:var(--accent-primary)"> Slack</label>
+                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="reddit" name="pj-platform" style="width:14px;height:14px;accent-color:var(--accent-primary)"> Reddit</label>
+                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="twitter" name="pj-platform" style="width:14px;height:14px;accent-color:var(--accent-primary)"> Twitter/X</label>
+                            </div>
+                            <div class="form-help">Select the platform(s) this job is related to</div>
+                        </div>
+
+                        <!-- Language -->
+                        <div class="form-group">
+                            <label class="form-label">Required Language(s)</label>
+                            <div style="display:flex;flex-wrap:wrap;gap:var(--space-2)" id="pj-language-chips">
+                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="en" name="pj-language" checked style="width:14px;height:14px;accent-color:var(--accent-primary)"> English</label>
+                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="ar" name="pj-language" style="width:14px;height:14px;accent-color:var(--accent-primary)"> Arabic</label>
+                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="fr" name="pj-language" style="width:14px;height:14px;accent-color:var(--accent-primary)"> French</label>
+                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="es" name="pj-language" style="width:14px;height:14px;accent-color:var(--accent-primary)"> Spanish</label>
+                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="de" name="pj-language" style="width:14px;height:14px;accent-color:var(--accent-primary)"> German</label>
+                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="other" name="pj-language" style="width:14px;height:14px;accent-color:var(--accent-primary)"> Other</label>
+                            </div>
+                            <div class="form-help">Select the language(s) required for this position</div>
+                        </div>
+
+                        <!-- Required Skills -->
+                        <div class="form-group">
+                            <label class="form-label">Required Skills</label>
+                            <div class="post-job__skills-input" id="pj-skills-input">
+                                <input type="text" class="post-job__skill-field" id="pj-skill-field" placeholder="Type a skill and press Enter (e.g., Discord, React, SEO)">
+                            </div>
+                            <div class="form-help"><span id="pj-skill-count">0</span>/10 skills. AI will also suggest skills based on your description.</div>
+                        </div>
+
+                        <!-- Contact Info -->
+                        <div style="display:flex;gap:var(--space-3)">
+                            <div class="form-group" style="flex:1">
+                                <label class="form-label" for="pj-contact-link">Application Link</label>
+                                <input type="url" class="form-input" id="pj-contact-link" placeholder="https://forms.google.com/...">
+                                <div class="form-help">Link where candidates can apply</div>
+                            </div>
+                            <div class="form-group" style="flex:1">
+                                <label class="form-label" for="pj-contact-email">Contact Email</label>
+                                <input type="email" class="form-input" id="pj-contact-email" placeholder="hiring@company.com">
+                            </div>
+                        </div>
+
+                        <!-- AI Gatekeeper Status -->
+                        <div id="ai-validate-status" style="display:none"></div>
+
+                        <button type="button" class="btn btn-primary btn-full" id="pj-next-btn" style="margin-top:var(--space-4)">
+                            Preview Job Listing &rarr;
+                        </button>
+                    </div>
+
+                    <!-- Step 2: Preview -->
+                    <div id="pj-step-2" class="hidden">
+                        <div id="pj-preview-content" style="background:var(--bg-tertiary);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-4)"></div>
+
+                        <div id="pj-ai-category-info" style="display:none;margin-bottom:var(--space-4)"></div>
+
+                        <div style="display:flex;gap:var(--space-3);margin-top:var(--space-4)">
+                            <button type="button" class="btn btn-secondary" id="pj-back-btn" style="flex:1">&larr; Edit</button>
+                            <button type="submit" class="btn btn-primary" id="pj-submit-btn" style="flex:2">
+                                <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                                Submit Job Listing
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Success -->
+                    <div id="pj-step-3" class="hidden">
+                        <div style="text-align:center;padding:var(--space-8) 0">
+                            <div style="font-size:var(--text-4xl);margin-bottom:var(--space-4)">
+                                <svg style="width:64px;height:64px;color:var(--success)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            </div>
+                            <h2>Job Posted Successfully!</h2>
+                            <p style="color:var(--text-secondary);margin:var(--space-4) 0;max-width:400px;margin-left:auto;margin-right:auto">Your job listing has been submitted and is under review. It will appear on the jobs board once approved by our AI quality filter.</p>
+                            <div id="pj-ai-feedback" style="margin-bottom:var(--space-4)"></div>
+                            <div style="display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap;margin-top:var(--space-6)">
+                                <a href="/post-job" class="btn btn-secondary">Post Another Job</a>
+                                <a href="/jobs" class="btn btn-primary">View Jobs Board</a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Promote CTA -->
+            <div style="text-align:center;margin-top:var(--space-6);padding:var(--space-5);background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg)">
+                <div style="display:flex;align-items:center;justify-content:center;gap:var(--space-3);flex-wrap:wrap">
+                    <div>
+                        <strong style="color:var(--accent-gold)">&#11088; Want more visibility?</strong>
+                        <span style="color:var(--text-secondary);font-size:var(--text-sm)"> Promoted jobs get 5x more views and are pinned to the top.</span>
+                    </div>
+                    <a href="/promote" class="btn btn-sm btn-primary">Promote Your Job</a>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', function () {
+            var skills = [];
+            var enhancedDesc = '';
+            var aiCategory = '';
+
+            // Require auth
+            Auth.waitForAuth().then(function () {
+                if (!Auth.isLoggedIn()) {
+                    UI.toast('Please sign in to post a job', 'info');
+                    setTimeout(function () { UI.authModal('signin'); }, 500);
+                }
+            });
+
+            // Location type toggle: show/hide location vs region fields
+            var locTypeEl = document.getElementById('pj-location-type');
+            var locGroup = document.getElementById('pj-location-group');
+            var regionGroup = document.getElementById('pj-region-group');
+            function updateLocFields() {
+                var val = locTypeEl.value;
+                if (val === 'remote') {
+                    locGroup.style.display = 'none';
+                    regionGroup.style.display = '';
+                } else {
+                    locGroup.style.display = '';
+                    regionGroup.style.display = val === 'hybrid' ? '' : 'none';
+                }
+            }
+            locTypeEl.addEventListener('change', updateLocFields);
+            updateLocFields();
+
+            // Helper: get checked values from checkbox group
+            function getCheckedValues(name) {
+                var checked = [];
+                document.querySelectorAll('input[name="' + name + '"]:checked').forEach(function (cb) {
+                    checked.push(cb.value);
+                });
+                return checked;
+            }
+
+            // Description counter
+            var descEl = document.getElementById('pj-description');
+            if (descEl) {
+                descEl.addEventListener('input', function () {
+                    document.getElementById('pj-desc-count').textContent = descEl.value.length;
+                });
+            }
+
+            // Skills input
+            var skillField = document.getElementById('pj-skill-field');
+            if (skillField) {
+                skillField.addEventListener('keydown', function (e) {
+                    if ((e.key === 'Enter' || e.key === ',') && skillField.value.trim()) {
+                        e.preventDefault();
+                        var val = skillField.value.trim().toLowerCase();
+                        if (skills.length >= 10) { UI.toast('Maximum 10 skills', 'warning'); return; }
+                        if (skills.indexOf(val) !== -1) { UI.toast('Skill already added', 'warning'); return; }
+                        skills.push(val);
+                        skillField.value = '';
+                        renderSkills();
+                    }
+                });
+            }
+
+            function renderSkills() {
+                var container = document.getElementById('pj-skills-input');
+                var field = document.getElementById('pj-skill-field');
+                if (!container || !field) return;
+                container.querySelectorAll('.post-job__skill-tag').forEach(function (t) { t.remove(); });
+                skills.forEach(function (s) {
+                    var span = document.createElement('span');
+                    span.className = 'post-job__skill-tag';
+                    span.innerHTML = Security.sanitize(s) + '<button type="button" data-skill="' + Security.sanitize(s) + '">&times;</button>';
+                    container.insertBefore(span, field);
+                });
+                container.querySelectorAll('.post-job__skill-tag button').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        skills = skills.filter(function (sk) { return sk !== btn.dataset.skill; });
+                        renderSkills();
+                    });
+                });
+                document.getElementById('pj-skill-count').textContent = skills.length;
+            }
+
+            // AI Enhance Button
+            var enhanceBtn = document.getElementById('btn-ai-enhance');
+            if (enhanceBtn) {
+                enhanceBtn.addEventListener('click', async function () {
+                    var title = document.getElementById('pj-title').value.trim();
+                    var desc = document.getElementById('pj-description').value.trim();
+
+                    if (!title && !desc) {
+                        UI.toast('Write a job title or description first, then click Enhance', 'warning');
+                        return;
+                    }
+
+                    enhanceBtn.disabled = true;
+                    enhanceBtn.innerHTML = '<div class="btn-spinner" style="width:12px;height:12px;border-width:2px"></div> Enhancing...';
+
+                    var statusEl = document.getElementById('ai-enhance-status');
+                    statusEl.style.display = '';
+                    statusEl.innerHTML = '<div class="ai-status ai-status--checking"><div class="ai-status__spinner"></div> AI is generating a professional description...</div>';
+
+                    try {
+                        var result = await Jobs.enhanceDescription(title, desc);
+
+                        if (result.enhanced && result.description) {
+                            enhancedDesc = result.description;
+
+                            // Show enhanced preview
+                            var previewEl = document.getElementById('ai-enhanced-preview');
+                            previewEl.style.display = '';
+
+                            // Simple markdown rendering
+                            var html = Security.sanitize(result.description)
+                                .replace(/## (.*)/g, '<h2>$1</h2>')
+                                .replace(/### (.*)/g, '<h3>$1</h3>')
+                                .replace(/^- (.*)/gm, '<li>$1</li>')
+                                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                .replace(/\n/g, '<br>');
+                            previewEl.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2)">' +
+                                '<span class="post-job__ai-badge"><svg style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> AI Enhanced</span>' +
+                                '<button type="button" class="btn btn-sm btn-ghost" id="btn-use-enhanced">Use This Description</button>' +
+                                '</div>' + html;
+
+                            document.getElementById('btn-use-enhanced').addEventListener('click', function () {
+                                document.getElementById('pj-description').value = result.description;
+                                document.getElementById('pj-desc-count').textContent = result.description.length;
+                                previewEl.style.display = 'none';
+                                UI.toast('AI-enhanced description applied!', 'success');
+                            });
+
+                            // Add suggested skills
+                            if (result.suggested_skills && result.suggested_skills.length > 0) {
+                                result.suggested_skills.forEach(function (s) {
+                                    if (skills.indexOf(s) === -1 && skills.length < 10) {
+                                        skills.push(s);
+                                    }
+                                });
+                                renderSkills();
+                                UI.toast('AI suggested ' + result.suggested_skills.length + ' skills for your listing', 'info');
+                            }
+
+                            statusEl.innerHTML = '<div class="ai-status ai-status--valid"><svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> AI enhancement ready! Review the improved description below.</div>';
+                        } else {
+                            statusEl.innerHTML = '<div class="ai-status ai-status--invalid"><svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ' + Security.sanitize(result.message || 'Enhancement failed') + '</div>';
+                        }
+                    } catch (err) {
+                        statusEl.innerHTML = '<div class="ai-status ai-status--invalid">AI enhancement temporarily unavailable</div>';
+                    }
+
+                    enhanceBtn.disabled = false;
+                    enhanceBtn.innerHTML = '<svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Enhance with AI';
+                });
+            }
+
+            // Preview Button (Step 1 -> Step 2)
+            document.getElementById('pj-next-btn').addEventListener('click', async function () {
+                if (!Auth.isLoggedIn()) {
+                    UI.authModal('signin');
+                    return;
+                }
+
+                var title = document.getElementById('pj-title').value.trim();
+                var company = document.getElementById('pj-company').value.trim();
+                var description = document.getElementById('pj-description').value.trim();
+
+                if (!title || title.length < 5) { UI.toast('Please enter a valid job title (at least 5 characters)', 'error'); return; }
+                if (!company) { UI.toast('Please enter a company/project name', 'error'); return; }
+                if (!description || description.length < 20) { UI.toast('Please write a job description (at least 20 characters)', 'error'); return; }
+
+                // Run AI validation
+                var validateEl = document.getElementById('ai-validate-status');
+                validateEl.style.display = '';
+                validateEl.innerHTML = '<div class="ai-status ai-status--checking"><div class="ai-status__spinner"></div> AI Gatekeeper is reviewing your listing...</div>';
+
+                var nextBtn = document.getElementById('pj-next-btn');
+                nextBtn.disabled = true;
+                nextBtn.innerHTML = '<div class="btn-spinner"></div> Validating...';
+
+                try {
+                    var validation = await Jobs.validateJob(title, description);
+
+                    if (!validation.valid) {
+                        validateEl.innerHTML = '<div class="ai-status ai-status--invalid"><svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> ' + Security.sanitize(validation.message || 'Listing was flagged by quality filter') + '</div>';
+                        nextBtn.disabled = false;
+                        nextBtn.innerHTML = 'Preview Job Listing &rarr;';
+                        return;
+                    }
+
+                    aiCategory = validation.category || 'other';
+                    validateEl.innerHTML = '<div class="ai-status ai-status--valid"><svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> AI validated! Category: ' + (Jobs.CATEGORY_LABELS[aiCategory] || 'Other') + '</div>';
+                } catch (err) {
+                    aiCategory = 'other';
+                }
+
+                // Build preview
+                var salaryMin = parseFloat(document.getElementById('pj-salary-min').value) || null;
+                var salaryMax = parseFloat(document.getElementById('pj-salary-max').value) || null;
+                var currency = document.getElementById('pj-salary-currency').value;
+                var jobType = document.getElementById('pj-job-type').value;
+                var location = document.getElementById('pj-location').value.trim();
+                var locationType = document.getElementById('pj-location-type').value;
+                var region = document.getElementById('pj-region').value;
+                var isRemote = locationType === 'remote';
+                var platforms = getCheckedValues('pj-platform');
+                var languages = getCheckedValues('pj-language');
+                var typeLabel = Jobs.JOB_TYPE_LABELS[jobType] || jobType;
+                var catLabel = Jobs.CATEGORY_LABELS[aiCategory] || 'Other';
+                var locLabel = Jobs.LOCATION_TYPE_LABELS[locationType] || locationType;
+
+                var salary = Jobs.formatSalary(salaryMin, salaryMax, currency);
+
+                // Simple markdown to HTML for preview
+                var descHTML = Security.sanitize(description)
+                    .replace(/## (.*)/g, '<h2>$1</h2>')
+                    .replace(/### (.*)/g, '<h3>$1</h3>')
+                    .replace(/^- (.*)/gm, '<li>$1</li>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\n/g, '<br>');
+
+                var skillsHTML = skills.length > 0
+                    ? '<div style="margin-top:var(--space-3)"><strong style="font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.05em;color:var(--text-tertiary)">Required Skills</strong><div style="display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:var(--space-2)">' +
+                      skills.map(function (s) { return '<span class="job-detail__skill">' + Security.sanitize(s) + '</span>'; }).join('') +
+                      '</div></div>'
+                    : '';
+
+                document.getElementById('pj-preview-content').innerHTML =
+                    '<div style="display:flex;align-items:flex-start;gap:var(--space-4);margin-bottom:var(--space-4)">' +
+                    '<div class="job-card__icon job-card__icon--' + aiCategory + '" style="width:56px;height:56px;border-radius:var(--radius-lg)">' + (Jobs.CATEGORY_ICONS[aiCategory] || Jobs.CATEGORY_ICONS.other) + '</div>' +
+                    '<div>' +
+                    '<h3 style="font-size:var(--text-lg);font-weight:var(--font-bold);margin-bottom:var(--space-1)">' + Security.sanitize(title) + '</h3>' +
+                    '<div style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-2)">' + Security.sanitize(company) + '</div>' +
+                    '<div style="display:flex;flex-wrap:wrap;gap:var(--space-2)">' +
+                    '<span class="job-card__tag job-card__tag--category">' + catLabel + '</span>' +
+                    '<span class="job-card__tag job-card__tag--' + jobType.replace(/\s+/g, '') + '">' + typeLabel + '</span>' +
+                    '<span class="job-card__tag job-card__tag--' + (isRemote ? 'remote' : locationType) + '">' + locLabel + '</span>' +
+                    (location && !isRemote ? '<span class="job-card__tag">' + Security.sanitize(location) + '</span>' : '') +
+                    (isRemote && region !== 'worldwide' ? '<span class="job-card__tag">' + (Jobs.REGION_LABELS[region] || region) + '</span>' : '') +
+                    (platforms.length > 0 ? platforms.map(function(p){ return '<span class="job-card__tag job-card__tag--platform">' + (Jobs.PLATFORM_LABELS[p] || p) + '</span>'; }).join('') : '') +
+                    (languages.length > 0 ? languages.map(function(l){ return '<span class="job-card__tag job-card__tag--lang">' + (Jobs.LANGUAGE_LABELS[l] || l) + '</span>'; }).join('') : '') +
+                    '</div></div></div>' +
+                    '<div style="font-size:var(--text-lg);font-weight:var(--font-bold);color:var(--success);margin-bottom:var(--space-4)">' + salary + '</div>' +
+                    '<div style="font-size:var(--text-sm);color:var(--text-secondary);line-height:1.7;white-space:pre-wrap">' + descHTML + '</div>' +
+                    skillsHTML;
+
+                // Show AI category badge
+                var catInfoEl = document.getElementById('pj-ai-category-info');
+                catInfoEl.style.display = '';
+                catInfoEl.innerHTML = '<div class="ai-status ai-status--valid" style="display:inline-flex">' +
+                    '<svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> ' +
+                    'AI auto-classified as <strong style="margin-left:4px">' + catLabel + '</strong></div>';
+
+                // Switch to step 2
+                document.getElementById('pj-step-1').classList.add('hidden');
+                document.getElementById('pj-step-2').classList.remove('hidden');
+                document.getElementById('pj-step-1-ind').classList.remove('submit-step--active');
+                document.getElementById('pj-step-1-ind').classList.add('submit-step--done');
+                document.getElementById('pj-step-2-ind').classList.add('submit-step--active');
+
+                nextBtn.disabled = false;
+                nextBtn.innerHTML = 'Preview Job Listing &rarr;';
+            });
+
+            // Back Button (Step 2 -> Step 1)
+            document.getElementById('pj-back-btn').addEventListener('click', function () {
+                document.getElementById('pj-step-2').classList.add('hidden');
+                document.getElementById('pj-step-1').classList.remove('hidden');
+                document.getElementById('pj-step-2-ind').classList.remove('submit-step--active');
+                document.getElementById('pj-step-1-ind').classList.remove('submit-step--done');
+                document.getElementById('pj-step-1-ind').classList.add('submit-step--active');
+            });
+
+            // Submit (Step 2 -> Step 3)
+            document.getElementById('post-job-form').addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                if (!Auth.isLoggedIn()) {
+                    UI.authModal('signin');
+                    return;
+                }
+
+                var submitBtn = document.getElementById('pj-submit-btn');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<div class="btn-spinner"></div> Submitting...';
+
+                var jobData = {
+                    title: document.getElementById('pj-title').value.trim(),
+                    company_name: document.getElementById('pj-company').value.trim(),
+                    description: document.getElementById('pj-description').value.trim(),
+                    salary_min: parseFloat(document.getElementById('pj-salary-min').value) || null,
+                    salary_max: parseFloat(document.getElementById('pj-salary-max').value) || null,
+                    salary_currency: document.getElementById('pj-salary-currency').value,
+                    job_type: document.getElementById('pj-job-type').value,
+                    location: document.getElementById('pj-location').value.trim() || '',
+                    is_remote: document.getElementById('pj-location-type').value === 'remote',
+                    location_type: document.getElementById('pj-location-type').value,
+                    region: document.getElementById('pj-region').value,
+                    platform: getCheckedValues('pj-platform'),
+                    language: getCheckedValues('pj-language'),
+                    contact_link: document.getElementById('pj-contact-link').value.trim(),
+                    contact_email: document.getElementById('pj-contact-email').value.trim(),
+                    skills_required: skills,
+                    category: aiCategory || 'other'
+                };
+
+                var result = await Jobs.submitJob(jobData);
+
+                if (result.success) {
+                    // Switch to step 3
+                    document.getElementById('pj-step-2').classList.add('hidden');
+                    document.getElementById('pj-step-3').classList.remove('hidden');
+                    document.getElementById('pj-step-2-ind').classList.remove('submit-step--active');
+                    document.getElementById('pj-step-2-ind').classList.add('submit-step--done');
+                    document.getElementById('pj-step-3-ind').classList.add('submit-step--active');
+
+                    // Show AI feedback
+                    var feedbackEl = document.getElementById('pj-ai-feedback');
+                    if (aiCategory) {
+                        feedbackEl.innerHTML = '<div class="ai-status ai-status--valid" style="display:inline-flex;margin:0 auto">' +
+                            '<svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> ' +
+                            'AI classified your job as <strong style="margin-left:4px">' + (Jobs.CATEGORY_LABELS[aiCategory] || aiCategory) + '</strong></div>';
+                    }
+                } else {
+                    UI.toast(result.message || 'Failed to post job', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg> Submit Job Listing';
+                }
+            });
+        });
+    </script>
+</Fragment>
+</BaseLayout>

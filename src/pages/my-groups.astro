@@ -1,0 +1,45 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="My Groups — GroupsMix"
+  description="Manage your submitted groups."
+  noIndex={true}
+>
+
+        <div class="container" style="max-width:var(--container-lg);padding:var(--space-8) var(--space-4)">
+            <h1 style="margin-bottom:var(--space-6)">📋 My Groups</h1>
+            <div id="my-groups">
+                <div class="skeleton" style="height:400px"></div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Wait for Auth module to fully process INITIAL_SESSION
+            // before checking login state to avoid race conditions.
+            await Auth.waitForAuth();
+            if (!Auth.isLoggedIn()) { UI.authModal('signin'); return; }
+            loadMyGroups();
+        });
+        async function loadMyGroups() {
+            if (!Auth.isLoggedIn()) { UI.authModal('signin'); return; }
+            const el = document.getElementById('my-groups');
+            try {
+                const groups = await DB.groups.getByUser(Auth.getUserId());
+                if (!groups?.length) { UI.emptyState('my-groups', '📋', 'No Groups Yet', 'Submit your first group to get started!', 'Submit a Group', '/submit'); return; }
+                el.innerHTML = '<div class="grid grid-3">' + groups.map(g => {
+                    const statusBadge = g.status === 'approved' ? '<span style="color:var(--success)">✅ Approved</span>' : g.status === 'pending' ? '<span style="color:var(--warning)">⏳ Pending</span>' : '<span style="color:var(--error)">❌ Rejected</span>';
+                    return '<div class="card"><div class="card__body" style="padding:var(--space-4)">' +
+                        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2)">' +
+                        '<strong>' + Security.sanitize(g.name) + '</strong>' + statusBadge + '</div>' +
+                        '<div style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-3)">' + Security.sanitize(g.platform || '') + ' · ' + Security.sanitize(g.category || '') + '</div>' +
+                        (g.status === 'approved' ? '<a href="/group?id=' + g.id + '" class="btn btn-primary btn-sm btn-full">View Profile</a>' : '') +
+                        '</div></div>';
+                }).join('') + '</div>';
+            } catch { el.innerHTML = '<div style="text-align:center;color:var(--text-tertiary)">Unable to load</div>'; }
+        }
+    </script>
+</Fragment>
+</BaseLayout>

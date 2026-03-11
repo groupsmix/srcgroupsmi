@@ -1,0 +1,127 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Newsletter — Stay Updated with GroupsMix"
+  description="Subscribe to the GroupsMix newsletter. Get the latest groups, community tips, and exclusive offers delivered to your inbox."
+  canonical="https://groupsmix.com/newsletter"
+  ogTitle="GroupsMix Newsletter — Stay Updated"
+  ogDescription="Get the latest groups, community tips, and exclusive offers delivered to your inbox."
+  ogUrl="https://groupsmix.com/newsletter"
+  cssFiles={["/assets/css/features.css?v=20260310b"]}
+  includeFeatures={true}
+  structuredData={"{\"@context\":\"https://schema.org\",\"@type\":\"WebPage\",\"name\":\"GroupsMix Newsletter\",\"description\":\"Subscribe to the GroupsMix newsletter for curated group recommendations and community tips.\",\"url\":\"https://groupsmix.com/newsletter\"}"}
+>
+<style is:inline>
+        .nl-page { max-width: 640px; margin: 0 auto; padding: var(--space-10) var(--space-4); text-align: center; }
+        .nl-page__hero-icon { color: var(--accent-primary); margin-bottom: var(--space-4); }
+        .nl-page__hero-icon .svg-icon { width: 64px; height: 64px; }
+        .nl-page__title { font-size: var(--text-3xl); font-weight: 800; margin-bottom: var(--space-3); line-height: 1.2; }
+        .nl-page__subtitle { font-size: var(--text-base); color: var(--text-secondary); margin-bottom: var(--space-6); line-height: 1.6; max-width: 480px; margin-left: auto; margin-right: auto; }
+        .nl-page__form { max-width: 440px; margin: 0 auto var(--space-8); }
+        .nl-page__form .form-input { text-align: center; margin-bottom: var(--space-3); }
+        .nl-page__trust { font-size: var(--text-xs); color: var(--text-tertiary); margin-top: var(--space-3); }
+        .nl-page__benefits { text-align: left; max-width: 440px; margin: 0 auto; }
+        .nl-page__benefit { display: flex; align-items: flex-start; gap: var(--space-3); margin-bottom: var(--space-4); }
+        .nl-page__benefit-icon { width: 32px; height: 32px; border-radius: var(--radius-md); background: var(--accent-primary-light); color: var(--accent-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .nl-page__benefit-icon .svg-icon { width: 16px; height: 16px; }
+        .nl-page__benefit-title { font-weight: 600; font-size: var(--text-sm); margin-bottom: 2px; }
+        .nl-page__benefit-text { font-size: var(--text-sm); color: var(--text-secondary); }
+        .nl-page__unsubscribe { margin-top: var(--space-10); padding-top: var(--space-6); border-top: 1px solid var(--border-primary); }
+        .nl-page__unsubscribe-title { font-size: var(--text-base); font-weight: 600; margin-bottom: var(--space-3); }
+    </style>
+
+
+        <div class="nl-page">
+            <div class="nl-page__hero-icon"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+            <h1 class="nl-page__title">Stay in the Loop</h1>
+            <p class="nl-page__subtitle">Get curated group recommendations, community management tips, and exclusive offers delivered straight to your inbox. No spam, ever.</p>
+
+            <div class="nl-page__form" id="nl-form-area">
+                <form id="nl-page-form">
+                    <input type="text" class="form-input" id="nl-name" placeholder="Your name (optional)">
+                    <input type="email" class="form-input" id="nl-email" placeholder="Enter your email address" required>
+                    <button type="submit" class="btn btn-primary btn-lg" style="width:100%" id="nl-submit-btn">
+                        <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;margin-right:8px"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        Subscribe Now
+                    </button>
+                </form>
+                <div class="nl-page__trust">Join 1,000+ community leaders. Unsubscribe anytime. We respect your privacy.</div>
+            </div>
+
+            <h2 style="font-size:var(--text-lg);font-weight:700;margin-bottom:var(--space-5)">What You'll Get</h2>
+            <div class="nl-page__benefits">
+                <div class="nl-page__benefit">
+                    <div class="nl-page__benefit-icon"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+                    <div><div class="nl-page__benefit-title">Curated Group Picks</div><div class="nl-page__benefit-text">Handpicked groups across all platforms, vetted for quality and engagement.</div></div>
+                </div>
+                <div class="nl-page__benefit">
+                    <div class="nl-page__benefit-icon"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></div>
+                    <div><div class="nl-page__benefit-title">Community Tips</div><div class="nl-page__benefit-text">Expert advice on growing and managing online communities effectively.</div></div>
+                </div>
+                <div class="nl-page__benefit">
+                    <div class="nl-page__benefit-icon"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+                    <div><div class="nl-page__benefit-title">Exclusive Offers</div><div class="nl-page__benefit-text">Early access to new features, promotional tools, and special discounts.</div></div>
+                </div>
+                <div class="nl-page__benefit">
+                    <div class="nl-page__benefit-icon"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></div>
+                    <div><div class="nl-page__benefit-title">Weekly Digest</div><div class="nl-page__benefit-text">A concise summary of new groups, trending communities, and platform updates.</div></div>
+                </div>
+            </div>
+
+            <!-- Unsubscribe Section -->
+            <div class="nl-page__unsubscribe">
+                <div class="nl-page__unsubscribe-title">Want to Unsubscribe?</div>
+                <form id="nl-unsub-form" style="max-width:400px;margin:0 auto">
+                    <input type="email" class="form-input" id="unsub-email" placeholder="Enter your email" required>
+                    <button type="submit" class="btn btn-ghost btn-sm" style="margin-top:var(--space-2)">Unsubscribe</button>
+                </form>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Subscribe form
+        document.getElementById('nl-page-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            var email = document.getElementById('nl-email').value.trim();
+            var name = document.getElementById('nl-name').value.trim();
+            var btn = document.getElementById('nl-submit-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="btn-spinner"></span> Subscribing...';
+            var success = await Newsletter.subscribe(email, name, 'landing_page');
+            if (success) {
+                document.getElementById('nl-form-area').innerHTML =
+                    '<div style="padding:var(--space-6);background:var(--accent-primary-light);border-radius:var(--radius-lg);text-align:center">' +
+                    '<div style="font-size:2rem;margin-bottom:var(--space-2)">&#127881;</div>' +
+                    '<div style="font-size:var(--text-lg);font-weight:700;margin-bottom:var(--space-1)">You\'re Subscribed!</div>' +
+                    '<div style="color:var(--text-secondary);font-size:var(--text-sm)">Welcome aboard. Check your inbox for a confirmation.</div>' +
+                    '</div>';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;margin-right:8px"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Subscribe Now';
+            }
+        });
+
+        // Unsubscribe form
+        document.getElementById('nl-unsub-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            var email = document.getElementById('unsub-email').value.trim();
+            var btn = this.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+            var ok = await Newsletter.unsubscribe(email);
+            if (ok) {
+                UI.toast('You have been unsubscribed.', 'success');
+                this.reset();
+            } else {
+                UI.toast('Could not unsubscribe. Check email and try again.', 'error');
+            }
+            btn.disabled = false;
+            btn.textContent = 'Unsubscribe';
+        });
+    });
+    </script>
+</Fragment>
+</BaseLayout>
