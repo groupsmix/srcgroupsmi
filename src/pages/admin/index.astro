@@ -1,0 +1,899 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Admin Dashboard &mdash; GroupsMix"
+  noIndex={true}
+>
+<style is:inline>
+        /* ── Gate screen (shown while verifying) ── */
+        .gate-screen{display:flex;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:var(--space-8)}
+        .gate-screen__spinner{width:40px;height:40px;border:3px solid var(--border-primary);border-top-color:var(--accent-primary);border-radius:50%;animation:spin .6s linear infinite;margin:0 auto var(--space-4)}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .gate-screen__text{color:var(--text-secondary);font-size:var(--text-sm)}
+
+        /* ── Admin styles (only visible after auth) ── */
+        .admin-layout{display:flex;min-height:calc(100vh - 64px)}
+        .admin-sidebar{width:240px;background:var(--bg-card);border-right:1px solid var(--border-primary);padding:var(--space-4);position:fixed;top:64px;bottom:0;overflow-y:auto;z-index:10}
+        .admin-sidebar__header{padding:var(--space-3);margin-bottom:var(--space-4);border-bottom:1px solid var(--border-primary)}
+        .admin-sidebar__title{font-size:var(--text-sm);font-weight:var(--font-bold);color:var(--accent-primary);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:var(--space-2)}
+        .admin-sidebar__section{font-size:var(--text-xs);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.08em;padding:var(--space-3) var(--space-3) var(--space-1);margin-top:var(--space-2)}
+        .admin-sidebar__link{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);font-size:var(--text-sm);text-decoration:none;color:var(--text-secondary);margin-bottom:2px;transition:all .15s ease;cursor:pointer}
+        .admin-sidebar__link:hover,.admin-sidebar__link--active{background:var(--bg-tertiary);color:var(--text-primary)}
+        .admin-sidebar__link--active{background:rgba(108,92,231,0.15);color:var(--accent-primary);font-weight:var(--font-semibold)}
+        .admin-sidebar__badge{margin-left:auto;background:var(--error);color:#fff;padding:0 6px;border-radius:var(--radius-full);font-size:10px;font-weight:var(--font-bold);min-width:18px;text-align:center;line-height:18px}
+        .admin-content{margin-left:240px;padding:var(--space-6);padding-bottom:120px;flex:1;min-width:0}
+
+        /* Stats Grid */
+        .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-4);margin-bottom:var(--space-6)}
+        .stat-card{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5);transition:transform .15s ease}
+        .stat-card:hover{transform:translateY(-1px)}
+        .stat-card__header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2)}
+        .stat-card__icon{width:40px;height:40px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:var(--text-xl)}
+        .stat-card__icon--blue{background:rgba(116,185,255,0.15);color:#74b9ff}
+        .stat-card__icon--green{background:rgba(0,184,148,0.15);color:#00b894}
+        .stat-card__icon--purple{background:rgba(108,92,231,0.15);color:#6c5ce7}
+        .stat-card__icon--orange{background:rgba(253,203,110,0.15);color:#fdcb6e}
+        .stat-card__icon--red{background:rgba(225,112,85,0.15);color:#e17055}
+        .stat-card__icon--teal{background:rgba(0,206,209,0.15);color:#00CED1}
+        .stat-card__value{font-size:var(--text-3xl);font-weight:var(--font-bold);color:var(--text-primary);line-height:1}
+        .stat-card__label{font-size:var(--text-xs);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-top:var(--space-1)}
+        .stat-card__trend{font-size:var(--text-xs);font-weight:var(--font-semibold);display:inline-flex;align-items:center;gap:2px}
+        .stat-card__trend--up{color:var(--success)}
+        .stat-card__trend--down{color:var(--error)}
+
+        /* Admin Tables */
+        .admin-table-wrap{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);overflow:hidden}
+        .admin-table-wrap__header{padding:var(--space-4);border-bottom:1px solid var(--border-primary);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--space-3)}
+        .admin-table-wrap__title{font-weight:var(--font-bold);display:flex;align-items:center;gap:var(--space-2)}
+        .admin-table{width:100%;border-collapse:collapse}
+        .admin-table th,.admin-table td{padding:var(--space-3) var(--space-4);text-align:left;border-bottom:1px solid var(--border-primary);font-size:var(--text-sm)}
+        .admin-table th{font-weight:var(--font-semibold);color:var(--text-tertiary);font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.03em;background:var(--bg-tertiary)}
+        .admin-table tr:hover{background:rgba(108,92,231,0.03)}
+        .admin-table tr:last-child td{border-bottom:none}
+
+        /* Toggle Switch */
+        .toggle-switch{position:relative;display:inline-block;width:36px;height:20px}
+        .toggle-switch input{opacity:0;width:0;height:0}
+        .toggle-switch__slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--bg-tertiary);border:1px solid var(--border-primary);transition:.2s;border-radius:20px}
+        .toggle-switch__slider::before{content:'';position:absolute;height:14px;width:14px;left:2px;bottom:2px;background:var(--text-tertiary);transition:.2s;border-radius:50%}
+        .toggle-switch input:checked+.toggle-switch__slider{background:var(--accent-primary);border-color:var(--accent-primary)}
+        .toggle-switch input:checked+.toggle-switch__slider::before{transform:translateX(16px);background:#fff}
+
+        /* GXP Editor */
+        .gxp-editor{display:inline-flex;align-items:center;gap:var(--space-1)}
+        .gxp-editor__input{width:70px;padding:2px 6px;border:1px solid var(--border-primary);border-radius:var(--radius-sm);background:var(--bg-tertiary);color:var(--text-primary);font-size:var(--text-sm);text-align:center}
+        .gxp-editor__input:focus{border-color:var(--accent-primary);outline:none}
+        .gxp-editor__btn{width:22px;height:22px;border:none;border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:opacity .15s ease}
+        .gxp-editor__btn:hover{opacity:.8}
+        .gxp-editor__btn--save{background:var(--success);color:#fff}
+
+        /* Report Queue */
+        .report-item{display:flex;gap:var(--space-3);padding:var(--space-4);border-bottom:1px solid var(--border-primary);transition:background .15s ease}
+        .report-item:hover{background:rgba(108,92,231,0.03)}
+        .report-item:last-child{border-bottom:none}
+        .report-item__priority{width:4px;border-radius:var(--radius-full);flex-shrink:0}
+        .report-item__priority--high{background:var(--error)}
+        .report-item__priority--medium{background:var(--warning)}
+        .report-item__priority--low{background:var(--info)}
+        .report-item__body{flex:1;min-width:0}
+        .report-item__title{font-weight:var(--font-semibold);font-size:var(--text-sm);margin-bottom:var(--space-1)}
+        .report-item__meta{font-size:var(--text-xs);color:var(--text-tertiary);display:flex;gap:var(--space-3);flex-wrap:wrap}
+        .report-item__actions{display:flex;gap:var(--space-2);flex-shrink:0;align-items:flex-start}
+
+        /* Mobile */
+        .admin-mobile-tabs{display:none;overflow-x:auto;white-space:nowrap;padding:var(--space-2) var(--space-4);border-bottom:1px solid var(--border-primary);background:var(--bg-card);gap:var(--space-1)}
+        .admin-mobile-tabs__btn{display:inline-block;padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);font-size:var(--text-xs);border:none;background:none;color:var(--text-secondary);cursor:pointer}
+        .admin-mobile-tabs__btn--active{background:var(--bg-tertiary);color:var(--text-primary);font-weight:var(--font-semibold)}
+        .admin-search{width:250px}
+        .admin-search input{width:100%;padding:var(--space-2) var(--space-3);border:1px solid var(--border-primary);border-radius:var(--radius-md);background:var(--bg-tertiary);color:var(--text-primary);font-size:var(--text-sm)}
+        .admin-search input:focus{border-color:var(--accent-primary);outline:none}
+
+        /* Role Select Dropdown */
+        .role-select{padding:4px 8px;border:1px solid var(--border-primary);border-radius:var(--radius-md);background:var(--bg-tertiary);color:var(--text-primary);font-size:var(--text-sm);cursor:pointer;transition:border-color .15s ease}
+        .role-select:focus{border-color:var(--accent-primary);outline:none;box-shadow:0 0 0 2px rgba(99,102,241,0.2)}
+        .role-select:hover{border-color:var(--text-tertiary)}
+
+        @media(max-width:899px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:767px){
+            .admin-sidebar{display:none}
+            .admin-mobile-tabs{display:flex}
+            .admin-content{margin-left:0}
+            .stats-grid{grid-template-columns:1fr 1fr}
+            .admin-search{width:100%}
+        }
+        @media(max-width:479px){.stats-grid{grid-template-columns:1fr}}
+    </style>
+
+
+        <div id="gate-container">
+            <div class="gate-screen">
+                <div>
+                    <div class="gate-screen__spinner"></div>
+                    <div class="gate-screen__text">Verifying access&hellip;</div>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    /* ════════════════════════════════════════════════════════════
+       SERVER-SIDE ADMIN GATE
+       ─────────────────────────────────────────────────────────
+       1. Waits for Supabase SDK + auth session to initialise
+       2. Verifies the JWT session is valid (server round-trip)
+       3. Queries the 'users' table (protected by RLS) to confirm
+          the authenticated user has role = 'admin'
+       4. ONLY on success → injects the admin UI into the DOM
+       5. On failure → redirects to homepage with zero admin
+          markup ever rendered
+       ════════════════════════════════════════════════════════════ */
+    (function () {
+        'use strict';
+
+        var MAX_WAIT_MS  = 8000;   // max time to wait for auth init
+        var POLL_MS      = 150;    // poll interval
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initAdminGate();
+        });
+
+        /* ── Step 1 & 2: Wait for Auth module to fully initialise ── */
+        /*    Auth.waitForAuth() resolves once INITIAL_SESSION has been
+              fully processed (including profile fetch), eliminating the
+              race condition where getSession() returned null before the
+              SDK finished reading the token from storage.              */
+        async function initAdminGate() {
+            try {
+                await Auth.waitForAuth();
+            } catch (e) {
+                denyAccess('Service unavailable. Please try again later.');
+                return;
+            }
+            var result = await supabaseClient.auth.getSession();
+            var session = result && result.data && result.data.session;
+            if (session) {
+                verifySession(session);
+            } else {
+                denyAccess('auth');
+            }
+        }
+
+        /* ── Step 3: Verify JWT is valid via server round-trip ──── */
+        async function verifySession(session) {
+            try {
+                // Double-check: call getUser() which verifies the
+                // JWT against the Supabase Auth server (not just local cache)
+                var userResult = await supabaseClient.auth.getUser();
+                if (!userResult || !userResult.data || !userResult.data.user) {
+                    denyAccess('auth');
+                    return;
+                }
+                verifyAdminRole(userResult.data.user.id);
+            } catch (err) {
+                console.error('Admin gate - session check failed:', err);
+                denyAccess('auth');
+            }
+        }
+
+        /* ── Step 4: Query users table to confirm admin role ───── */
+        async function verifyAdminRole(authId) {
+            try {
+                // This query goes through RLS — a non-admin cannot
+                // spoof the result because RLS policies restrict access
+                var res = await supabaseClient
+                    .from('users')
+                    .select('id, role')
+                    .eq('auth_id', authId)
+                    .maybeSingle();
+
+                if (res.error) {
+                    console.error('Admin gate - role query error:', res.error.message);
+                    denyAccess();
+                    return;
+                }
+
+                var profile = res.data;
+                if (!profile || (profile.role !== 'admin' && profile.role !== 'moderator' && profile.role !== 'editor')) {
+                    denyAccess();
+                    return;
+                }
+
+                // ── Auth verified, role = admin/moderator/editor → build admin UI ──
+                buildAdminPanel(profile.role);
+
+            } catch (err) {
+                console.error('Admin gate - role check failed:', err);
+                denyAccess();
+            }
+        }
+
+        /* ── Deny: redirect away, show nothing ─────────────────── */
+        function denyAccess(reason) {
+            if (reason === 'auth') {
+                // Show sign-in prompt (for admins who aren't logged in yet)
+                var gate = document.getElementById('gate-container');
+                if (gate) {
+                    gate.innerHTML =
+                        '<div class="gate-screen">' +
+                        '<div>' +
+                        '<div style="font-size:3rem;margin-bottom:var(--space-4)">&#128274;</div>' +
+                        '<h2 style="margin-bottom:var(--space-3)">Authentication Required</h2>' +
+                        '<p style="color:var(--text-secondary);margin-bottom:var(--space-6)">Please sign in with an admin account to continue.</p>' +
+                        '<button class="btn btn-primary" id="gate-signin-btn">&#128274; Sign In</button>' +
+                        '</div></div>';
+                    document.getElementById('gate-signin-btn').addEventListener('click', function () {
+                        UI.authModal('signin');
+                    });
+                    // Listen for successful sign-in and re-verify
+                    supabaseClient.auth.onAuthStateChange(function (event, session) {
+                        if (event === 'SIGNED_IN' && session) {
+                            gate.innerHTML = '<div class="gate-screen"><div><div class="gate-screen__spinner"></div><div class="gate-screen__text">Verifying access&hellip;</div></div></div>';
+                            verifySession(session);
+                        }
+                    });
+                }
+                return;
+            }
+            // Non-admin or error → redirect to 403 Access Denied
+            window.location.replace('/403');
+        }
+
+        /* ════════════════════════════════════════════════════════
+           Step 5: BUILD ADMIN PANEL
+           ─────────────────────────────────────────────────────
+           All admin markup and logic lives here — it is NEVER
+           present in the initial HTML source. It is only created
+           in memory after the server-verified auth check passes.
+           ════════════════════════════════════════════════════════ */
+        var activeRole = 'user'; // set after verification
+
+        function buildAdminPanel(role) {
+            activeRole = role || 'user';
+            var main = document.getElementById('main-content');
+            main.innerHTML = '';
+
+            var isAdmin = activeRole === 'admin';
+            var isMod = activeRole === 'moderator' || isAdmin;
+            var isEd = activeRole === 'editor' || isAdmin;
+
+            /* ── Create Sidebar ─── */
+            var sidebar = document.createElement('nav');
+            sidebar.className = 'admin-sidebar';
+            sidebar.id = 'admin-sidebar';
+            var sidebarHtml =
+                '<div class="admin-sidebar__header"><div class="admin-sidebar__title">&#9889; ' + (isAdmin ? 'God Mode' : isMod ? 'Moderator' : 'Editor') + '</div></div>' +
+                '<div class="admin-sidebar__section">Dashboard</div>' +
+                '<a class="admin-sidebar__link admin-sidebar__link--active" data-tab="overview">&#128202; Overview</a>' +
+                '<a class="admin-sidebar__link" data-tab="analytics">&#128200; Analytics</a>' +
+                '<div class="admin-sidebar__section">Management</div>';
+            if (isMod) sidebarHtml += '<a class="admin-sidebar__link" data-tab="pending">&#9203; Pending Groups<span class="admin-sidebar__badge" id="badge-pending" style="display:none">0</span></a>';
+            if (isMod) sidebarHtml += '<a class="admin-sidebar__link" data-tab="reports">&#128681; Reported Content<span class="admin-sidebar__badge" id="badge-reports" style="display:none">0</span></a>';
+            if (isAdmin) sidebarHtml += '<a class="admin-sidebar__link" data-tab="users">&#128101; User Management</a>';
+            if (isAdmin) sidebarHtml += '<a class="admin-sidebar__link" data-tab="payments">&#128176; Payments</a>';
+            sidebarHtml += '<div class="admin-sidebar__section">Content</div>';
+            if (isEd) sidebarHtml += '<a class="admin-sidebar__link" data-tab="articles">&#128240; Articles</a>';
+            if (isAdmin) sidebarHtml += '<a class="admin-sidebar__link" data-tab="donations">&#10084;&#65039; Donations</a>';
+            if (isAdmin) {
+                sidebarHtml += '<div class="admin-sidebar__section">System</div>';
+                sidebarHtml += '<a class="admin-sidebar__link" data-tab="config">&#9881;&#65039; Config</a>';
+            }
+            sidebar.innerHTML = sidebarHtml;
+
+            /* ── Create Mobile Tabs ─── */
+            var mobileTabs = document.createElement('div');
+            mobileTabs.className = 'admin-mobile-tabs';
+            mobileTabs.id = 'admin-mobile-tabs';
+            var mobileHtml =
+                '<button class="admin-mobile-tabs__btn admin-mobile-tabs__btn--active" data-mob-tab="overview">&#128202;</button>' +
+                '<button class="admin-mobile-tabs__btn" data-mob-tab="analytics">&#128200;</button>';
+            if (isMod) mobileHtml += '<button class="admin-mobile-tabs__btn" data-mob-tab="pending">&#9203;</button>';
+            if (isMod) mobileHtml += '<button class="admin-mobile-tabs__btn" data-mob-tab="reports">&#128681;</button>';
+            if (isAdmin) mobileHtml += '<button class="admin-mobile-tabs__btn" data-mob-tab="users">&#128101;</button>';
+            if (isAdmin) mobileHtml += '<button class="admin-mobile-tabs__btn" data-mob-tab="payments">&#128176;</button>';
+            if (isEd) mobileHtml += '<button class="admin-mobile-tabs__btn" data-mob-tab="articles">&#128240;</button>';
+            if (isAdmin) mobileHtml += '<button class="admin-mobile-tabs__btn" data-mob-tab="donations">&#10084;&#65039;</button>';
+            if (isAdmin) mobileHtml += '<button class="admin-mobile-tabs__btn" data-mob-tab="config">&#9881;&#65039;</button>';
+            mobileTabs.innerHTML = mobileHtml;
+
+            /* ── Create Content Area ─── */
+            var content = document.createElement('div');
+            content.className = 'admin-content';
+            content.id = 'admin-content';
+            content.innerHTML = '<div class="skeleton" style="height:400px"></div>';
+
+            main.appendChild(sidebar);
+            main.appendChild(mobileTabs);
+            main.appendChild(content);
+
+            /* ── Bind all admin functionality ─── */
+            initAdminPanel();
+        }
+
+        /* ════════════════════════════════════════════════════════
+           ADMIN PANEL LOGIC
+           All tab loaders, event handlers, and admin functions
+           ════════════════════════════════════════════════════════ */
+        var currentTab = 'overview';
+
+        function initAdminPanel() {
+            /* Sidebar click handlers */
+            document.querySelectorAll('.admin-sidebar__link').forEach(function (link) {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    currentTab = link.dataset.tab;
+                    document.querySelectorAll('.admin-sidebar__link').forEach(function (l) { l.classList.remove('admin-sidebar__link--active'); });
+                    link.classList.add('admin-sidebar__link--active');
+                    syncMobileTabs();
+                    loadTab();
+                });
+            });
+
+            /* Mobile tab handlers */
+            document.querySelectorAll('[data-mob-tab]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    currentTab = btn.dataset.mobTab;
+                    document.querySelectorAll('[data-mob-tab]').forEach(function (b) { b.classList.remove('admin-mobile-tabs__btn--active'); });
+                    btn.classList.add('admin-mobile-tabs__btn--active');
+                    syncSidebarTabs();
+                    loadTab();
+                });
+            });
+
+            /* Re-verify on auth state change (sign out → redirect) */
+            supabaseClient.auth.onAuthStateChange(function (event) {
+                if (event === 'SIGNED_OUT') {
+                    window.location.replace('/');
+                }
+            });
+
+            /* Load badge counts + first tab */
+            loadBadgeCounts();
+            loadTab();
+        }
+
+        function syncMobileTabs() {
+            document.querySelectorAll('[data-mob-tab]').forEach(function (b) {
+                b.classList.toggle('admin-mobile-tabs__btn--active', b.dataset.mobTab === currentTab);
+            });
+        }
+        function syncSidebarTabs() {
+            document.querySelectorAll('.admin-sidebar__link').forEach(function (l) {
+                l.classList.toggle('admin-sidebar__link--active', l.dataset.tab === currentTab);
+            });
+        }
+
+        async function loadBadgeCounts() {
+            try {
+                var pendingResult = await DB.pending.getAll({ status: 'pending' });
+                var pendingCount = (pendingResult && pendingResult.data) ? pendingResult.data.length : 0;
+                var badgePending = document.getElementById('badge-pending');
+                if (pendingCount > 0) { badgePending.textContent = pendingCount; badgePending.style.display = ''; }
+                else { badgePending.style.display = 'none'; }
+
+                var reportsResult = await DB.reports.getAll({ status: 'pending' });
+                var reportsCount = (reportsResult && reportsResult.data) ? reportsResult.data.length : 0;
+                var badgeReports = document.getElementById('badge-reports');
+                if (reportsCount > 0) { badgeReports.textContent = reportsCount; badgeReports.style.display = ''; }
+                else { badgeReports.style.display = 'none'; }
+            } catch (e) { console.error('Badge counts:', e); }
+        }
+
+        async function loadTab() {
+            var el = document.getElementById('admin-content');
+            el.innerHTML = '<div class="skeleton" style="height:400px"></div>';
+            switch (currentTab) {
+                case 'overview': await loadOverview(el); break;
+                case 'analytics': await loadAnalytics(el); break;
+                case 'pending': await loadPending(el); break;
+                case 'reports': await loadReports(el); break;
+                case 'users': await loadUsers(el); break;
+                case 'payments': await loadPayments(el); break;
+                case 'articles': await loadArticles(el); break;
+                case 'donations': await loadDonations(el); break;
+                case 'config': await loadConfig(el); break;
+            }
+        }
+
+        /* ============================
+           OVERVIEW - Real-time Stats
+           ============================ */
+        async function loadOverview(el) {
+            var stats = await DB.stats.getGlobal();
+            var s = stats || {};
+            el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-6)"><h2>&#128202; Overview</h2><button class="btn btn-sm btn-secondary" id="refresh-overview">&#8635; Refresh</button></div>' +
+                '<div class="stats-grid">' +
+                    '<div class="stat-card"><div class="stat-card__header"><div class="stat-card__icon stat-card__icon--blue">&#128101;</div><span class="stat-card__trend stat-card__trend--up">&#9650; Live</span></div><div class="stat-card__value">' + UI.formatNumber(s.total_groups || 0) + '</div><div class="stat-card__label">Total Groups</div></div>' +
+                    '<div class="stat-card"><div class="stat-card__header"><div class="stat-card__icon stat-card__icon--green">&#128100;</div></div><div class="stat-card__value">' + UI.formatNumber(s.total_users || 0) + '</div><div class="stat-card__label">Total Users</div></div>' +
+                    '<div class="stat-card"><div class="stat-card__header"><div class="stat-card__icon stat-card__icon--purple">&#128065;</div></div><div class="stat-card__value">' + UI.formatNumber(s.total_views || 0) + '</div><div class="stat-card__label">Total Views / Clicks</div></div>' +
+                    '<div class="stat-card"><div class="stat-card__header"><div class="stat-card__icon stat-card__icon--orange">&#127758;</div></div><div class="stat-card__value">' + UI.formatNumber(s.total_countries || 0) + '</div><div class="stat-card__label">Countries</div></div>' +
+                '</div>' +
+                '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-bottom:var(--space-6)">' +
+                    '<div class="stat-card" style="cursor:pointer" data-quick="pending"><div style="text-align:center"><div style="font-size:var(--text-3xl);margin-bottom:var(--space-2)">&#9203;</div><div style="font-weight:var(--font-semibold);font-size:var(--text-sm)">Review Pending</div><div style="font-size:var(--text-xs);color:var(--text-tertiary)">Groups awaiting approval</div></div></div>' +
+                    '<div class="stat-card" style="cursor:pointer" data-quick="reports"><div style="text-align:center"><div style="font-size:var(--text-3xl);margin-bottom:var(--space-2)">&#128681;</div><div style="font-weight:var(--font-semibold);font-size:var(--text-sm)">Content Reports</div><div style="font-size:var(--text-xs);color:var(--text-tertiary)">Review flagged content</div></div></div>' +
+                    '<div class="stat-card" style="cursor:pointer" data-quick="users"><div style="text-align:center"><div style="font-size:var(--text-3xl);margin-bottom:var(--space-2)">&#128101;</div><div style="font-weight:var(--font-semibold);font-size:var(--text-sm)">Manage Users</div><div style="font-size:var(--text-xs);color:var(--text-tertiary)">GXP, verification, roles</div></div></div>' +
+                '</div>';
+
+            document.getElementById('refresh-overview').addEventListener('click', function () { loadOverview(el); });
+            el.querySelectorAll('[data-quick]').forEach(function (card) {
+                card.addEventListener('click', function () {
+                    currentTab = card.dataset.quick;
+                    syncSidebarTabs();
+                    syncMobileTabs();
+                    loadTab();
+                });
+            });
+        }
+
+        /* ============================
+           ANALYTICS
+           ============================ */
+        async function loadAnalytics(el) {
+            var stats = await DB.stats.getGlobal();
+            var s = stats || {};
+            el.innerHTML = '<h2 style="margin-bottom:var(--space-6)">&#128200; Analytics</h2>' +
+                '<div class="stats-grid">' +
+                    '<div class="stat-card"><div class="stat-card__header"><div class="stat-card__icon stat-card__icon--teal">&#128196;</div></div><div class="stat-card__value">' + UI.formatNumber(s.total_views || 0) + '</div><div class="stat-card__label">Page Views</div></div>' +
+                    '<div class="stat-card"><div class="stat-card__header"><div class="stat-card__icon stat-card__icon--blue">&#128279;</div></div><div class="stat-card__value">' + UI.formatNumber(s.total_clicks || 0) + '</div><div class="stat-card__label">Link Clicks</div></div>' +
+                    '<div class="stat-card"><div class="stat-card__header"><div class="stat-card__icon stat-card__icon--green">&#128270;</div></div><div class="stat-card__value">' + UI.formatNumber(s.total_searches || 0) + '</div><div class="stat-card__label">Searches</div></div>' +
+                    '<div class="stat-card"><div class="stat-card__header"><div class="stat-card__icon stat-card__icon--purple">&#11088;</div></div><div class="stat-card__value">' + UI.formatNumber(s.total_reviews || 0) + '</div><div class="stat-card__label">Reviews</div></div>' +
+                '</div>' +
+                '<div class="admin-table-wrap"><div class="admin-table-wrap__header"><div class="admin-table-wrap__title">&#128202; Platform Distribution</div></div>' +
+                '<div style="padding:var(--space-4);color:var(--text-secondary);text-align:center;font-size:var(--text-sm)">Advanced analytics charts coming soon. Data is being collected.</div></div>';
+        }
+
+        /* ============================
+           PENDING GROUPS
+           ============================ */
+        async function loadPending(el) {
+            var result = await DB.pending.getAll({ status: 'pending' });
+            var pending = (result && result.data) ? result.data : [];
+            el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-6)"><h2>&#9203; Pending Groups (' + pending.length + ')</h2><button class="btn btn-sm btn-secondary" id="refresh-pending">&#8635; Refresh</button></div>';
+            if (!pending.length) { el.innerHTML += '<div class="empty-state"><div class="empty-state__icon">&#9989;</div><div class="empty-state__title">All Clear</div><div class="empty-state__text">No groups awaiting review.</div></div>'; return; }
+            el.innerHTML += '<div class="admin-table-wrap"><div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Name</th><th>Platform</th><th>Category</th><th>Link</th><th>Submitted</th><th>Actions</th></tr></thead><tbody>' +
+                pending.map(function (g) {
+                    return '<tr><td><strong>' + Security.sanitize(g.name) + '</strong></td><td>' + Security.sanitize(g.platform) + '</td><td>' + Security.sanitize(g.category) + '</td>' +
+                    '<td><a href="/go?id=' + g.id + '" target="_blank" style="color:var(--accent-primary);font-size:var(--text-xs)">View</a></td>' +
+                    '<td style="font-size:var(--text-xs);color:var(--text-tertiary)">' + UI.formatDate(g.submitted_at) + '</td>' +
+                    '<td><button class="btn btn-sm" style="background:var(--success);color:#fff;margin-right:4px" data-action="approve" data-id="' + g.id + '">&#9989; Approve</button><button class="btn btn-sm btn-danger" data-action="reject" data-id="' + g.id + '">&#10060; Reject</button></td></tr>';
+                }).join('') +
+                '</tbody></table></div></div>';
+
+            document.getElementById('refresh-pending').addEventListener('click', function () { loadPending(el); });
+            el.querySelectorAll('[data-action]').forEach(function (btn) {
+                btn.addEventListener('click', async function () {
+                    var action = btn.dataset.action;
+                    var id = btn.dataset.id;
+                    btn.disabled = true;
+                    btn.textContent = action === 'approve' ? 'Approving...' : 'Rejecting...';
+                    try {
+                        if (action === 'approve') {
+                            var result = await DB.pending.approve(id);
+                            if (result === true) {
+                                UI.toast('Group approved successfully!', 'success');
+                            } else if (typeof result === 'string') {
+                                UI.toast('Approve failed: ' + result, 'error');
+                            } else {
+                                UI.toast('Approve failed. Check console for details.', 'error');
+                            }
+                        } else {
+                            var result = await DB.pending.reject(id);
+                            if (result === true) {
+                                UI.toast('Group rejected', 'info');
+                            } else if (typeof result === 'string') {
+                                UI.toast('Reject failed: ' + result, 'error');
+                            } else {
+                                UI.toast('Reject failed. Check console for details.', 'error');
+                            }
+                        }
+                    } catch (err) {
+                        UI.toast('Error: ' + (err.message || 'Unknown error'), 'error');
+                    }
+                    loadBadgeCounts();
+                    loadPending(el);
+                });
+            });
+        }
+
+        /* ============================
+           REPORTED CONTENT QUEUE
+           ============================ */
+        async function loadReports(el) {
+            var result = await DB.reports.getAll({ status: 'pending' });
+            var reports = (result && result.data) ? result.data : [];
+            el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-6)"><h2>&#128681; Reported Content (' + reports.length + ')</h2><button class="btn btn-sm btn-secondary" id="refresh-reports">&#8635; Refresh</button></div>';
+
+            if (!reports.length) {
+                el.innerHTML += '<div class="empty-state"><div class="empty-state__icon">&#9989;</div><div class="empty-state__title">No Reports</div><div class="empty-state__text">All clear. No content has been reported.</div></div>';
+                return;
+            }
+
+            el.innerHTML += '<div class="admin-table-wrap"><div class="admin-table-wrap__header"><div class="admin-table-wrap__title">Queue</div><div style="font-size:var(--text-xs);color:var(--text-tertiary)">' + reports.length + ' item(s)</div></div>' +
+                reports.map(function (r) {
+                    var priority = getPriority(r.reason);
+                    return '<div class="report-item">' +
+                        '<div class="report-item__priority report-item__priority--' + priority + '"></div>' +
+                        '<div class="report-item__body">' +
+                            '<div class="report-item__title">' + Security.sanitize(r.group_name || 'Group #' + (r.group_id || '').slice(0, 8)) + '</div>' +
+                            '<div class="report-item__meta">' +
+                                '<span>Reason: <strong>' + Security.sanitize(r.reason || 'Not specified') + '</strong></span>' +
+                                '<span>Priority: <strong style="text-transform:capitalize">' + priority + '</strong></span>' +
+                                '<span>' + UI.formatDate(r.created_at) + '</span>' +
+                            '</div>' +
+                            (r.details ? '<div style="margin-top:var(--space-2);font-size:var(--text-xs);color:var(--text-secondary)">' + Security.sanitize(r.details) + '</div>' : '') +
+                        '</div>' +
+                        '<div class="report-item__actions">' +
+                            '<button class="btn btn-sm" style="background:var(--warning);color:#000" data-review="' + r.id + '">Review</button>' +
+                            '<button class="btn btn-sm btn-danger" data-dismiss="' + r.id + '">Dismiss</button>' +
+                        '</div>' +
+                    '</div>';
+                }).join('') + '</div>';
+
+            document.getElementById('refresh-reports').addEventListener('click', function () { loadReports(el); });
+            el.querySelectorAll('[data-dismiss]').forEach(function (btn) {
+                btn.addEventListener('click', async function () {
+                    await DB.reports.resolve(btn.dataset.dismiss);
+                    UI.toast('Report dismissed', 'info');
+                    loadBadgeCounts();
+                    loadReports(el);
+                });
+            });
+            el.querySelectorAll('[data-review]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    UI.toast('Opening report details...', 'info');
+                });
+            });
+        }
+
+        function getPriority(reason) {
+            if (!reason) return 'low';
+            var r = reason.toLowerCase();
+            if (r.indexOf('scam') !== -1 || r.indexOf('fraud') !== -1 || r.indexOf('illegal') !== -1 || r.indexOf('nsfw') !== -1) return 'high';
+            if (r.indexOf('spam') !== -1 || r.indexOf('fake') !== -1 || r.indexOf('misleading') !== -1) return 'medium';
+            return 'low';
+        }
+
+        /* ============================
+           USER MANAGEMENT
+           ============================ */
+        async function loadUsers(el) {
+            var result = await DB.admin.getUsers({ limit: 50 });
+            var data = (result && result.data) ? result.data : [];
+
+            el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-6);flex-wrap:wrap;gap:var(--space-3)"><h2>&#128101; User Management (' + data.length + ')</h2><div class="admin-search"><input type="text" id="user-search" placeholder="Search users..."></div></div>';
+
+            if (!data.length) { el.innerHTML += '<div class="empty-state"><div class="empty-state__icon">&#128101;</div><div class="empty-state__title">No Users</div></div>'; return; }
+
+            el.innerHTML += '<div class="admin-table-wrap"><div style="overflow-x:auto"><table class="admin-table" id="users-table"><thead><tr><th>User</th><th>Email</th><th>Role</th><th>Verified</th><th>GXP</th><th>Joined</th></tr></thead><tbody>' +
+                data.map(function (u) {
+                    var isVerified = u.is_verified || false;
+                    var gxp = u.gxp || 0;
+                    return '<tr data-user-id="' + u.id + '" data-name="' + Security.sanitize((u.display_name || '').toLowerCase()) + '" data-email="' + Security.sanitize((u.email || '').toLowerCase()) + '">' +
+                        '<td><strong>' + Security.sanitize(u.display_name || 'Anonymous') + '</strong></td>' +
+                        '<td style="font-size:var(--text-xs);color:var(--text-tertiary)">' + Security.sanitize(u.email || '') + '</td>' +
+                        '<td>' + getRoleDropdown(u.id, u.role) + '</td>' +
+                        '<td><label class="toggle-switch"><input type="checkbox"' + (isVerified ? ' checked' : '') + ' data-verify-user="' + u.id + '"><span class="toggle-switch__slider"></span></label></td>' +
+                        '<td><div class="gxp-editor"><input type="number" class="gxp-editor__input" value="' + gxp + '" data-gxp-input="' + u.id + '" min="0" max="999999"><button class="gxp-editor__btn gxp-editor__btn--save" data-gxp-save="' + u.id + '" title="Save GXP">&#10004;</button></div></td>' +
+                        '<td style="font-size:var(--text-xs);color:var(--text-tertiary)">' + UI.formatDate(u.created_at) + '</td>' +
+                    '</tr>';
+                }).join('') +
+                '</tbody></table></div></div>';
+
+            /* Search filter */
+            document.getElementById('user-search').addEventListener('input', function () {
+                var q = this.value.toLowerCase().trim();
+                document.querySelectorAll('#users-table tbody tr').forEach(function (row) {
+                    var name = row.dataset.name || '';
+                    var email = row.dataset.email || '';
+                    row.style.display = (!q || name.indexOf(q) !== -1 || email.indexOf(q) !== -1) ? '' : 'none';
+                });
+            });
+
+            /* Verification toggles */
+            el.querySelectorAll('[data-verify-user]').forEach(function (checkbox) {
+                checkbox.addEventListener('change', async function () {
+                    var userId = checkbox.dataset.verifyUser;
+                    var verified = checkbox.checked;
+                    try {
+                        await supabaseClient.from('profiles').update({ is_verified: verified }).eq('id', userId);
+                        UI.toast(verified ? 'User verified!' : 'Verification removed', verified ? 'success' : 'info');
+                    } catch (err) {
+                        console.error('Verify toggle:', err);
+                        UI.toast('Failed to update verification', 'error');
+                        checkbox.checked = !verified;
+                    }
+                });
+            });
+
+            /* GXP save buttons */
+            el.querySelectorAll('[data-gxp-save]').forEach(function (btn) {
+                btn.addEventListener('click', async function () {
+                    var userId = btn.dataset.gxpSave;
+                    var input = document.querySelector('[data-gxp-input="' + userId + '"]');
+                    var newGxp = parseInt(input.value) || 0;
+                    if (newGxp < 0) { UI.toast('GXP cannot be negative', 'error'); return; }
+                    try {
+                        await supabaseClient.from('profiles').update({ gxp: newGxp }).eq('id', userId);
+                        UI.toast('GXP updated to ' + newGxp, 'success');
+                    } catch (err) {
+                        console.error('GXP update:', err);
+                        UI.toast('Failed to update GXP', 'error');
+                    }
+                });
+            });
+
+            /* Role change dropdowns (admin only) */
+            el.querySelectorAll('[data-role-user]').forEach(function (select) {
+                select.addEventListener('change', async function () {
+                    var userId = select.dataset.roleUser;
+                    var newRole = select.value;
+                    var originalRole = select.dataset.originalRole;
+                    if (newRole === originalRole) return;
+                    if (!confirm('Change this user\'s role to "' + newRole + '"?')) {
+                        select.value = originalRole;
+                        return;
+                    }
+                    var ok = await DB.admin.updateUserRole(userId, newRole);
+                    if (ok) {
+                        select.dataset.originalRole = newRole;
+                        UI.toast('Role updated to ' + newRole, 'success');
+                    } else {
+                        select.value = originalRole;
+                    }
+                });
+            });
+        }
+
+        function getRoleBadge(role) {
+            if (role === 'admin') return '<span class="role-badge role-badge--admin">&#128081; Admin</span>';
+            if (role === 'moderator') return '<span class="role-badge role-badge--moderator">&#128737;&#65039; Mod</span>';
+            if (role === 'editor') return '<span class="role-badge role-badge--editor">&#9998;&#65039; Editor</span>';
+            return '<span class="role-badge role-badge--user">User</span>';
+        }
+
+        function getRoleDropdown(userId, currentRole) {
+            if (activeRole !== 'admin') return getRoleBadge(currentRole);
+            return '<select class="role-select" data-role-user="' + userId + '" data-original-role="' + currentRole + '">' +
+                '<option value="user"' + (currentRole === 'user' ? ' selected' : '') + '>User</option>' +
+                '<option value="editor"' + (currentRole === 'editor' ? ' selected' : '') + '>Editor</option>' +
+                '<option value="moderator"' + (currentRole === 'moderator' ? ' selected' : '') + '>Moderator</option>' +
+                '<option value="admin"' + (currentRole === 'admin' ? ' selected' : '') + '>Admin</option>' +
+            '</select>';
+        }
+
+        /* ============================
+           PAYMENTS
+           ============================ */
+        async function loadPayments(el) {
+            var result = await DB.payments.getAll();
+            var payments = (result && result.data) ? result.data : [];
+            el.innerHTML = '<h2 style="margin-bottom:var(--space-6)">&#128176; Payments (' + payments.length + ')</h2>';
+            if (!payments.length) { el.innerHTML += '<div class="empty-state"><div class="empty-state__icon">&#128176;</div><div class="empty-state__title">No Payments</div></div>'; return; }
+
+            el.innerHTML += '<div class="admin-table-wrap"><div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>User</th><th>Service</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>' +
+                payments.map(function (p) {
+                    var statusIcon = p.status === 'verified' ? '&#9989;' : p.status === 'rejected' ? '&#10060;' : '&#9203;';
+                    return '<tr><td style="font-size:var(--text-xs)">' + Security.sanitize((p.user_id || '').slice(0, 8)) + '...</td>' +
+                        '<td>' + Security.sanitize(p.service || '') + '</td>' +
+                        '<td style="font-weight:var(--font-semibold)">' + UI.formatCurrency(p.amount) + '</td>' +
+                        '<td>' + statusIcon + ' ' + Security.sanitize(p.status) + '</td>' +
+                        '<td style="font-size:var(--text-xs);color:var(--text-tertiary)">' + UI.formatDate(p.created_at) + '</td>' +
+                        (p.status === 'pending' ?
+                            '<td><button class="btn btn-sm" style="background:var(--success);color:#fff;margin-right:4px" data-verify="' + p.id + '">&#9989;</button><button class="btn btn-sm btn-danger" data-deny="' + p.id + '">&#10060;</button></td>' :
+                            '<td style="color:var(--text-tertiary)">&mdash;</td>') +
+                    '</tr>';
+                }).join('') +
+                '</tbody></table></div></div>';
+
+            el.querySelectorAll('[data-verify]').forEach(function (btn) {
+                btn.addEventListener('click', async function () { await DB.payments.verify(btn.dataset.verify); UI.toast('Payment verified', 'success'); loadPayments(el); });
+            });
+            el.querySelectorAll('[data-deny]').forEach(function (btn) {
+                btn.addEventListener('click', async function () { await DB.payments.reject(btn.dataset.deny); UI.toast('Payment denied', 'info'); loadPayments(el); });
+            });
+        }
+
+        /* ============================
+           ARTICLES
+           ============================ */
+        async function loadArticles(el) {
+            el.innerHTML = '<h2 style="margin-bottom:var(--space-6)">&#128240; Articles</h2><button class="btn btn-primary btn-sm" id="new-article" style="margin-bottom:var(--space-4)">+ New Article</button><div id="articles-table"></div>';
+            document.getElementById('new-article').addEventListener('click', function () { openArticleEditor(); });
+
+            var result = await DB.articles.getAll();
+            var data = (result && result.data) ? result.data : [];
+            if (!data.length) { document.getElementById('articles-table').innerHTML = '<div style="color:var(--text-tertiary)">No articles yet</div>'; return; }
+
+            document.getElementById('articles-table').innerHTML = '<div class="admin-table-wrap"><div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Title</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>' +
+                data.map(function (a) {
+                    return '<tr><td><strong>' + Security.sanitize(a.title) + '</strong></td>' +
+                        '<td>' + (a.status === 'published' ? '<span style="color:var(--success)">&#9989; Published</span>' : '<span style="color:var(--text-tertiary)">&#128221; Draft</span>') + '</td>' +
+                        '<td style="font-size:var(--text-xs);color:var(--text-tertiary)">' + UI.formatDate(a.created_at) + '</td>' +
+                        '<td><button class="btn btn-sm btn-secondary" data-edit-article="' + a.id + '">Edit</button></td></tr>';
+                }).join('') +
+                '</tbody></table></div></div>';
+
+            document.querySelectorAll('[data-edit-article]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var article = data.find(function (a) { return a.id === btn.dataset.editArticle; });
+                    openArticleEditor(article);
+                });
+            });
+        }
+
+        function openArticleEditor(article) {
+            UI.modal({
+                title: article ? 'Edit Article' : 'New Article',
+                content: '<div class="form-group"><label class="form-label">Title</label><input class="form-input" id="art-title" value="' + Security.sanitize(article ? article.title || '' : '') + '"></div>' +
+                    '<div class="form-group"><label class="form-label">Slug</label><input class="form-input" id="art-slug" value="' + Security.sanitize(article ? article.slug || '' : '') + '"></div>' +
+                    '<div class="form-group"><label class="form-label">Excerpt</label><textarea class="form-textarea" id="art-excerpt" style="min-height:60px">' + Security.sanitize(article ? article.excerpt || '' : '') + '</textarea></div>' +
+                    '<div class="form-group"><label class="form-label">Content (HTML)</label><textarea class="form-textarea" id="art-content" style="min-height:160px">' + Security.sanitize(article ? article.content || '' : '') + '</textarea></div>' +
+                    '<div class="form-group"><label class="form-label">Author Name</label><input class="form-input" id="art-author" value="' + Security.sanitize(article ? article.author_name || '' : '') + '"></div>' +
+                    '<div class="form-group"><label><input type="checkbox" id="art-published"' + (article && article.status === 'published' ? ' checked' : '') + '> Published</label></div>',
+                footer: '<button class="btn btn-secondary" id="art-cancel">Cancel</button><button class="btn btn-primary" id="art-save">Save</button>',
+                size: 'large'
+            });
+            document.getElementById('art-cancel').addEventListener('click', UI.closeModal);
+            document.getElementById('art-save').addEventListener('click', async function () {
+                var d = {
+                    title: document.getElementById('art-title').value,
+                    slug: document.getElementById('art-slug').value,
+                    excerpt: document.getElementById('art-excerpt').value,
+                    content: document.getElementById('art-content').value,
+                    author_name: document.getElementById('art-author').value,
+                    published: document.getElementById('art-published').checked
+                };
+                if (article) { await DB.articles.update(article.id, d); }
+                else { await DB.articles.create(d); }
+                UI.toast('Article saved!', 'success');
+                UI.closeModal();
+                loadTab();
+            });
+        }
+
+        /* ============================
+           DONATIONS
+           ============================ */
+        async function loadDonations(el) {
+            el.innerHTML = '<h2 style="margin-bottom:var(--space-6)">&#10084;&#65039; Donations</h2>';
+            try {
+                var result = await supabaseClient.from('donations').select('*,profiles(display_name,email)').order('created_at', { ascending: false }).limit(50);
+                var data = (result && result.data) ? result.data : [];
+
+                if (!data.length) { el.innerHTML += '<div style="color:var(--text-tertiary)">No donations yet</div>'; return; }
+
+                var totalUsd = data.reduce(function (s, d) { return s + (d.amount_usd || 0); }, 0);
+                el.innerHTML += '<div class="stats-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:var(--space-4)">' +
+                    '<div class="stat-card"><div class="stat-card__value">$' + totalUsd.toFixed(2) + '</div><div class="stat-card__label">Total Donations</div></div>' +
+                    '<div class="stat-card"><div class="stat-card__value">' + data.length + '</div><div class="stat-card__label">Submissions</div></div>' +
+                '</div>';
+
+                el.innerHTML += '<div class="admin-table-wrap"><div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>User</th><th>Crypto</th><th>TX Hash</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>' +
+                    data.map(function (d) {
+                        var name = (d.profiles && d.profiles.display_name) ? Security.sanitize(d.profiles.display_name) : Security.sanitize((d.user_id || '').slice(0, 8));
+                        var statusIcon = d.status === 'verified' ? '&#9989;' : d.status === 'rejected' ? '&#10060;' : '&#9203;';
+                        return '<tr><td>' + name + '</td><td style="text-transform:uppercase">' + Security.sanitize(d.crypto || '') + '</td>' +
+                            '<td style="font-size:var(--text-xs);max-width:120px;overflow:hidden;text-overflow:ellipsis" title="' + Security.sanitize(d.tx_hash || '') + '">' + Security.sanitize((d.tx_hash || '').slice(0, 16)) + '...</td>' +
+                            '<td style="font-weight:var(--font-semibold)">$' + (d.amount_usd || 0).toFixed(2) + '</td>' +
+                            '<td>' + statusIcon + ' ' + Security.sanitize(d.status || 'pending') + '</td>' +
+                            (d.status === 'pending' ?
+                                '<td><button class="btn btn-sm" style="background:var(--success);color:#fff;margin-right:4px" data-don-verify="' + d.id + '">&#9989;</button><button class="btn btn-sm btn-danger" data-don-reject="' + d.id + '">&#10060;</button></td>' :
+                                '<td>&mdash;</td>') +
+                        '</tr>';
+                    }).join('') +
+                    '</tbody></table></div></div>';
+
+                el.querySelectorAll('[data-don-verify]').forEach(function (btn) {
+                    btn.addEventListener('click', async function () {
+                        await supabaseClient.from('donations').update({ status: 'verified' }).eq('id', btn.dataset.donVerify);
+                        UI.toast('Donation verified', 'success');
+                        loadDonations(el);
+                    });
+                });
+                el.querySelectorAll('[data-don-reject]').forEach(function (btn) {
+                    btn.addEventListener('click', async function () {
+                        await supabaseClient.from('donations').update({ status: 'rejected' }).eq('id', btn.dataset.donReject);
+                        UI.toast('Donation rejected', 'info');
+                        loadDonations(el);
+                    });
+                });
+            } catch (err) {
+                console.error('Donations:', err);
+                el.innerHTML += '<div style="color:var(--text-tertiary)">Error loading donations</div>';
+            }
+        }
+
+        /* ============================
+           CONFIG
+           ============================ */
+        async function loadConfig(el) {
+            var config = await DB.config.getSettings();
+            var c = config || {};
+
+            // Load maintenance settings from site_settings table
+            var maintenanceData = { maintenance_mode: false, store_locked: false, maintenance_message: '' };
+            try {
+                var { data: msData } = await supabaseClient.from('site_settings').select('*').eq('id', 1).single();
+                if (msData) maintenanceData = msData;
+            } catch (e) { console.warn('site_settings not available:', e.message); }
+
+            el.innerHTML = '<h2 style="margin-bottom:var(--space-6)">&#9881;&#65039; Site Config</h2>' +
+
+                /* ── Maintenance Mode Section ── */
+                '<div class="admin-table-wrap" style="padding:var(--space-6);margin-bottom:var(--space-6)">' +
+                '<div class="admin-table-wrap__header" style="margin-bottom:var(--space-4)"><div class="admin-table-wrap__title">&#128736; Maintenance Mode</div></div>' +
+                '<div style="display:grid;gap:var(--space-4)">' +
+
+                    /* Toggle 1: Full Site Maintenance */
+                    '<div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-3) var(--space-4);background:var(--bg-tertiary);border-radius:var(--radius-md)">' +
+                        '<div><div style="font-weight:var(--font-semibold);font-size:var(--text-sm)">&#128683; Full Site Maintenance</div><div style="font-size:var(--text-xs);color:var(--text-tertiary)">Redirect all visitors to maintenance page</div></div>' +
+                        '<label class="toggle-switch"><input type="checkbox" id="maint-site-toggle"' + (maintenanceData.maintenance_mode ? ' checked' : '') + '><span class="toggle-switch__slider"></span></label>' +
+                    '</div>' +
+
+                    /* Toggle 2: Store Lock */
+                    '<div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-3) var(--space-4);background:var(--bg-tertiary);border-radius:var(--radius-md)">' +
+                        '<div><div style="font-weight:var(--font-semibold);font-size:var(--text-sm)">&#128274; Lock Store</div><div style="font-size:var(--text-xs);color:var(--text-tertiary)">Block access to the store page only</div></div>' +
+                        '<label class="toggle-switch"><input type="checkbox" id="maint-store-toggle"' + (maintenanceData.store_locked ? ' checked' : '') + '><span class="toggle-switch__slider"></span></label>' +
+                    '</div>' +
+
+                    /* Maintenance Message */
+                    '<div class="form-group" style="margin-bottom:0"><label class="form-label">Maintenance Message</label><input class="form-input" id="maint-message" value="' + Security.sanitize(maintenanceData.maintenance_message || '') + '" placeholder="We are updating the site. Please check back soon."></div>' +
+
+                '</div></div>' +
+
+                /* ── General Config Section ── */
+                '<div class="admin-table-wrap" style="padding:var(--space-6)">' +
+                '<div class="admin-table-wrap__header" style="margin-bottom:var(--space-4)"><div class="admin-table-wrap__title">&#9881;&#65039; General Config</div></div>' +
+                '<div class="form-group"><label class="form-label">Announcement Text</label><input class="form-input" id="cfg-announcement" value="' + Security.sanitize(c.announcement_text || '') + '"></div>' +
+                '<div class="form-group"><label class="form-label">Announcement Link</label><input class="form-input" id="cfg-announcement-link" value="' + Security.sanitize(c.announcement_link || '') + '"></div>' +
+                '<button class="btn btn-primary" id="save-config">Save Config</button>' +
+                '</div>';
+
+            /* ── Maintenance Toggle Handlers (instant update) ── */
+            document.getElementById('maint-site-toggle').addEventListener('change', async function () {
+                var val = this.checked;
+                try {
+                    await supabaseClient.from('site_settings').update({ maintenance_mode: val, updated_at: new Date().toISOString() }).eq('id', 1);
+                    UI.toast(val ? 'Maintenance mode ENABLED' : 'Maintenance mode disabled', val ? 'warning' : 'success');
+                } catch (err) {
+                    UI.toast('Failed to update maintenance mode', 'error');
+                    this.checked = !val;
+                }
+            });
+
+            document.getElementById('maint-store-toggle').addEventListener('change', async function () {
+                var val = this.checked;
+                try {
+                    await supabaseClient.from('site_settings').update({ store_locked: val, updated_at: new Date().toISOString() }).eq('id', 1);
+                    UI.toast(val ? 'Store LOCKED' : 'Store unlocked', val ? 'warning' : 'success');
+                } catch (err) {
+                    UI.toast('Failed to update store lock', 'error');
+                    this.checked = !val;
+                }
+            });
+
+            document.getElementById('maint-message').addEventListener('change', async function () {
+                var msg = this.value.trim();
+                if (!msg) return;
+                try {
+                    await supabaseClient.from('site_settings').update({ maintenance_message: msg, updated_at: new Date().toISOString() }).eq('id', 1);
+                    UI.toast('Maintenance message updated', 'success');
+                } catch (err) {
+                    UI.toast('Failed to update message', 'error');
+                }
+            });
+
+            /* ── General Config Save ── */
+            document.getElementById('save-config').addEventListener('click', async function () {
+                await DB.config.updateSettings({
+                    announcement_text: document.getElementById('cfg-announcement').value,
+                    announcement_link: document.getElementById('cfg-announcement-link').value
+                });
+                UI.toast('Config saved!', 'success');
+            });
+        }
+
+    })();
+    </script>
+</Fragment>
+</BaseLayout>

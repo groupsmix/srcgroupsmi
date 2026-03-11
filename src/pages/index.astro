@@ -1,0 +1,1800 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="GroupsMix — Discover Trusted Social Media Groups"
+  description="Find, join, and promote the best WhatsApp, Telegram, Discord groups and more. Verified communities with trust scores."
+  canonical="https://groupsmix.com/"
+  ogTitle="GroupsMix — Discover Trusted Social Media Groups"
+  ogDescription="Find, join, and promote the best WhatsApp, Telegram, Discord groups and more. Verified communities with trust scores."
+  ogUrl="https://groupsmix.com/"
+  twitterTitle="GroupsMix — Discover Trusted Social Media Groups"
+  twitterDescription="Find, join, and promote the best WhatsApp, Telegram, Discord groups and more."
+  cssFiles={["/assets/css/features.css?v=20260310b"]}
+  includeFeatures={true}
+  structuredData={"{\"@context\":\"https://schema.org\",\"@type\":\"WebSite\",\"name\":\"GroupsMix\",\"url\":\"https://groupsmix.com\",\"description\":\"Discover Trusted Social Media Groups\",\"potentialAction\":{\"@type\":\"SearchAction\",\"target\":\"https://groupsmix.com/search?q={search_term_string}\",\"query-input\":\"required name=search_term_string\"}}"}
+>
+<style is:inline>
+        /* ─── Hero Section (Premium Redesign) ─── */
+        .hero {
+            position: relative;
+            min-height: auto;
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+            text-align: center;
+            padding: var(--space-4) 0 var(--space-3);
+        }
+
+        .hero-gradient {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60%;
+            height: 100%;
+            background: none;
+            pointer-events: none;
+        }
+
+        .hero-gradient-left {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 40%;
+            height: 60%;
+            background: none;
+            pointer-events: none;
+        }
+
+        .hero > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero__badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            background: var(--bg-card);
+            color: rgba(255,255,255,0.7);
+            padding: var(--space-1) var(--space-3);
+            border-radius: var(--radius-full);
+            font-size: var(--text-xs);
+            font-weight: var(--font-medium);
+            margin-bottom: var(--space-2);
+            box-shadow: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .hero__title {
+            font-family: var(--font-display);
+            /* Issue #19 fix: static fallback before clamp() for Safari < 13.1 */
+            font-size: 1.75rem;
+            font-size: clamp(1.5rem, 3vw, 2.25rem);
+            font-weight: var(--font-extrabold);
+            line-height: var(--leading-tight);
+            letter-spacing: -0.02em;
+            margin-bottom: var(--space-2);
+            color: var(--text-primary);
+            animation: fadeIn 0.5s ease 0.1s both;
+        }
+
+        .hero__title-highlight {
+            color: rgba(255,255,255,0.60);
+            -webkit-text-fill-color: rgba(255,255,255,0.60);
+        }
+
+        .hero__subtitle {
+            color: var(--text-secondary);
+            /* Issue #19 fix: static fallback before clamp() for Safari < 13.1 */
+            font-size: 0.9rem;
+            font-size: clamp(0.85rem, 1.4vw, 0.95rem);
+            max-width: 480px;
+            margin: 0 auto var(--space-4);
+            line-height: var(--leading-relaxed);
+            animation: fadeIn 0.5s ease 0.2s both;
+        }
+
+        .hero__search {
+            max-width: 500px;
+            margin: 0 auto var(--space-3);
+            position: relative;
+            animation: fadeIn 0.5s ease 0.25s both;
+        }
+
+        .hero__search-input {
+            width: 100%;
+            height: 48px;
+            padding: 0 52px 0 20px;
+            border-radius: var(--radius-full);
+            font-size: var(--text-base);
+            background: var(--bg-card);
+            border: 2px solid var(--border-primary);
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .hero__search-input:focus {
+            border-color: rgba(255,255,255,0.20);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.04), var(--shadow-md);
+        }
+
+        .hero__search-btn {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-full);
+            background: rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            font-size: var(--text-lg);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: none;
+        }
+
+        .hero__search-btn:hover {
+            transform: translateY(-50%) scale(1.03);
+            background: rgba(255,255,255,0.18);
+            color: #fff;
+            box-shadow: none;
+        }
+
+        .hero__search-btn:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        /* ─── Hero Platforms Scroll Container ─── */
+        .hero-platforms-scroll {
+            max-width: 100%;
+            margin: 0 auto var(--space-6);
+            animation: fadeIn 0.5s ease 0.3s both;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .hero-platforms-scroll .scroll-arrow {
+            width: 36px;
+            height: 36px;
+            font-size: var(--text-base);
+            opacity: 0.7;
+        }
+
+        .hero-platforms-scroll .scroll-arrow--left { left: -18px; }
+        .hero-platforms-scroll .scroll-arrow--right { right: -18px; }
+
+        /* ─── Platform Chips — Pure CSS Horizontal Scroll ─── */
+        .hero__platforms {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: var(--space-3);
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+            padding: var(--space-2) var(--space-4);
+            scroll-behavior: smooth;
+        }
+
+        .hero__platforms > * {
+            scroll-snap-align: center;
+            flex-shrink: 0;
+        }
+
+        .hero__platforms::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hero__platform-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-full);
+            padding: var(--space-2) var(--space-4);
+            font-size: var(--text-sm);
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: var(--font-medium);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .hero__platform-btn:hover {
+            border-color: rgba(255,255,255,0.20);
+            color: rgba(255,255,255,0.85);
+            background: rgba(255,255,255,0.06);
+            transform: translateY(-1px);
+            box-shadow: none;
+        }
+
+        .hero__platform-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        /* ─── Compact Stats Bar ─── */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            /* Issue #17 fix: gap with margin fallback */
+            gap: 10px;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto var(--space-3);
+            animation: fadeIn 0.5s ease 0.35s both;
+        }
+
+        /* Issue #17 fix: margin-based gap fallback for stats-bar */
+        .stats-bar > * + * {
+            margin-left: 10px;
+        }
+        @supports (gap: 1px) {
+            .stats-bar > * + * {
+                margin-left: 0;
+            }
+        }
+
+        .stats-bar__item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-3) var(--space-4);
+            /* Issue #18 fix: solid background fallback for browsers without backdrop-filter */
+            background: rgba(var(--stats-card-rgb, 22, 22, 31), 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        [data-theme="light"] .stats-bar__item {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .stats-bar__item:hover {
+            transform: translateY(-1px);
+            box-shadow: none;
+            border-color: rgba(255,255,255,0.12);
+        }
+
+        .stats-bar__icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--text-base);
+            flex-shrink: 0;
+        }
+
+        .stats-bar__icon--groups { background: rgba(255,255,255,0.06); }
+        .stats-bar__icon--users { background: rgba(255,255,255,0.06); }
+
+        .stats-bar__info { text-align: left; }
+
+        .stats-bar__value {
+            font-family: var(--font-display);
+            font-size: var(--text-lg);
+            font-weight: var(--font-extrabold);
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .stats-bar__label {
+            font-size: 0.65rem;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 2px;
+            font-weight: var(--font-medium);
+        }
+
+        /* ─── Section Styles ───────────────────── */
+        @supports (backdrop-filter: blur(1px)) {
+            .stats-bar__item {
+                background: rgba(var(--stats-card-rgb, 22, 22, 31), 0.6);
+            }
+        }
+
+        .home-section {
+            /* Issue #19 fix: static fallback before clamp() */
+            padding: 1.5rem 0;
+            padding: clamp(1.25rem, 2.5vw, 2rem) 0;
+        }
+
+        .home-section__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-4);
+        }
+
+        /* ─── Alternating Section Backgrounds ─── */
+        .home-section--alt {
+            background: var(--bg-secondary);
+            margin-left: calc(-50vw + 50%);
+            margin-right: calc(-50vw + 50%);
+            padding-left: calc(50vw - 50%);
+            padding-right: calc(50vw - 50%);
+        }
+
+        /* ─── Section Divider ─── */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-primary) 20%, var(--border-primary) 80%, transparent);
+            margin: var(--space-2) 0;
+        }
+
+        /* ─── Browse Sections Group ─── */
+        .browse-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-4);
+        }
+
+        .browse-group .home-section {
+            padding: var(--space-3) 0;
+        }
+
+        .browse-group .home-section__header {
+            margin-bottom: var(--space-3);
+        }
+
+        /* ─── Quick Access — Uniform Muted Style ─── */
+        .quick-access__card--marketplace .quick-access__icon,
+        .quick-access__card--store .quick-access__icon,
+        .quick-access__card--jobs .quick-access__icon,
+        .quick-access__card--tools .quick-access__icon,
+        .quick-access__card--submit .quick-access__icon,
+        .quick-access__card--promote .quick-access__icon { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.55); }
+
+        .quick-access__card--marketplace:hover,
+        .quick-access__card--store:hover,
+        .quick-access__card--jobs:hover,
+        .quick-access__card--tools:hover,
+        .quick-access__card--submit:hover,
+        .quick-access__card--promote:hover { background: rgba(255,255,255,0.04); }
+
+        .home-section__title {
+            font-family: var(--font-display);
+            font-size: var(--text-2xl);
+            font-weight: var(--font-extrabold);
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            letter-spacing: -0.01em;
+        }
+
+        .home-section__link {
+            color: rgba(255,255,255,0.55);
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: var(--space-1);
+            transition: all 0.3s ease;
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-full);
+            background: rgba(255,255,255,0.06);
+        }
+
+        .home-section__link:hover {
+            background: rgba(255,255,255,0.10);
+            color: rgba(255,255,255,0.85);
+            gap: var(--space-2);
+        }
+
+        /* ─── Icon Bar (slim horizontal action row) ─── */
+        .icon-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-8);
+            margin-bottom: var(--space-3);
+            animation: slideUp 0.8s ease 0.55s both;
+        }
+
+        .icon-bar__item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: rgba(255,255,255,0.55);
+            transition: all 0.25s ease;
+        }
+
+        .icon-bar__item:hover {
+            color: rgba(255,255,255,0.85);
+            transform: translateY(-3px);
+        }
+
+        .icon-bar__icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.06);
+            border: 1.5px solid rgba(255,255,255,0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .icon-bar__icon svg {
+            width: 20px;
+            height: 20px;
+            color: rgba(255,255,255,0.55);
+        }
+
+        .icon-bar__item:hover .icon-bar__icon {
+            background: rgba(255,255,255,0.10);
+            border-color: rgba(255,255,255,0.18);
+            box-shadow: none;
+            transform: translateY(-2px);
+        }
+
+        .icon-bar__label {
+            font-size: 0.65rem;
+            font-weight: var(--font-semibold);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: rgba(255,255,255,0.45);
+            opacity: 0.85;
+        }
+
+        .icon-bar__item:hover .icon-bar__label {
+            opacity: 1;
+            color: rgba(255,255,255,0.70);
+        }
+
+        /* ─── Category Ribbon (converted from grid) ─── */
+        .category-ribbon {
+            display: flex;
+            flex-wrap: nowrap;
+            /* Issue #17 fix: gap with margin fallback */
+            gap: var(--space-3);
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding: var(--space-2) 0;
+        }
+
+        .category-ribbon::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Issue #17 fix: margin-based gap fallback for category-ribbon */
+        .category-ribbon > * + * {
+            margin-left: var(--space-3);
+        }
+        @supports (gap: 1px) {
+            .category-ribbon > * + * {
+                margin-left: 0;
+            }
+        }
+
+        /* ─── View All Chip ────────────────────── */
+        .browse-ribbon__chip--view-all {
+            background: var(--gradient-accent);
+            color: #fff;
+            border: none;
+            font-weight: var(--font-bold);
+        }
+
+        .browse-ribbon__chip--view-all:hover {
+            color: #fff;
+            background: var(--accent-primary-hover);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+        }
+
+        /* ─── Country Flag Circular Icon ─── */
+        .browse-ribbon__chip-flag {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--text-lg);
+            background: var(--bg-tertiary);
+            flex-shrink: 0;
+            line-height: 1;
+            overflow: hidden;
+        }
+
+        /* ─── Stats — No Pulsing Animation ─── */
+        .stats-bar__item {
+            animation: none;
+        }
+
+        .stats-bar__icon {
+            transition: transform 0.3s ease;
+        }
+
+        .stats-bar__item:hover .stats-bar__icon {
+            transform: scale(1.15) rotate(-5deg);
+        }
+
+        /* ─── Browse Ribbons — Horizontal Scrollable ─── */
+        .browse-ribbon {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: var(--space-3);
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding: var(--space-2) 0;
+            scroll-snap-type: x mandatory;
+        }
+
+        .browse-ribbon::-webkit-scrollbar {
+            display: none;
+        }
+
+        .browse-ribbon > * {
+            scroll-snap-align: start;
+        }
+
+        /* ─── Scroll Container with Navigation Arrows ─── */
+        .scroll-container {
+            position: relative;
+        }
+
+        .scroll-container:hover .scroll-arrow {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .scroll-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            user-select: none;
+        }
+
+        [data-theme="light"] .scroll-arrow {
+            background: rgba(255, 255, 255, 0.65);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .scroll-arrow:hover {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transform: translateY(-50%) scale(1.08);
+        }
+
+        .scroll-arrow:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        .scroll-arrow--left {
+            left: -6px;
+        }
+
+        .scroll-arrow--right {
+            right: -6px;
+        }
+
+        .browse-ribbon__chip {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-3) var(--space-5);
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-size: var(--text-sm);
+            font-weight: var(--font-medium);
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .browse-ribbon__chip:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            background: var(--accent-primary-light);
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.12);
+        }
+
+        .browse-ribbon__chip:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .browse-ribbon__chip-icon {
+            font-size: var(--text-xl);
+            line-height: 1;
+        }
+
+        .browse-ribbon__chip-name {
+            font-weight: var(--font-semibold);
+        }
+
+        /* ─── Articles Grid — Horizontal Scrollable ─── */
+        .articles-grid {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: var(--space-5);
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding: var(--space-2) 0;
+            scroll-snap-type: x mandatory;
+        }
+
+        .articles-grid::-webkit-scrollbar {
+            display: none;
+        }
+
+        .articles-grid > * {
+            scroll-snap-align: start;
+        }
+
+        .article-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            min-width: 300px;
+            max-width: 340px;
+            flex-shrink: 0;
+        }
+
+        .article-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 40px rgba(99, 102, 241, 0.12);
+            border-color: rgba(99, 102, 241, 0.3);
+            color: var(--text-primary);
+        }
+
+        .article-card__img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            display: block;
+            background: var(--bg-tertiary);
+        }
+
+        .article-card__body {
+            padding: var(--space-5);
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .article-card__tag {
+            display: inline-block;
+            padding: var(--space-1) var(--space-3);
+            background: var(--accent-primary-light);
+            color: var(--accent-primary);
+            font-size: var(--text-xs);
+            font-weight: var(--font-semibold);
+            border-radius: var(--radius-full);
+            margin-bottom: var(--space-3);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            width: fit-content;
+        }
+
+        .article-card__title {
+            font-family: var(--font-display);
+            font-size: var(--text-lg);
+            font-weight: var(--font-bold);
+            line-height: var(--leading-snug);
+            margin-bottom: var(--space-3);
+            color: var(--text-primary);
+        }
+
+        .article-card__excerpt {
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
+            line-height: var(--leading-relaxed);
+            margin-bottom: var(--space-4);
+            flex: 1;
+        }
+
+        .article-card__btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: var(--accent-primary);
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+            transition: gap 0.3s ease;
+        }
+
+        .article-card:hover .article-card__btn {
+            gap: var(--space-3);
+        }
+
+        /* ─── CTA Section ──────────────────────── */
+        .cta-section {
+            text-align: center;
+            padding: var(--space-12) var(--space-8);
+            background: var(--gradient-accent);
+            border-radius: var(--radius-xl);
+            margin: var(--space-4) 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .cta-section::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .cta-section > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-section__title {
+            font-family: var(--font-display);
+            /* Issue #19 fix: static fallback before clamp() */
+            font-size: 2rem;
+            font-size: clamp(1.5rem, 3vw, 2.5rem);
+            font-weight: var(--font-extrabold);
+            margin-bottom: var(--space-4);
+            color: #fff;
+        }
+
+        .cta-section__text {
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: var(--space-8);
+            max-width: 520px;
+            margin-left: auto;
+            margin-right: auto;
+            font-size: var(--text-lg);
+            line-height: var(--leading-relaxed);
+        }
+
+        .cta-section .btn {
+            background: #fff;
+            color: var(--accent-primary);
+            font-weight: var(--font-bold);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .cta-section .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        /* ─── Trust Features (Compact Inline) ──── */
+        .trust-features {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .trust-feature {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-3) var(--space-4);
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex: 1 1 0;
+            min-width: 200px;
+        }
+
+        .trust-feature:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .trust-feature__icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            background: var(--accent-primary-light);
+            flex-shrink: 0;
+            transition: transform 0.3s ease;
+        }
+
+        .trust-feature:hover .trust-feature__icon { transform: scale(1.1); }
+
+        .trust-feature__info { min-width: 0; }
+
+        .trust-feature__title {
+            font-family: var(--font-display);
+            font-weight: var(--font-bold);
+            font-size: var(--text-sm);
+            line-height: 1.2;
+        }
+
+        .trust-feature__text {
+            color: var(--text-secondary);
+            font-size: var(--text-xs);
+            line-height: 1.4;
+            margin-top: 2px;
+        }
+
+        /* ─── How It Works (Compact Horizontal) ── */
+        .how-it-works {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .how-it-works__step {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-3) var(--space-4);
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex: 1 1 0;
+            min-width: 200px;
+        }
+
+        .how-it-works__step:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .how-it-works__number {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-full);
+            background: var(--gradient-accent);
+            color: #fff;
+            font-family: var(--font-display);
+            font-weight: var(--font-extrabold);
+            font-size: var(--text-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+        }
+
+        .how-it-works__info { min-width: 0; }
+
+        .how-it-works__title {
+            font-family: var(--font-display);
+            font-weight: var(--font-bold);
+            font-size: var(--text-sm);
+            line-height: 1.2;
+        }
+
+        .how-it-works__text {
+            color: var(--text-secondary);
+            font-size: var(--text-xs);
+            line-height: 1.4;
+            margin-top: 2px;
+        }
+
+        /* ─── Responsive ───────────────────────── */
+        @media (max-width: 767px) {
+            .hero {
+                min-height: auto;
+                padding: var(--space-6) 0 var(--space-4);
+            }
+
+            .hero__title {
+                /* Issue #19 fix: static fallback before clamp() */
+                font-size: 2rem;
+                font-size: clamp(1.75rem, 6vw, 2.5rem);
+            }
+
+            .hero__subtitle { font-size: var(--text-base); }
+
+            .hero__search-input {
+                height: 52px;
+                padding: 0 52px 0 18px;
+            }
+
+            .stats-bar {
+                flex-wrap: wrap;
+                gap: var(--space-2);
+                max-width: 100%;
+            }
+
+            .stats-bar__item {
+                flex: 1 1 calc(50% - var(--space-2));
+                min-width: 0;
+            }
+
+            .icon-bar {
+                gap: var(--space-5);
+            }
+
+            .icon-bar__icon {
+                width: 38px;
+                height: 38px;
+            }
+
+            .trust-features { flex-direction: column; }
+
+            .scroll-arrow {
+                display: none !important;
+            }
+
+            .article-card {
+                min-width: 260px;
+                max-width: 300px;
+            }
+
+            .how-it-works {
+                flex-direction: column;
+            }
+
+            .cta-section { padding: var(--space-8) var(--space-4); }
+
+            .browse-group .home-section { padding: var(--space-2) 0; }
+        }
+
+
+        @media (max-width: 1023px) {
+            .scroll-arrow {
+                display: none !important;
+            }
+        }
+    </style>
+
+
+        <div class="container">
+
+            <!-- ─── Hero ──────────────────────────── -->
+            <section class="hero">
+                <div class="hero-gradient"></div>
+                <div class="hero-gradient-left"></div>
+                <h1 class="hero__title">Your #1 Directory for <span class="hero__title-highlight">Trusted Groups</span></h1>
+                <p class="hero__subtitle">Discover, join &amp; promote verified communities in a smart, safe ecosystem.</p>
+                <form class="hero__search" id="hero-search-form" action="/search" method="get">
+                    <input type="search" name="q" class="hero__search-input" placeholder="Search groups by name, category, or platform..."
+                        aria-label="Search groups">
+                    <button type="submit" class="hero__search-btn" aria-label="Search"><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+                </form>
+                <div class="scroll-container hero-platforms-scroll">
+                    <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
+                    <div class="hero__platforms" id="hero-platforms"></div>
+                    <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
+                </div>
+
+                <!-- Stats Bar -->
+                <div class="stats-bar" id="hero-stats">
+                    <div class="stats-bar__item">
+                        <div class="stats-bar__icon stats-bar__icon--groups"><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+                        <div class="stats-bar__info">
+                            <div class="stats-bar__value skeleton" style="width:60px;height:28px;display:inline-block"></div>
+                            <div class="stats-bar__label">Groups</div>
+                        </div>
+                    </div>
+                    <div class="stats-bar__item">
+                        <div class="stats-bar__icon stats-bar__icon--users"><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
+                        <div class="stats-bar__info">
+                            <div class="stats-bar__value skeleton" style="width:50px;height:28px;display:inline-block"></div>
+                            <div class="stats-bar__label">Users</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Quick Access Bar removed — links already in subnav and bottom nav -->
+            </section>
+
+            <!-- ─── Featured Groups ───────────────── -->
+            <section class="home-section" id="featured-section" style="display:none">
+                <div class="home-section__header">
+                    <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span> Featured Groups</h2>
+                </div>
+                <div class="hscroll" id="featured-groups"></div>
+            </section>
+
+            <!-- ─── Trending Groups ───────────────── -->
+            <section class="home-section">
+                <div class="home-section__header">
+                    <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg></span> Trending Now</h2>
+                    <a href="/search?sort=ranking" class="home-section__link">See More →</a>
+                </div>
+                <div id="trending-groups">
+                    <div class="grid grid-4">
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="section-divider"></div>
+
+            <!-- ─── Marketplace Preview ─────────────── -->
+            <section class="home-section home-section--alt preview-section" id="marketplace-preview-section" style="display:none">
+                <div class="home-section__header">
+                    <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span> Marketplace</h2>
+                    <a href="/marketplace" class="home-section__link">Browse All →</a>
+                </div>
+                <div class="preview-grid" id="marketplace-preview-grid">
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                </div>
+                <a href="/marketplace" class="home-section__cta">Explore Marketplace →</a>
+            </section>
+
+            <!-- ─── Jobs Spotlight ──────────────────── -->
+            <section class="home-section preview-section" id="jobs-preview-section" style="display:none">
+                <div class="home-section__header">
+                    <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg></span> Jobs Spotlight</h2>
+                    <a href="/jobs" class="home-section__link">Browse All →</a>
+                </div>
+                <div class="preview-grid" id="jobs-preview-grid">
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                </div>
+                <a href="/jobs" class="home-section__cta">View All Jobs →</a>
+            </section>
+
+            <div class="section-divider"></div>
+
+            <!-- ─── Recently Added Groups ─────────── -->
+            <section class="home-section home-section--alt">
+                <div class="home-section__header">
+                    <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span> Recently Added</h2>
+                    <a href="/search?sort=newest" class="home-section__link">See More →</a>
+                </div>
+                <div id="new-groups">
+                    <div class="grid grid-4">
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── Store Highlights ────────────────── -->
+            <section class="home-section preview-section" id="store-preview-section" style="display:none">
+                <div class="home-section__header">
+                    <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg></span> Store Highlights</h2>
+                    <a href="/store" class="home-section__link">Visit Store →</a>
+                </div>
+                <div class="preview-grid" id="store-preview-grid">
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                </div>
+                <a href="/store" class="home-section__cta">Browse All Products →</a>
+            </section>
+
+            <div class="section-divider"></div>
+
+            <!-- ─── How It Works (Compact) ────────── -->
+            <section class="home-section home-section--alt">
+                <div class="home-section__header">
+                    <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg></span> How It Works</h2>
+                </div>
+                <div class="how-it-works">
+                    <div class="how-it-works__step">
+                        <div class="how-it-works__number">1</div>
+                        <div class="how-it-works__info">
+                            <div class="how-it-works__title">Search or Browse</div>
+                            <div class="how-it-works__text">Find groups by platform, category, or country.</div>
+                        </div>
+                    </div>
+                    <div class="how-it-works__step">
+                        <div class="how-it-works__number">2</div>
+                        <div class="how-it-works__info">
+                            <div class="how-it-works__title">Check Trust Score</div>
+                            <div class="how-it-works__text">See verification, ratings, and feedback.</div>
+                        </div>
+                    </div>
+                    <div class="how-it-works__step">
+                        <div class="how-it-works__number">3</div>
+                        <div class="how-it-works__info">
+                            <div class="how-it-works__title">Join with Confidence</div>
+                            <div class="how-it-works__text">Reviewed and rated by real members.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── Why GroupsMix (Compact) ───────── -->
+            <section class="home-section">
+                <div class="home-section__header">
+                    <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span> Why GroupsMix?</h2>
+                </div>
+                <div class="trust-features">
+                    <div class="trust-feature">
+                        <div class="trust-feature__icon"><svg class="svg-icon svg-icon--lg" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+                        <div class="trust-feature__info">
+                            <div class="trust-feature__title">Verified Groups</div>
+                            <div class="trust-feature__text">Reviewed and scored for safety.</div>
+                        </div>
+                    </div>
+                    <div class="trust-feature">
+                        <div class="trust-feature__icon"><svg class="svg-icon svg-icon--lg" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+                        <div class="trust-feature__info">
+                            <div class="trust-feature__title">Community Rated</div>
+                            <div class="trust-feature__text">Real reviews from real users.</div>
+                        </div>
+                    </div>
+                    <div class="trust-feature">
+                        <div class="trust-feature__icon"><svg class="svg-icon svg-icon--lg" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="8" y1="11" x2="16" y2="11"/></svg></div>
+                        <div class="trust-feature__info">
+                            <div class="trust-feature__title">Scam Protected</div>
+                            <div class="trust-feature__text">Report and block suspicious groups.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="section-divider"></div>
+
+            <!-- ─── Latest Insights ──────────────── -->
+            <section class="home-section" id="articles-section" style="display:none">
+                <div class="home-section__header">
+                    <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span> Latest Insights</h2>
+                    <a href="/articles" class="home-section__link">View All →</a>
+                </div>
+                <div class="scroll-container">
+                    <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
+                    <div class="articles-grid" id="articles-grid"></div>
+                    <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
+                </div>
+            </section>
+
+            <!-- ─── Browse Sections (Grouped) ────── -->
+            <div class="browse-group home-section--alt">
+                <!-- ─── Browse by Platform (Ribbon) ──── -->
+                <section class="home-section">
+                    <div class="home-section__header">
+                        <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span> Browse by Platform</h2>
+                    </div>
+                    <div class="scroll-container">
+                        <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
+                        <div class="browse-ribbon" id="platform-ribbon"></div>
+                        <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
+                    </div>
+                </section>
+
+                <!-- ─── Browse by Country (Ribbon) ───── -->
+                <section class="home-section">
+                    <div class="home-section__header">
+                        <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></span> Browse by Country</h2>
+                    </div>
+                    <div class="scroll-container">
+                        <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
+                        <div class="browse-ribbon" id="country-ribbon"></div>
+                        <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
+                    </div>
+                </section>
+
+                <!-- ─── Browse by Category (Ribbon) ──── -->
+                <section class="home-section">
+                    <div class="home-section__header">
+                        <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></span> Browse by Category</h2>
+                    </div>
+                    <div class="scroll-container">
+                        <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
+                        <div class="category-ribbon browse-ribbon" id="category-ribbon"></div>
+                        <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
+                    </div>
+                </section>
+            </div>
+
+            <!-- ─── AI Group Recommendations (Feature 8) ──── -->
+            <div id="ai-recommendations"></div>
+
+
+            <!-- ─── CTA Banner ────────────────────── -->
+            <div class="cta-section animate-on-scroll">
+                <h2 class="cta-section__title">Have a great group? Share it with the world!</h2>
+                <p class="cta-section__text">Submit your group for free and reach thousands of potential members looking for communities like yours.</p>
+                <a href="/submit" class="btn btn-lg"><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Submit Your Group &rarr;</a>
+            </div>
+
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', () => {
+            initPage();
+            initScrollAnimations();
+            initHeaderScroll();
+            initScrollArrows();
+        });
+
+        // Scroll-based animations
+        function initScrollAnimations() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.animate-on-scroll').forEach(el => {
+                observer.observe(el);
+            });
+        }
+
+        // Header scroll effect
+        function initHeaderScroll() {
+            const header = document.getElementById('site-header');
+            if (!header) return;
+            let ticking = false;
+            window.addEventListener('scroll', () => {
+                if (!ticking) {
+                    window.requestAnimationFrame(() => {
+                        if (window.scrollY > 50) {
+                            header.classList.add('scrolled');
+                        } else {
+                            header.classList.remove('scrolled');
+                        }
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            });
+        }
+
+        async function initPage() {
+            renderPlatforms();
+            renderCategories();
+            renderCountryRibbon();
+            renderPlatformRibbon();
+            const timeout = setTimeout(() => {
+                UI.timeoutState('trending-groups');
+                UI.timeoutState('new-groups');
+            }, CONFIG.timeoutDuration);
+            // Use Promise.allSettled so one failure doesn't crash all sections
+            const results = await Promise.allSettled([
+                DB.groups.getFeatured(),
+                DB.groups.getTrending(),
+                DB.groups.getNew(),
+                DB.stats.getGlobal()
+            ]);
+            clearTimeout(timeout);
+            const featured = results[0].status === 'fulfilled' ? results[0].value : null;
+            const trending = results[1].status === 'fulfilled' ? results[1].value : null;
+            const newGroups = results[2].status === 'fulfilled' ? results[2].value : null;
+            const stats = results[3].status === 'fulfilled' ? results[3].value : null;
+            // Featured groups
+            if (featured && featured.length > 0) {
+                document.getElementById('featured-section').style.display = '';
+                const fc = document.getElementById('featured-groups');
+                if (fc) fc.innerHTML = featured.map(g => '<div>' + UI.groupCard(g) + '</div>').join('');
+            }
+            // Trending groups
+            if (trending) {
+                if (trending.length > 0) {
+                    UI.groupGrid(trending, 'trending-groups');
+                } else {
+                    UI.emptyState('trending-groups', ICONS.inbox, 'No trending groups yet', 'Groups will appear here once they are approved.', 'Submit a Group', '/submit');
+                }
+            } else {
+                UI.errorState('trending-groups', () => initPage());
+            }
+            // New groups
+            if (newGroups) {
+                if (newGroups.length > 0) {
+                    UI.groupGrid(newGroups, 'new-groups');
+                } else {
+                    UI.emptyState('new-groups', ICONS.inbox, 'No groups added yet', 'Be the first to submit a group!', 'Submit a Group', '/submit');
+                }
+            } else {
+                UI.errorState('new-groups', () => initPage());
+            }
+            // Stats
+            renderStats(stats);
+            // Articles
+            renderArticles();
+            // ── New Preview Sections (non-blocking, parallel) ──
+            loadMarketplacePreview();
+            loadJobsPreview();
+            loadStorePreview();
+        }
+
+        function renderPlatforms() {
+            const el = document.getElementById('hero-platforms');
+            if (!el) return;
+            el.innerHTML = CONFIG.platforms.map(p =>
+                '<a href="/browse?platform=' + p.id + '" class="hero__platform-btn">' + (p.svgIcon || p.emoji) + ' ' + p.name + '</a>'
+            ).join('');
+        }
+
+        function renderCategories() {
+            const el = document.getElementById('category-ribbon');
+            if (!el) return;
+            el.innerHTML = CONFIG.categories.map(c =>
+                '<a href="/browse?cat=' + c.id + '" class="browse-ribbon__chip">' +
+                    '<span class="browse-ribbon__chip-icon">' + c.emoji + '</span>' +
+                    '<span class="browse-ribbon__chip-name">' + c.name + '</span>' +
+                '</a>'
+            ).join('') +
+            '<a href="/browse" class="browse-ribbon__chip browse-ribbon__chip--view-all">View All &rarr;</a>';
+        }
+
+        function renderCountryRibbon() {
+            const el = document.getElementById('country-ribbon');
+            if (!el) return;
+            el.innerHTML = CONFIG.countries.map(c =>
+                '<a href="/browse?country=' + c.code + '" class="browse-ribbon__chip">' +
+                    '<span class="browse-ribbon__chip-flag">' + c.flag + '</span>' +
+                    '<span class="browse-ribbon__chip-name">' + c.name + '</span>' +
+                '</a>'
+            ).join('') +
+            '<a href="/browse" class="browse-ribbon__chip browse-ribbon__chip--view-all">View All &rarr;</a>';
+        }
+
+        function renderPlatformRibbon() {
+            const el = document.getElementById('platform-ribbon');
+            if (!el) return;
+            el.innerHTML = CONFIG.platforms.map(p =>
+                '<a href="/browse?platform=' + p.id + '" class="browse-ribbon__chip">' +
+                    '<span class="browse-ribbon__chip-icon">' + (p.svgIcon || p.emoji) + '</span>' +
+                    '<span class="browse-ribbon__chip-name">' + p.name + '</span>' +
+                '</a>'
+            ).join('') +
+            '<a href="/browse" class="browse-ribbon__chip browse-ribbon__chip--view-all">View All &rarr;</a>';
+        }
+
+        async function renderArticles() {
+            try {
+                var articles = null;
+                if (typeof DB !== 'undefined' && DB.articles && DB.articles.getRecent) {
+                    articles = await DB.articles.getRecent(3);
+                }
+                var section = document.getElementById('articles-section');
+                var grid = document.getElementById('articles-grid');
+                if (!section || !grid) return;
+                if (!articles || articles.length === 0) {
+                    // Hide section when no articles
+                    section.style.display = 'none';
+                    return;
+                }
+                section.style.display = '';
+                grid.innerHTML = articles.map(function(a) {
+                    var img = a.cover_image || '';
+                    var tag = a.category || 'Article';
+                    var title = Security.sanitize(a.title || 'Untitled');
+                    var excerpt = Security.sanitize(a.excerpt || '');
+                    var href = '/article/' + (a.slug || a.id);
+                    return '<a href="' + href + '" class="article-card">' +
+                        (img ? '<img class="article-card__img" src="' + img + '" alt="' + title + '" loading="lazy">' : '<div class="article-card__img" style="display:flex;align-items:center;justify-content:center;font-size:3rem;">' + ICONS.file_text + '</div>') +
+                        '<div class="article-card__body">' +
+                            '<span class="article-card__tag">' + tag + '</span>' +
+                            '<h3 class="article-card__title">' + title + '</h3>' +
+                            '<p class="article-card__excerpt">' + excerpt + '</p>' +
+                            '<span class="article-card__btn">Read More <span>→</span></span>' +
+                        '</div>' +
+                    '</a>';
+                }).join('');
+            } catch (err) {
+                console.error('renderArticles:', err);
+                // Hide section on error
+                if (section) section.style.display = 'none';
+            }
+        }
+
+        function buildArticleCard(href, tag, title, excerpt) {
+            return '<a href="' + href + '" class="article-card">' +
+                '<div class="article-card__img" style="display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg, var(--accent-primary-light), var(--bg-tertiary));">' + ICONS.file_text + '</div>' +
+                '<div class="article-card__body">' +
+                    '<span class="article-card__tag">' + tag + '</span>' +
+                    '<h3 class="article-card__title">' + title + '</h3>' +
+                    '<p class="article-card__excerpt">' + excerpt + '</p>' +
+                    '<span class="article-card__btn">Read More <span>→</span></span>' +
+                '</div>' +
+            '</a>';
+        }
+
+        // ─── Scroll Arrows Navigation ───
+        function initScrollArrows() {
+            document.querySelectorAll('.scroll-container').forEach(container => {
+                const leftBtn = container.querySelector('.scroll-arrow--left');
+                const rightBtn = container.querySelector('.scroll-arrow--right');
+                const scrollEl = container.querySelector('.browse-ribbon, .articles-grid, .category-ribbon, .hero__platforms');
+                if (!leftBtn || !rightBtn || !scrollEl) return;
+
+                // Calculate scroll amount: width of ~3 items
+                function getScrollAmount() {
+                    var firstChild = scrollEl.firstElementChild;
+                    if (!firstChild) return 300;
+                    var itemWidth = firstChild.offsetWidth + 12; // item width + gap
+                    return itemWidth * 3;
+                }
+
+                leftBtn.addEventListener('click', function() {
+                    scrollEl.scrollBy({ left: -getScrollAmount(), behavior: 'smooth' });
+                });
+
+                rightBtn.addEventListener('click', function() {
+                    scrollEl.scrollBy({ left: getScrollAmount(), behavior: 'smooth' });
+                });
+
+                // Native CSS scroll-snap handles touch/swipe
+            });
+        }
+
+        // Removed complex drag-scroll JS — native CSS overflow-x: auto
+        // with scroll-snap-type handles touch/swipe on iOS & Android.
+
+        // ═══════════════════════════════════════
+        // ── Marketplace Preview Section ────────
+        // ═══════════════════════════════════════
+        async function loadMarketplacePreview() {
+            if (!CONFIG.features.marketplace) return;
+            var section = document.getElementById('marketplace-preview-section');
+            var grid = document.getElementById('marketplace-preview-grid');
+            if (!section || !grid) return;
+            try {
+                var result = null;
+                if (typeof Marketplace !== 'undefined' && Marketplace.getListings) {
+                    result = await Marketplace.getListings({ limit: 4, sort: 'newest' });
+                }
+                if (!result || !result.data || result.data.length === 0) {
+                    // Hide section when no live data
+                    section.style.display = 'none';
+                    return;
+                }
+                section.style.display = '';
+                grid.innerHTML = result.data.map(function(item) {
+                    var title = Security.sanitize(item.title || 'Untitled Listing');
+                    var platform = Security.sanitize(item.platform || '');
+                    var price = item.price ? '$' + parseFloat(item.price).toLocaleString() : 'Contact Seller';
+                    var platformIcon = platform ? (getPlatformIcon(platform) || '') : '';
+                    var imgUrl = item.image_url ? Security.sanitizeUrl(item.image_url) : '';
+                    var imgHtml = imgUrl
+                        ? '<img src="' + imgUrl + '" alt="' + title + '" loading="lazy">'
+                        : '<span class="mp-card__image-placeholder">' + ICONS.store + '</span>';
+                    var typeLabel = platform ? platform.charAt(0).toUpperCase() + platform.slice(1) : 'Listing';
+                    return '<a href="/marketplace?id=' + (item.id || '') + '" class="mp-card">' +
+                        '<div class="mp-card__image">' + imgHtml +
+                            '<span class="mp-card__type-badge">' + platformIcon + ' ' + Security.sanitize(typeLabel) + '</span>' +
+                        '</div>' +
+                        '<div class="mp-card__body">' +
+                            '<div class="mp-card__title">' + title + '</div>' +
+                            '<div class="mp-card__price">' + Security.sanitize(price) + '</div>' +
+                        '</div>' +
+                    '</a>';
+                }).join('');
+            } catch (err) {
+                console.error('loadMarketplacePreview:', err.message);
+                // Hide section on error
+                section.style.display = 'none';
+            }
+        }
+
+        function buildMPPlaceholders() {
+            var items = [
+                { title: 'Social Media Accounts', type: 'Social Media', price: 'Browse Listings' },
+                { title: 'YouTube Channels', type: 'Streaming', price: 'Browse Listings' },
+                { title: 'Telegram Groups', type: 'Messaging', price: 'Browse Listings' },
+                { title: 'Discord Servers', type: 'Messaging', price: 'Browse Listings' }
+            ];
+            return items.map(function(item) {
+                return '<a href="/marketplace" class="mp-card">' +
+                    '<div class="mp-card__image">' +
+                        '<span class="mp-card__image-placeholder">' + ICONS.store + '</span>' +
+                        '<span class="mp-card__type-badge">' + Security.sanitize(item.type) + '</span>' +
+                    '</div>' +
+                    '<div class="mp-card__body">' +
+                        '<div class="mp-card__title">' + Security.sanitize(item.title) + '</div>' +
+                        '<div class="mp-card__price">' + Security.sanitize(item.price) + '</div>' +
+                    '</div>' +
+                '</a>';
+            }).join('');
+        }
+
+        // ═══════════════════════════════════════
+        // ── Jobs Spotlight Section ─────────────
+        // ═══════════════════════════════════════
+        async function loadJobsPreview() {
+            if (!CONFIG.features.jobs) return;
+            var section = document.getElementById('jobs-preview-section');
+            var grid = document.getElementById('jobs-preview-grid');
+            if (!section || !grid) return;
+            try {
+                var jobs = null;
+                // Jobs are fetched directly from Supabase (jobs table)
+                if (typeof window.supabaseClient !== 'undefined') {
+                    var { data, error } = await window.supabaseClient
+                        .from('jobs')
+                        .select('id, title, company_name, job_type, location_type, is_remote, salary_min, salary_max, salary_currency, category, ai_category, platform, created_at, is_promoted, region')
+                        .eq('status', 'active')
+                        .order('created_at', { ascending: false })
+                        .limit(3);
+                    if (!error && data) jobs = data;
+                }
+                if (!jobs || jobs.length === 0) {
+                    // Hide section when no jobs
+                    section.style.display = 'none';
+                    return;
+                }
+                section.style.display = '';
+                grid.innerHTML = jobs.map(function(job) {
+                    var title = Security.sanitize(job.title || 'Untitled Job');
+                    var company = Security.sanitize(job.company_name || 'Anonymous');
+                    var cat = job.ai_category || job.category || 'other';
+                    var typeLabel = { 'full-time': 'Full-Time', 'part-time': 'Part-Time', 'freelance': 'Freelance', 'contract': 'Contract', 'internship': 'Internship' }[job.job_type] || 'Full-Time';
+                    // Location badge
+                    var locBadge = '';
+                    if (job.location_type === 'remote' || job.is_remote) {
+                        locBadge = '<span class="job-prev__badge job-prev__badge--remote">Remote</span>';
+                    } else if (job.location_type === 'hybrid') {
+                        locBadge = '<span class="job-prev__badge job-prev__badge--hybrid">Hybrid</span>';
+                    } else if (job.location_type === 'onsite') {
+                        locBadge = '<span class="job-prev__badge job-prev__badge--onsite">On-Site</span>';
+                    }
+                    // Salary
+                    var salary = '';
+                    if (job.salary_min || job.salary_max) {
+                        var sym = job.salary_currency === 'EUR' ? '\u20AC' : job.salary_currency === 'GBP' ? '\u00A3' : '$';
+                        var min = job.salary_min ? sym + (job.salary_min >= 1000 ? Math.round(job.salary_min / 1000) + 'k' : job.salary_min) : '';
+                        var max = job.salary_max ? sym + (job.salary_max >= 1000 ? Math.round(job.salary_max / 1000) + 'k' : job.salary_max) : '';
+                        salary = min && max ? min + ' - ' + max : (min || max);
+                    }
+                    // Time ago
+                    var timeStr = '';
+                    if (job.created_at) {
+                        var diff = Math.floor((Date.now() - new Date(job.created_at).getTime()) / 1000);
+                        if (diff < 3600) timeStr = Math.max(1, Math.floor(diff / 60)) + 'm ago';
+                        else if (diff < 86400) timeStr = Math.floor(diff / 3600) + 'h ago';
+                        else if (diff < 604800) timeStr = Math.floor(diff / 86400) + 'd ago';
+                        else timeStr = Math.floor(diff / 604800) + 'w ago';
+                    }
+                    var promoted = job.is_promoted ? '<span class="job-prev__featured">\u2B50 Featured</span>' : '';
+                    return '<a href="/jobs?job=' + (job.id || '') + '" class="job-prev-card">' +
+                        '<div class="job-prev-card__header">' +
+                            '<span class="job-prev__cat job-prev__cat--' + Security.sanitize(cat) + '">' + Security.sanitize(typeLabel) + '</span>' +
+                            locBadge + promoted +
+                        '</div>' +
+                        '<div class="job-prev-card__body">' +
+                            '<div class="job-prev-card__title">' + title + '</div>' +
+                            '<div class="job-prev-card__company">' + company + '</div>' +
+                            (salary ? '<div class="job-prev-card__salary">' + salary + '</div>' : '') +
+                        '</div>' +
+                        '<div class="job-prev-card__footer">' +
+                            (timeStr ? '<span class="job-prev__time">' + timeStr + '</span>' : '') +
+                        '</div>' +
+                    '</a>';
+                }).join('');
+            } catch (err) {
+                console.error('loadJobsPreview:', err.message);
+                // Hide section on error
+                section.style.display = 'none';
+            }
+        }
+
+        function buildJobPlaceholders() {
+            var items = [
+                { title: 'Community Manager', company: 'Explore Opportunities', type: 'Full-Time', loc: 'remote' },
+                { title: 'Discord Moderator', company: 'Browse Open Roles', type: 'Part-Time', loc: 'remote' },
+                { title: 'Content Creator', company: 'Find Your Next Role', type: 'Freelance', loc: 'hybrid' }
+            ];
+            return items.map(function(item) {
+                var badgeClass = item.loc === 'remote' ? 'remote' : item.loc === 'hybrid' ? 'hybrid' : 'onsite';
+                var badgeLabel = item.loc === 'remote' ? 'Remote' : item.loc === 'hybrid' ? 'Hybrid' : 'On-Site';
+                return '<a href="/jobs" class="job-prev-card">' +
+                    '<div class="job-prev-card__header">' +
+                        '<span class="job-prev__cat">' + item.type + '</span>' +
+                        '<span class="job-prev__badge job-prev__badge--' + badgeClass + '">' + badgeLabel + '</span>' +
+                    '</div>' +
+                    '<div class="job-prev-card__body">' +
+                        '<div class="job-prev-card__title">' + item.title + '</div>' +
+                        '<div class="job-prev-card__company">' + item.company + '</div>' +
+                    '</div>' +
+                    '<div class="job-prev-card__footer">' +
+                        '<span class="job-prev__time">New</span>' +
+                    '</div>' +
+                '</a>';
+            }).join('');
+        }
+
+        // ═══════════════════════════════════════
+        // ── Store Highlights Section ───────────
+        // ═══════════════════════════════════════
+        async function loadStorePreview() {
+            if (!CONFIG.features.store) return;
+            var section = document.getElementById('store-preview-section');
+            var grid = document.getElementById('store-preview-grid');
+            if (!section || !grid) return;
+            try {
+                var products = null;
+                // Try fetching from the store API endpoint
+                var res = await fetch('/api/lemonsqueezy');
+                if (res.ok) {
+                    var json = await res.json();
+                    if (json.ok && json.products && json.products.length > 0) {
+                        products = json.products.slice(0, 4);
+                    }
+                }
+                if (!products || products.length === 0) {
+                    // Hide section when no products
+                    section.style.display = 'none';
+                    return;
+                }
+                section.style.display = '';
+                grid.innerHTML = products.map(function(p) {
+                    var name = Security.sanitize(p.name || 'Product');
+                    var desc = Security.sanitize((p.description || '').replace(/<[^>]*>/g, '').substring(0, 100));
+                    var priceText = (!p.price || p.price === 0) ? 'Free' : (p.price_formatted || ('$' + (p.price / 100).toFixed(2)));
+                    var typeLabel = p.product_type || 'digital';
+                    var typeName = { guide: 'Guide', template: 'Template', course: 'Course', tool: 'Tool', membership: 'Membership', bundle: 'Bundle', service: 'Service', digital: 'Digital' }[typeLabel] || 'Digital';
+                    var imgHtml = '';
+                    if (p.large_thumb_url || p.thumb_url) {
+                        imgHtml = '<img src="' + Security.sanitizeUrl(p.large_thumb_url || p.thumb_url) + '" alt="' + name + '" loading="lazy">';
+                    } else {
+                        var iconMap = { guide: '\uD83D\uDCD6', template: '\uD83D\uDCC4', course: '\uD83C\uDF93', tool: '\uD83D\uDEE0', membership: '\u2B50', bundle: '\uD83C\uDF81', service: '\uD83D\uDCBC', digital: '\uD83D\uDCE6' };
+                        imgHtml = '<span class="store-prev__placeholder">' + (iconMap[typeLabel] || '\uD83D\uDCE6') + '</span>';
+                    }
+                    return '<a href="/store" class="store-prev-card">' +
+                        '<div class="store-prev-card__image">' + imgHtml +
+                            '<span class="store-prev__badge store-prev__badge--' + Security.sanitize(typeLabel) + '">' + Security.sanitize(typeName) + '</span>' +
+                        '</div>' +
+                        '<div class="store-prev-card__body">' +
+                            '<div class="store-prev-card__title">' + name + '</div>' +
+                            (desc ? '<div class="store-prev-card__desc">' + desc + '</div>' : '') +
+                        '</div>' +
+                        '<div class="store-prev-card__footer">' +
+                            '<span class="store-prev__price">' + Security.sanitize(priceText) + '</span>' +
+                            '<span class="store-prev__buy">' + ICONS.shopping_cart + ' View</span>' +
+                        '</div>' +
+                    '</a>';
+                }).join('');
+            } catch (err) {
+                console.error('loadStorePreview:', err.message);
+                // Hide section on error
+                section.style.display = 'none';
+            }
+        }
+
+        function buildStorePlaceholders() {
+            var items = [
+                { name: 'Community Growth Guide', type: 'guide', price: 'Browse Products' },
+                { name: 'Moderation Templates', type: 'template', price: 'Browse Products' },
+                { name: 'Group Management Course', type: 'course', price: 'Browse Products' },
+                { name: 'Analytics Toolkit', type: 'tool', price: 'Browse Products' }
+            ];
+            var iconMap = { guide: '\uD83D\uDCD6', template: '\uD83D\uDCC4', course: '\uD83C\uDF93', tool: '\uD83D\uDEE0' };
+            var nameMap = { guide: 'Guide', template: 'Template', course: 'Course', tool: 'Tool' };
+            return items.map(function(item) {
+                return '<a href="/store" class="store-prev-card">' +
+                    '<div class="store-prev-card__image">' +
+                        '<span class="store-prev__placeholder">' + (iconMap[item.type] || '\uD83D\uDCE6') + '</span>' +
+                        '<span class="store-prev__badge store-prev__badge--' + item.type + '">' + (nameMap[item.type] || 'Digital') + '</span>' +
+                    '</div>' +
+                    '<div class="store-prev-card__body">' +
+                        '<div class="store-prev-card__title">' + item.name + '</div>' +
+                    '</div>' +
+                    '<div class="store-prev-card__footer">' +
+                        '<span class="store-prev__price">' + item.price + '</span>' +
+                        '<span class="store-prev__buy">' + ICONS.shopping_cart + ' View</span>' +
+                    '</div>' +
+                '</a>';
+            }).join('');
+        }
+
+        function renderStats(stats) {
+            const el = document.getElementById('hero-stats');
+            if (!el) return;
+            var groups = (stats && stats.total_groups) || 0;
+            var users = (stats && stats.total_users) || 0;
+
+            el.innerHTML =
+                '<div class="stats-bar__item">' +
+                    '<div class="stats-bar__icon stats-bar__icon--groups"><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>' +
+                    '<div class="stats-bar__info">' +
+                        '<div class="stats-bar__value" id="stat-groups">' + (groups != null ? groups : '--') + '</div>' +
+                        '<div class="stats-bar__label">Groups</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="stats-bar__item">' +
+                    '<div class="stats-bar__icon stats-bar__icon--users"><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>' +
+                    '<div class="stats-bar__info">' +
+                        '<div class="stats-bar__value" id="stat-users">' + (users != null ? users : '--') + '</div>' +
+                        '<div class="stats-bar__label">Users</div>' +
+                    '</div>' +
+                '</div>';
+
+            if (groups != null || users != null) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            if (groups != null) UI.countUp(document.getElementById('stat-groups'), groups);
+                            if (users != null) UI.countUp(document.getElementById('stat-users'), users);
+                            observer.disconnect();
+                        }
+                    });
+                }, { threshold: 0.3 });
+                observer.observe(el);
+            }
+        }
+    </script>
+</Fragment>
+</BaseLayout>

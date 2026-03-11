@@ -1,0 +1,275 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Reading Lists — GroupsMix"
+  description="Browse and create curated reading lists on GroupsMix. Discover the best articles organized by the community."
+  cssFiles={["/assets/css/articles.css?v=20260310b"]}
+>
+
+        <div class="reading-lists-page">
+            <!-- Header -->
+            <div class="reading-lists-page__header">
+                <div style="display:flex;align-items:center;gap:var(--space-3)">
+                    <a href="/articles" class="btn btn-ghost btn-sm" title="Back to Articles">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    </a>
+                    <h1 class="reading-lists-page__title">Reading Lists</h1>
+                </div>
+                <button id="btn-create-list" class="btn btn-primary btn-sm" style="display:none">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Create List
+                </button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="articles-tabs" role="tablist" style="margin-bottom:var(--space-6)">
+                <button class="articles-tab articles-tab--active" data-tab="popular" role="tab" aria-selected="true">Popular</button>
+                <button class="articles-tab" data-tab="recent" role="tab" aria-selected="false">Recent</button>
+                <button class="articles-tab" data-tab="my" role="tab" aria-selected="false" style="display:none" id="tab-my-lists">My Lists</button>
+            </div>
+
+            <!-- Lists Grid -->
+            <div id="reading-lists-grid" class="reading-lists-grid">
+                <div class="article-skeleton"><div class="article-skeleton__image"></div><div class="article-skeleton__body"><div class="article-skeleton__line article-skeleton__line--title"></div><div class="article-skeleton__line article-skeleton__line--text"></div></div></div>
+                <div class="article-skeleton"><div class="article-skeleton__image"></div><div class="article-skeleton__body"><div class="article-skeleton__line article-skeleton__line--title"></div><div class="article-skeleton__line article-skeleton__line--text"></div></div></div>
+                <div class="article-skeleton"><div class="article-skeleton__image"></div><div class="article-skeleton__body"><div class="article-skeleton__line article-skeleton__line--title"></div><div class="article-skeleton__line article-skeleton__line--text"></div></div></div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="lists-empty" class="articles-empty" style="display:none">
+                <div class="articles-empty__icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <div class="articles-empty__title">No Reading Lists Found</div>
+                <div class="articles-empty__text" id="lists-empty-text">Create your first reading list to curate articles!</div>
+            </div>
+
+            <!-- List Detail View -->
+            <div id="list-detail" style="display:none">
+                <div class="reading-list-detail__header">
+                    <a href="/reading-lists" class="btn btn-ghost btn-sm" style="margin-bottom:var(--space-3)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                        Back to Lists
+                    </a>
+                    <h2 id="list-detail-title" class="reading-list-detail__title"></h2>
+                    <div id="list-detail-meta" class="reading-list-detail__meta"></div>
+                    <div id="list-detail-desc" class="reading-list-detail__desc"></div>
+                    <div id="list-detail-actions" style="margin-top:var(--space-3)"></div>
+                </div>
+                <div id="list-detail-articles" class="articles-grid"></div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const params = new URLSearchParams(window.location.search);
+            const listId = params.get('id');
+
+            await Auth.waitForAuth();
+
+            if (Auth.isLoggedIn()) {
+                const createBtn = document.getElementById('btn-create-list');
+                const tabMy = document.getElementById('tab-my-lists');
+                if (createBtn) createBtn.style.display = '';
+                if (tabMy) tabMy.style.display = '';
+            }
+
+            // If viewing a specific list
+            if (listId) {
+                document.querySelector('.reading-lists-page__header').style.display = 'none';
+                document.querySelector('.articles-tabs').style.display = 'none';
+                document.getElementById('reading-lists-grid').style.display = 'none';
+                document.getElementById('list-detail').style.display = '';
+                loadListDetail(listId);
+                return;
+            }
+
+            // Init tabs
+            let currentTab = 'popular';
+            const tabs = document.querySelectorAll('.articles-tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => { t.classList.remove('articles-tab--active'); t.setAttribute('aria-selected', 'false'); });
+                    tab.classList.add('articles-tab--active');
+                    tab.setAttribute('aria-selected', 'true');
+                    currentTab = tab.dataset.tab;
+                    loadLists(currentTab);
+                });
+            });
+
+            // Create list button
+            const createBtn = document.getElementById('btn-create-list');
+            if (createBtn) {
+                createBtn.addEventListener('click', () => {
+                    const container = document.getElementById('modal-container');
+                    container.innerHTML =
+                        '<div class="modal-overlay" id="create-list-modal">' +
+                            '<div class="modal-content" style="max-width:400px">' +
+                                '<div class="modal-header"><h3>Create Reading List</h3><button class="modal-close" id="close-cl-modal">&times;</button></div>' +
+                                '<div style="padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-3)">' +
+                                    '<input type="text" id="cl-title" placeholder="List title..." maxlength="100" class="reading-list-picker__input">' +
+                                    '<textarea id="cl-desc" placeholder="Description (optional)..." maxlength="500" rows="3" class="reading-list-picker__input" style="resize:vertical"></textarea>' +
+                                    '<label style="font-size:var(--text-sm);display:flex;align-items:center;gap:var(--space-2)"><input type="checkbox" id="cl-public" checked> Public list</label>' +
+                                    '<button id="cl-submit" class="btn btn-primary">Create</button>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>';
+                    container.style.display = 'block';
+
+                    document.getElementById('close-cl-modal').addEventListener('click', () => { container.innerHTML = ''; container.style.display = 'none'; });
+                    document.getElementById('create-list-modal').addEventListener('click', (e) => { if (e.target.id === 'create-list-modal') { container.innerHTML = ''; container.style.display = 'none'; } });
+
+                    document.getElementById('cl-submit').addEventListener('click', async () => {
+                        const title = document.getElementById('cl-title').value.trim();
+                        if (!title) { UI.toast('Enter a title', 'warning'); return; }
+
+                        const btn = document.getElementById('cl-submit');
+                        btn.disabled = true;
+                        try {
+                            const user = Auth.getUser();
+                            const slug = title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').slice(0, 50) + '-' + Date.now().toString(36);
+                            const { error } = await window.supabaseClient.from('reading_lists').insert({
+                                user_id: user.id,
+                                title: title,
+                                description: document.getElementById('cl-desc').value.trim(),
+                                slug: slug,
+                                is_public: document.getElementById('cl-public').checked
+                            });
+                            if (error) throw error;
+                            UI.toast('Reading list created!', 'success');
+                            container.innerHTML = '';
+                            container.style.display = 'none';
+                            loadLists(currentTab);
+                        } catch (err) {
+                            UI.toast('Failed to create list: ' + err.message, 'error');
+                            btn.disabled = false;
+                        }
+                    });
+                });
+            }
+
+            loadLists(currentTab);
+        });
+
+        async function loadLists(tab) {
+            const grid = document.getElementById('reading-lists-grid');
+            const emptyEl = document.getElementById('lists-empty');
+            grid.style.display = '';
+            emptyEl.style.display = 'none';
+
+            grid.innerHTML = '<div class="article-skeleton"><div class="article-skeleton__image"></div><div class="article-skeleton__body"><div class="article-skeleton__line article-skeleton__line--title"></div><div class="article-skeleton__line article-skeleton__line--text"></div></div></div>'.repeat(3);
+
+            try {
+                let query;
+                if (tab === 'my') {
+                    if (!Auth.isLoggedIn()) { grid.innerHTML = ''; return; }
+                    const user = Auth.getUser();
+                    query = window.supabaseClient.from('reading_lists').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+                } else if (tab === 'recent') {
+                    query = window.supabaseClient.from('reading_lists').select('*').eq('is_public', true).order('created_at', { ascending: false }).limit(20);
+                } else {
+                    query = window.supabaseClient.from('reading_lists').select('*').eq('is_public', true).order('follower_count', { ascending: false }).limit(20);
+                }
+
+                const { data: lists, error } = await query;
+                if (error) throw error;
+
+                if (!lists || lists.length === 0) {
+                    grid.innerHTML = '';
+                    grid.style.display = 'none';
+                    emptyEl.style.display = 'block';
+                    return;
+                }
+
+                grid.innerHTML = lists.map(l => {
+                    if (typeof ReadingLists !== 'undefined') {
+                        return ReadingLists.renderListCard(l, null);
+                    }
+                    return '<a href="/reading-lists?id=' + l.id + '" class="reading-list-card"><div class="reading-list-card__body"><div class="reading-list-card__title">' + Security.sanitize(l.title) + '</div></div></a>';
+                }).join('');
+            } catch (err) {
+                console.error('loadLists:', err.message);
+                grid.innerHTML = '<div style="text-align:center;color:var(--text-tertiary);padding:var(--space-8);grid-column:1/-1">Unable to load reading lists</div>';
+            }
+        }
+
+        async function loadListDetail(listId) {
+            try {
+                const { data: list, error } = await window.supabaseClient
+                    .from('reading_lists')
+                    .select('*')
+                    .eq('id', listId)
+                    .single();
+
+                if (error || !list) {
+                    document.getElementById('list-detail-title').textContent = 'List Not Found';
+                    return;
+                }
+
+                document.getElementById('list-detail-title').textContent = list.title;
+                document.getElementById('list-detail-meta').innerHTML =
+                    '<span>' + (list.article_count || 0) + ' articles</span>' +
+                    '<span>' + (list.follower_count || 0) + ' followers</span>' +
+                    '<span>Created ' + UI.formatDate(list.created_at) + '</span>';
+                document.getElementById('list-detail-desc').textContent = list.description || '';
+
+                // Follow button
+                const actionsEl = document.getElementById('list-detail-actions');
+                if (Auth.isLoggedIn()) {
+                    const user = Auth.getUser();
+                    const isOwner = user && user.id === list.user_id;
+                    if (!isOwner) {
+                        actionsEl.innerHTML = '<button id="btn-follow-list" class="btn btn-primary btn-sm">Follow List</button>';
+                        document.getElementById('btn-follow-list').addEventListener('click', async function () {
+                            this.disabled = true;
+                            try {
+                                const { data } = await window.supabaseClient.rpc('toggle_reading_list_follow', {
+                                    p_list_id: listId, p_user_id: user.id
+                                });
+                                if (data && data.action === 'followed') {
+                                    this.textContent = 'Following';
+                                    this.className = 'btn btn-secondary btn-sm';
+                                } else {
+                                    this.textContent = 'Follow List';
+                                    this.className = 'btn btn-primary btn-sm';
+                                }
+                            } catch (e) { UI.toast('Failed', 'error'); }
+                            this.disabled = false;
+                        });
+                    }
+                }
+
+                // Load articles in list
+                const { data: items } = await window.supabaseClient
+                    .from('reading_list_items')
+                    .select('article_id, sort_order, note')
+                    .eq('list_id', listId)
+                    .order('sort_order', { ascending: true });
+
+                if (items && items.length > 0) {
+                    const articleIds = items.map(i => i.article_id);
+                    const { data: articles } = await window.supabaseClient
+                        .from('articles')
+                        .select('*')
+                        .in('id', articleIds)
+                        .eq('status', 'published')
+                        .eq('moderation_status', 'approved');
+
+                    if (articles && articles.length > 0) {
+                        document.getElementById('list-detail-articles').innerHTML =
+                            articles.map(a => UI.articleCardEnhanced(a)).join('');
+                        if (typeof UI.initInteractionToolbar === 'function') UI.initInteractionToolbar();
+                    }
+                } else {
+                    document.getElementById('list-detail-articles').innerHTML =
+                        '<div style="text-align:center;color:var(--text-tertiary);padding:var(--space-8);grid-column:1/-1">No articles in this list yet</div>';
+                }
+            } catch (err) {
+                console.error('loadListDetail:', err.message);
+            }
+        }
+    </script>
+</Fragment>
+</BaseLayout>

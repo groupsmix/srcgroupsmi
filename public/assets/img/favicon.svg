@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="premiumPurple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6200ea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d500f9;stop-opacity:1" />
+    </linearGradient>
+    
+    <filter id="innerShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+      <feOffset dx="2" dy="2"/>
+      <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" result="shadow"/>
+      <feFlood flood-color="#000" flood-opacity="0.3"/>
+      <feComposite in2="shadow" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <path d="M50,15 
+           A35,35 0 1,0 85,50 
+           L85,45 
+           A5,5 0 0,0 75,45 
+           L75,50 
+           A25,25 0 1,1 50,25 
+           C65,25 75,35 75,45
+           L75,55
+           C75,65 65,75 50,75
+           C35,75 25,65 25,55
+           L25,45
+           C25,35 35,25 50,25" 
+        fill="none" 
+        stroke="url(#premiumPurple)" 
+        stroke-width="12" 
+        stroke-linecap="round" 
+        filter="url(#innerShadow)"/>
+        
+  <circle cx="50" cy="50" r="6" fill="url(#premiumPurple)">
+    <animate attributeName="opacity" values="1;0.5;1" dur="3s" repeatCount="indefinite" />
+  </circle>
+</svg>

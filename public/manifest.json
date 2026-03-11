@@ -1,0 +1,42 @@
+{
+  "name": "GroupsMix — Discover Trusted Social Media Groups",
+  "short_name": "GroupsMix",
+  "description": "Find, join, and promote verified communities across WhatsApp, Telegram, Discord, Facebook and more.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0a0f",
+  "theme_color": "#6200ea",
+  "categories": ["social", "communication", "utilities"],
+  "icons": [
+    { "src": "/assets/img/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/assets/img/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/img/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Search Groups",
+      "short_name": "Search",
+      "url": "/search",
+      "description": "Search for social media groups"
+    },
+    {
+      "name": "Submit Group",
+      "short_name": "Submit",
+      "url": "/submit",
+      "description": "Submit your group to the directory"
+    },
+    {
+      "name": "Jobs",
+      "short_name": "Jobs",
+      "url": "/jobs",
+      "description": "Find community management jobs"
+    },
+    {
+      "name": "Marketplace",
+      "short_name": "Market",
+      "url": "/marketplace",
+      "description": "Buy and sell social media assets"
+    }
+  ]
+}

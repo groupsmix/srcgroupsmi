@@ -1,0 +1,310 @@
+/**
+ * /api/chat — AI Chatbot proxy (server-side)
+ *
+ * Smart load-balanced dual-API strategy:
+ *   - Alternates primary provider between Groq and OpenRouter per request
+ *   - Uses a time-based rotation to distribute load evenly
+ *   - If the primary provider fails, falls back to the other automatically
+ *   - OpenRouter uses a fallback chain of free models
+ *
+ * Includes GroupsMix knowledge base in the system prompt.
+ *
+ * Request (POST JSON):
+ *   { messages: [{role, content}] }
+ *
+ * Response: Server-Sent Events (SSE) stream of text chunks
+ */
+
+/* ── Allowed origins for CORS ────────────────────────────────── */
+const ALLOWED_ORIGINS = [
+    'https://groupsmix.com',
+    'https://www.groupsmix.com'
+];
+
+/* ── CORS headers ────────────────────────────────────────────── */
+function corsHeaders(origin) {
+    const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+    return {
+        'Access-Control-Allow-Origin': allowed,
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+    };
+}
+
+/* ── OpenRouter free models (fallback chain) ─────────────────── */
+const OPENROUTER_MODELS = [
+    'google/gemma-3-27b-it:free',
+    'google/gemma-3-12b-it:free',
+    'meta-llama/llama-3.3-70b-instruct:free',
+    'mistralai/mistral-small-3.1-24b-instruct:free',
+    'nousresearch/hermes-3-llama-3.1-405b:free'
+];
+
+/* ── GroupsMix Knowledge Base (System Prompt) ────────────────── */
+const SYSTEM_PROMPT = `You are GroupsMix Assistant — a concise, smart chatbot on GroupsMix.com.
+
+## CRITICAL RESPONSE RULES (MUST FOLLOW)
+1. **BE SHORT**: Maximum 2-3 sentences per response. Never write paragraphs.
+2. **ONE link per topic**: Give the most relevant link only, not a list of links.
+3. **No filler**: No greetings like "Great question!", no "Here's what I found", no "I'd be happy to help". Just answer directly.
+4. **No repeating info**: Never restate what the user said. Just answer.
+5. **Language match**: Reply in the SAME language the user writes in (Arabic → Arabic, English → English, etc.)
+6. **No lists unless asked**: Don't give bullet-point lists unless the user specifically asks for options.
+7. **Max 80 words** per response unless the user asks for a detailed explanation.
+
+## RESPONSE STYLE EXAMPLES
+- User: "كيف أضيف قروب؟" → "ارفع قروبك من هنا: https://groupsmix.com/submit"
+- User: "I want WhatsApp groups for tech" → "Browse tech WhatsApp groups here: https://groupsmix.com/search?platform=whatsapp — use the category filter for Tech."
+- User: "ما هو GroupsMix؟" → "GroupsMix دليل موثوق لاكتشاف والانضمام لمجموعات واتساب وتيليجرام وديسكورد وفيسبوك، مع نظام تقييم وحماية من الاحتيال."
+- User: "hi" → "Hey! How can I help? Looking for groups, want to submit one, or need help with something?"
+
+## GroupsMix Knowledge
+- **Directory** for WhatsApp, Telegram, Discord, Facebook groups across 50+ countries.
+- **Features**: Trust scores, AI-powered review, scam protection, 50+ countries, many categories.
+- **AI Tools**: Name Generator, Rules Generator, Viral Post Creator, Scam Detector, Health Analyzer, Privacy Auditor.
+
+## Links (use ONLY when relevant — pick ONE, not all)
+- Search: https://groupsmix.com/search
+- Submit: https://groupsmix.com/submit
+- AI Tools: https://groupsmix.com/pages/tools/
+- Store: https://groupsmix.com/store
+- Jobs: https://groupsmix.com/jobs
+- Marketplace: https://groupsmix.com/marketplace
+- About: https://groupsmix.com/about
+- Platform filters: add ?platform=whatsapp | telegram | discord | facebook to /search
+- Country filters: add ?country=us | gb | in | ng | br | de | fr | sa | eg | global to /search
+
+## What NOT to do
+- NEVER write more than 80 words unless explicitly asked for details.
+- NEVER list all links at once. Pick the ONE most relevant.
+- NEVER repeat the question back.
+- NEVER use phrases like "Sure!", "Of course!", "Absolutely!", "Great question!".
+- NEVER explain what GroupsMix is unless directly asked.
+- If you don't know something, say "I'm not sure about that" — don't make things up.`;
+
+/* ── Input validation ────────────────────────────────────────── */
+function sanitizeMessage(msg) {
+    if (!msg || typeof msg.role !== 'string' || typeof msg.content !== 'string') return null;
+    const role = msg.role === 'assistant' ? 'assistant' : 'user';
+    return { role: role, content: msg.content.substring(0, 2000).trim() };
+}
+
+/* ── Main handler ────────────────────────────────────────────── */
+export async function onRequest(context) {
+    const { request, env } = context;
+    const origin = request.headers.get('Origin') || '';
+
+    if (request.method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: corsHeaders(origin) });
+    }
+
+    if (request.method !== 'POST') {
+        return new Response(
+            JSON.stringify({ ok: false, error: 'Method not allowed' }),
+            { status: 405, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+        );
+    }
+
+    // Get available API keys
+    const groqKey = env?.GROQ_API_KEY;
+    const openrouterKey = env?.OPENROUTER_API_KEY;
+
+    if (!groqKey && !openrouterKey) {
+        return new Response(
+            JSON.stringify({ ok: false, error: 'AI service not configured' }),
+            { status: 503, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+        );
+    }
+
+    let body;
+    try {
+        body = await request.json();
+    } catch {
+        return new Response(
+            JSON.stringify({ ok: false, error: 'Invalid JSON body' }),
+            { status: 400, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+        );
+    }
+
+    // Validate and sanitize messages
+    const rawMessages = Array.isArray(body.messages) ? body.messages : [];
+    const userMessages = rawMessages.map(sanitizeMessage).filter(Boolean);
+
+    // Keep only last 10 messages to control context size
+    const trimmedMessages = userMessages.slice(-10);
+
+    if (!trimmedMessages.length) {
+        return new Response(
+            JSON.stringify({ ok: false, error: 'At least one message is required' }),
+            { status: 422, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+        );
+    }
+
+    // Build full messages array with system prompt
+    const messages = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...trimmedMessages
+    ];
+
+    // ── Smart Load Balancing ───────────────────────────────────
+    // Alternate primary provider using time-based rotation (seconds).
+    // Even seconds → Groq first; Odd seconds → OpenRouter first.
+    // This distributes load ~50/50 across providers over time,
+    // maximizing free tier usage on both APIs.
+    const useGroqFirst = (Math.floor(Date.now() / 1000) % 2 === 0);
+    const hasBothKeys = groqKey && openrouterKey;
+
+    let aiRes = null;
+
+    // Helper: try Groq
+    async function tryGroq() {
+        try {
+            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + groqKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'llama-3.3-70b-versatile',
+                    messages: messages,
+                    max_tokens: 300,
+                    temperature: 0.6,
+                    stream: true
+                })
+            });
+            if (!res.ok) {
+                console.error('Groq error:', res.status);
+                return null;
+            }
+            return res;
+        } catch (err) {
+            console.error('Groq fetch error:', err);
+            return null;
+        }
+    }
+
+    // Helper: try OpenRouter (model fallback chain)
+    async function tryOpenRouter() {
+        for (const model of OPENROUTER_MODELS) {
+            try {
+                const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + openrouterKey,
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': 'https://groupsmix.com',
+                        'X-Title': 'GroupsMix AI Assistant'
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: messages,
+                        max_tokens: 300,
+                        temperature: 0.6,
+                        stream: true
+                    })
+                });
+                if (res.ok) {
+                    console.log('OpenRouter success with model:', model);
+                    return res;
+                }
+                console.error('OpenRouter error (' + model + '):', res.status);
+            } catch (err) {
+                console.error('OpenRouter fetch error (' + model + '):', err);
+            }
+        }
+        return null;
+    }
+
+    // ── Execute load-balanced routing with fallback ─────────────
+    if (hasBothKeys) {
+        if (useGroqFirst) {
+            aiRes = await tryGroq();
+            if (!aiRes) {
+                console.log('Groq unavailable for chat, falling back to OpenRouter');
+                aiRes = await tryOpenRouter();
+            }
+        } else {
+            aiRes = await tryOpenRouter();
+            if (!aiRes) {
+                console.log('OpenRouter unavailable for chat, falling back to Groq');
+                aiRes = await tryGroq();
+            }
+        }
+    } else if (groqKey) {
+        aiRes = await tryGroq();
+    } else {
+        aiRes = await tryOpenRouter();
+    }
+
+    // ── All APIs failed ────────────────────────────────────────
+    if (!aiRes) {
+        return new Response(
+            JSON.stringify({ ok: false, error: 'AI service temporarily unavailable. Please try again.' }),
+            { status: 503, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+        );
+    }
+
+    // ── Stream the SSE response back to the client ──────────────
+    try {
+        const { readable, writable } = new TransformStream();
+        const writer = writable.getWriter();
+        const encoder = new TextEncoder();
+
+        (async () => {
+            const reader = aiRes.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        const trimmed = line.trim();
+                        if (!trimmed || !trimmed.startsWith('data: ')) continue;
+                        const data = trimmed.slice(6);
+                        if (data === '[DONE]') {
+                            await writer.write(encoder.encode('data: [DONE]\n\n'));
+                            continue;
+                        }
+                        try {
+                            const parsed = JSON.parse(data);
+                            const content = parsed.choices?.[0]?.delta?.content;
+                            if (content) {
+                                await writer.write(encoder.encode('data: ' + JSON.stringify({ text: content }) + '\n\n'));
+                            }
+                        } catch (e) {
+                            // Skip malformed SSE lines
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Stream processing error:', e);
+            } finally {
+                await writer.close();
+            }
+        })();
+
+        return new Response(readable, {
+            status: 200,
+            headers: {
+                ...corsHeaders(origin),
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive'
+            }
+        });
+    } catch (err) {
+        console.error('Chat proxy error:', err);
+        return new Response(
+            JSON.stringify({ ok: false, error: 'Internal error' }),
+            { status: 500, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+        );
+    }
+}

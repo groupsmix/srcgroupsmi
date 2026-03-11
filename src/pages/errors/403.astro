@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="403 — Access Denied &mdash; GroupsMix"
+  noIndex={true}
+>
+<style is:inline>
+        .error-page {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 70vh;
+            text-align: center;
+            padding: var(--space-8);
+        }
+        .error-page__code {
+            font-size: 6rem;
+            font-weight: var(--font-bold);
+            background: linear-gradient(135deg, #6200ea 0%, #b388ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-bottom: var(--space-2);
+        }
+        .error-page__title {
+            font-size: var(--text-2xl);
+            font-weight: var(--font-bold);
+            color: var(--text-primary);
+            margin-bottom: var(--space-3);
+        }
+        .error-page__desc {
+            color: var(--text-secondary);
+            font-size: var(--text-base);
+            max-width: 400px;
+            margin: 0 auto var(--space-6);
+            line-height: var(--leading-relaxed);
+        }
+        .error-page__actions {
+            display: flex;
+            gap: var(--space-3);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+    </style>
+
+
+        <div class="error-page">
+            <div>
+                <div class="error-page__code">403</div>
+                <div class="error-page__title">Access Denied</div>
+                <div class="error-page__desc">
+                    You don't have permission to access this page.
+                    If you believe this is an error, please contact an administrator.
+                </div>
+                <div class="error-page__actions">
+                    <a href="/" class="btn btn-primary">&#127968; Go Home</a>
+                    <a href="/contact" class="btn btn-secondary">&#128232; Contact Support</a>
+                </div>
+            </div>
+        </div>
+    
+</BaseLayout>

@@ -1,0 +1,88 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Weekly Challenges — GroupsMix"
+  description="Join weekly writing challenges on GroupsMix. Earn GMX Coins, XP, and exclusive badges by completing community challenges."
+  cssFiles={["/assets/css/fuel-community.css?v=20260310b"]}
+  includeFuel={true}
+  includeFuelComponents={true}
+>
+
+        <div style="max-width:var(--container-lg);margin:0 auto;padding:var(--space-8) var(--space-4)">
+            <h1 style="text-align:center;margin-bottom:var(--space-2)">Weekly Challenges</h1>
+            <p style="text-align:center;color:var(--text-secondary);margin-bottom:var(--space-8);font-size:var(--text-sm)">Complete challenges to earn GMX Coins, XP, and exclusive badges</p>
+
+            <!-- Active Challenges -->
+            <section style="margin-bottom:var(--space-8)">
+                <h2 style="font-size:var(--text-lg);font-weight:var(--font-bold);margin-bottom:var(--space-4);display:flex;align-items:center;gap:var(--space-2)">
+                    <span style="color:var(--fuel-green)">&#9889;</span> Active Challenges
+                </h2>
+                <div class="fuel-challenges-grid" id="active-challenges">
+                    <div class="skeleton" style="height:200px;border-radius:var(--radius-lg)"></div>
+                    <div class="skeleton" style="height:200px;border-radius:var(--radius-lg)"></div>
+                </div>
+            </section>
+
+            <!-- Upcoming Challenges -->
+            <section style="margin-bottom:var(--space-8)">
+                <h2 style="font-size:var(--text-lg);font-weight:var(--font-bold);margin-bottom:var(--space-4);display:flex;align-items:center;gap:var(--space-2)">
+                    <span style="color:var(--fuel-orange)">&#128197;</span> Upcoming Challenges
+                </h2>
+                <div class="fuel-challenges-grid" id="upcoming-challenges">
+                    <div class="skeleton" style="height:200px;border-radius:var(--radius-lg)"></div>
+                </div>
+            </section>
+
+            <!-- Completed Challenges -->
+            <section>
+                <h2 style="font-size:var(--text-lg);font-weight:var(--font-bold);margin-bottom:var(--space-4);display:flex;align-items:center;gap:var(--space-2)">
+                    <span style="color:var(--text-tertiary)">&#127942;</span> Completed Challenges
+                </h2>
+                <div class="fuel-challenges-grid" id="completed-challenges">
+                    <div class="skeleton" style="height:200px;border-radius:var(--radius-lg)"></div>
+                </div>
+            </section>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', loadChallenges);
+
+        async function loadChallenges() {
+            try {
+                var data = await Challenges.getAll();
+
+                // Active
+                var activeEl = document.getElementById('active-challenges');
+                if (data.active && data.active.length > 0) {
+                    activeEl.innerHTML = data.active.map(function (c) { return UI.fuelChallengeCard(c); }).join('');
+                    UI.initChallengeButtons(activeEl);
+                } else {
+                    activeEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:var(--space-6);color:var(--text-tertiary);background:var(--bg-card);border-radius:var(--radius-lg);border:1px solid var(--border-primary)">No active challenges right now. Check back soon!</div>';
+                }
+
+                // Upcoming
+                var upcomingEl = document.getElementById('upcoming-challenges');
+                if (data.upcoming && data.upcoming.length > 0) {
+                    upcomingEl.innerHTML = data.upcoming.map(function (c) { return UI.fuelChallengeCard(c); }).join('');
+                } else {
+                    upcomingEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:var(--space-6);color:var(--text-tertiary);background:var(--bg-card);border-radius:var(--radius-lg);border:1px solid var(--border-primary)">No upcoming challenges scheduled yet.</div>';
+                }
+
+                // Completed
+                var completedEl = document.getElementById('completed-challenges');
+                if (data.completed && data.completed.length > 0) {
+                    completedEl.innerHTML = data.completed.map(function (c) { return UI.fuelChallengeCard(c); }).join('');
+                } else {
+                    completedEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:var(--space-6);color:var(--text-tertiary);background:var(--bg-card);border-radius:var(--radius-lg);border:1px solid var(--border-primary)">No completed challenges yet.</div>';
+                }
+
+            } catch (err) {
+                console.error('Challenges page error:', err.message);
+                document.getElementById('active-challenges').innerHTML = '<div style="text-align:center;padding:var(--space-4);color:var(--text-tertiary)">Unable to load challenges</div>';
+            }
+        }
+    </script>
+</Fragment>
+</BaseLayout>

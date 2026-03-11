@@ -1,0 +1,313 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Browse Groups &mdash; GroupsMix"
+  description="Browse social media groups by category, platform, and country. Filter and discover the best communities."
+  canonical="https://groupsmix.com/browse"
+  ogTitle="Browse Groups - GroupsMix"
+  ogDescription="Browse social media groups by category, platform, and country. Filter and discover the best communities."
+  ogUrl="https://groupsmix.com/browse"
+>
+<style is:inline>
+        .browse-hero{padding:var(--space-8) 0 var(--space-4);text-align:center}
+        .browse-hero__subtitle{color:var(--text-secondary);margin-top:var(--space-2)}
+        .browse-layout{display:grid;grid-template-columns:280px 1fr;gap:var(--space-6);align-items:start}
+        .smart-sidebar{position:sticky;top:76px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-4);max-height:calc(100vh - 92px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border-secondary) transparent}
+        .smart-sidebar::-webkit-scrollbar{width:4px}
+        .smart-sidebar::-webkit-scrollbar-thumb{background:var(--border-secondary);border-radius:var(--radius-full)}
+        .smart-sidebar__title{font-size:var(--text-lg);font-weight:var(--font-bold);margin-bottom:var(--space-4);display:flex;align-items:center;gap:var(--space-2)}
+        .smart-sidebar__section{margin-bottom:var(--space-5);padding-bottom:var(--space-4);border-bottom:1px solid var(--border-primary)}
+        .smart-sidebar__section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+        .smart-sidebar__label{font-size:var(--text-sm);font-weight:var(--font-semibold);color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-2)}
+        .sf-platform-list{display:flex;flex-direction:column;gap:var(--space-1)}
+        .sf-platform-item{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-1) var(--space-2);border-radius:var(--radius-md);cursor:pointer;font-size:var(--text-sm);transition:background .15s ease;user-select:none}
+        .sf-platform-item:hover{background:var(--bg-tertiary)}
+        .sf-platform-item input[type="checkbox"]{width:16px;height:16px;accent-color:var(--accent-primary);cursor:pointer;flex-shrink:0}
+        .sf-platform-item__kind{font-size:10px;padding:1px 6px;border-radius:var(--radius-full);font-weight:var(--font-semibold);text-transform:uppercase;letter-spacing:.03em;margin-left:auto}
+        .sf-platform-item__kind--group{background:var(--accent-primary-light);color:var(--accent-primary)}
+        .sf-platform-item__kind--channel{background:var(--info-light);color:var(--info)}
+        .sf-platform-item__kind--bot{background:var(--warning-light);color:var(--warning)}
+        .sf-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:var(--space-2) 0}
+        .sf-toggle-row__label{font-size:var(--text-sm);display:flex;align-items:center;gap:var(--space-2)}
+        .sf-multiselect{position:relative;margin-bottom:var(--space-2)}
+        .sf-multiselect__trigger{width:100%;height:40px;padding:8px 32px 8px 12px;background:var(--bg-input);border:1px solid var(--border-primary);border-radius:var(--radius-md);color:var(--text-primary);font-size:var(--text-sm);cursor:pointer;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:border-color .15s ease;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236a6a82' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+        .sf-multiselect__trigger:focus,.sf-multiselect__trigger--open{border-color:var(--accent-primary)}
+        .sf-multiselect__dropdown{position:absolute;top:100%;left:0;right:0;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-md);box-shadow:var(--shadow-md);z-index:50;max-height:200px;overflow-y:auto;margin-top:4px;display:none}
+        .sf-multiselect__dropdown--open{display:block}
+        .sf-multiselect__search{width:100%;padding:8px 12px;border:none;border-bottom:1px solid var(--border-primary);background:var(--bg-input);color:var(--text-primary);font-size:var(--text-sm);outline:none}
+        .sf-multiselect__option{display:flex;align-items:center;gap:var(--space-2);padding:6px 12px;cursor:pointer;font-size:var(--text-sm);transition:background .1s ease}
+        .sf-multiselect__option:hover{background:var(--bg-tertiary)}
+        .sf-multiselect__option input[type="checkbox"]{width:14px;height:14px;accent-color:var(--accent-primary);cursor:pointer;flex-shrink:0}
+        .active-filters{display:flex;flex-wrap:wrap;gap:var(--space-2);margin-bottom:var(--space-4);align-items:center}
+        .active-filter-tag{display:inline-flex;align-items:center;gap:var(--space-1);padding:var(--space-1) var(--space-3);background:var(--accent-primary-light);border:1px solid var(--accent-primary);border-radius:var(--radius-full);font-size:var(--text-xs);color:var(--accent-primary);font-weight:var(--font-semibold)}
+        .active-filter-tag__remove{background:none;border:none;cursor:pointer;font-size:var(--text-xs);color:var(--accent-primary);padding:0;margin-left:var(--space-1);line-height:1}
+        .clear-all-btn{font-size:var(--text-xs);color:var(--text-tertiary);background:none;border:none;cursor:pointer;text-decoration:underline;padding:0}
+        .results-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);flex-wrap:wrap;gap:var(--space-2)}
+        .results-count{color:var(--text-secondary);font-size:var(--text-sm)}
+        .sf-sort-select{height:36px;padding:4px 28px 4px 10px;background:var(--bg-input);border:1px solid var(--border-primary);border-radius:var(--radius-md);color:var(--text-primary);font-size:var(--text-sm);cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236a6a82' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+        .sf-mobile-toggle{display:none;width:100%;margin-bottom:var(--space-4)}
+        .sf-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:998}
+        .sf-overlay--open{display:block}
+        @media(max-width:899px){
+            .browse-layout{grid-template-columns:1fr}
+            .smart-sidebar{position:fixed;top:0;left:-300px;width:290px;height:100vh;max-height:100vh;border-radius:0;z-index:999;transition:left .3s ease;border:none;border-right:1px solid var(--border-primary)}
+            .smart-sidebar--open{left:0}
+            .sf-mobile-toggle{display:flex}
+        }
+    </style>
+
+
+        <div class="container">
+            <section class="browse-hero">
+                <h1>Browse Groups</h1>
+                <p class="browse-hero__subtitle">Explore groups and find exactly what you need &mdash; instant results, no reloads</p>
+            </section>
+
+            <button class="btn btn-secondary sf-mobile-toggle" id="sf-mobile-toggle"><span>Filters</span></button>
+            <div class="sf-overlay" id="sf-overlay"></div>
+
+            <div class="browse-layout">
+                <aside class="smart-sidebar" id="smart-sidebar">
+                    <div class="smart-sidebar__title">Groups</div>
+
+                    <div class="smart-sidebar__section">
+                        <div class="smart-sidebar__label">Platform</div>
+                        <div class="sf-platform-list" id="sf-platforms"></div>
+                    </div>
+
+                    <div class="smart-sidebar__section">
+                        <div class="smart-sidebar__label">Verification Status</div>
+                        <div class="sf-toggle-row">
+                            <span class="sf-toggle-row__label">Verified Only</span>
+                            <label class="toggle"><input type="checkbox" id="sf-verified"><span class="toggle__slider"></span></label>
+                        </div>
+                        <div class="sf-toggle-row">
+                            <span class="sf-toggle-row__label">VIP Only</span>
+                            <label class="toggle"><input type="checkbox" id="sf-vip"><span class="toggle__slider"></span></label>
+                        </div>
+                    </div>
+
+                    <div class="smart-sidebar__section">
+                        <div class="smart-sidebar__label">Category</div>
+                        <div class="sf-multiselect" id="sf-category-ms">
+                            <button class="sf-multiselect__trigger" id="sf-category-trigger" type="button">All Categories</button>
+                            <div class="sf-multiselect__dropdown" id="sf-category-dropdown">
+                                <input type="text" class="sf-multiselect__search" id="sf-category-search" placeholder="Search categories...">
+                                <div id="sf-category-options"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="smart-sidebar__section">
+                        <div class="smart-sidebar__label">Country</div>
+                        <div class="sf-multiselect" id="sf-country-ms">
+                            <button class="sf-multiselect__trigger" id="sf-country-trigger" type="button">All Countries</button>
+                            <div class="sf-multiselect__dropdown" id="sf-country-dropdown">
+                                <input type="text" class="sf-multiselect__search" id="sf-country-search" placeholder="Search countries...">
+                                <div id="sf-country-options"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:var(--space-2)">
+                        <button class="btn btn-primary btn-sm" id="sf-apply" style="flex:1">Apply Filters</button>
+                        <button class="btn btn-secondary btn-sm" id="sf-clear">Clear</button>
+                    </div>
+                </aside>
+
+                <div class="browse-results">
+                    <div class="active-filters" id="active-filters"></div>
+                    <div class="results-header" id="results-header">
+                        <h2 id="results-title" style="font-size:var(--text-xl)">All Groups</h2>
+                        <div style="display:flex;align-items:center;gap:var(--space-3)">
+                            <span class="results-count" id="results-count"></span>
+                            <select class="sf-sort-select" id="sf-sort">
+                                <option value="ranking">Ranking</option>
+                                <option value="newest">Newest</option>
+                                <option value="views">Most Viewed</option>
+                                <option value="rating">Top Rated</option>
+                                <option value="trending">Trending</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="results-container"></div>
+                    <div id="pagination-container"></div>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', initPage);
+        var currentPage = 1, selectedPlatforms = [], selectedCategories = [], selectedCountries = [];
+        var verifiedOnly = false, vipOnly = false, currentSort = 'ranking';
+
+        function initPage() {
+            var params = new URLSearchParams(window.location.search);
+            if (params.get('platform') || params.get('p')) selectedPlatforms = (params.get('platform') || params.get('p')).split(',');
+            if (params.get('cat') || params.get('category')) selectedCategories = (params.get('cat') || params.get('category')).split(',');
+            if (params.get('c') || params.get('country')) selectedCountries = (params.get('c') || params.get('country')).split(',');
+            if (params.get('verified') === '1') verifiedOnly = true;
+            if (params.get('vip') === '1') vipOnly = true;
+            currentSort = params.get('sort') || 'ranking';
+            renderPlatformCheckboxes(); renderCategoryMultiSelect(); renderCountryMultiSelect();
+            syncSidebarState(); renderActiveFilters();
+            document.getElementById('sf-sort').value = currentSort;
+            document.getElementById('sf-sort').addEventListener('change', function(){ currentSort = this.value; currentPage = 1; updateUrl(); loadGroups(); });
+            document.getElementById('sf-apply').addEventListener('click', applyFilters);
+            document.getElementById('sf-clear').addEventListener('click', clearAllFilters);
+            document.getElementById('sf-mobile-toggle').addEventListener('click', function(){ document.getElementById('smart-sidebar').classList.add('smart-sidebar--open'); document.getElementById('sf-overlay').classList.add('sf-overlay--open'); });
+            document.getElementById('sf-overlay').addEventListener('click', closeMobileSidebar);
+            document.addEventListener('click', function(e){
+                if(!e.target.closest('#sf-category-ms')){document.getElementById('sf-category-dropdown').classList.remove('sf-multiselect__dropdown--open');document.getElementById('sf-category-trigger').classList.remove('sf-multiselect__trigger--open');}
+                if(!e.target.closest('#sf-country-ms')){document.getElementById('sf-country-dropdown').classList.remove('sf-multiselect__dropdown--open');document.getElementById('sf-country-trigger').classList.remove('sf-multiselect__trigger--open');}
+            });
+            loadGroups();
+        }
+
+        function closeMobileSidebar(){ document.getElementById('smart-sidebar').classList.remove('smart-sidebar--open'); document.getElementById('sf-overlay').classList.remove('sf-overlay--open'); }
+
+        function renderPlatformCheckboxes(){
+            document.getElementById('sf-platforms').innerHTML = CONFIG.platforms.map(function(p){
+                var k = p.kind || 'group';
+                return '<label class="sf-platform-item"><input type="checkbox" value="'+p.id+'" class="sf-platform-cb"'+(selectedPlatforms.indexOf(p.id)>-1?' checked':'')+'><span>'+p.emoji+' '+p.name+'</span><span class="sf-platform-item__kind sf-platform-item__kind--'+k+'">'+k+'</span></label>';
+            }).join('');
+        }
+
+        function initMultiSelect(triggerId, dropdownId, searchId, optionsId, items, selectedArr, itemKey, itemLabel, cbClass, updateLabel){
+            var trigger = document.getElementById(triggerId);
+            var dropdown = document.getElementById(dropdownId);
+            var search = document.getElementById(searchId);
+            var opts = document.getElementById(optionsId);
+            trigger.addEventListener('click', function(e){ e.stopPropagation(); dropdown.classList.toggle('sf-multiselect__dropdown--open'); trigger.classList.toggle('sf-multiselect__trigger--open'); if(dropdown.classList.contains('sf-multiselect__dropdown--open')) search.focus(); });
+            function render(filter){
+                var list = filter ? items.filter(function(i){ return itemLabel(i).toLowerCase().indexOf(filter.toLowerCase()) > -1; }) : items;
+                opts.innerHTML = list.map(function(i){ return '<label class="sf-multiselect__option"><input type="checkbox" value="'+itemKey(i)+'" class="'+cbClass+'"'+(selectedArr.indexOf(itemKey(i))>-1?' checked':'')+'><span>'+itemLabel(i)+'</span></label>'; }).join('');
+            }
+            render('');
+            search.addEventListener('input', function(){ render(this.value); });
+            updateLabel();
+        }
+
+        function renderCategoryMultiSelect(){
+            initMultiSelect('sf-category-trigger','sf-category-dropdown','sf-category-search','sf-category-options',
+                CONFIG.categories, selectedCategories, function(c){return c.id;}, function(c){return c.emoji+' '+c.name;}, 'sf-cat-cb', updateCategoryTriggerLabel);
+        }
+
+        function renderCountryMultiSelect(){
+            initMultiSelect('sf-country-trigger','sf-country-dropdown','sf-country-search','sf-country-options',
+                CONFIG.countries, selectedCountries, function(c){return c.code;}, function(c){return c.flag+' '+c.name;}, 'sf-country-cb', updateCountryTriggerLabel);
+        }
+
+        function syncSidebarState(){ document.getElementById('sf-verified').checked = verifiedOnly; document.getElementById('sf-vip').checked = vipOnly; }
+
+        function readSidebarState(){
+            selectedPlatforms = []; document.querySelectorAll('.sf-platform-cb:checked').forEach(function(cb){ selectedPlatforms.push(cb.value); });
+            selectedCategories = []; document.querySelectorAll('.sf-cat-cb:checked').forEach(function(cb){ selectedCategories.push(cb.value); });
+            selectedCountries = []; document.querySelectorAll('.sf-country-cb:checked').forEach(function(cb){ selectedCountries.push(cb.value); });
+            verifiedOnly = document.getElementById('sf-verified').checked;
+            vipOnly = document.getElementById('sf-vip').checked;
+        }
+
+        function applyFilters(){ readSidebarState(); currentPage=1; updateUrl(); updateCategoryTriggerLabel(); updateCountryTriggerLabel(); renderActiveFilters(); closeMobileSidebar(); loadGroups(); }
+
+        function clearAllFilters(){
+            selectedPlatforms=[]; selectedCategories=[]; selectedCountries=[]; verifiedOnly=false; vipOnly=false; currentSort='ranking'; currentPage=1;
+            document.querySelectorAll('.sf-platform-cb,.sf-cat-cb,.sf-country-cb').forEach(function(cb){cb.checked=false;});
+            document.getElementById('sf-verified').checked=false; document.getElementById('sf-vip').checked=false; document.getElementById('sf-sort').value='ranking';
+            updateCategoryTriggerLabel(); updateCountryTriggerLabel(); updateUrl(); renderActiveFilters(); closeMobileSidebar(); loadGroups();
+        }
+
+        function updateCategoryTriggerLabel(){
+            var t=document.getElementById('sf-category-trigger');
+            if(!selectedCategories.length) t.textContent='All Categories';
+            else if(selectedCategories.length===1){var c=CONFIG.categories.find(function(c){return c.id===selectedCategories[0];}); t.textContent=c?c.emoji+' '+c.name:selectedCategories[0];}
+            else t.textContent=selectedCategories.length+' categories selected';
+        }
+
+        function updateCountryTriggerLabel(){
+            var t=document.getElementById('sf-country-trigger');
+            if(!selectedCountries.length) t.textContent='All Countries';
+            else if(selectedCountries.length===1){var c=CONFIG.countries.find(function(c){return c.code===selectedCountries[0];}); t.textContent=c?c.flag+' '+c.name:selectedCountries[0];}
+            else t.textContent=selectedCountries.length+' countries selected';
+        }
+
+        function renderActiveFilters(){
+            var container=document.getElementById('active-filters'), tags=[];
+            selectedPlatforms.forEach(function(pid){ var p=CONFIG.platforms.find(function(p){return p.id===pid;}); if(p) tags.push({type:'platform',value:pid,label:p.emoji+' '+p.name}); });
+            selectedCategories.forEach(function(cid){ var c=CONFIG.categories.find(function(c){return c.id===cid;}); if(c) tags.push({type:'category',value:cid,label:c.emoji+' '+c.name}); });
+            selectedCountries.forEach(function(code){ var c=CONFIG.countries.find(function(c){return c.code===code;}); if(c) tags.push({type:'country',value:code,label:c.flag+' '+c.name}); });
+            if(verifiedOnly) tags.push({type:'verified',value:'1',label:'Verified Only'});
+            if(vipOnly) tags.push({type:'vip',value:'1',label:'VIP Only'});
+            if(!tags.length){container.innerHTML='';return;}
+            container.innerHTML=tags.map(function(t){return '<span class="active-filter-tag">'+Security.sanitize(t.label)+'<button class="active-filter-tag__remove" data-type="'+t.type+'" data-value="'+t.value+'" aria-label="Remove filter">&times;</button></span>';}).join('')+'<button class="clear-all-btn" id="clear-all-filters">Clear all</button>';
+            container.querySelectorAll('.active-filter-tag__remove').forEach(function(btn){btn.addEventListener('click',function(){removeFilter(btn.dataset.type,btn.dataset.value);});});
+            document.getElementById('clear-all-filters').addEventListener('click',clearAllFilters);
+        }
+
+        function removeFilter(type,value){
+            if(type==='platform'){selectedPlatforms=selectedPlatforms.filter(function(p){return p!==value;});var cb=document.querySelector('.sf-platform-cb[value="'+value+'"]');if(cb)cb.checked=false;}
+            else if(type==='category'){selectedCategories=selectedCategories.filter(function(c){return c!==value;});var cb2=document.querySelector('.sf-cat-cb[value="'+value+'"]');if(cb2)cb2.checked=false;updateCategoryTriggerLabel();}
+            else if(type==='country'){selectedCountries=selectedCountries.filter(function(c){return c!==value;});var cb3=document.querySelector('.sf-country-cb[value="'+value+'"]');if(cb3)cb3.checked=false;updateCountryTriggerLabel();}
+            else if(type==='verified'){verifiedOnly=false;document.getElementById('sf-verified').checked=false;}
+            else if(type==='vip'){vipOnly=false;document.getElementById('sf-vip').checked=false;}
+            currentPage=1;updateUrl();renderActiveFilters();loadGroups();
+        }
+
+        function updateUrl(){
+            var params=new URLSearchParams();
+            if(selectedPlatforms.length) params.set('platform',selectedPlatforms.join(','));
+            if(selectedCategories.length) params.set('cat',selectedCategories.join(','));
+            if(selectedCountries.length) params.set('country',selectedCountries.join(','));
+            if(verifiedOnly) params.set('verified','1');
+            if(vipOnly) params.set('vip','1');
+            if(currentSort&&currentSort!=='ranking') params.set('sort',currentSort);
+            var qs=params.toString();
+            history.replaceState(null,'',window.location.pathname+(qs?'?'+qs:''));
+        }
+
+        function buildResultTitle(){
+            var parts=[];
+            selectedPlatforms.forEach(function(pid){var p=CONFIG.platforms.find(function(p){return p.id===pid;});if(p)parts.push(p.name);});
+            selectedCategories.forEach(function(cid){var c=CONFIG.categories.find(function(c){return c.id===cid;});if(c)parts.push(c.name);});
+            selectedCountries.forEach(function(code){var c=CONFIG.countries.find(function(c){return c.code===code;});if(c)parts.push(c.name);});
+            if(verifiedOnly) parts.push('Verified');
+            if(vipOnly) parts.push('VIP');
+            if(!parts.length) return 'All Groups';
+            var title=parts.join(' + ');
+            if(/groups|channels/i.test(title)) return title;
+            return title+' Groups';
+        }
+
+        async function loadGroups(){
+            document.getElementById('results-title').textContent=buildResultTitle();
+            UI.groupGridSkeleton(12,'results-container');
+            document.getElementById('pagination-container').innerHTML='';
+            var offset=(currentPage-1)*CONFIG.perPage;
+            var platform=selectedPlatforms.length===1?selectedPlatforms[0]:'';
+            var category=selectedCategories.length===1?selectedCategories[0]:'';
+            var country=selectedCountries.length===1?selectedCountries[0]:'';
+            try{
+                var result=await DB.groups.getApproved({platform:platform,category:category,country:country,sort:currentSort,limit:CONFIG.perPage,offset:offset});
+                var data=result.data||[];
+                /* Client-side array filtering for multi-select */
+                if(selectedPlatforms.length>1) data=data.filter(function(g){return selectedPlatforms.indexOf(g.platform)>-1;});
+                if(selectedCategories.length>1) data=data.filter(function(g){return selectedCategories.indexOf(g.category)>-1;});
+                if(selectedCountries.length>1) data=data.filter(function(g){return selectedCountries.indexOf(g.country)>-1;});
+                /* Verification status filtering */
+                if(verifiedOnly) data=data.filter(function(g){return g.is_verified===true;});
+                if(vipOnly) data=data.filter(function(g){return g.vip_tier&&g.vip_tier!=='none';});
+                /* Base64 link obfuscation */
+                data=data.map(function(g){if(g.link)g._obfuscated_link=Security.obfuscateLink(g.link);return g;});
+                var total=data.length;
+                document.getElementById('results-count').textContent=(result.count||total)+' group'+((result.count||total)!==1?'s':'')+' found';
+                if(!data.length){UI.emptyState('results-container','\ud83d\udced','No Groups Found','Try adjusting your filters or be the first to submit a group!','Submit Group','/submit');return;}
+                UI.groupGrid(data,'results-container');
+                var totalPages=Math.ceil((result.count||total)/CONFIG.perPage);
+                if(totalPages>1){document.getElementById('pagination-container').innerHTML=UI.pagination(currentPage,totalPages);UI.initPagination('pagination-container',function(p){currentPage=p;loadGroups();window.scrollTo({top:0,behavior:'smooth'});});}
+            }catch(err){console.error('Browse loadGroups:',err);UI.errorState('results-container',loadGroups);}
+        }
+    </script>
+</Fragment>
+</BaseLayout>

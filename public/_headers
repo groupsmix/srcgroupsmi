@@ -1,0 +1,83 @@
+/*.html
+  Content-Type: text/html; charset=utf-8
+
+/browse
+  Content-Type: text/html; charset=utf-8
+/group
+  Content-Type: text/html; charset=utf-8
+/category
+  Content-Type: text/html; charset=utf-8
+/country
+  Content-Type: text/html; charset=utf-8
+/platform
+  Content-Type: text/html; charset=utf-8
+/leaderboard
+  Content-Type: text/html; charset=utf-8
+/promote
+  Content-Type: text/html; charset=utf-8
+/advertise
+  Content-Type: text/html; charset=utf-8
+/donate
+  Content-Type: text/html; charset=utf-8
+/fuel
+  Content-Type: text/html; charset=utf-8
+/tools
+  Content-Type: text/html; charset=utf-8
+/tools/*
+  Content-Type: text/html; charset=utf-8
+/articles
+  Content-Type: text/html; charset=utf-8
+/article
+  Content-Type: text/html; charset=utf-8
+/scam-wall
+  Content-Type: text/html; charset=utf-8
+/stats
+  Content-Type: text/html; charset=utf-8
+/dashboard
+  Content-Type: text/html; charset=utf-8
+/my-groups
+  Content-Type: text/html; charset=utf-8
+/saved
+  Content-Type: text/html; charset=utf-8
+/settings
+  Content-Type: text/html; charset=utf-8
+/reset-password
+  Content-Type: text/html; charset=utf-8
+/admin
+  Content-Type: text/html; charset=utf-8
+/contact
+  Content-Type: text/html; charset=utf-8
+/faq
+  Content-Type: text/html; charset=utf-8
+/privacy
+  Content-Type: text/html; charset=utf-8
+/terms
+  Content-Type: text/html; charset=utf-8
+/support
+  Content-Type: text/html; charset=utf-8
+
+/*.html
+  Cache-Control: no-cache, must-revalidate
+
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/assets/css/*
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/assets/js/*
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/assets/img/*
+  Cache-Control: public, max-age=604800
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+  Cross-Origin-Resource-Policy: cross-origin
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://challenges.cloudflare.com https://static.cloudflareinsights.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://hmlqppacanpxmrfdlkec.supabase.co wss://hmlqppacanpxmrfdlkec.supabase.co https://cloudflareinsights.com https://challenges.cloudflare.com https://cdn.jsdelivr.net https://api.lemonsqueezy.com; img-src 'self' data: https:; frame-src https://challenges.cloudflare.com; base-uri 'self'; form-action 'self';

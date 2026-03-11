@@ -1,0 +1,277 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Owner Dashboard — GroupsMix"
+  noIndex={true}
+  cssFiles={["/assets/css/fuel-community.css?v=20260310b"]}
+  includeFuel={true}
+  includeFuelComponents={true}
+>
+<style is:inline>
+        .gate-screen{display:flex;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:var(--space-8)}
+        .gate-screen__spinner{width:40px;height:40px;border:3px solid var(--border-primary);border-top-color:var(--accent-primary);border-radius:50%;animation:spin .6s linear infinite;margin:0 auto var(--space-4)}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .gate-screen__text{color:var(--text-secondary);font-size:var(--text-sm)}
+    </style>
+
+
+        <div id="gate-container">
+            <div class="gate-screen">
+                <div>
+                    <div class="gate-screen__spinner"></div>
+                    <div class="gate-screen__text">Verifying access&hellip;</div>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    (function () {
+        'use strict';
+
+        document.addEventListener('DOMContentLoaded', function () { initOwnerGate(); });
+
+        async function initOwnerGate() {
+            try { await Auth.waitForAuth(); } catch (e) { denyAccess('Service unavailable'); return; }
+            var result = await window.supabaseClient.auth.getSession();
+            var session = result && result.data && result.data.session;
+            if (session) { verifySession(); } else { denyAccess('auth'); }
+        }
+
+        async function verifySession() {
+            try {
+                var userResult = await window.supabaseClient.auth.getUser();
+                if (!userResult || !userResult.data || !userResult.data.user) { denyAccess('auth'); return; }
+                verifyAdminRole(userResult.data.user.id);
+            } catch (err) { denyAccess('auth'); }
+        }
+
+        async function verifyAdminRole(authId) {
+            try {
+                var res = await window.supabaseClient.from('users').select('id, role').eq('auth_id', authId).maybeSingle();
+                if (res.error || !res.data || res.data.role !== 'admin') { denyAccess(); return; }
+                buildOwnerDashboard();
+            } catch (err) { denyAccess(); }
+        }
+
+        function denyAccess(reason) {
+            if (reason === 'auth') {
+                var gate = document.getElementById('gate-container');
+                if (gate) gate.innerHTML = '<div class="gate-screen"><div><div style="font-size:3rem;margin-bottom:var(--space-4)">&#128274;</div><div style="font-weight:var(--font-bold);margin-bottom:var(--space-2)">Sign In Required</div><div style="color:var(--text-secondary);margin-bottom:var(--space-4)">Admin access only</div><button class="btn btn-primary" onclick="UI.authModal(\'signin\')">Sign In</button></div></div>';
+            } else {
+                window.location.href = '/';
+            }
+        }
+
+        var _dashPeriod = 30;
+
+        async function buildOwnerDashboard() {
+            var gate = document.getElementById('gate-container');
+            gate.innerHTML =
+                '<div class="fuel-dashboard" style="padding:var(--space-6) var(--space-4);padding-bottom:120px">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-6);flex-wrap:wrap;gap:var(--space-3)">' +
+                '<h1 style="margin:0">Owner Dashboard</h1>' +
+                '<div style="display:flex;gap:var(--space-2)">' +
+                '<button class="btn btn-sm period-btn' + (_dashPeriod === 7 ? ' btn-primary' : ' btn-ghost') + '" data-days="7">7 Days</button>' +
+                '<button class="btn btn-sm period-btn' + (_dashPeriod === 30 ? ' btn-primary' : ' btn-ghost') + '" data-days="30">30 Days</button>' +
+                '<button class="btn btn-sm period-btn' + (_dashPeriod === 90 ? ' btn-primary' : ' btn-ghost') + '" data-days="90">90 Days</button>' +
+                '</div>' +
+                '</div>' +
+                '<div id="dash-stats" class="fuel-dashboard__grid"><div class="skeleton" style="height:120px;border-radius:var(--radius-lg)"></div><div class="skeleton" style="height:120px;border-radius:var(--radius-lg)"></div><div class="skeleton" style="height:120px;border-radius:var(--radius-lg)"></div><div class="skeleton" style="height:120px;border-radius:var(--radius-lg)"></div></div>' +
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-4)" id="dash-panels">' +
+                '<div class="skeleton" style="height:300px;border-radius:var(--radius-lg)"></div>' +
+                '<div class="skeleton" style="height:300px;border-radius:var(--radius-lg)"></div>' +
+                '</div>' +
+                '<div id="dash-withdrawals"></div>' +
+                '<div id="dash-challenge-form"></div>' +
+                '</div>';
+
+            // Period buttons
+            document.querySelectorAll('.period-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('.period-btn').forEach(function (b) { b.className = 'btn btn-sm btn-ghost period-btn'; });
+                    btn.className = 'btn btn-sm btn-primary period-btn';
+                    _dashPeriod = parseInt(btn.dataset.days);
+                    loadDashboardData();
+                });
+            });
+
+            loadDashboardData();
+        }
+
+        async function loadDashboardData() {
+            try {
+                var stats = await OwnerDashboard.getStats(_dashPeriod);
+                var withdrawals = await OwnerDashboard.getPendingWithdrawals();
+
+                // Stats Grid
+                var statsEl = document.getElementById('dash-stats');
+                if (stats) {
+                    statsEl.innerHTML =
+                        statCard('Total Users', stats.total_users || 0, 'rgba(116,185,255,0.15)', '#74b9ff') +
+                        statCard('Total Articles', stats.total_articles || 0, 'rgba(0,184,148,0.15)', '#00b894') +
+                        statCard('New Users (' + _dashPeriod + 'd)', stats.new_users || 0, 'rgba(108,92,231,0.15)', '#6c5ce7') +
+                        statCard('New Articles (' + _dashPeriod + 'd)', stats.new_articles || 0, 'rgba(253,203,110,0.15)', '#fdcb6e') +
+                        statCard('Total Coins Sold', Wallet.formatCoins(stats.total_coins_purchased || 0), 'rgba(249,168,37,0.15)', '#F59E0B') +
+                        statCard('Platform Revenue', '$' + ((stats.total_coins_purchased || 0) * 0.003).toFixed(2), 'rgba(16,185,129,0.15)', '#10B981') +
+                        statCard('Total Tips', Wallet.formatCoins(stats.total_tips || 0), 'rgba(139,92,246,0.15)', '#8B5CF6') +
+                        statCard('Pending Withdrawals', withdrawals.length, 'rgba(239,68,68,0.15)', '#EF4444');
+                } else {
+                    statsEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:var(--space-6);color:var(--text-tertiary)">Unable to load stats</div>';
+                }
+
+                // Panels: Top Writers + Recent Activity
+                var panelsEl = document.getElementById('dash-panels');
+                var leaderboard = await OwnerDashboard.getLeaderboard('xp', 10);
+
+                panelsEl.innerHTML =
+                    // Top Writers
+                    '<div class="fuel-dashboard-section">' +
+                    '<div class="fuel-dashboard-section__title">Top Writers (by XP)</div>' +
+                    (leaderboard.length > 0 ?
+                        leaderboard.map(function (u, i) { return UI.fuelLeaderboardRow(u, i + 1); }).join('') :
+                        '<div style="text-align:center;padding:var(--space-4);color:var(--text-tertiary)">No writers yet</div>'
+                    ) +
+                    '</div>' +
+
+                    // Top Fueled Authors
+                    '<div class="fuel-dashboard-section">' +
+                    '<div class="fuel-dashboard-section__title">Top Fueled Authors (by Tips)</div>' +
+                    '<div id="dash-top-fueled"><div class="skeleton" style="height:200px"></div></div>' +
+                    '</div>';
+
+                // Load top fueled
+                Tips.getTopFueledAuthors(10).then(function (authors) {
+                    var fueledEl = document.getElementById('dash-top-fueled');
+                    if (authors.length > 0) {
+                        fueledEl.innerHTML = authors.map(function (a, i) {
+                            var user = a.users || {};
+                            return '<div class="fuel-lb-row">' +
+                                '<div class="fuel-lb-row__rank"><span class="fuel-lb-rank">#' + (i + 1) + '</span></div>' +
+                                '<div class="fuel-lb-row__avatar">' +
+                                (user.photo_url ? '<img src="' + Security.sanitize(user.photo_url) + '" class="fuel-lb-row__img" loading="lazy">' : '<div class="fuel-lb-row__placeholder">' + (user.display_name || '?').charAt(0).toUpperCase() + '</div>') +
+                                '</div>' +
+                                '<div class="fuel-lb-row__info"><span class="fuel-lb-row__name">' + Security.sanitize(user.display_name || 'Anonymous') + '</span></div>' +
+                                '<div class="fuel-lb-row__xp">' + Wallet.formatCoins(a.total_received) + ' GMX received</div>' +
+                                '</div>';
+                        }).join('');
+                    } else {
+                        fueledEl.innerHTML = '<div style="text-align:center;padding:var(--space-4);color:var(--text-tertiary)">No tips yet</div>';
+                    }
+                });
+
+                // Pending Withdrawals
+                var withdrawEl = document.getElementById('dash-withdrawals');
+                if (withdrawals.length > 0) {
+                    withdrawEl.innerHTML =
+                        '<div class="fuel-dashboard-section">' +
+                        '<div class="fuel-dashboard-section__title" style="color:var(--fuel-orange)">Pending Withdrawal Requests (' + withdrawals.length + ')</div>' +
+                        '<table class="fuel-dashboard-table">' +
+                        '<thead><tr><th>User</th><th>Coins</th><th>USD</th><th>Method</th><th>Date</th><th>Actions</th></tr></thead>' +
+                        '<tbody>' +
+                        withdrawals.map(function (w) {
+                            var user = w.user || {};
+                            return '<tr>' +
+                                '<td>' + Security.sanitize(user.display_name || user.email || 'Unknown') + '</td>' +
+                                '<td>' + Wallet.formatCoins(w.coins_amount) + '</td>' +
+                                '<td>$' + parseFloat(w.usd_amount).toFixed(2) + '</td>' +
+                                '<td>' + Security.sanitize(w.payment_method || 'paypal') + '</td>' +
+                                '<td>' + UI.formatDate(w.created_at) + '</td>' +
+                                '<td>' +
+                                '<button class="btn btn-sm btn-primary withdraw-action-btn" data-id="' + w.id + '" data-action="approve">Approve</button> ' +
+                                '<button class="btn btn-sm btn-ghost withdraw-action-btn" data-id="' + w.id + '" data-action="reject" style="color:var(--fuel-red)">Reject</button>' +
+                                '</td>' +
+                                '</tr>';
+                        }).join('') +
+                        '</tbody></table></div>';
+
+                    document.querySelectorAll('.withdraw-action-btn').forEach(function (btn) {
+                        btn.addEventListener('click', async function () {
+                            var action = btn.dataset.action;
+                            var id = btn.dataset.id;
+                            var note = '';
+                            if (action === 'reject') {
+                                note = prompt('Reason for rejection (optional):') || '';
+                            }
+                            btn.disabled = true;
+                            btn.textContent = 'Processing...';
+                            var ok = await OwnerDashboard.processWithdrawal(id, action, note);
+                            if (ok) loadDashboardData();
+                        });
+                    });
+                }
+
+                // Create Challenge Form
+                var challengeFormEl = document.getElementById('dash-challenge-form');
+                challengeFormEl.innerHTML =
+                    '<div class="fuel-dashboard-section">' +
+                    '<div class="fuel-dashboard-section__title">Create New Challenge</div>' +
+                    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">' +
+                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Title (English)</label><input type="text" id="ch-title" class="form-input" placeholder="Write a Crypto article this week"></div>' +
+                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Title (Arabic)</label><input type="text" id="ch-title-ar" class="form-input" dir="rtl" placeholder="اكتب مقال عن العملات الرقمية"></div>' +
+                    '<div style="grid-column:1/-1"><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Description</label><textarea id="ch-desc" class="form-input" rows="2" placeholder="Write and publish an article about cryptocurrency topics..."></textarea></div>' +
+                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Type</label><select id="ch-type" class="form-input"><option value="write">Write Articles</option><option value="engage">Engage (Like/Comment)</option><option value="tip">Send Tips</option><option value="refer">Refer Friends</option></select></div>' +
+                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Target Category</label><input type="text" id="ch-category" class="form-input" placeholder="e.g. crypto (optional)"></div>' +
+                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Required Count</label><input type="number" id="ch-count" class="form-input" value="1" min="1"></div>' +
+                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Max Participants (0=unlimited)</label><input type="number" id="ch-max" class="form-input" value="0" min="0"></div>' +
+                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Reward Coins</label><input type="number" id="ch-coins" class="form-input" value="50" min="0"></div>' +
+                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Reward XP</label><input type="number" id="ch-xp" class="form-input" value="20" min="0"></div>' +
+                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Starts At</label><input type="datetime-local" id="ch-starts" class="form-input"></div>' +
+                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Ends At</label><input type="datetime-local" id="ch-ends" class="form-input"></div>' +
+                    '</div>' +
+                    '<button class="btn btn-primary" id="ch-create-btn" style="margin-top:var(--space-4)">Create Challenge</button>' +
+                    '</div>';
+
+                // Set default dates
+                var now = new Date();
+                var nextWeek = new Date(now.getTime() + 7 * 86400000);
+                var startsInput = document.getElementById('ch-starts');
+                var endsInput = document.getElementById('ch-ends');
+                if (startsInput) startsInput.value = now.toISOString().slice(0, 16);
+                if (endsInput) endsInput.value = nextWeek.toISOString().slice(0, 16);
+
+                document.getElementById('ch-create-btn').addEventListener('click', async function () {
+                    var btn = this;
+                    btn.disabled = true;
+                    btn.textContent = 'Creating...';
+                    var result = await OwnerDashboard.createChallenge({
+                        title: (document.getElementById('ch-title') || {}).value || '',
+                        title_ar: (document.getElementById('ch-title-ar') || {}).value || '',
+                        description: (document.getElementById('ch-desc') || {}).value || '',
+                        challenge_type: (document.getElementById('ch-type') || {}).value || 'write',
+                        target_category: (document.getElementById('ch-category') || {}).value || '',
+                        required_count: parseInt((document.getElementById('ch-count') || {}).value) || 1,
+                        max_participants: parseInt((document.getElementById('ch-max') || {}).value) || 0,
+                        reward_coins: parseInt((document.getElementById('ch-coins') || {}).value) || 50,
+                        reward_xp: parseInt((document.getElementById('ch-xp') || {}).value) || 20,
+                        starts_at: (document.getElementById('ch-starts') || {}).value || new Date().toISOString(),
+                        ends_at: (document.getElementById('ch-ends') || {}).value || new Date(Date.now() + 7 * 86400000).toISOString()
+                    });
+                    btn.disabled = false;
+                    btn.textContent = 'Create Challenge';
+                    if (result) {
+                        document.getElementById('ch-title').value = '';
+                        document.getElementById('ch-title-ar').value = '';
+                        document.getElementById('ch-desc').value = '';
+                    }
+                });
+
+            } catch (err) {
+                console.error('Owner dashboard error:', err.message);
+            }
+        }
+
+        function statCard(label, value, bg, color) {
+            return '<div class="fuel-dashboard-stat">' +
+                '<div class="fuel-dashboard-stat__icon" style="background:' + bg + ';color:' + color + '">' +
+                '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>' +
+                '</div>' +
+                '<div class="fuel-dashboard-stat__value">' + value + '</div>' +
+                '<div class="fuel-dashboard-stat__label">' + label + '</div>' +
+                '</div>';
+        }
+    })();
+    </script>
+</Fragment>
+</BaseLayout>

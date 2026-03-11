@@ -1,0 +1,137 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="About | GroupsMix"
+  description="Learn about GroupsMix - the trusted directory for discovering social media groups across WhatsApp, Telegram, Discord, and more."
+  mainClass="page-container"
+>
+<style is:inline>
+        .about-hero{text-align:center;padding:var(--space-10) 0 var(--space-6)}
+        .about-hero__badge{display:inline-block;background:linear-gradient(135deg,var(--accent-primary),#a29bfe);color:#fff;padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:var(--font-bold);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--space-3)}
+        .about-hero__subtitle{color:var(--text-secondary);margin-top:var(--space-3);max-width:640px;margin-left:auto;margin-right:auto;font-size:var(--text-md);line-height:1.7}
+        .about-section{margin-bottom:var(--space-10)}
+        .about-section__title{font-size:var(--text-xl);font-weight:var(--font-bold);margin-bottom:var(--space-4);display:flex;align-items:center;gap:var(--space-2)}
+        .about-section__text{color:var(--text-secondary);line-height:1.7;max-width:720px}
+        .about-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-5);margin-top:var(--space-6)}
+        .about-card{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-6);text-align:center;transition:transform .2s ease,box-shadow .2s ease}
+        .about-card:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(99,102,241,0.12)}
+        .about-card__icon{font-size:2.5rem;margin-bottom:var(--space-3);display:flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:var(--radius-lg);background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.08));margin-left:auto;margin-right:auto}
+        .about-card__title{font-weight:var(--font-semibold);margin-bottom:var(--space-2);font-size:var(--text-base)}
+        .about-card__text{color:var(--text-secondary);font-size:var(--text-sm);line-height:1.6}
+        .about-stats{display:flex;justify-content:center;gap:var(--space-10);margin:var(--space-8) 0;flex-wrap:wrap}
+        .about-stat{text-align:center}
+        .about-stat__value{font-size:var(--text-3xl);font-weight:var(--font-bold);color:var(--accent-primary)}
+        .about-stat__label{font-size:var(--text-sm);color:var(--text-tertiary);margin-top:var(--space-1)}
+        .about-cta{padding:var(--space-10);background:var(--bg-tertiary);border-radius:var(--radius-xl);text-align:center;margin-top:var(--space-8)}
+        .about-values{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-4);margin:var(--space-8) 0}
+        .about-value{text-align:center;padding:var(--space-4)}
+        .about-value__icon{font-size:2rem;margin-bottom:var(--space-2)}
+        .about-value__label{font-size:var(--text-sm);font-weight:var(--font-semibold);color:var(--text-primary)}
+        .about-value__desc{font-size:var(--text-xs);color:var(--text-tertiary);margin-top:var(--space-1)}
+        @media(max-width:767px){.about-grid{grid-template-columns:1fr}.about-stats{gap:var(--space-6)}.about-values{grid-template-columns:repeat(2,1fr)}}
+        @media(min-width:768px) and (max-width:1023px){.about-grid{grid-template-columns:repeat(2,1fr)}}
+        @media(min-width:1024px){.about-grid{grid-template-columns:repeat(2,1fr)}}
+    </style>
+
+
+        <div class="content-wrapper">
+            <section class="about-hero">
+                <span class="about-hero__badge">About Us</span>
+                <h1>The Largest Trusted Groups Directory</h1>
+                <p class="about-hero__subtitle">GroupsMix is the leading platform for discovering, verifying, and joining social media groups across WhatsApp, Telegram, Discord, and more. We use smart algorithms to ensure quality and keep communities safe from fraud.</p>
+            </section>
+
+            <!-- Core Value Propositions -->
+            <div class="about-values">
+                <div class="about-value">
+                    <div class="about-value__icon">&#128218;</div>
+                    <div class="about-value__label">Largest Directory</div>
+                    <div class="about-value__desc">Thousands of verified groups</div>
+                </div>
+                <div class="about-value">
+                    <div class="about-value__icon">&#129504;</div>
+                    <div class="about-value__label">Smart Algorithms</div>
+                    <div class="about-value__desc">AI-powered quality classification</div>
+                </div>
+                <div class="about-value">
+                    <div class="about-value__icon">&#128737;&#65039;</div>
+                    <div class="about-value__label">Fraud-Free</div>
+                    <div class="about-value__desc">Scam detection &amp; prevention</div>
+                </div>
+                <div class="about-value">
+                    <div class="about-value__icon">&#127793;</div>
+                    <div class="about-value__label">Community Growth</div>
+                    <div class="about-value__desc">Tools to grow your audience</div>
+                </div>
+            </div>
+
+            <div class="about-stats" id="about-stats">
+                <div class="about-stat"><div class="about-stat__value" id="about-groups">1,000+</div><div class="about-stat__label">Groups Listed</div></div>
+                <div class="about-stat"><div class="about-stat__value" id="about-users">500+</div><div class="about-stat__label">Active Users</div></div>
+                <div class="about-stat"><div class="about-stat__value">6</div><div class="about-stat__label">Platforms</div></div>
+                <div class="about-stat"><div class="about-stat__value">50+</div><div class="about-stat__label">Countries</div></div>
+            </div>
+
+            <section class="about-section">
+                <h2 class="about-section__title">&#127919; Our Mission</h2>
+                <p class="about-section__text">We believe every online community deserves visibility and trust. Our mission is to build the most reliable directory of social media groups, powered by intelligent algorithms that rank quality and filter out fraud &mdash; so users find genuine communities, and group owners reach the right audience.</p>
+            </section>
+
+            <section class="about-section">
+                <h2 class="about-section__title">&#128171; The 4 Pillars of GroupsMix</h2>
+                <div class="about-grid">
+                    <div class="about-card">
+                        <div class="about-card__icon">&#128269;</div>
+                        <h3 class="about-card__title">Smart Review</h3>
+                        <p class="about-card__text">Every group is reviewed both manually and programmatically before listing. Our smart algorithms check activity, content quality, and authenticity to ensure only real, active communities make it to the directory.</p>
+                    </div>
+                    <div class="about-card">
+                        <div class="about-card__icon">&#128200;</div>
+                        <h3 class="about-card__title">Trust Score System</h3>
+                        <p class="about-card__text">We don&rsquo;t accept fake or inactive groups. Our proprietary Trust Score evaluates reviews, engagement, reports, and verification status &mdash; so you always know which communities are worth joining.</p>
+                    </div>
+                    <div class="about-card">
+                        <div class="about-card__icon">&#127919;</div>
+                        <h3 class="about-card__title">Specialized Niches</h3>
+                        <p class="about-card__text">Whether you&rsquo;re into tech, cooking, trading, fitness, or education &mdash; we make it effortless to find exactly the right group. Browse by niche, platform, country, and language for precise results.</p>
+                    </div>
+                    <div class="about-card">
+                        <div class="about-card__icon">&#128737;&#65039;</div>
+                        <h3 class="about-card__title">Scam Protection</h3>
+                        <p class="about-card__text">Your safety comes first. Built-in Scam Wall, encrypted links, and behavioral fraud detection protect you from phishing, scam groups, and malicious links before you ever click.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="about-section">
+                <h2 class="about-section__title">&#128272; Security &amp; Privacy</h2>
+                <p class="about-section__text">Your safety is built into our architecture. All group links are encrypted and only revealed after verification. We leverage Row Level Security (RLS), behavioral fraud detection, and zero personal data storage to protect every user on our platform.</p>
+            </section>
+
+            <div class="about-cta">
+                <h2 style="font-size:var(--text-2xl);margin-bottom:var(--space-3)">Ready to Discover Trusted Communities?</h2>
+                <p style="color:var(--text-secondary);margin-bottom:var(--space-6);max-width:500px;margin-left:auto;margin-right:auto">Join thousands of users and group owners who trust GroupsMix to connect them with genuine, active communities.</p>
+                <div style="display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap">
+                    <a href="/search" class="btn btn-primary">Browse Groups</a>
+                    <a href="/submit" class="btn btn-secondary">Submit a Group</a>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                var stats = await DB.stats.getGlobal();
+                if (stats) {
+                    var groupsEl = document.getElementById('about-groups');
+                    var usersEl = document.getElementById('about-users');
+                    if (groupsEl && stats.total_groups) groupsEl.textContent = UI.formatNumber(stats.total_groups) + '+';
+                    if (usersEl && stats.total_users) usersEl.textContent = UI.formatNumber(stats.total_users) + '+';
+                }
+            } catch (err) { console.warn('About stats:', err.message); }
+        });
+    </script>
+</Fragment>
+</BaseLayout>

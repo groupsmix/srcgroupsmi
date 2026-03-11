@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /gm-ctrl-x7
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /my-groups
+Disallow: /saved
+Disallow: /settings
+Disallow: /reset-password
+Sitemap: https://groupsmix.com/sitemap.xml

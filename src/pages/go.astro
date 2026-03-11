@@ -1,0 +1,510 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Redirecting... &mdash; GroupsMix"
+>
+<style is:inline>
+        .go-page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-6);
+        }
+
+        .go-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-xl);
+            padding: var(--space-8);
+            max-width: 520px;
+            width: 100%;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            animation: scaleUp 0.3s ease;
+        }
+
+        .go-card__icon {
+            font-size: 48px;
+            margin-bottom: var(--space-4);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.85; }
+        }
+
+        .go-card__title {
+            font-size: var(--text-xl);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--space-2);
+        }
+
+        .go-card__message {
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+            margin-bottom: var(--space-6);
+        }
+
+        .countdown-ring {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto var(--space-6);
+        }
+
+        .countdown-ring svg {
+            transform: rotate(-90deg);
+            width: 100px;
+            height: 100px;
+        }
+
+        .countdown-ring__bg {
+            fill: none;
+            stroke: var(--bg-tertiary);
+            stroke-width: 6;
+        }
+
+        .countdown-ring__progress {
+            fill: none;
+            stroke: var(--accent-primary);
+            stroke-width: 6;
+            stroke-linecap: round;
+            stroke-dasharray: 283;
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear;
+        }
+
+        .countdown-ring__number {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: var(--text-3xl);
+            font-weight: var(--font-bold);
+            color: var(--accent-primary);
+        }
+
+        .go-progress {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+            margin-bottom: var(--space-6);
+        }
+
+        .go-progress__bar {
+            height: 100%;
+            background: var(--accent-primary);
+            border-radius: var(--radius-full);
+            width: 0%;
+            transition: width 1s linear;
+        }
+
+        .go-link-section {
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            pointer-events: none;
+        }
+
+        .go-link-section--visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .go-link-section .btn {
+            width: 100%;
+            font-size: var(--text-base);
+            padding: var(--space-3) var(--space-6);
+        }
+
+        .go-badges {
+            display: flex;
+            gap: var(--space-3);
+            justify-content: center;
+            margin-bottom: var(--space-6);
+            flex-wrap: wrap;
+        }
+
+        .go-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-1);
+            font-size: var(--text-xs);
+            color: var(--text-tertiary);
+            background: var(--bg-tertiary);
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+        }
+
+        .go-ad-section {
+            max-width: 520px;
+            width: 100%;
+            margin-top: var(--space-6);
+        }
+
+        .go-ad-placeholder {
+            background: var(--bg-card);
+            border: 1px dashed var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6) var(--space-4);
+            text-align: center;
+            color: var(--text-tertiary);
+            font-size: var(--text-sm);
+            margin-bottom: var(--space-4);
+        }
+
+        .go-ad-placeholder__label {
+            font-size: var(--text-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: var(--space-2);
+            color: var(--text-tertiary);
+        }
+
+        .go-donate {
+            max-width: 520px;
+            width: 100%;
+            margin-top: var(--space-6);
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-xl);
+            padding: var(--space-6);
+            text-align: center;
+            animation: fadeIn 0.5s ease 2s both;
+        }
+
+        .go-donate__title {
+            font-size: var(--text-lg);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--space-2);
+        }
+
+        .go-donate__subtitle {
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+            margin-bottom: var(--space-4);
+        }
+
+        .go-donate__wallets {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+
+        .go-donate__wallet {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            background: var(--bg-tertiary);
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: background 0.2s ease;
+            text-align: left;
+        }
+
+        .go-donate__wallet:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .go-donate__wallet-icon {
+            font-size: var(--text-xl);
+            flex-shrink: 0;
+        }
+
+        .go-donate__wallet-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .go-donate__wallet-name {
+            font-weight: var(--font-semibold);
+            font-size: var(--text-sm);
+        }
+
+        .go-donate__wallet-addr {
+            font-size: var(--text-xs);
+            color: var(--text-tertiary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .go-donate__wallet-copy {
+            font-size: var(--text-xs);
+            color: var(--accent-primary);
+            font-weight: var(--font-semibold);
+            flex-shrink: 0;
+        }
+
+        .go-back {
+            margin-top: var(--space-4);
+        }
+
+        .go-back a {
+            font-size: var(--text-sm);
+            color: var(--text-tertiary);
+            text-decoration: none;
+        }
+
+        .go-back a:hover {
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 767px) {
+            .go-card { padding: var(--space-6); }
+            .go-card__title { font-size: var(--text-lg); }
+            .countdown-ring { width: 80px; height: 80px; }
+            .countdown-ring svg { width: 80px; height: 80px; }
+        }
+    </style>
+
+
+        <div class="go-page">
+            <div class="go-card">
+                <div class="go-card__icon" id="go-icon">&#128274;</div>
+                <h1 class="go-card__title" id="go-title">Securing your connection...</h1>
+                <p class="go-card__message" id="go-message">We're verifying the group link for your safety. Please wait.</p>
+
+                <div class="countdown-ring" id="countdown-ring">
+                    <svg viewBox="0 0 100 100">
+                        <circle class="countdown-ring__bg" cx="50" cy="50" r="45"></circle>
+                        <circle class="countdown-ring__progress" id="countdown-progress" cx="50" cy="50" r="45"></circle>
+                    </svg>
+                    <div class="countdown-ring__number" id="countdown-number">5</div>
+                </div>
+
+                <div class="go-progress">
+                    <div class="go-progress__bar" id="go-progress-bar"></div>
+                </div>
+
+                <div class="go-badges">
+                    <span class="go-badge">&#128274; Encrypted</span>
+                    <span class="go-badge">&#9989; Verified Link</span>
+                    <span class="go-badge">&#128737; Safe Redirect</span>
+                </div>
+
+                <div class="go-link-section" id="go-link-section">
+                    <a id="go-link" href="#" class="btn btn-primary btn-lg" target="_blank" rel="noopener noreferrer">Open Group &rarr;</a>
+                </div>
+
+                <div class="go-back">
+                    <a href="/">&larr; Back to GroupsMix</a>
+                </div>
+            </div>
+
+            <!-- Ad Placeholder 1 -->
+            <div class="go-ad-section">
+                <div class="go-ad-placeholder">
+                    <div class="go-ad-placeholder__label">Advertisement</div>
+                    <div>Ad Space &mdash; 728&times;90</div>
+                </div>
+            </div>
+
+            <!-- Crypto Donation Section -->
+            <div class="go-donate" id="go-donate" style="display:none">
+                <div class="go-donate__title">&#10084;&#65039; Show Some Love</div>
+                <div class="go-donate__subtitle">Help us keep GroupsMix free and safe for everyone</div>
+                <div class="go-donate__wallets" id="donate-wallets"></div>
+            </div>
+
+            <!-- Ad Placeholder 2 -->
+            <div class="go-ad-section">
+                <div class="go-ad-placeholder">
+                    <div class="go-ad-placeholder__label">Advertisement</div>
+                    <div>Ad Space &mdash; 300&times;250</div>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', async function () {
+            var COUNTDOWN_SECONDS = 5;
+            var params = new URLSearchParams(window.location.search);
+            var id = params.get('id');
+            var encodedLink = params.get('ref');
+            var targetUrl = null;
+
+            /* Resolve the target URL */
+            // 1. Check for short link code (from link shortener)
+            // Audit fix #4: use window.supabaseClient (initialized client) instead of supabase (library namespace)
+            var shortCode = params.get('code');
+            if (!targetUrl && shortCode) {
+                try {
+                    var linkRes = await window.supabaseClient.from('short_links').select('id, long_url').eq('code', shortCode).single();
+                    if (linkRes.data && linkRes.data.long_url && Security.isValidUrl(linkRes.data.long_url)) {
+                        targetUrl = linkRes.data.long_url;
+                        // Track click asynchronously
+                        try {
+                            var ua = navigator.userAgent || '';
+                            var device = /mobile|android|iphone|ipad/i.test(ua) ? 'Mobile' : /tablet/i.test(ua) ? 'Tablet' : 'Desktop';
+                            window.supabaseClient.from('link_clicks').insert({ link_id: linkRes.data.id, device: device, referrer: document.referrer || '' });
+                            window.supabaseClient.rpc('increment_link_clicks', { p_link_id: linkRes.data.id });
+                        } catch (e) { /* click tracking is optional */ }
+                    }
+                } catch (e) { /* fall through */ }
+            }
+
+            // 2. Check for obfuscated ref link
+            // Audit fix #1: restrict redirects to whitelisted domains to prevent open redirect / phishing
+            var ALLOWED_REDIRECT_DOMAINS = [
+                'chat.whatsapp.com', 'whatsapp.com', 'www.whatsapp.com',
+                't.me', 'telegram.me', 'telegram.org',
+                'discord.gg', 'discord.com',
+                'facebook.com', 'www.facebook.com', 'fb.com',
+                'groupsmix.com', 'www.groupsmix.com'
+            ];
+            function isAllowedRedirect(url) {
+                try {
+                    var parsed = new URL(url);
+                    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
+                    var hostname = parsed.hostname.toLowerCase();
+                    return ALLOWED_REDIRECT_DOMAINS.some(function(d) {
+                        return hostname === d || hostname.endsWith('.' + d);
+                    });
+                } catch (e) { return false; }
+            }
+            if (encodedLink) {
+                try {
+                    var decoded = Security.deobfuscateLink(encodedLink);
+                    if (decoded && Security.isValidUrl(decoded) && isAllowedRedirect(decoded)) {
+                        targetUrl = decoded;
+                    }
+                } catch (e) { /* fall through */ }
+            }
+
+            // 3. Check for group ID
+            if (!targetUrl && id) {
+                try {
+                    var group = await DB.groups.getOne(id);
+                    if (group && group.link && Security.isValidUrl(group.link)) {
+                        targetUrl = group.link;
+                        DB.groups.incrementClicks(id);
+                        RecentlyViewed.add(group);
+                    }
+                } catch (e) { /* fall through */ }
+            }
+
+            if (!targetUrl) {
+                document.getElementById('go-icon').innerHTML = '&#9888;&#65039;';
+                document.getElementById('go-title').textContent = 'Invalid Link';
+                document.getElementById('go-message').textContent = 'This group link is invalid or has expired.';
+                document.getElementById('countdown-ring').style.display = 'none';
+                document.querySelector('.go-progress').style.display = 'none';
+                document.querySelector('.go-badges').style.display = 'none';
+                return;
+            }
+
+            /* Render Crypto Donation Wallets */
+            renderDonation();
+
+            /* Start Countdown */
+            var remaining = COUNTDOWN_SECONDS;
+            var circumference = 2 * Math.PI * 45;
+            var progressCircle = document.getElementById('countdown-progress');
+            var numberEl = document.getElementById('countdown-number');
+            var progressBar = document.getElementById('go-progress-bar');
+
+            progressCircle.style.strokeDasharray = circumference;
+            progressCircle.style.strokeDashoffset = '0';
+
+            function updateCountdown() {
+                numberEl.textContent = remaining;
+                var progress = ((COUNTDOWN_SECONDS - remaining) / COUNTDOWN_SECONDS) * 100;
+                progressBar.style.width = progress + '%';
+                var offset = ((COUNTDOWN_SECONDS - remaining) / COUNTDOWN_SECONDS) * circumference;
+                progressCircle.style.strokeDashoffset = offset;
+            }
+
+            updateCountdown();
+
+            var timer = setInterval(function () {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(timer);
+                    remaining = 0;
+                    updateCountdown();
+                    progressBar.style.width = '100%';
+                    progressCircle.style.strokeDashoffset = circumference;
+
+                    /* Reveal the link */
+                    document.getElementById('go-icon').innerHTML = '&#9989;';
+                    document.getElementById('go-title').textContent = 'Connection Secured!';
+                    document.getElementById('go-message').textContent = 'Your link is ready. You will be redirected shortly.';
+                    document.getElementById('countdown-ring').style.display = 'none';
+
+                    var linkEl = document.getElementById('go-link');
+                    linkEl.href = targetUrl;
+                    document.getElementById('go-link-section').classList.add('go-link-section--visible');
+
+                    /* Auto-redirect after reveal */
+                    setTimeout(function () {
+                        window.location.href = targetUrl;
+                    }, 1500);
+                } else {
+                    updateCountdown();
+                }
+            }, 1000);
+
+            /* Donation Section */
+            function renderDonation() {
+                var wallets = [];
+                if (typeof CONFIG !== 'undefined' && CONFIG.cryptoWallets) {
+                    var cw = CONFIG.cryptoWallets;
+                    if (cw.btc) wallets.push({ name: 'Bitcoin (BTC)', icon: '&#8383;', addr: cw.btc });
+                    if (cw.eth) wallets.push({ name: 'Ethereum (ETH)', icon: '&#9830;', addr: cw.eth });
+                    if (cw.usdt) wallets.push({ name: 'USDT (TRC20)', icon: '&#128176;', addr: cw.usdt });
+                    if (cw.sol) wallets.push({ name: 'Solana (SOL)', icon: '&#9788;', addr: cw.sol });
+                    if (cw.ltc) wallets.push({ name: 'Litecoin (LTC)', icon: '&#321;', addr: cw.ltc });
+                    if (cw.ton) wallets.push({ name: 'TON', icon: '&#9670;', addr: cw.ton });
+                }
+
+                if (!wallets.length) {
+                    wallets = [
+                        { name: 'Bitcoin (BTC)', icon: '&#8383;', addr: 'bc1q...your-btc-address' },
+                        { name: 'Ethereum (ETH)', icon: '&#9830;', addr: '0x...your-eth-address' },
+                        { name: 'USDT (TRC20)', icon: '&#128176;', addr: 'T...your-usdt-address' }
+                    ];
+                }
+
+                var container = document.getElementById('donate-wallets');
+                var donateSection = document.getElementById('go-donate');
+                if (!container || !donateSection) return;
+
+                donateSection.style.display = '';
+                container.innerHTML = wallets.map(function (w) {
+                    return '<div class="go-donate__wallet" onclick="copyWallet(this, \'' + w.addr.replace(/'/g, "\\'") + '\')">' +
+                        '<div class="go-donate__wallet-icon">' + w.icon + '</div>' +
+                        '<div class="go-donate__wallet-info">' +
+                        '<div class="go-donate__wallet-name">' + w.name + '</div>' +
+                        '<div class="go-donate__wallet-addr">' + w.addr + '</div>' +
+                        '</div>' +
+                        '<div class="go-donate__wallet-copy">Copy</div>' +
+                        '</div>';
+                }).join('');
+            }
+        });
+
+        function copyWallet(el, addr) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(addr).then(function () {
+                    var copyEl = el.querySelector('.go-donate__wallet-copy');
+                    if (copyEl) {
+                        copyEl.textContent = 'Copied!';
+                        setTimeout(function () { copyEl.textContent = 'Copy'; }, 2000);
+                    }
+                    if (typeof UI !== 'undefined' && UI.toast) UI.toast('Address copied!', 'success');
+                });
+            }
+        }
+    </script>
+</Fragment>
+</BaseLayout>

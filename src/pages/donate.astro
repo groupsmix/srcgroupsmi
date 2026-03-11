@@ -1,0 +1,286 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Fuel the Community &mdash; GroupsMix"
+  description="Support GroupsMix development. Help us keep the platform free and ad-free for everyone."
+>
+<style is:inline>
+        .fuel-hero{text-align:center;padding:var(--space-10) 0 var(--space-6)}
+        .fuel-hero__icon{font-size:72px;margin-bottom:var(--space-4);animation:pulse 2s ease-in-out infinite}
+        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+        .fuel-hero__title{font-size:var(--text-3xl);font-weight:var(--font-bold);margin-bottom:var(--space-3)}
+        .fuel-hero__subtitle{color:var(--text-secondary);max-width:560px;margin:0 auto;font-size:var(--text-lg);line-height:var(--leading-relaxed)}
+        .fuel-message{max-width:640px;margin:0 auto var(--space-8);padding:var(--space-6);background:rgba(22,22,31,0.75);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(42,42,62,0.6);border-radius:var(--radius-xl);text-align:center;line-height:var(--leading-relaxed);color:var(--text-secondary);font-size:var(--text-base)}
+        .fuel-message strong{color:var(--text-primary)}
+        .fuel-stats{display:flex;justify-content:center;gap:var(--space-8);margin-bottom:var(--space-8);flex-wrap:wrap}
+        .fuel-stat{text-align:center}
+        .fuel-stat__value{font-size:var(--text-2xl);font-weight:var(--font-bold);color:var(--accent-primary)}
+        .fuel-stat__label{font-size:var(--text-xs);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em}
+        .fuel-options{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);max-width:720px;margin:0 auto var(--space-8)}
+        .fuel-option{background:rgba(22,22,31,0.75);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(42,42,62,0.6);border-radius:var(--radius-xl);padding:var(--space-6);text-align:center;cursor:pointer;transition:all .2s ease;position:relative}
+        .fuel-option:hover{border-color:var(--accent-primary);transform:translateY(-2px)}
+        .fuel-option--selected{border-color:var(--accent-primary);box-shadow:0 0 0 1px var(--accent-primary)}
+        .fuel-option__icon{font-size:var(--text-4xl);margin-bottom:var(--space-2)}
+        .fuel-option__amount{font-size:var(--text-xl);font-weight:var(--font-bold);color:var(--text-primary)}
+        .fuel-option__label{font-size:var(--text-sm);color:var(--text-secondary);margin-top:var(--space-1)}
+        .fuel-option__popular{position:absolute;top:-10px;right:-10px;background:var(--accent-primary);color:#fff;padding:2px 10px;border-radius:var(--radius-full);font-size:10px;font-weight:var(--font-bold);text-transform:uppercase}
+        .fuel-card{max-width:560px;margin:0 auto var(--space-8);background:rgba(22,22,31,0.75);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(42,42,62,0.6);border-radius:var(--radius-xl);padding:var(--space-6)}
+        .fuel-card__title{font-weight:var(--font-bold);margin-bottom:var(--space-4);text-align:center;display:flex;align-items:center;justify-content:center;gap:var(--space-2)}
+        .crypto-row{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-md);margin-bottom:var(--space-3);cursor:pointer;transition:background .15s ease}
+        .crypto-row:hover{background:rgba(108,92,231,0.1)}
+        .crypto-row__icon{font-size:var(--text-xl);flex-shrink:0}
+        .crypto-row__info{flex:1;min-width:0}
+        .crypto-row__name{font-weight:var(--font-semibold);font-size:var(--text-sm)}
+        .crypto-row__addr{font-size:var(--text-xs);color:var(--text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .crypto-row__copy{padding:var(--space-1) var(--space-2);background:var(--accent-primary);color:#fff;border:none;border-radius:var(--radius-sm);font-size:var(--text-xs);cursor:pointer;flex-shrink:0;transition:opacity .15s ease}
+        .crypto-row__copy:hover{opacity:.85}
+        .fuel-tx{max-width:560px;margin:0 auto var(--space-8);background:rgba(22,22,31,0.75);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(42,42,62,0.6);border-radius:var(--radius-xl);padding:var(--space-6)}
+        .fuel-supporters{max-width:560px;margin:0 auto;text-align:center}
+        .fuel-supporters__title{font-weight:var(--font-bold);margin-bottom:var(--space-4);display:flex;align-items:center;justify-content:center;gap:var(--space-2)}
+        .supporter-list{display:flex;flex-direction:column;gap:var(--space-2)}
+        .supporter-item{display:flex;justify-content:space-between;align-items:center;padding:var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-md);font-size:var(--text-sm)}
+        .supporter-item__name{display:flex;align-items:center;gap:var(--space-2)}
+        .supporter-item__amount{color:var(--accent-primary);font-weight:var(--font-semibold)}
+        [data-theme="light"] .fuel-message,[data-theme="light"] .fuel-option,[data-theme="light"] .fuel-card,[data-theme="light"] .fuel-tx{background:rgba(255,255,255,0.75);border-color:rgba(200,200,220,0.5)}
+        @media(max-width:599px){.fuel-options{grid-template-columns:1fr}}
+    </style>
+
+
+        <div class="container" style="max-width:var(--container-md);padding:0 var(--space-4)">
+            <section class="fuel-hero">
+                <div class="fuel-hero__icon">&#10084;&#65039;</div>
+                <h1 class="fuel-hero__title">&#128293; Fuel the Community</h1>
+                <p class="fuel-hero__subtitle">Support our server costs and help keep GroupsMix free for everyone.</p>
+            </section>
+
+            <div class="fuel-message">
+                <strong>GroupsMix is free and ad-free.</strong> If you find value in our tools, consider buying our developers a coffee to keep us running. Every contribution &mdash; no matter how small &mdash; directly funds server costs, development, and keeping the lights on. &#9749;
+            </div>
+
+            <div class="fuel-stats">
+                <div class="fuel-stat"><div class="fuel-stat__value" id="fuel-total">$0</div><div class="fuel-stat__label">Total Raised</div></div>
+                <div class="fuel-stat"><div class="fuel-stat__value" id="fuel-supporters">0</div><div class="fuel-stat__label">Supporters</div></div>
+                <div class="fuel-stat"><div class="fuel-stat__value" id="fuel-goal">$500</div><div class="fuel-stat__label">Monthly Goal</div></div>
+            </div>
+
+            <!-- Donation Amount Options -->
+            <div class="fuel-options" id="fuel-options">
+                <div class="fuel-option" data-amount="3">
+                    <div class="fuel-option__icon">&#9749;</div>
+                    <div class="fuel-option__amount">$3</div>
+                    <div class="fuel-option__label">A Coffee</div>
+                </div>
+                <div class="fuel-option fuel-option--selected" data-amount="10">
+                    <span class="fuel-option__popular">Popular</span>
+                    <div class="fuel-option__icon">&#127828;</div>
+                    <div class="fuel-option__amount">$10</div>
+                    <div class="fuel-option__label">A Meal</div>
+                </div>
+                <div class="fuel-option" data-amount="25">
+                    <div class="fuel-option__icon">&#128640;</div>
+                    <div class="fuel-option__amount">$25</div>
+                    <div class="fuel-option__label">Rocket Fuel</div>
+                </div>
+            </div>
+
+            <!-- Crypto Wallets -->
+            <div class="fuel-card">
+                <div class="fuel-card__title">&#128176; Send Crypto</div>
+                <div class="crypto-row" data-addr="bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh">
+                    <span class="crypto-row__icon">&#128992;</span>
+                    <div class="crypto-row__info">
+                        <div class="crypto-row__name">Bitcoin (BTC)</div>
+                        <div class="crypto-row__addr">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</div>
+                    </div>
+                    <button class="crypto-row__copy" data-copy="bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh">Copy</button>
+                </div>
+                <div class="crypto-row" data-addr="0x71C7656EC7ab88b098defB751B7401B5f6d8976F">
+                    <span class="crypto-row__icon">&#128995;</span>
+                    <div class="crypto-row__info">
+                        <div class="crypto-row__name">USDT (ERC-20)</div>
+                        <div class="crypto-row__addr">0x71C7656EC7ab88b098defB751B7401B5f6d8976F</div>
+                    </div>
+                    <button class="crypto-row__copy" data-copy="0x71C7656EC7ab88b098defB751B7401B5f6d8976F">Copy</button>
+                </div>
+                <div class="crypto-row" data-addr="9nv3Byp6Jt2SfPkCmQ9RsnqFRb5sWahpXuEcFfXkPCZG">
+                    <span class="crypto-row__icon">&#128156;</span>
+                    <div class="crypto-row__info">
+                        <div class="crypto-row__name">Solana (SOL)</div>
+                        <div class="crypto-row__addr">9nv3Byp6Jt2SfPkCmQ9RsnqFRb5sWahpXuEcFfXkPCZG</div>
+                    </div>
+                    <button class="crypto-row__copy" data-copy="9nv3Byp6Jt2SfPkCmQ9RsnqFRb5sWahpXuEcFfXkPCZG">Copy</button>
+                </div>
+            </div>
+
+            <!-- TX Hash Submission -->
+            <div class="fuel-tx">
+                <div style="font-weight:var(--font-bold);margin-bottom:var(--space-3);text-align:center">Already Sent? Submit Your TX Hash</div>
+                <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-4);text-align:center">Once verified, you'll receive a Supporter badge and GXP bonus. &#127942;</p>
+                <div class="form-group"><label class="form-label">Cryptocurrency</label>
+                    <select class="form-select" id="fuel-crypto">
+                        <option value="btc">Bitcoin (BTC)</option>
+                        <option value="usdt">USDT (ERC-20)</option>
+                        <option value="sol">Solana (SOL)</option>
+                    </select>
+                </div>
+                <div class="form-group"><label class="form-label">Transaction Hash</label><input type="text" class="form-input" id="fuel-txhash" placeholder="Paste your transaction hash..." maxlength="120"></div>
+                <div class="form-group"><label class="form-label">Amount (USD equivalent)</label><input type="number" class="form-input" id="fuel-amount" placeholder="e.g. 10" min="1" max="10000" step="0.01"></div>
+                <div class="form-group" id="fuel-turnstile-wrapper" style="display:none"><div id="fuel-turnstile-widget"></div></div>
+                <button class="btn btn-primary btn-full" id="fuel-submit" style="display:flex;align-items:center;justify-content:center;gap:var(--space-2)">&#10084;&#65039; Submit &amp; Verify</button>
+            </div>
+
+            <!-- Recent Supporters -->
+            <div class="fuel-supporters">
+                <div class="fuel-supporters__title">&#128150; Recent Supporters</div>
+                <div class="supporter-list" id="supporter-list">
+                    <div class="skeleton" style="height:48px;border-radius:var(--radius-md)"></div>
+                    <div class="skeleton" style="height:48px;border-radius:var(--radius-md)"></div>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', function() {
+            /* Amount option selection */
+            document.querySelectorAll('.fuel-option').forEach(function(opt) {
+                opt.addEventListener('click', function() {
+                    document.querySelectorAll('.fuel-option').forEach(function(o){ o.classList.remove('fuel-option--selected'); });
+                    opt.classList.add('fuel-option--selected');
+                    document.getElementById('fuel-amount').value = opt.dataset.amount;
+                });
+            });
+
+            /* Copy to clipboard */
+            document.querySelectorAll('.crypto-row__copy').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var addr = btn.dataset.copy;
+                    navigator.clipboard.writeText(addr).then(function() {
+                        btn.textContent = 'Copied!';
+                        UI.toast('Address copied to clipboard', 'success');
+                        setTimeout(function(){ btn.textContent = 'Copy'; }, 2000);
+                    }).catch(function() {
+                        UI.toast('Failed to copy', 'error');
+                    });
+                });
+            });
+
+            /* Crypto row click also copies */
+            document.querySelectorAll('.crypto-row').forEach(function(row) {
+                row.addEventListener('click', function() {
+                    var addr = row.dataset.addr;
+                    if (addr) {
+                        navigator.clipboard.writeText(addr).then(function() {
+                            UI.toast('Address copied!', 'success');
+                        });
+                    }
+                });
+            });
+
+            /* Turnstile CAPTCHA: poll for SDK readiness */
+            if (CONFIG.turnstileSiteKey) {
+                var _tsAttempts = 0, _tsMaxAttempts = 50; // 50 × 200 ms = 10 s
+                var _tsWrap = document.getElementById('fuel-turnstile-wrapper');
+                if (_tsWrap) _tsWrap.innerHTML = '<div style="text-align:center;padding:var(--space-2);color:var(--text-tertiary);font-size:var(--text-sm)">Loading CAPTCHA\u2026</div>';
+                (function pollTurnstile() {
+                    if (typeof turnstile !== 'undefined') {
+                        document.getElementById('fuel-turnstile-wrapper').style.display = '';
+                        if (_tsWrap) _tsWrap.innerHTML = '<div id="fuel-turnstile-widget"></div>';
+                        turnstile.render('#fuel-turnstile-widget', {
+                            sitekey: CONFIG.turnstileSiteKey,
+                            callback: function(token) { window._fuelTurnstileToken = token; }
+                        });
+                    } else if (++_tsAttempts < _tsMaxAttempts) {
+                        if (_tsWrap) _tsWrap.style.display = '';
+                        setTimeout(pollTurnstile, 200);
+                    } else {
+                        if (_tsWrap) _tsWrap.innerHTML = '<div style="color:var(--text-tertiary);font-size:var(--text-xs);text-align:center">CAPTCHA unavailable \u2014 you may continue</div>';
+                        window._fuelTurnstileToken = 'bypass_sdk_unavailable';
+                    }
+                })();
+            }
+
+            /* TX Hash submission */
+            document.getElementById('fuel-submit').addEventListener('click', submitDonation);
+
+            /* Load supporters */
+            loadSupporters();
+        });
+
+        async function submitDonation() {
+            var user = Auth.getUser();
+            if (!user) { UI.toast('Please sign in to submit a donation', 'error'); return; }
+
+            var crypto = document.getElementById('fuel-crypto').value;
+            var txhash = Security.sanitize(document.getElementById('fuel-txhash').value.trim());
+            var amount = parseFloat(document.getElementById('fuel-amount').value) || 0;
+
+            if (!txhash || txhash.length < 10) { UI.toast('Please enter a valid transaction hash', 'error'); return; }
+            if (amount < 1) { UI.toast('Please enter the amount', 'error'); return; }
+            if (CONFIG.turnstileSiteKey && !window._fuelTurnstileToken) { UI.toast('Please complete the CAPTCHA verification.', 'error'); return; }
+
+            var btn = document.getElementById('fuel-submit');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="btn-spinner"></span> Verifying...';
+
+            /* Server-side validation (rate limit + Turnstile) */
+            var sv = await Security.serverValidate({ turnstileToken: window._fuelTurnstileToken || null, action: 'submit' });
+            if (!sv.ok) { UI.toast(sv.errors?.[0] || 'Validation failed.', 'error'); btn.disabled = false; btn.innerHTML = '&#10084;&#65039; Submit &amp; Verify'; return; }
+
+            try {
+                var result = await DB.donations.submit({
+                    display_name: user.display_name || user.email || 'Anonymous',
+                    currency: crypto,
+                    tx_hash: txhash,
+                    amount: amount,
+                    message: ''
+                });
+                if (!result) throw new Error('Submission failed');
+                UI.toast('Thank you! Your donation will be verified shortly. You will receive a Supporter badge and GXP bonus once confirmed.', 'success');
+                document.getElementById('fuel-txhash').value = '';
+                document.getElementById('fuel-amount').value = '';
+            } catch (err) {
+                console.error('Donation submit:', err);
+                UI.toast('Submission failed. Please try again.', 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '&#10084;&#65039; Submit &amp; Verify';
+        }
+
+        async function loadSupporters() {
+            try {
+                var { data, error } = await supabase
+                    .from('donations')
+                    .select('amount_usd, created_at, profiles(display_name)')
+                    .eq('status', 'verified')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+                var list = document.getElementById('supporter-list');
+
+                if (!data || !data.length) {
+                    list.innerHTML = '<div style="color:var(--text-tertiary);padding:var(--space-4)">Be the first to support GroupsMix! &#128150;</div>';
+                    return;
+                }
+
+                /* Update stats */
+                var total = data.reduce(function(s, d){ return s + (d.amount_usd || 0); }, 0);
+                document.getElementById('fuel-total').textContent = '$' + total.toFixed(0);
+                document.getElementById('fuel-supporters').textContent = data.length;
+
+                list.innerHTML = data.map(function(d) {
+                    var name = (d.profiles && d.profiles.display_name) ? Security.sanitize(d.profiles.display_name) : 'Anonymous';
+                    var amt = d.amount_usd ? '$' + d.amount_usd.toFixed(2) : '';
+                    return '<div class="supporter-item"><span class="supporter-item__name">&#128150; ' + name + '</span><span class="supporter-item__amount">' + amt + '</span></div>';
+                }).join('');
+            } catch (err) {
+                console.error('Load supporters:', err);
+                document.getElementById('supporter-list').innerHTML = '<div style="color:var(--text-tertiary);padding:var(--space-4)">Unable to load supporters</div>';
+            }
+        }
+    </script>
+</Fragment>
+</BaseLayout>

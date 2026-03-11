@@ -1,0 +1,273 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Community Jobs | GroupsMix"
+  description="Find community management jobs, moderators, social media managers, and content creator roles on GroupsMix. AI-powered job matching."
+  ogTitle="Community Jobs | GroupsMix"
+  ogDescription="AI-powered job board for community managers, designers, developers, and marketers."
+  cssFiles={["/assets/css/jobs.css?v=20260310b"]}
+  mainClass="page-container"
+  includeJobs={true}
+>
+
+        <div class="content-wrapper">
+
+            <!-- Hero Section -->
+            <section class="jobs-hero">
+                <span class="jobs-hero__badge">
+                    <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    AI-Powered Jobs Board
+                </span>
+                <h1 class="jobs-hero__title">Community Jobs</h1>
+                <p class="jobs-hero__subtitle">Find paid roles for community managers, designers, developers, and marketers. AI-powered smart matching finds the best opportunities for your skills.</p>
+
+                <div class="jobs-stats">
+                    <div class="jobs-stats__item">
+                        <div class="jobs-stats__value" id="stat-active-jobs">0</div>
+                        <div class="jobs-stats__label">Active Jobs</div>
+                    </div>
+                    <div class="jobs-stats__item">
+                        <div class="jobs-stats__value" id="stat-companies">0</div>
+                        <div class="jobs-stats__label">Companies</div>
+                    </div>
+                    <div class="jobs-stats__item">
+                        <div class="jobs-stats__value" id="stat-remote">0</div>
+                        <div class="jobs-stats__label">Remote Jobs</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Smart Search Section -->
+            <div class="jobs-search-section">
+                <div class="jobs-search-bar">
+                    <div class="jobs-search-bar__icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    </div>
+                    <input type="search" id="jobs-search" class="jobs-search-bar__input"
+                        placeholder="Search jobs (e.g., Discord Mod, React Developer...)" autocomplete="off">
+                    <span class="jobs-search-bar__ai-badge" title="AI-Powered Search">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        AI
+                    </span>
+                </div>
+
+                <!-- AI Suggestions -->
+                <div class="jobs-ai-suggestions" id="ai-suggestions" style="display:none">
+                    <span class="jobs-ai-suggestions__label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        Suggested for you:
+                    </span>
+                    <div class="jobs-ai-suggestions__list" id="ai-suggestions-list"></div>
+                </div>
+
+                    <!-- Filter Chips -->
+                    <div class="jobs-filter-chips">
+                        <!-- Primary filters: always visible -->
+                        <div class="jobs-filter-group">
+                            <span class="jobs-filter-group__label">Category</span>
+                            <div class="jobs-filter-group__chips" id="category-chips">
+                                <button class="jobs-chip jobs-chip--active" data-filter="category" data-value="">All</button>
+                                <button class="jobs-chip" data-filter="category" data-value="design">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 011.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+                                    Design
+                                </button>
+                                <button class="jobs-chip" data-filter="category" data-value="programming">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                                    Programming
+                                </button>
+                                <button class="jobs-chip" data-filter="category" data-value="marketing">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                                    Marketing
+                                </button>
+                                <button class="jobs-chip" data-filter="category" data-value="writing">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                    Writing
+                                </button>
+                                <button class="jobs-chip" data-filter="category" data-value="community">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                                    Community
+                                </button>
+                                <button class="jobs-chip" data-filter="category" data-value="other">Other</button>
+                            </div>
+                        </div>
+
+                        <div class="jobs-filter-group">
+                            <span class="jobs-filter-group__label">Type</span>
+                            <div class="jobs-filter-group__chips" id="type-chips">
+                                <button class="jobs-chip jobs-chip--active" data-filter="jobType" data-value="">All</button>
+                                <button class="jobs-chip" data-filter="jobType" data-value="full-time">Full-Time</button>
+                                <button class="jobs-chip" data-filter="jobType" data-value="part-time">Part-Time</button>
+                                <button class="jobs-chip" data-filter="jobType" data-value="freelance">Freelance</button>
+                                <button class="jobs-chip" data-filter="jobType" data-value="contract">Contract</button>
+                                <button class="jobs-chip" data-filter="jobType" data-value="internship">Internship</button>
+                            </div>
+                        </div>
+
+                        <!-- Toggle button for extra filters -->
+                        <div class="jobs-filter-toggle-row">
+                            <button class="jobs-filter-toggle" id="btn-toggle-filters" type="button">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+                                <span id="toggle-filters-label">More Filters</span>
+                                <span class="jobs-filter-toggle__count" id="extra-filter-count" style="display:none">0</span>
+                                <svg class="jobs-filter-toggle__arrow" id="toggle-filters-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                            <button class="jobs-filter-clear" id="btn-clear-filters" type="button" style="display:none">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                Clear All
+                            </button>
+                        </div>
+
+                        <!-- Extra filters: collapsible -->
+                        <div class="jobs-extra-filters" id="extra-filters" style="display:none">
+                            <div class="jobs-filter-group">
+                                <span class="jobs-filter-group__label">Location</span>
+                                <div class="jobs-filter-group__chips" id="location-chips">
+                                    <button class="jobs-chip jobs-chip--active" data-filter="locationType" data-value="">All</button>
+                                    <button class="jobs-chip" data-filter="locationType" data-value="remote">🌍 Remote</button>
+                                    <button class="jobs-chip" data-filter="locationType" data-value="onsite">📍 On-Site</button>
+                                    <button class="jobs-chip" data-filter="locationType" data-value="hybrid">🏢 Hybrid</button>
+                                </div>
+                            </div>
+
+                            <div class="jobs-filter-group" id="region-filter-row" style="display:none">
+                                <span class="jobs-filter-group__label">Region</span>
+                                <div class="jobs-filter-group__chips" id="region-chips">
+                                    <button class="jobs-chip jobs-chip--active" data-filter="region" data-value="">All</button>
+                                    <button class="jobs-chip" data-filter="region" data-value="worldwide">🌎 Worldwide</button>
+                                    <button class="jobs-chip" data-filter="region" data-value="us">US Only</button>
+                                    <button class="jobs-chip" data-filter="region" data-value="eu">EU Only</button>
+                                    <button class="jobs-chip" data-filter="region" data-value="mena">MENA</button>
+                                    <button class="jobs-chip" data-filter="region" data-value="asia">Asia</button>
+                                    <button class="jobs-chip" data-filter="region" data-value="latam">LATAM</button>
+                                </div>
+                            </div>
+
+                            <div class="jobs-filter-group">
+                                <span class="jobs-filter-group__label">Platform</span>
+                                <div class="jobs-filter-group__chips" id="platform-chips">
+                                    <button class="jobs-chip jobs-chip--active" data-filter="platform" data-value="">All</button>
+                                    <button class="jobs-chip" data-filter="platform" data-value="discord">Discord</button>
+                                    <button class="jobs-chip" data-filter="platform" data-value="telegram">Telegram</button>
+                                    <button class="jobs-chip" data-filter="platform" data-value="whatsapp">WhatsApp</button>
+                                    <button class="jobs-chip" data-filter="platform" data-value="slack">Slack</button>
+                                    <button class="jobs-chip" data-filter="platform" data-value="reddit">Reddit</button>
+                                    <button class="jobs-chip" data-filter="platform" data-value="twitter">Twitter/X</button>
+                                </div>
+                            </div>
+
+                            <div class="jobs-filter-group">
+                                <span class="jobs-filter-group__label">Language</span>
+                                <div class="jobs-filter-group__chips" id="language-chips">
+                                    <button class="jobs-chip jobs-chip--active" data-filter="language" data-value="">All</button>
+                                    <button class="jobs-chip" data-filter="language" data-value="en">English</button>
+                                    <button class="jobs-chip" data-filter="language" data-value="ar">Arabic</button>
+                                    <button class="jobs-chip" data-filter="language" data-value="fr">French</button>
+                                    <button class="jobs-chip" data-filter="language" data-value="es">Spanish</button>
+                                    <button class="jobs-chip" data-filter="language" data-value="de">German</button>
+                                    <button class="jobs-chip" data-filter="language" data-value="other">Other</button>
+                                </div>
+                            </div>
+
+                            <div class="jobs-filter-group">
+                                <span class="jobs-filter-group__label">Salary</span>
+                                <div class="jobs-filter-group__chips" id="salary-chips">
+                                    <button class="jobs-chip jobs-chip--active" data-filter="salaryMin" data-value="">Any</button>
+                                    <button class="jobs-chip" data-filter="salaryMin" data-value="500">$500+</button>
+                                    <button class="jobs-chip" data-filter="salaryMin" data-value="1000">$1k+</button>
+                                    <button class="jobs-chip" data-filter="salaryMin" data-value="2000">$2k+</button>
+                                    <button class="jobs-chip" data-filter="salaryMin" data-value="3000">$3k+</button>
+                                    <button class="jobs-chip" data-filter="salaryMin" data-value="5000">$5k+</button>
+                                </div>
+                            </div>
+
+                            <div class="jobs-filter-group">
+                                <span class="jobs-filter-group__label">Pay Period</span>
+                                <div class="jobs-filter-group__chips" id="salary-period-chips">
+                                    <button class="jobs-chip jobs-chip--active" data-filter="salaryPeriod" data-value="">Any</button>
+                                    <button class="jobs-chip" data-filter="salaryPeriod" data-value="hourly">Hourly</button>
+                                    <button class="jobs-chip" data-filter="salaryPeriod" data-value="daily">Daily</button>
+                                    <button class="jobs-chip" data-filter="salaryPeriod" data-value="weekly">Weekly</button>
+                                    <button class="jobs-chip" data-filter="salaryPeriod" data-value="monthly">Monthly</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary jobs-filter-chips__post-btn" id="btn-post-job">
+                            <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Post a Job
+                        </button>
+                    </div>
+            </div>
+
+            <!-- Smart Match Banner (shown when user has skills) -->
+            <div id="match-banner" style="display:none"></div>
+
+            <!-- Skills Banner (shown when user doesn't have skills) -->
+            <div id="skills-banner" style="display:none"></div>
+
+            <!-- Job List -->
+            <div class="job-list" id="job-list">
+                <!-- Jobs loaded dynamically by jobs.js -->
+            </div>
+
+            <!-- Load More -->
+            <div class="jobs-load-more">
+                <button class="btn btn-secondary" id="btn-load-more">Load More Jobs</button>
+            </div>
+
+            <!-- Minimal CTA: link to promote page -->
+            <div class="jobs-promote-link" style="text-align:center;padding:var(--space-6) 0">
+                <a href="/promote" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+                    Promote Your Job Listing
+                </a>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (!CONFIG.features.jobs) {
+                var main = document.getElementById('main-content');
+                if (main) {
+                    main.innerHTML = '<div class="content-wrapper" style="text-align:center;padding:var(--space-16) var(--space-4)">' +
+                        '<div style="font-size:var(--text-5xl);margin-bottom:var(--space-4)">&#128188;</div>' +
+                        '<h1 style="margin-bottom:var(--space-3)">Community Jobs Coming Soon</h1>' +
+                        '<p style="color:var(--text-secondary);max-width:500px;margin:0 auto var(--space-6)">Find paid roles for community managers, discord moderators, admins, and content creators. Launching soon!</p>' +
+                        '<a href="/" class="btn btn-primary">Back to Home</a>' +
+                        '</div>';
+                }
+                return;
+            }
+
+            Jobs.init();
+            // Feature 10: AI Job Matching — show recommended jobs based on viewing history
+            if (window.AIFeatures && window.AIFeatures.JobMatching) {
+                setTimeout(function() {
+                    var recContainer = document.getElementById('match-banner');
+                    if (recContainer) {
+                        window.AIFeatures.JobMatching.getRecommendations().then(function(recs) {
+                            if (recs && recs.length) {
+                                var html = '<div style="background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-4)">';
+                                html += '<div style="font-weight:var(--font-semibold);margin-bottom:var(--space-3)">&#128161; Recommended for You</div>';
+                                html += '<div style="display:flex;gap:var(--space-3);overflow-x:auto;padding-bottom:var(--space-2)">';
+                                for (var i = 0; i < Math.min(recs.length, 3); i++) {
+                                    var j = recs[i];
+                                    html += '<div style="min-width:200px;background:var(--bg-tertiary);border-radius:var(--radius-md);padding:var(--space-3)">';
+                                    html += '<div style="font-weight:var(--font-medium);font-size:var(--text-sm)">' + (j.title || 'Job') + '</div>';
+                                    html += '<div style="font-size:var(--text-xs);color:var(--text-secondary)">' + (j.company || '') + '</div>';
+                                    html += '</div>';
+                                }
+                                html += '</div></div>';
+                                recContainer.innerHTML = html;
+                                recContainer.style.display = '';
+                            }
+                        }).catch(function() {});
+                    }
+                }, 1000);
+            }
+        });
+    </script>
+</Fragment>
+</BaseLayout>

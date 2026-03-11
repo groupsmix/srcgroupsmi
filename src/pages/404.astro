@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Page Not Found — GroupsMix"
+  description="The page you're looking for doesn't exist or has been moved."
+  noIndex={true}
+  mainStyle="min-height:100vh;display:flex;align-items:center;justify-content:center"
+>
+
+    <div class="empty-state">
+      <div class="empty-state__icon">🔍</div>
+      <h1 class="empty-state__title">Page Not Found</h1>
+      <p class="empty-state__text">The page you're looking for doesn't exist or has been moved.</p>
+      <form action="/search" method="get"
+        style="margin-bottom:var(--space-6);max-width:400px;margin-left:auto;margin-right:auto">
+        <input type="search" name="q" class="form-input" placeholder="Try searching for what you need"
+          aria-label="Search">
+      </form>
+      <a href="/" class="btn btn-primary">🏠 Back to Home</a>
+      <div style="margin-top:var(--space-6);display:flex;gap:var(--space-4);justify-content:center;flex-wrap:wrap">
+        <a href="/browse" style="font-size:var(--text-sm)">Browse Groups</a>
+        <a href="/search" style="font-size:var(--text-sm)">Search Groups</a>
+        <a href="/submit" style="font-size:var(--text-sm)">Submit a Group</a>
+      </div>
+    </div>
+  
+</BaseLayout>

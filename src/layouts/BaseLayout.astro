@@ -1,0 +1,122 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+  canonical?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  ogUrl?: string;
+  ogType?: string;
+  twitterCard?: string;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  cssFiles?: string[];
+  jsFiles?: string[];
+  deferJsFiles?: string[];
+  noIndex?: boolean;
+  extraHead?: string;
+  bodyClass?: string;
+  mainClass?: string;
+  mainStyle?: string;
+  includeFeatures?: boolean;
+  includeSmartFilter?: boolean;
+  includeJobs?: boolean;
+  includeStore?: boolean;
+  includeFuel?: boolean;
+  includeFuelComponents?: boolean;
+  includeArticleJs?: boolean[];
+  structuredData?: string;
+}
+
+const {
+  title,
+  description = '',
+  canonical = '',
+  ogTitle = '',
+  ogDescription = '',
+  ogImage = 'https://groupsmix.com/assets/img/og-default.png',
+  ogUrl = '',
+  ogType = 'website',
+  twitterCard = 'summary_large_image',
+  twitterTitle = '',
+  twitterDescription = '',
+  cssFiles = [],
+  jsFiles = [],
+  deferJsFiles = [],
+  noIndex = false,
+  bodyClass = '',
+  mainClass = '',
+  mainStyle = '',
+  includeFeatures = false,
+  includeSmartFilter = false,
+  includeJobs = false,
+  includeStore = false,
+  includeFuel = false,
+  includeFuelComponents = false,
+  structuredData = '',
+} = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script is:inline src="/assets/js/head-scripts.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    {canonical && <link rel="canonical" href={canonical} />}
+    <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+    {noIndex && <meta name="robots" content="noindex, nofollow" />}
+    {ogType && <meta property="og:type" content={ogType} />}
+    <meta property="og:site_name" content="GroupsMix">
+    {(ogTitle || title) && <meta property="og:title" content={ogTitle || title} />}
+    {(ogDescription || description) && <meta property="og:description" content={ogDescription || description} />}
+    {ogUrl && <meta property="og:url" content={ogUrl} />}
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {twitterCard && <meta name="twitter:card" content={twitterCard} />}
+    {(twitterTitle || ogTitle || title) && <meta name="twitter:title" content={twitterTitle || ogTitle || title} />}
+    {(twitterDescription || ogDescription || description) && <meta name="twitter:description" content={twitterDescription || ogDescription || description} />}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://hmlqppacanpxmrfdlkec.supabase.co">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js" as="script" crossorigin="anonymous">
+    <link rel="preload" href="/assets/js/app.js?v=20260310b" as="script">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" as="style">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap">
+    </noscript>
+    <link rel="stylesheet" href="/assets/css/shared.css?v=20260310b">
+    {cssFiles.map(f => <link rel="stylesheet" href={f} />)}
+    <link rel="stylesheet" href="/assets/css/chatbot.css?v=20260310b">
+    <slot name="head" />
+</head>
+<body class={bodyClass || undefined}>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <header id="site-header"></header>
+    <div id="announcement-bar"></div>
+    <main id="main-content" class={mainClass || undefined} style={mainStyle || undefined}>
+        <slot />
+    </main>
+    <footer id="site-footer"></footer>
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+    <div id="modal-container"></div>
+    <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+    <script is:inline src="/assets/js/supabase-config.js?v=20260310b"></script>
+    <script is:inline src="/assets/js/app.js?v=20260310b"></script>
+    <script is:inline src="/assets/js/components.js?v=20260310b"></script>
+    {includeFeatures && <script is:inline src="/assets/js/features.js?v=20260310b"></script>}
+    {includeSmartFilter && <script is:inline src="/assets/js/smart-filter.js?v=20260310b"></script>}
+    {includeJobs && <script is:inline src="/assets/js/jobs.js?v=20260310b"></script>}
+    {includeStore && <script is:inline src="/assets/js/store.js?v=20260310b"></script>}
+    {includeFuel && <script is:inline src="/assets/js/fuel-community.js?v=20260310b"></script>}
+    {includeFuelComponents && <script is:inline src="/assets/js/fuel-components.js?v=20260310b"></script>}
+    {jsFiles.map(f => <script is:inline src={f}></script>)}
+    <script is:inline src="/assets/js/ai-features.js?v=20260310b" defer></script>
+    <script is:inline src="/assets/js/chatbot.js?v=20260310b" defer></script>
+    {deferJsFiles.map(f => <script is:inline src={f} defer></script>)}
+    <slot name="scripts" />
+    {structuredData && <script type="application/ld+json" set:html={structuredData} />}
+</body>
+</html>

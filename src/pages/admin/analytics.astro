@@ -1,0 +1,264 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Analytics Dashboard &mdash; GroupsMix Admin"
+  noIndex={true}
+  cssFiles={["/assets/css/features.css?v=20260310b"]}
+  includeFeatures={true}
+>
+<style is:inline>
+        .gate-screen{display:flex;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:var(--space-8)}
+        .gate-screen__spinner{width:40px;height:40px;border:3px solid var(--border-primary);border-top-color:var(--accent-primary);border-radius:50%;animation:spin .6s linear infinite;margin:0 auto var(--space-4)}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .analytics-page{max-width:var(--container-xl);margin:0 auto;padding:var(--space-6) var(--space-4)}
+        .analytics-page__header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-6);flex-wrap:wrap;gap:var(--space-3)}
+        .analytics-page__title{font-size:var(--text-2xl);font-weight:800;display:flex;align-items:center;gap:var(--space-2)}
+        .analytics-page__back{color:var(--text-secondary);text-decoration:none;font-size:var(--text-sm);display:flex;align-items:center;gap:var(--space-1)}
+        .analytics-page__back:hover{color:var(--primary)}
+    </style>
+
+
+        <div id="gate-container">
+            <div class="gate-screen">
+                <div>
+                    <div class="gate-screen__spinner"></div>
+                    <div style="color:var(--text-secondary);font-size:var(--text-sm)">Verifying admin access&hellip;</div>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    (function() {
+        'use strict';
+        var currentDays = 30;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                await Auth.waitForAuth();
+            } catch (e) { denyAccess(); return; }
+            var result = await supabaseClient.auth.getSession();
+            var session = result && result.data && result.data.session;
+            if (!session) { denyAccess('auth'); return; }
+            var userResult = await supabaseClient.auth.getUser();
+            if (!userResult || !userResult.data || !userResult.data.user) { denyAccess('auth'); return; }
+            var res = await supabaseClient.from('users').select('id, role').eq('auth_id', userResult.data.user.id).maybeSingle();
+            if (!res.data || (res.data.role !== 'admin' && res.data.role !== 'moderator')) { denyAccess(); return; }
+            buildAnalytics();
+        });
+
+        function denyAccess(reason) {
+            if (reason === 'auth') {
+                window.location.href = '/dashboard';
+            } else {
+                var gate = document.getElementById('gate-container');
+                if (gate) gate.innerHTML = '<div class="gate-screen"><div><div style="font-size:3rem;margin-bottom:var(--space-4)">&#128274;</div><div style="color:var(--text-secondary)">Access denied. Admins only.</div><a href="/" class="btn btn-primary" style="margin-top:var(--space-4)">Go Home</a></div></div>';
+            }
+        }
+
+        function buildAnalytics() {
+            var main = document.getElementById('main-content');
+            main.innerHTML =
+                '<div class="analytics-page">' +
+                '<div class="analytics-page__header">' +
+                '<div class="analytics-page__title">' + ICONS.bar_chart + ' Analytics Dashboard</div>' +
+                '<a href="/admin" class="analytics-page__back">&larr; Back to Admin</a>' +
+                '</div>' +
+                '<div class="date-range-picker" id="date-range"></div>' +
+                '<div class="analytics-kpi-grid" id="kpi-grid"></div>' +
+                '<div class="analytics-grid-2" style="margin-top:var(--space-5)">' +
+                '<div class="chart-section" id="chart-pages"></div>' +
+                '<div class="chart-section" id="chart-searches"></div>' +
+                '</div>' +
+                '<div class="analytics-grid-2" style="margin-top:var(--space-5)">' +
+                '<div class="chart-section" id="chart-events"></div>' +
+                '<div class="chart-section" id="chart-devices"></div>' +
+                '</div>' +
+                '<div class="analytics-grid-2" style="margin-top:var(--space-5)">' +
+                '<div class="chart-section" id="chart-countries"></div>' +
+                '<div class="chart-section" id="chart-newsletter"></div>' +
+                '</div>' +
+                '<div class="chart-section" style="margin-top:var(--space-5)" id="chart-daily"></div>' +
+                '<div class="chart-section" style="margin-top:var(--space-5)" id="chart-conversions"></div>' +
+                '</div>';
+
+            renderDatePicker();
+            loadAllData();
+        }
+
+        function renderDatePicker() {
+            var el = document.getElementById('date-range');
+            var ranges = [
+                { days: 7, label: '7 Days' },
+                { days: 14, label: '14 Days' },
+                { days: 30, label: '30 Days' },
+                { days: 90, label: '90 Days' },
+                { days: 365, label: '1 Year' }
+            ];
+            el.innerHTML = ranges.map(function(r) {
+                return '<button class="date-range-btn' + (r.days === currentDays ? ' date-range-btn--active' : '') + '" data-days="' + r.days + '">' + r.label + '</button>';
+            }).join('');
+            el.querySelectorAll('.date-range-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    currentDays = parseInt(btn.dataset.days);
+                    el.querySelectorAll('.date-range-btn').forEach(function(b) { b.classList.remove('date-range-btn--active'); });
+                    btn.classList.add('date-range-btn--active');
+                    loadAllData();
+                });
+            });
+        }
+
+        async function loadAllData() {
+            // Show loading states
+            document.getElementById('kpi-grid').innerHTML = '<div class="skeleton" style="height:120px;grid-column:1/-1;border-radius:var(--radius-lg)"></div>';
+
+            var [summary, searches, conversions, nlStats] = await Promise.allSettled([
+                Analytics.getSummary(currentDays),
+                Analytics.getSearchAnalytics(currentDays),
+                Analytics.getConversionData(currentDays),
+                Newsletter.getStats()
+            ]);
+
+            var summaryData = summary.status === 'fulfilled' ? summary.value : null;
+            var searchData = searches.status === 'fulfilled' ? searches.value : [];
+            var conversionData = conversions.status === 'fulfilled' ? conversions.value : null;
+            var nlData = nlStats.status === 'fulfilled' ? nlStats.value : null;
+
+            renderKPIs(summaryData, conversionData, nlData);
+            renderTopPages(summaryData);
+            renderSearches(searchData);
+            renderTopEvents(summaryData);
+            renderDevices(summaryData);
+            renderCountries(summaryData);
+            renderNewsletter(nlData);
+            renderDailyChart(summaryData);
+            renderConversions(conversionData);
+        }
+
+        function renderKPIs(summary, conv, nl) {
+            var el = document.getElementById('kpi-grid');
+            var totalEvents = summary ? (summary.total_events || 0) : 0;
+            var uniqueSessions = summary ? (summary.unique_sessions || 0) : 0;
+            var convRate = conv ? (conv.rate || '0.00') : '0.00';
+            var nlTotal = nl ? (nl.active || 0) : 0;
+
+            el.innerHTML =
+                kpiCard(ICONS.eye, UI.formatNumber(totalEvents), 'Total Events', '') +
+                kpiCard(ICONS.users, UI.formatNumber(uniqueSessions), 'Unique Sessions', '') +
+                kpiCard(ICONS.trending_up || ICONS.rocket, convRate + '%', 'Conversion Rate', '') +
+                kpiCard(ICONS.mail, UI.formatNumber(nlTotal), 'Newsletter Subs', '');
+        }
+
+        function kpiCard(icon, value, label, trend) {
+            return '<div class="kpi-card">' +
+                '<div class="kpi-card__icon">' + icon + '</div>' +
+                '<div class="kpi-card__value">' + value + '</div>' +
+                '<div class="kpi-card__label">' + Security.sanitize(label) + '</div>' +
+                (trend ? '<div class="kpi-card__trend">' + trend + '</div>' : '') +
+                '</div>';
+        }
+
+        function renderBarChart(items, maxVal) {
+            if (!items || !items.length) return '<div style="color:var(--text-tertiary);font-size:var(--text-sm);padding:var(--space-3)">No data available</div>';
+            var max = maxVal || Math.max.apply(null, items.map(function(i) { return i.value; }));
+            if (max === 0) max = 1;
+            return '<div class="chart-bar-container">' + items.slice(0, 10).map(function(item) {
+                var pct = Math.round((item.value / max) * 100);
+                return '<div class="chart-bar">' +
+                    '<div class="chart-bar__label" title="' + Security.sanitize(item.label) + '">' + Security.sanitize(item.label) + '</div>' +
+                    '<div class="chart-bar__track"><div class="chart-bar__fill" style="width:' + pct + '%"></div></div>' +
+                    '<div class="chart-bar__value">' + UI.formatNumber(item.value) + '</div>' +
+                    '</div>';
+            }).join('') + '</div>';
+        }
+
+        function renderTopPages(summary) {
+            var el = document.getElementById('chart-pages');
+            var pages = summary && summary.top_pages ? summary.top_pages : [];
+            var items = pages.map(function(p) { return { label: p.page_path || '/', value: p.views || 0 }; });
+            el.innerHTML = '<div class="chart-section__title">' + ICONS.file_text + ' Top Pages</div>' + renderBarChart(items);
+        }
+
+        function renderSearches(searchData) {
+            var el = document.getElementById('chart-searches');
+            var items = (searchData || []).slice(0, 10).map(function(s) { return { label: s.term, value: s.count }; });
+            el.innerHTML = '<div class="chart-section__title">' + ICONS.search + ' Top Searches</div>' + renderBarChart(items);
+        }
+
+        function renderTopEvents(summary) {
+            var el = document.getElementById('chart-events');
+            var events = summary && summary.top_events ? summary.top_events : [];
+            var items = events.map(function(e) { return { label: e.event_name, value: e.total || 0 }; });
+            el.innerHTML = '<div class="chart-section__title">' + ICONS.activity + ' Top Events</div>' + renderBarChart(items);
+        }
+
+        function renderDevices(summary) {
+            var el = document.getElementById('chart-devices');
+            var devices = summary && summary.device_breakdown ? summary.device_breakdown : [];
+            var items = devices.map(function(d) { return { label: d.device_type || 'unknown', value: d.total || 0 }; });
+            el.innerHTML = '<div class="chart-section__title">' + ICONS.smartphone + ' Device Breakdown</div>' + renderBarChart(items);
+        }
+
+        function renderCountries(summary) {
+            var el = document.getElementById('chart-countries');
+            var countries = summary && summary.top_countries ? summary.top_countries : [];
+            var items = countries.map(function(c) { return { label: c.country || 'Unknown', value: c.total || 0 }; });
+            el.innerHTML = '<div class="chart-section__title">' + ICONS.globe + ' Top Countries</div>' + renderBarChart(items);
+        }
+
+        function renderNewsletter(nlData) {
+            var el = document.getElementById('chart-newsletter');
+            if (!nlData) { el.innerHTML = '<div class="chart-section__title">' + ICONS.mail + ' Newsletter</div><div style="color:var(--text-tertiary);font-size:var(--text-sm)">No newsletter data</div>'; return; }
+            el.innerHTML = '<div class="chart-section__title">' + ICONS.mail + ' Newsletter Stats</div>' +
+                '<div class="nl-admin-stats">' +
+                nlStat(nlData.total || 0, 'Total') +
+                nlStat(nlData.active || 0, 'Active') +
+                nlStat(nlData.today || 0, 'Today') +
+                nlStat(nlData.this_week || 0, 'This Week') +
+                nlStat(nlData.this_month || 0, 'This Month') +
+                nlStat(nlData.unsubscribed || 0, 'Unsubscribed') +
+                '</div>' +
+                (nlData.by_source ? '<div style="margin-top:var(--space-3)">' +
+                renderBarChart((nlData.by_source || []).map(function(s) { return { label: s.source || 'unknown', value: s.total || 0 }; })) +
+                '</div>' : '');
+        }
+
+        function nlStat(value, label) {
+            return '<div class="nl-admin-stat"><div class="nl-admin-stat__value">' + UI.formatNumber(value) + '</div><div class="nl-admin-stat__label">' + label + '</div></div>';
+        }
+
+        function renderDailyChart(summary) {
+            var el = document.getElementById('chart-daily');
+            var daily = summary && summary.daily_views ? summary.daily_views : [];
+            if (!daily.length) {
+                el.innerHTML = '<div class="chart-section__title">' + ICONS.bar_chart + ' Daily Page Views</div><div style="color:var(--text-tertiary);font-size:var(--text-sm)">No data available</div>';
+                return;
+            }
+            var max = Math.max.apply(null, daily.map(function(d) { return d.views || 0; }));
+            if (max === 0) max = 1;
+            el.innerHTML = '<div class="chart-section__title">' + ICONS.bar_chart + ' Daily Page Views</div>' +
+                '<div class="mini-chart">' + daily.map(function(d) {
+                    var h = Math.max(2, Math.round(((d.views || 0) / max) * 56));
+                    var date = d.day || '';
+                    return '<div class="mini-chart__bar" style="height:' + h + 'px" title="' + Security.sanitize(date) + ': ' + (d.views || 0) + ' views"></div>';
+                }).join('') + '</div>';
+        }
+
+        function renderConversions(conv) {
+            var el = document.getElementById('chart-conversions');
+            if (!conv) {
+                el.innerHTML = '<div class="chart-section__title">' + ICONS.trending_up + ' Conversion Funnel</div><div style="color:var(--text-tertiary);font-size:var(--text-sm)">No conversion data</div>';
+                return;
+            }
+            el.innerHTML = '<div class="chart-section__title">' + ICONS.trending_up + ' Conversion Funnel</div>' +
+                '<div class="analytics-kpi-grid" style="margin-top:var(--space-3)">' +
+                kpiCard(ICONS.eye, UI.formatNumber(conv.views || 0), 'Product Views', '') +
+                kpiCard(ICONS.shopping_cart || ICONS.check_circle, UI.formatNumber(conv.conversions || 0), 'Conversions', '') +
+                kpiCard(ICONS.trending_up || ICONS.rocket, (conv.rate || '0.00') + '%', 'Conv. Rate', '') +
+                '</div>';
+        }
+    })();
+    </script>
+</Fragment>
+</BaseLayout>

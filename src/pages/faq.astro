@@ -1,0 +1,150 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="FAQ &mdash; GroupsMix"
+  description="Frequently asked questions about GroupsMix."
+>
+<style is:inline>
+        .legal-hero{text-align:center;padding:var(--space-8) 0 var(--space-4)}
+        .legal-hero__icon{font-size:var(--text-5xl);margin-bottom:var(--space-3)}
+        .legal-hero__subtitle{color:var(--text-secondary);margin-top:var(--space-2);max-width:560px;margin-left:auto;margin-right:auto;font-size:var(--text-base)}
+        .glass-card{background:rgba(22,22,31,0.75);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(42,42,62,0.6);border-radius:var(--radius-xl);padding:var(--space-6);box-shadow:0 8px 32px rgba(0,0,0,0.2);transition:transform .2s ease,box-shadow .2s ease}
+        .glass-card:hover{box-shadow:0 12px 40px rgba(0,0,0,0.3)}
+        .glass-card__body{line-height:var(--leading-relaxed);color:var(--text-secondary)}
+        .glass-card__body h2{color:var(--text-primary);margin:var(--space-6) 0 var(--space-3);font-size:var(--text-lg);font-weight:var(--font-bold);display:flex;align-items:center;gap:var(--space-2)}
+        .glass-card__body h2::before{content:'';width:3px;height:20px;background:var(--accent-primary);border-radius:var(--radius-full);flex-shrink:0}
+        .glass-card__body p{margin-bottom:var(--space-3)}
+        .glass-card__body ul{margin-bottom:var(--space-4);padding-left:var(--space-4)}
+        .glass-card__body ul li{margin-bottom:var(--space-2);line-height:1.6}
+        .glass-card__body a{color:var(--accent-primary);text-decoration:none;font-weight:var(--font-medium)}
+        .glass-card__body a:hover{text-decoration:underline}
+        .legal-meta{display:inline-flex;align-items:center;gap:var(--space-2);padding:var(--space-1) var(--space-3);background:rgba(108,92,231,0.1);border:1px solid rgba(108,92,231,0.2);border-radius:var(--radius-full);font-size:var(--text-xs);color:var(--accent-primary);font-weight:var(--font-semibold);margin-bottom:var(--space-6)}
+        .legal-nav{display:flex;gap:var(--space-2);flex-wrap:wrap;justify-content:center;margin-bottom:var(--space-6)}
+        .legal-nav a{padding:var(--space-2) var(--space-3);border-radius:var(--radius-full);border:1px solid var(--border-primary);background:var(--bg-card);color:var(--text-secondary);font-size:var(--text-sm);text-decoration:none;transition:all .15s ease}
+        .legal-nav a:hover,.legal-nav a.active{background:var(--accent-primary);color:#fff;border-color:var(--accent-primary)}
+        [data-theme="light"] .glass-card{background:rgba(255,255,255,0.75);border-color:rgba(200,200,220,0.5);box-shadow:0 8px 32px rgba(0,0,0,0.08)}
+        .faq-search-wrap{margin-bottom:var(--space-6);position:relative}
+        .faq-search-wrap input{width:100%;padding:var(--space-3) var(--space-4) var(--space-3) var(--space-10);border-radius:var(--radius-lg);border:1px solid var(--border-primary);background:var(--bg-card);color:var(--text-primary);font-size:var(--text-base);transition:border-color .2s ease}
+        .faq-search-wrap input:focus{outline:none;border-color:var(--accent-primary)}
+        .faq-search-wrap::before{content:'\1F50D';position:absolute;left:var(--space-3);top:50%;transform:translateY(-50%);font-size:var(--text-lg);pointer-events:none}
+        .faq-count{text-align:center;font-size:var(--text-sm);color:var(--text-tertiary);margin-bottom:var(--space-4)}
+        .faq-item{background:rgba(22,22,31,0.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(42,42,62,0.5);border-radius:var(--radius-lg);margin-bottom:var(--space-3);overflow:hidden;transition:border-color .2s ease}
+        .faq-item:hover{border-color:rgba(108,92,231,0.3)}
+        .faq-item.open{border-color:var(--accent-primary)}
+        .faq-question{padding:var(--space-4);cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:var(--font-semibold);transition:background .15s ease;color:var(--text-primary)}
+        .faq-question:hover{background:rgba(108,92,231,0.05)}
+        .faq-answer{padding:0 var(--space-4) var(--space-4);color:var(--text-secondary);line-height:var(--leading-relaxed);display:none}
+        .faq-item.open .faq-answer{display:block;animation:fadeIn .2s ease}
+        .faq-item.open .faq-arrow{transform:rotate(180deg)}
+        .faq-arrow{transition:transform 0.2s ease;color:var(--accent-primary);font-size:var(--text-sm)}
+        .faq-category{font-size:var(--text-sm);font-weight:var(--font-bold);color:var(--accent-primary);text-transform:uppercase;letter-spacing:.05em;margin:var(--space-6) 0 var(--space-3);padding-bottom:var(--space-2);border-bottom:1px solid var(--border-primary)}
+        .faq-category:first-child{margin-top:0}
+        .faq-no-results{text-align:center;color:var(--text-tertiary);padding:var(--space-8);font-size:var(--text-base)}
+        [data-theme="light"] .faq-item{background:rgba(255,255,255,0.6);border-color:rgba(200,200,220,0.4)}
+    </style>
+
+
+        <div class="container" style="max-width:var(--container-md);padding:var(--space-8) var(--space-4)">
+            <section class="legal-hero">
+                <div class="legal-hero__icon">&#10067;</div>
+                <h1>Frequently Asked Questions</h1>
+                <p class="legal-hero__subtitle">Everything you need to know about GroupsMix.</p>
+            </section>
+            <nav class="legal-nav">
+                <a href="/terms">Terms</a>
+                <a href="/privacy">Privacy</a>
+                <a href="/about">About</a>
+                <a href="/faq">FAQ</a>
+                <a href="/contact">Contact</a>
+                <a href="/support">Support Center</a>
+            </nav>
+
+            <div class="faq-search-wrap">
+                <input type="text" id="faq-search" placeholder="Search questions..." autocomplete="off">
+            </div>
+            <div id="faq-count" class="faq-count"></div>
+            <div id="faq-list"></div>
+
+            <div style="text-align:center;margin-top:var(--space-8)">
+                <p style="color:var(--text-secondary);margin-bottom:var(--space-3)">Still have questions?</p>
+                <div style="display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap">
+                    <a href="/contact" class="btn btn-secondary">Contact Us</a>
+                    <a href="/support" class="btn btn-primary">Visit Support Center</a>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        var faqs = [
+            /* Getting Started */
+            { cat: 'Getting Started', q: 'What is GroupsMix?', a: 'GroupsMix is the leading platform for discovering, sharing, and promoting trusted social media groups across platforms like WhatsApp, Telegram, Discord, Facebook, Viber, and more.' },
+            { cat: 'Getting Started', q: 'Do I need an account to browse groups?', a: 'No, you can browse and search groups without an account. However, creating a free account lets you save groups, write reviews, submit your own groups, and earn GXP rewards.' },
+            { cat: 'Getting Started', q: 'What platforms are supported?', a: 'We currently support WhatsApp, Telegram, Discord, Facebook Groups, Viber, and more. New platforms are added regularly based on community demand.' },
+
+            /* Submitting Groups */
+            { cat: 'Submitting Groups', q: 'How do I submit a group?', a: 'Click "Submit" in the navigation bar, fill in your group details (name, description, category, platform, and invite link), and submit for review. Your group will be reviewed and approved within 24\u201372 hours.' },
+            { cat: 'Submitting Groups', q: 'Is it free to list my group?', a: 'Yes! Basic listing is completely free. We also offer premium VIP plans for enhanced visibility, badges, and priority placement.' },
+            { cat: 'Submitting Groups', q: 'Can I edit my group after submission?', a: 'Currently, you\'ll need to contact us to make changes to an approved group. We\'re working on a self-service edit feature that will be available soon.' },
+            { cat: 'Submitting Groups', q: 'Why was my group rejected?', a: 'Groups may be rejected if they contain prohibited content (spam, scams, NSFW, hate speech), have an invalid or expired invite link, or lack sufficient description. You can resubmit after fixing the issues.' },
+
+            /* Trust & Safety */
+            { cat: 'Trust & Safety', q: 'How does the trust score work?', a: 'Trust scores are calculated based on multiple factors: verification status, review ratings, report history, account age, and community engagement. Higher scores indicate more trustworthy groups.' },
+            { cat: 'Trust & Safety', q: 'How do I report a suspicious group?', a: 'Visit the group\'s profile page and click the "Report" button. Select a reason and provide details. Our team reviews all reports promptly and takes action within 24 hours.' },
+            { cat: 'Trust & Safety', q: 'Are the group links safe to click?', a: 'All group invite links on GroupsMix are encrypted and only revealed after verification checks. Our Scam Wall and behavioral fraud detection systems actively protect users from phishing and malicious links.' },
+
+            /* GXP & Rewards */
+            { cat: 'GXP & Rewards', q: 'What is GXP?', a: 'GXP (GroupsMix Experience Points) is our reputation and rewards system. You earn GXP by submitting groups (+50), writing reviews (+10), reporting scams, and other platform activities. Higher GXP unlocks levels, badges, and exclusive perks.' },
+            { cat: 'GXP & Rewards', q: 'Can I lose GXP?', a: 'Yes, GXP can be deducted if you violate our Terms of Service, submit false reports, or engage in manipulative behavior. Severe violations may result in a full GXP reset.' },
+
+            /* VIP & Payments */
+            { cat: 'VIP & Payments', q: 'What are VIP plans?', a: 'VIP plans give your group enhanced visibility with badges, priority placement, and ranking multipliers. Plans range from Verified ($5/mo) to Diamond ($50/mo), each with increasing benefits.' },
+            { cat: 'VIP & Payments', q: 'What payment methods do you accept?', a: 'We accept cryptocurrency (Bitcoin, USDT, Solana) and card payments via LemonSqueezy for VIP plans and services.' },
+            { cat: 'VIP & Payments', q: 'Can I get a refund?', a: 'Cryptocurrency payments are non-refundable once confirmed on the blockchain. Card payments processed through LemonSqueezy follow their refund policy. VIP subscriptions can be cancelled anytime but prorated refunds are not provided.' },
+
+            /* Account & Privacy */
+            { cat: 'Account & Privacy', q: 'How do I delete my account?', a: 'Contact us through the Contact page or Support Center and we\'ll process your account deletion request within 48 hours. All your personal data will be permanently removed.' },
+            { cat: 'Account & Privacy', q: 'What data do you collect?', a: 'We collect your email, display name, and group submissions. We also collect anonymized usage data for improving the platform. We do not use third-party tracking cookies. See our Privacy Policy for full details.' },
+            { cat: 'Account & Privacy', q: 'Can I change my email or display name?', a: 'Yes, you can update your display name from your profile settings. For email changes, please contact us through the Support Center for security verification.' }
+        ];
+
+        function renderFaqList(items) {
+            var el = document.getElementById('faq-list');
+            var countEl = document.getElementById('faq-count');
+            if (!items.length) {
+                el.innerHTML = '<div class="faq-no-results">No matching questions found. Try a different search term.</div>';
+                countEl.textContent = '';
+                return;
+            }
+            var html = '';
+            var lastCat = '';
+            items.forEach(function(f, i) {
+                if (f.cat !== lastCat) {
+                    html += '<div class="faq-category">' + Security.sanitize(f.cat) + '</div>';
+                    lastCat = f.cat;
+                }
+                html += '<div class="faq-item" data-index="' + i + '"><div class="faq-question">' + Security.sanitize(f.q) + '<span class="faq-arrow">&#9660;</span></div><div class="faq-answer">' + Security.sanitize(f.a) + '</div></div>';
+            });
+            el.innerHTML = html;
+            countEl.textContent = items.length + ' question' + (items.length !== 1 ? 's' : '');
+            el.querySelectorAll('.faq-item').forEach(function(item) {
+                item.querySelector('.faq-question').addEventListener('click', function() {
+                    item.classList.toggle('open');
+                });
+            });
+        }
+
+        renderFaqList(faqs);
+
+        document.getElementById('faq-search').addEventListener('input', function() {
+            var q = this.value.toLowerCase().trim();
+            if (!q) { renderFaqList(faqs); return; }
+            var filtered = faqs.filter(function(f) {
+                return f.q.toLowerCase().indexOf(q) !== -1 || f.a.toLowerCase().indexOf(q) !== -1 || f.cat.toLowerCase().indexOf(q) !== -1;
+            });
+            renderFaqList(filtered);
+        });
+    </script>
+</Fragment>
+</BaseLayout>

@@ -1,0 +1,171 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Browse by Platform — GroupsMix"
+  description="Browse social media groups by platform. WhatsApp, Telegram, Discord, Facebook, Reddit and more."
+>
+<style is:inline>
+        .browse-hero {
+            padding: var(--space-8) 0;
+            text-align: center;
+        }
+
+        .platform-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-4);
+            margin-bottom: var(--space-8);
+        }
+
+        .platform-card {
+            text-align: center;
+            padding: var(--space-6) var(--space-4);
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .platform-card:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .platform-card--active {
+            border-color: var(--accent-primary);
+            background: var(--accent-primary-light);
+        }
+
+        .platform-card__emoji {
+            font-size: var(--text-4xl);
+            display: block;
+            margin-bottom: var(--space-2);
+        }
+
+        .platform-card__name {
+            font-weight: var(--font-semibold);
+        }
+
+        @media (max-width: 767px) {
+            .platform-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+
+
+        <div class="container">
+            <section class="browse-hero">
+                <h1>📱 Browse by Platform</h1>
+                <p style="color:var(--text-secondary);margin-top:var(--space-2)">Explore groups on your favourite
+                    platform</p>
+            </section>
+            <div class="platform-grid" id="platform-grid"></div>
+            <div id="filter-container" style="display:none;margin-bottom:var(--space-6)"></div>
+            <div id="results-header" style="display:none;margin-bottom:var(--space-4)">
+                <h2 id="results-title" style="font-size:var(--text-xl)"></h2><span id="results-count"
+                    style="color:var(--text-secondary);font-size:var(--text-sm)"></span>
+            </div>
+            <div id="results-container"></div>
+            <div id="pagination-container"></div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', initPage);
+        let currentPlatform = '', currentPage = 1;
+        let currentFilters = { category: '', country: '', sort: 'ranking' };
+
+        function initPage() {
+            const params = new URLSearchParams(window.location.search);
+            currentPlatform = params.get('p') || '';
+            currentFilters.category = params.get('category') || '';
+            currentFilters.country = params.get('country') || '';
+            currentFilters.sort = params.get('sort') || 'ranking';
+
+            renderGrid();
+            if (currentPlatform) {
+                renderFilters();
+                loadGroups();
+            }
+        }
+
+        function renderGrid() {
+            document.getElementById('platform-grid').innerHTML = CONFIG.platforms.map(p =>
+                '<div class="platform-card' + (currentPlatform === p.id ? ' platform-card--active' : '') + '" data-id="' + p.id + '">' +
+                '<span class="platform-card__emoji">' + p.emoji + '</span><span class="platform-card__name">' + p.name + '</span></div>'
+            ).join('');
+            document.querySelectorAll('.platform-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    currentPlatform = card.dataset.id;
+                    currentPage = 1;
+                    updateUrl();
+                    document.querySelectorAll('.platform-card').forEach(c => c.classList.remove('platform-card--active'));
+                    card.classList.add('platform-card--active');
+                    renderFilters();
+                    loadGroups();
+                });
+            });
+        }
+
+        function renderFilters() {
+            const fc = document.getElementById('filter-container');
+            fc.style.display = 'block';
+            fc.innerHTML = UI.searchFilters({ platform: currentPlatform, ...currentFilters });
+            UI.initFilters(onFilterChange);
+        }
+
+        function onFilterChange(filters) {
+            currentPlatform = filters.platform || '';
+            Object.assign(currentFilters, filters);
+            currentPage = 1;
+            updateUrl();
+            document.querySelectorAll('.platform-card').forEach(c => c.classList.remove('platform-card--active'));
+            if (currentPlatform) {
+                const card = document.querySelector('.platform-card[data-id="' + currentPlatform + '"]');
+                if (card) card.classList.add('platform-card--active');
+            } else {
+                document.getElementById('filter-container').style.display = 'none';
+                document.getElementById('results-header').style.display = 'none';
+                document.getElementById('results-container').innerHTML = '';
+                document.getElementById('pagination-container').innerHTML = '';
+                return; // if they cleared platform
+            }
+            renderFilters();
+            loadGroups();
+        }
+
+        function updateUrl() {
+            const params = new URLSearchParams();
+            if (currentPlatform) params.set('p', currentPlatform);
+            if (currentFilters.category) params.set('category', currentFilters.category);
+            if (currentFilters.country) params.set('country', currentFilters.country);
+            if (currentFilters.sort && currentFilters.sort !== 'ranking') params.set('sort', currentFilters.sort);
+            const qs = params.toString();
+            history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : ''));
+        }
+
+        async function loadGroups() {
+            const p = CONFIG.platforms.find(x => x.id === currentPlatform);
+            document.getElementById('results-header').style.display = '';
+            document.getElementById('results-title').textContent = (p?.emoji || '📱') + ' ' + (p?.name || currentPlatform) + ' Groups';
+            UI.groupGridSkeleton(12, 'results-container');
+            const offset = (currentPage - 1) * CONFIG.perPage;
+            try {
+                const { data, count } = await DB.groups.getByPlatform(currentPlatform, { ...currentFilters, limit: CONFIG.perPage, offset });
+                document.getElementById('results-count').textContent = (count || 0) + ' groups';
+                if (!data?.length) { UI.emptyState('results-container', '📭', 'No Groups Yet', 'Be the first to submit a ' + (p?.name || '') + ' group!', 'Submit Group', '/submit'); return; }
+                UI.groupGrid(data, 'results-container');
+                const totalPages = Math.ceil((count || 0) / CONFIG.perPage);
+                if (totalPages > 1) {
+                    document.getElementById('pagination-container').innerHTML = UI.pagination(currentPage, totalPages);
+                    UI.initPagination('pagination-container', (page) => { currentPage = page; loadGroups(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+                }
+            } catch { UI.errorState('results-container', loadGroups); }
+        }
+    </script>
+</Fragment>
+</BaseLayout>
