@@ -5,8 +5,8 @@
   "start_url": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0a0a0f",
-  "theme_color": "#6200ea",
+  "background_color": "#0d0d14",
+  "theme_color": "#6366F1",
   "categories": ["social", "communication", "utilities"],
   "icons": [
     { "src": "/assets/img/favicon.svg", "sizes": "any", "type": "image/svg+xml" },

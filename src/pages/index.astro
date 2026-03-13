@@ -28,26 +28,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             padding: var(--space-4) 0 var(--space-3);
         }
 
-        .hero-gradient {
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 60%;
-            height: 100%;
-            background: none;
-            pointer-events: none;
-        }
-
-        .hero-gradient-left {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 40%;
-            height: 60%;
-            background: none;
-            pointer-events: none;
-        }
-
         .hero > * {
             position: relative;
             z-index: 1;
@@ -1018,8 +998,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
             <!-- ─── Hero ──────────────────────────── -->
             <section class="hero">
-                <div class="hero-gradient"></div>
-                <div class="hero-gradient-left"></div>
                 <h1 class="hero__title">Your #1 Directory for <span class="hero__title-highlight">Trusted Groups</span></h1>
                 <p class="hero__subtitle">Discover, join &amp; promote verified communities in a smart, safe ecosystem.</p>
                 <form class="hero__search" id="hero-search-form" action="/search" method="get">

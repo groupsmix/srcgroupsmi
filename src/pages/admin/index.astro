@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 <BaseLayout
-  title="Admin Dashboard &mdash; GroupsMix"
+  title="Admin Dashboard — GroupsMix"
   noIndex={true}
 >
 <style is:inline>
@@ -680,7 +680,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                         '<td style="font-size:var(--text-xs);color:var(--text-tertiary)">' + UI.formatDate(p.created_at) + '</td>' +
                         (p.status === 'pending' ?
                             '<td><button class="btn btn-sm" style="background:var(--success);color:#fff;margin-right:4px" data-verify="' + p.id + '">&#9989;</button><button class="btn btn-sm btn-danger" data-deny="' + p.id + '">&#10060;</button></td>' :
-                            '<td style="color:var(--text-tertiary)">&mdash;</td>') +
+                            '<td style="color:var(--text-tertiary)">—</td>') +
                     '</tr>';
                 }).join('') +
                 '</tbody></table></div></div>';
@@ -778,7 +778,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                             '<td>' + statusIcon + ' ' + Security.sanitize(d.status || 'pending') + '</td>' +
                             (d.status === 'pending' ?
                                 '<td><button class="btn btn-sm" style="background:var(--success);color:#fff;margin-right:4px" data-don-verify="' + d.id + '">&#9989;</button><button class="btn btn-sm btn-danger" data-don-reject="' + d.id + '">&#10060;</button></td>' :
-                                '<td>&mdash;</td>') +
+                                '<td>—</td>') +
                         '</tr>';
                     }).join('') +
                     '</tbody></table></div></div>';

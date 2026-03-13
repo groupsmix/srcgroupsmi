@@ -9,7 +9,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 >
 
     <div class="empty-state">
-      <div class="empty-state__icon">🔍</div>
+      <div class="empty-state__icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
       <h1 class="empty-state__title">Page Not Found</h1>
       <p class="empty-state__text">The page you're looking for doesn't exist or has been moved.</p>
       <form action="/search" method="get"
@@ -17,7 +17,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <input type="search" name="q" class="form-input" placeholder="Try searching for what you need"
           aria-label="Search">
       </form>
-      <a href="/" class="btn btn-primary">🏠 Back to Home</a>
+      <a href="/" class="btn btn-primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Back to Home</a>
       <div style="margin-top:var(--space-6);display:flex;gap:var(--space-4);justify-content:center;flex-wrap:wrap">
         <a href="/browse" style="font-size:var(--text-sm)">Browse Groups</a>
         <a href="/search" style="font-size:var(--text-sm)">Search Groups</a>

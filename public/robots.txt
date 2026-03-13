@@ -7,4 +7,10 @@ Disallow: /my-groups
 Disallow: /saved
 Disallow: /settings
 Disallow: /reset-password
+Disallow: /wallet
+Disallow: /wishlist
+Disallow: /user/
+Disallow: /go
+Disallow: /seller
+Disallow: /errors/
 Sitemap: https://groupsmix.com/sitemap.xml
