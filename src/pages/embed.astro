@@ -1,0 +1,375 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Embeddable Group Widget — GroupsMix"
+  description="Create a 'Join on GroupsMix' badge or widget to embed on your website, blog, or YouTube description. Free advertising for your group."
+  cssFiles={["/assets/css/features.css?v=20260310b"]}
+  includeFeatures={true}
+>
+<style is:inline>
+    .embed-page {
+        max-width: var(--container-lg);
+        margin: 0 auto;
+        padding: var(--space-8) var(--space-4);
+    }
+    .embed-hero {
+        text-align: center;
+        margin-bottom: var(--space-8);
+    }
+    .embed-hero__title {
+        font-size: var(--text-3xl);
+        font-weight: var(--font-bold);
+        margin-bottom: var(--space-3);
+    }
+    .embed-hero__subtitle {
+        color: var(--text-secondary);
+        font-size: var(--text-base);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .embed-builder {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-6);
+    }
+    .embed-config {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
+    }
+    .embed-preview {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
+    }
+    .embed-preview__title {
+        font-size: var(--text-lg);
+        font-weight: var(--font-semibold);
+        margin-bottom: var(--space-4);
+    }
+    .embed-preview__frame {
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-lg);
+        padding: var(--space-6);
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .embed-code-box {
+        margin-top: var(--space-4);
+    }
+    .embed-code-box__label {
+        font-size: var(--text-sm);
+        font-weight: var(--font-semibold);
+        margin-bottom: var(--space-2);
+    }
+    .embed-code-box__code {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-md);
+        padding: var(--space-3);
+        font-family: monospace;
+        font-size: var(--text-xs);
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+    .embed-code-box__copy {
+        margin-top: var(--space-2);
+    }
+    .style-selector {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-3);
+        margin-bottom: var(--space-4);
+    }
+    .style-option {
+        background: var(--bg-tertiary);
+        border: 2px solid var(--border-primary);
+        border-radius: var(--radius-lg);
+        padding: var(--space-3);
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s ease, background 0.2s ease;
+        font-size: var(--text-sm);
+    }
+    .style-option:hover {
+        background: var(--bg-card-hover);
+    }
+    .style-option--active {
+        border-color: var(--accent-primary);
+        background: var(--accent-primary-light);
+    }
+    .style-option__icon {
+        font-size: var(--text-xl);
+        margin-bottom: var(--space-1);
+    }
+    .how-it-works {
+        margin-top: var(--space-8);
+    }
+    .how-it-works__title {
+        font-size: var(--text-xl);
+        font-weight: var(--font-bold);
+        text-align: center;
+        margin-bottom: var(--space-6);
+    }
+    .hiw-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-6);
+    }
+    .hiw-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
+        text-align: center;
+    }
+    .hiw-card__icon {
+        font-size: var(--text-3xl);
+        margin-bottom: var(--space-3);
+    }
+    .hiw-card__title {
+        font-weight: var(--font-semibold);
+        margin-bottom: var(--space-2);
+    }
+    .hiw-card__desc {
+        color: var(--text-secondary);
+        font-size: var(--text-sm);
+    }
+    @media (max-width: 767px) {
+        .embed-builder { grid-template-columns: 1fr; }
+        .style-selector { grid-template-columns: repeat(3, 1fr); }
+        .hiw-grid { grid-template-columns: 1fr; }
+        .embed-hero__title { font-size: var(--text-2xl); }
+    }
+</style>
+
+<div class="embed-page">
+    <div class="embed-hero">
+        <h1 class="embed-hero__title">Embed Your Group Widget</h1>
+        <p class="embed-hero__subtitle">Add a "Join on GroupsMix" badge to your website, blog, or social media. Every embed drives free traffic to your group.</p>
+    </div>
+
+    <div class="embed-builder">
+        <div class="embed-config">
+            <h2 style="font-size:var(--text-lg);font-weight:var(--font-semibold);margin-bottom:var(--space-4)">Configure Widget</h2>
+
+            <div class="form-group">
+                <label class="form-label" for="embed-group-search">Search Your Group</label>
+                <input type="text" id="embed-group-search" class="form-input" placeholder="Type group name...">
+                <div id="embed-group-results" style="margin-top:var(--space-2)"></div>
+                <input type="hidden" id="embed-group-id" value="">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Widget Style</label>
+                <div class="style-selector" id="style-selector">
+                    <div class="style-option style-option--active" data-style="badge">
+                        <div class="style-option__icon">&#127991;</div>
+                        <div>Badge</div>
+                    </div>
+                    <div class="style-option" data-style="card">
+                        <div class="style-option__icon">&#128196;</div>
+                        <div>Card</div>
+                    </div>
+                    <div class="style-option" data-style="button">
+                        <div class="style-option__icon">&#128280;</div>
+                        <div>Button</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="embed-theme">Theme</label>
+                <select id="embed-theme" class="form-input">
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                    <option value="auto">Auto (match site)</option>
+                </select>
+            </div>
+
+            <div class="embed-code-box">
+                <div class="embed-code-box__label">Embed Code</div>
+                <div class="embed-code-box__code" id="embed-code">Select a group above to generate your embed code.</div>
+                <button class="btn btn-primary btn-sm embed-code-box__copy" id="copy-embed-code" disabled>Copy Code</button>
+            </div>
+        </div>
+
+        <div class="embed-preview">
+            <h2 class="embed-preview__title">Live Preview</h2>
+            <div class="embed-preview__frame" id="embed-preview-frame">
+                <div style="color:var(--text-tertiary);text-align:center">
+                    <div style="font-size:var(--text-3xl);margin-bottom:var(--space-2)">&#128065;</div>
+                    <div>Select a group to see preview</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="how-it-works">
+        <h2 class="how-it-works__title">How It Works</h2>
+        <div class="hiw-grid">
+            <div class="hiw-card">
+                <div class="hiw-card__icon">&#128296;</div>
+                <div class="hiw-card__title">1. Configure</div>
+                <div class="hiw-card__desc">Search for your group, choose a style, and customize the theme to match your website.</div>
+            </div>
+            <div class="hiw-card">
+                <div class="hiw-card__icon">&#128203;</div>
+                <div class="hiw-card__title">2. Copy & Paste</div>
+                <div class="hiw-card__desc">Copy the embed code and paste it into your website HTML, blog, or content management system.</div>
+            </div>
+            <div class="hiw-card">
+                <div class="hiw-card__icon">&#128640;</div>
+                <div class="hiw-card__title">3. Grow</div>
+                <div class="hiw-card__desc">Every visitor who sees your widget can join your group with one click. Track impressions and clicks.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+document.addEventListener('DOMContentLoaded', function() {
+    var selectedGroup = null;
+    var selectedStyle = 'badge';
+    var selectedTheme = 'light';
+    var searchTimeout = null;
+
+    // Style selector
+    document.querySelectorAll('.style-option').forEach(function(opt) {
+        opt.addEventListener('click', function() {
+            document.querySelectorAll('.style-option').forEach(function(o) { o.classList.remove('style-option--active'); });
+            opt.classList.add('style-option--active');
+            selectedStyle = opt.dataset.style;
+            updatePreview();
+            updateCode();
+        });
+    });
+
+    // Theme selector
+    document.getElementById('embed-theme').addEventListener('change', function() {
+        selectedTheme = this.value;
+        updatePreview();
+        updateCode();
+    });
+
+    // Group search with debounce
+    document.getElementById('embed-group-search').addEventListener('input', function() {
+        var query = this.value.trim();
+        clearTimeout(searchTimeout);
+        if (query.length < 2) {
+            document.getElementById('embed-group-results').innerHTML = '';
+            return;
+        }
+        searchTimeout = setTimeout(function() { searchGroups(query); }, 300);
+    });
+
+    async function searchGroups(query) {
+        var resultsEl = document.getElementById('embed-group-results');
+        resultsEl.innerHTML = '<div style="font-size:var(--text-sm);color:var(--text-tertiary)">Searching...</div>';
+        try {
+            var result = await DB.groups.search(query, { limit: 5 });
+            var groups = result.data || result || [];
+            if (!groups.length) {
+                resultsEl.innerHTML = '<div style="font-size:var(--text-sm);color:var(--text-tertiary)">No groups found</div>';
+                return;
+            }
+            resultsEl.innerHTML = groups.map(function(g) {
+                return '<div class="embed-group-result" data-id="' + g.id + '" style="padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);cursor:pointer;border:1px solid var(--border-primary);margin-bottom:var(--space-1);font-size:var(--text-sm);transition:background 0.15s">' +
+                    '<strong>' + Security.sanitize(g.name) + '</strong>' +
+                    '<span style="color:var(--text-tertiary);margin-left:var(--space-2)">' + Security.sanitize(g.platform || '') + '</span>' +
+                    '</div>';
+            }).join('');
+            resultsEl.querySelectorAll('.embed-group-result').forEach(function(el) {
+                el.addEventListener('click', function() {
+                    var gid = el.dataset.id;
+                    selectedGroup = groups.find(function(g) { return g.id === gid; });
+                    document.getElementById('embed-group-id').value = gid;
+                    document.getElementById('embed-group-search').value = selectedGroup.name;
+                    resultsEl.innerHTML = '';
+                    document.getElementById('copy-embed-code').disabled = false;
+                    updatePreview();
+                    updateCode();
+                });
+                el.addEventListener('mouseenter', function() { el.style.background = 'var(--bg-card-hover)'; });
+                el.addEventListener('mouseleave', function() { el.style.background = ''; });
+            });
+        } catch (err) {
+            resultsEl.innerHTML = '<div style="font-size:var(--text-sm);color:var(--error)">Search failed</div>';
+        }
+    }
+
+    function updatePreview() {
+        var frame = document.getElementById('embed-preview-frame');
+        if (!selectedGroup) return;
+        var g = selectedGroup;
+        var name = Security.sanitize(g.name || 'Group');
+        var platform = Security.sanitize(g.platform || '');
+        var trustScore = typeof Algorithms !== 'undefined' ? Algorithms.calculateTrustScore(g) : 0;
+        var isDark = selectedTheme === 'dark';
+        var bg = isDark ? '#1a1a2e' : '#ffffff';
+        var text = isDark ? '#e0e0e0' : '#1a1a2e';
+        var border = isDark ? '#333' : '#e0e0e0';
+        var accent = '#6200ea';
+
+        if (selectedStyle === 'badge') {
+            frame.innerHTML = '<div style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;background:' + bg + ';border:1px solid ' + border + ';font-family:system-ui,sans-serif;font-size:13px;color:' + text + ';text-decoration:none;cursor:pointer">' +
+                '<img src="/assets/img/favicon.svg" alt="" style="width:20px;height:20px">' +
+                '<span>Join <strong>' + name + '</strong> on GroupsMix</span>' +
+                '<span style="background:' + accent + ';color:#fff;font-size:11px;padding:2px 8px;border-radius:12px">' + platform + '</span>' +
+                '</div>';
+        } else if (selectedStyle === 'card') {
+            frame.innerHTML = '<div style="max-width:320px;border-radius:12px;overflow:hidden;background:' + bg + ';border:1px solid ' + border + ';font-family:system-ui,sans-serif;color:' + text + '">' +
+                '<div style="padding:16px">' +
+                '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
+                '<img src="/assets/img/favicon.svg" alt="" style="width:24px;height:24px">' +
+                '<span style="font-weight:600;font-size:15px">' + name + '</span>' +
+                '</div>' +
+                '<div style="font-size:13px;color:' + (isDark ? '#999' : '#666') + ';margin-bottom:12px">' + Security.sanitize((g.description || '').slice(0, 100)) + '</div>' +
+                '<div style="display:flex;gap:12px;font-size:12px;color:' + (isDark ? '#888' : '#777') + ';margin-bottom:12px">' +
+                '<span>&#128101; ' + UI.formatNumber(g.members_count || 0) + ' members</span>' +
+                '<span>&#11088; ' + trustScore + '% trust</span>' +
+                '</div>' +
+                '<div style="display:flex;align-items:center;justify-content:space-between">' +
+                '<div style="display:inline-block;padding:8px 20px;background:' + accent + ';color:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Join Group</div>' +
+                '<span style="font-size:11px;color:' + (isDark ? '#666' : '#aaa') + '">Powered by GroupsMix</span>' +
+                '</div>' +
+                '</div></div>';
+        } else {
+            frame.innerHTML = '<div style="display:inline-flex;align-items:center;gap:8px;padding:10px 24px;border-radius:8px;background:' + accent + ';color:#fff;font-family:system-ui,sans-serif;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none">' +
+                '<img src="/assets/img/favicon.svg" alt="" style="width:18px;height:18px;filter:brightness(10)">' +
+                'Join ' + name + ' on GroupsMix' +
+                '</div>';
+        }
+    }
+
+    function updateCode() {
+        var codeEl = document.getElementById('embed-code');
+        if (!selectedGroup) {
+            codeEl.textContent = 'Select a group above to generate your embed code.';
+            return;
+        }
+        var gid = selectedGroup.id;
+        var code = '<a href="https://groupsmix.com/group?id=' + gid + '" target="_blank" rel="noopener" id="gmx-widget-' + gid.slice(0, 8) + '">\n  Join ' + Security.sanitize(selectedGroup.name) + ' on GroupsMix\n</a>\n<script src="https://groupsmix.com/assets/js/widget.js" data-group="' + gid + '" data-style="' + selectedStyle + '" data-theme="' + selectedTheme + '"></' + 'script>';
+        codeEl.textContent = code;
+    }
+
+    // Copy button
+    document.getElementById('copy-embed-code').addEventListener('click', function() {
+        var code = document.getElementById('embed-code').textContent;
+        if (code && code !== 'Select a group above to generate your embed code.') {
+            UI.copyToClipboard(code);
+        }
+    });
+});
+</script>
+</Fragment>
+</BaseLayout>

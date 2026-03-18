@@ -1031,6 +1031,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <!-- Quick Access Bar removed — links already in subnav and bottom nav -->
             </section>
 
+            <!-- ─── Group of the Day ──────────────── -->
+            <section class="home-section" id="gotd-section" style="display:none">
+                <div class="home-section__header">
+                    <h2 class="home-section__title"><span>&#127942;</span> Group of the Day</h2>
+                </div>
+                <div id="gotd-card" class="gotd-card">
+                    <div class="skeleton" style="height:120px;border-radius:var(--radius-lg)"></div>
+                </div>
+            </section>
+
             <!-- ─── Featured Groups ───────────────── -->
             <section class="home-section" id="featured-section" style="display:none">
                 <div class="home-section__header">
@@ -1355,6 +1365,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             loadMarketplacePreview();
             loadJobsPreview();
             loadStorePreview();
+            // ── Group of the Day (non-blocking) ──
+            loadGroupOfTheDay();
         }
 
         function renderPlatforms() {
@@ -1736,6 +1748,66 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     '</div>' +
                 '</a>';
             }).join('');
+        }
+
+        // ═══════════════════════════════════════
+        // ── Group of the Day Section ─────────
+        // ═══════════════════════════════════════
+        async function loadGroupOfTheDay() {
+            var section = document.getElementById('gotd-section');
+            var card = document.getElementById('gotd-card');
+            if (!section || !card) return;
+            try {
+                // Try to get today's featured group from group_of_the_day table
+                var today = new Date().toISOString().split('T')[0];
+                var { data: gotdData } = await window.supabaseClient
+                    .from('group_of_the_day')
+                    .select('group_id')
+                    .eq('featured_date', today)
+                    .limit(1);
+
+                var groupId = null;
+                if (gotdData && gotdData.length > 0) {
+                    groupId = gotdData[0].group_id;
+                }
+
+                // If no GOTD selected, pick the top trending group
+                var group = null;
+                if (groupId) {
+                    group = await DB.groups.getOne(groupId);
+                }
+                if (!group) {
+                    // Fallback: use the top trending group
+                    var trending = await DB.groups.getTrending(1);
+                    if (trending && trending.length > 0) group = trending[0];
+                }
+
+                if (!group) { section.style.display = 'none'; return; }
+
+                section.style.display = '';
+                var trustScore = typeof Algorithms !== 'undefined' ? Algorithms.calculateTrustScore(group) : 0;
+                var platform = CONFIG.platforms.find(function(p) { return p.id === group.platform; });
+                card.innerHTML =
+                    '<a href="/group?id=' + group.id + '" style="text-decoration:none;color:inherit;display:block">' +
+                    '<div style="background:linear-gradient(135deg,var(--accent-primary),#9c27b0);border-radius:var(--radius-xl);padding:var(--space-6);color:#fff;position:relative;overflow:hidden">' +
+                    '<div style="position:absolute;top:0;right:0;width:120px;height:120px;background:rgba(255,255,255,0.1);border-radius:0 0 0 100%;pointer-events:none"></div>' +
+                    '<div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-3)">' +
+                    '<span style="font-size:var(--text-2xl)">&#127942;</span>' +
+                    '<span style="font-size:var(--text-xs);text-transform:uppercase;letter-spacing:0.1em;opacity:0.9">Group of the Day</span>' +
+                    '</div>' +
+                    '<div style="font-size:var(--text-xl);font-weight:var(--font-bold);margin-bottom:var(--space-2)">' + Security.sanitize(group.name || 'Group') + '</div>' +
+                    '<div style="font-size:var(--text-sm);opacity:0.85;margin-bottom:var(--space-3);max-width:500px">' + Security.sanitize((group.description || '').slice(0, 120)) + '</div>' +
+                    '<div style="display:flex;gap:var(--space-4);font-size:var(--text-xs);opacity:0.8">' +
+                    '<span>' + (platform ? Security.sanitize(platform.name) : Security.sanitize(group.platform || '')) + '</span>' +
+                    '<span>&#128101; ' + UI.formatNumber(group.members_count || 0) + ' members</span>' +
+                    '<span>&#128737; ' + trustScore + '% trust</span>' +
+                    '<span>&#11088; ' + (parseFloat(group.avg_rating) || 0).toFixed(1) + ' rating</span>' +
+                    '</div>' +
+                    '</div></a>';
+            } catch (err) {
+                console.error('loadGroupOfTheDay:', err.message);
+                section.style.display = 'none';
+            }
         }
 
         function renderStats(stats) {
