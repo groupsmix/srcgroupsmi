@@ -1,0 +1,347 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Group Owner Dashboard — GroupsMix"
+  description="See how your groups are performing on GroupsMix. Track views, clicks, joins, trust score trends, and get growth tips."
+  cssFiles={["/assets/css/features.css?v=20260310b"]}
+  includeFeatures={true}
+>
+<style is:inline>
+    .owner-page {
+        max-width: var(--container-lg);
+        margin: 0 auto;
+        padding: var(--space-8) var(--space-4);
+    }
+    .owner-hero {
+        text-align: center;
+        margin-bottom: var(--space-8);
+    }
+    .owner-hero__title {
+        font-size: var(--text-3xl);
+        font-weight: var(--font-bold);
+        margin-bottom: var(--space-3);
+    }
+    .owner-hero__subtitle {
+        color: var(--text-secondary);
+        font-size: var(--text-base);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .owner-login-prompt {
+        text-align: center;
+        padding: var(--space-12);
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+    }
+    .owner-login-prompt__icon {
+        font-size: var(--text-4xl);
+        margin-bottom: var(--space-4);
+    }
+    .owner-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--space-4);
+        margin-bottom: var(--space-6);
+    }
+    .owner-stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-lg);
+        padding: var(--space-5);
+        text-align: center;
+    }
+    .owner-stat-card__value {
+        font-size: var(--text-3xl);
+        font-weight: var(--font-bold);
+        color: var(--accent-primary);
+    }
+    .owner-stat-card__label {
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+        margin-top: var(--space-1);
+    }
+    .owner-groups-list {
+        margin-bottom: var(--space-8);
+    }
+    .owner-group-row {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-lg);
+        padding: var(--space-5);
+        margin-bottom: var(--space-3);
+    }
+    .owner-group-row__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--space-4);
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+    .owner-group-row__name {
+        font-weight: var(--font-bold);
+        font-size: var(--text-lg);
+    }
+    .owner-group-row__platform {
+        font-size: var(--text-xs);
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+    }
+    .owner-group-row__stats {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: var(--space-3);
+        margin-bottom: var(--space-4);
+    }
+    .owner-mini-stat {
+        text-align: center;
+    }
+    .owner-mini-stat__value {
+        font-weight: var(--font-bold);
+        font-size: var(--text-lg);
+    }
+    .owner-mini-stat__label {
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+    }
+    .owner-group-row__actions {
+        display: flex;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+    }
+    .growth-tips {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
+    }
+    .growth-tips__title {
+        font-size: var(--text-xl);
+        font-weight: var(--font-bold);
+        margin-bottom: var(--space-4);
+    }
+    .growth-tip {
+        display: flex;
+        gap: var(--space-3);
+        padding: var(--space-4);
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-lg);
+        margin-bottom: var(--space-3);
+    }
+    .growth-tip__icon {
+        font-size: var(--text-xl);
+        flex-shrink: 0;
+    }
+    .growth-tip__text {
+        font-size: var(--text-sm);
+    }
+    .growth-tip__title {
+        font-weight: var(--font-semibold);
+        margin-bottom: var(--space-1);
+    }
+    .growth-tip__desc {
+        color: var(--text-secondary);
+    }
+    .growth-tip__priority {
+        font-size: var(--text-xs);
+        padding: 2px 6px;
+        border-radius: var(--radius-full);
+        display: inline-block;
+        margin-top: var(--space-1);
+    }
+    .growth-tip__priority--high { background: rgba(244,67,54,0.15); color: #f44336; }
+    .growth-tip__priority--medium { background: rgba(255,152,0,0.15); color: #ff9800; }
+    .growth-tip__priority--low { background: rgba(76,175,80,0.15); color: #4caf50; }
+    @media (max-width: 767px) {
+        .owner-hero__title { font-size: var(--text-2xl); }
+        .owner-stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .owner-group-row__stats { grid-template-columns: repeat(3, 1fr); }
+    }
+</style>
+
+<div class="owner-page">
+    <div class="owner-hero">
+        <h1 class="owner-hero__title">Group Owner Dashboard</h1>
+        <p class="owner-hero__subtitle">Track your groups' performance on GroupsMix. Views, clicks, trust scores, and personalized growth tips to help you grow.</p>
+    </div>
+
+    <div id="owner-login-prompt" class="owner-login-prompt" style="display:none">
+        <div class="owner-login-prompt__icon">&#128274;</div>
+        <h2 style="margin-bottom:var(--space-2)">Sign In Required</h2>
+        <p style="color:var(--text-secondary);margin-bottom:var(--space-4)">Sign in to see your group analytics and growth tips.</p>
+        <button class="btn btn-primary" onclick="Auth.showLoginModal()">Sign In</button>
+    </div>
+
+    <div id="owner-dashboard-content" style="display:none">
+        <div class="owner-stats-grid" id="owner-stats-grid">
+            <div class="owner-stat-card">
+                <div class="owner-stat-card__value" id="total-groups-count">-</div>
+                <div class="owner-stat-card__label">Your Groups</div>
+            </div>
+            <div class="owner-stat-card">
+                <div class="owner-stat-card__value" id="total-views-count">-</div>
+                <div class="owner-stat-card__label">Total Views</div>
+            </div>
+            <div class="owner-stat-card">
+                <div class="owner-stat-card__value" id="total-clicks-count">-</div>
+                <div class="owner-stat-card__label">Total Clicks</div>
+            </div>
+            <div class="owner-stat-card">
+                <div class="owner-stat-card__value" id="avg-trust-score">-</div>
+                <div class="owner-stat-card__label">Avg Trust Score</div>
+            </div>
+        </div>
+
+        <div class="owner-groups-list" id="owner-groups-list">
+            <h2 style="font-size:var(--text-xl);font-weight:var(--font-bold);margin-bottom:var(--space-4)">Your Groups</h2>
+            <div id="owner-groups-container">
+                <div class="skeleton" style="height:120px;border-radius:var(--radius-lg);margin-bottom:var(--space-3)"></div>
+                <div class="skeleton" style="height:120px;border-radius:var(--radius-lg)"></div>
+            </div>
+        </div>
+
+        <div class="growth-tips" id="growth-tips">
+            <h2 class="growth-tips__title">Growth Tips</h2>
+            <div id="growth-tips-list"></div>
+        </div>
+    </div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+document.addEventListener('DOMContentLoaded', async function() {
+    await Auth.waitForAuth();
+
+    if (!Auth.isLoggedIn()) {
+        document.getElementById('owner-login-prompt').style.display = 'block';
+        return;
+    }
+
+    document.getElementById('owner-dashboard-content').style.display = 'block';
+    loadOwnerDashboard();
+
+    async function loadOwnerDashboard() {
+        try {
+            var uid = Auth.getUserId();
+            // Get all groups owned by this user
+            var { data: groups, error } = await window.supabaseClient
+                .from('groups')
+                .select('*')
+                .eq('submitted_by', uid)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            if (!groups || groups.length === 0) {
+                document.getElementById('total-groups-count').textContent = '0';
+                document.getElementById('total-views-count').textContent = '0';
+                document.getElementById('total-clicks-count').textContent = '0';
+                document.getElementById('avg-trust-score').textContent = '0';
+                document.getElementById('owner-groups-container').innerHTML =
+                    '<div style="text-align:center;padding:var(--space-8);color:var(--text-tertiary)">' +
+                    '<p>You haven\'t submitted any groups yet.</p>' +
+                    '<a href="/submit" class="btn btn-primary" style="margin-top:var(--space-3)">Submit Your First Group</a>' +
+                    '</div>';
+                renderGrowthTips([], 0);
+                return;
+            }
+
+            // Calculate aggregate stats
+            var totalViews = 0;
+            var totalClicks = 0;
+            var totalTrust = 0;
+            groups.forEach(function(g) {
+                totalViews += g.views || 0;
+                totalClicks += g.clicks || 0;
+                totalTrust += typeof Algorithms !== 'undefined' ? Algorithms.calculateTrustScore(g) : 0;
+            });
+            var avgTrust = Math.round(totalTrust / groups.length);
+
+            document.getElementById('total-groups-count').textContent = groups.length;
+            document.getElementById('total-views-count').textContent = UI.formatNumber(totalViews);
+            document.getElementById('total-clicks-count').textContent = UI.formatNumber(totalClicks);
+            document.getElementById('avg-trust-score').textContent = avgTrust + '%';
+
+            // Render groups
+            document.getElementById('owner-groups-container').innerHTML = groups.map(function(g) {
+                var trust = typeof Algorithms !== 'undefined' ? Algorithms.calculateTrustScore(g) : 0;
+                var ctr = (g.views > 0) ? ((g.clicks / g.views) * 100).toFixed(1) : '0.0';
+                return '<div class="owner-group-row">' +
+                    '<div class="owner-group-row__header">' +
+                    '<div>' +
+                    '<span class="owner-group-row__name">' + Security.sanitize(g.name || 'Unnamed') + '</span>' +
+                    ' <span class="owner-group-row__platform">' + Security.sanitize(g.platform || '') + '</span>' +
+                    ' <span class="owner-group-row__platform" style="background:' + (g.status === 'approved' ? 'rgba(76,175,80,0.15);color:var(--success)' : 'rgba(255,152,0,0.15);color:#ff9800') + '">' + Security.sanitize(g.status || 'pending') + '</span>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="owner-group-row__stats">' +
+                    '<div class="owner-mini-stat"><div class="owner-mini-stat__value">' + UI.formatNumber(g.views || 0) + '</div><div class="owner-mini-stat__label">Views</div></div>' +
+                    '<div class="owner-mini-stat"><div class="owner-mini-stat__value">' + UI.formatNumber(g.clicks || 0) + '</div><div class="owner-mini-stat__label">Clicks</div></div>' +
+                    '<div class="owner-mini-stat"><div class="owner-mini-stat__value">' + ctr + '%</div><div class="owner-mini-stat__label">CTR</div></div>' +
+                    '<div class="owner-mini-stat"><div class="owner-mini-stat__value">' + trust + '%</div><div class="owner-mini-stat__label">Trust</div></div>' +
+                    '<div class="owner-mini-stat"><div class="owner-mini-stat__value">' + (parseFloat(g.avg_rating) || 0).toFixed(1) + '</div><div class="owner-mini-stat__label">Rating</div></div>' +
+                    '</div>' +
+                    '<div class="owner-group-row__actions">' +
+                    '<a href="/group?id=' + g.id + '" class="btn btn-sm btn-outline">View Listing</a>' +
+                    '<a href="/embed?group=' + g.id + '" class="btn btn-sm btn-outline">Get Widget</a>' +
+                    '<a href="/shorten" class="btn btn-sm btn-outline">Shorten Link</a>' +
+                    '<a href="/group-reviews?group=' + g.id + '" class="btn btn-sm btn-outline">Reviews</a>' +
+                    '<a href="/similar-groups?group=' + g.id + '" class="btn btn-sm btn-outline">Similar Groups</a>' +
+                    '</div></div>';
+            }).join('');
+
+            renderGrowthTips(groups, avgTrust);
+        } catch (err) {
+            console.error('loadOwnerDashboard:', err);
+            UI.toast('Failed to load dashboard', 'error');
+        }
+    }
+
+    function renderGrowthTips(groups, avgTrust) {
+        var tips = [];
+
+        if (groups.length === 0) {
+            tips.push({ icon: '&#128640;', title: 'Submit Your First Group', desc: 'Get started by listing your group on GroupsMix. It takes less than 2 minutes.', priority: 'high' });
+        }
+
+        groups.forEach(function(g) {
+            var trust = typeof Algorithms !== 'undefined' ? Algorithms.calculateTrustScore(g) : 0;
+            if (!g.description || g.description.length < 50) {
+                tips.push({ icon: '&#9997;', title: 'Add a Better Description for "' + (g.name || 'your group').slice(0, 30) + '"', desc: 'Groups with detailed descriptions get 3x more clicks. Aim for at least 100 characters.', priority: 'high' });
+            }
+            if (!g.rules || g.rules.length < 20) {
+                tips.push({ icon: '&#128220;', title: 'Add Group Rules', desc: 'Groups with clear rules have higher trust scores. Add rules to "' + (g.name || 'your group').slice(0, 30) + '".', priority: 'medium' });
+            }
+            if (trust < 50) {
+                tips.push({ icon: '&#128737;', title: 'Improve Trust Score', desc: '"' + (g.name || 'Your group').slice(0, 30) + '" has a ' + trust + '% trust score. Verify your group and add more details to increase it.', priority: 'high' });
+            }
+            if ((g.views || 0) > 50 && (g.clicks || 0) === 0) {
+                tips.push({ icon: '&#128073;', title: 'Improve Click-Through Rate', desc: '"' + (g.name || 'Your group').slice(0, 30) + '" has views but no clicks. Try updating the name and description.', priority: 'medium' });
+            }
+        });
+
+        // General tips
+        tips.push({ icon: '&#127760;', title: 'Embed a Widget on Your Website', desc: 'Add a "Join on GroupsMix" badge to your website or blog. Every embed is free advertising for your group.', priority: 'low' });
+        tips.push({ icon: '&#128279;', title: 'Use Short Links', desc: 'Share your group with a GroupsMix short link to track clicks, countries, and devices.', priority: 'low' });
+        tips.push({ icon: '&#129309;', title: 'Invite Friends with Referral Program', desc: 'Earn GMX coins by inviting friends to GroupsMix. Both you and your friend get 50 coins!', priority: 'low' });
+
+        // Limit to 6 tips
+        tips = tips.slice(0, 6);
+
+        document.getElementById('growth-tips-list').innerHTML = tips.map(function(tip) {
+            return '<div class="growth-tip">' +
+                '<span class="growth-tip__icon">' + tip.icon + '</span>' +
+                '<div class="growth-tip__text">' +
+                '<div class="growth-tip__title">' + tip.title + '</div>' +
+                '<div class="growth-tip__desc">' + tip.desc + '</div>' +
+                '<span class="growth-tip__priority growth-tip__priority--' + tip.priority + '">' + tip.priority + ' priority</span>' +
+                '</div></div>';
+        }).join('');
+    }
+});
+</script>
+</Fragment>
+</BaseLayout>

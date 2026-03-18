@@ -1,0 +1,329 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Bot Integration — GroupsMix"
+  description="Connect your WhatsApp or Telegram group to GroupsMix with our bot. Auto-sync member count, show trust score, and get organic listings."
+  cssFiles={["/assets/css/features.css?v=20260310b"]}
+  includeFeatures={true}
+>
+<style is:inline>
+    .bot-page {
+        max-width: var(--container-lg);
+        margin: 0 auto;
+        padding: var(--space-8) var(--space-4);
+    }
+    .bot-hero {
+        text-align: center;
+        margin-bottom: var(--space-8);
+    }
+    .bot-hero__title {
+        font-size: var(--text-3xl);
+        font-weight: var(--font-bold);
+        margin-bottom: var(--space-3);
+    }
+    .bot-hero__subtitle {
+        color: var(--text-secondary);
+        font-size: var(--text-base);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .bot-platforms {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-6);
+        margin-bottom: var(--space-8);
+    }
+    .bot-platform-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
+    }
+    .bot-platform-card__header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        margin-bottom: var(--space-4);
+    }
+    .bot-platform-card__icon {
+        font-size: var(--text-3xl);
+    }
+    .bot-platform-card__name {
+        font-size: var(--text-xl);
+        font-weight: var(--font-bold);
+    }
+    .bot-platform-card__status {
+        font-size: var(--text-xs);
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+        display: inline-block;
+        margin-top: var(--space-1);
+    }
+    .bot-platform-card__status--active {
+        background: var(--success);
+        color: #fff;
+    }
+    .bot-platform-card__status--coming {
+        background: var(--warning);
+        color: #000;
+    }
+    .bot-steps {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .bot-steps li {
+        display: flex;
+        gap: var(--space-3);
+        padding: var(--space-3) 0;
+        border-bottom: 1px solid var(--border-primary);
+        font-size: var(--text-sm);
+    }
+    .bot-steps li:last-child {
+        border-bottom: none;
+    }
+    .bot-step-num {
+        width: 24px;
+        height: 24px;
+        border-radius: var(--radius-full);
+        background: var(--accent-primary);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--text-xs);
+        font-weight: var(--font-bold);
+        flex-shrink: 0;
+    }
+    .bot-commands {
+        margin-top: var(--space-6);
+    }
+    .bot-commands__title {
+        font-size: var(--text-lg);
+        font-weight: var(--font-semibold);
+        margin-bottom: var(--space-4);
+    }
+    .bot-cmd {
+        display: flex;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-md);
+        margin-bottom: var(--space-2);
+        font-size: var(--text-sm);
+    }
+    .bot-cmd__name {
+        font-family: monospace;
+        font-weight: var(--font-bold);
+        color: var(--accent-primary);
+        min-width: 120px;
+        flex-shrink: 0;
+    }
+    .bot-cmd__desc {
+        color: var(--text-secondary);
+    }
+    .bot-features-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-6);
+        margin-bottom: var(--space-8);
+    }
+    .bot-feature {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
+        text-align: center;
+    }
+    .bot-feature__icon {
+        font-size: var(--text-3xl);
+        margin-bottom: var(--space-3);
+    }
+    .bot-feature__title {
+        font-weight: var(--font-semibold);
+        margin-bottom: var(--space-2);
+    }
+    .bot-feature__desc {
+        color: var(--text-secondary);
+        font-size: var(--text-sm);
+    }
+    .bot-my-integrations {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    .integration-item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-lg);
+        padding: var(--space-4);
+        margin-bottom: var(--space-3);
+    }
+    .integration-item__platform {
+        font-size: var(--text-2xl);
+    }
+    .integration-item__info {
+        flex: 1;
+    }
+    .integration-item__name {
+        font-weight: var(--font-semibold);
+        font-size: var(--text-sm);
+    }
+    .integration-item__meta {
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+    }
+    .integration-item__status {
+        font-size: var(--text-xs);
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+    }
+    @media (max-width: 767px) {
+        .bot-platforms { grid-template-columns: 1fr; }
+        .bot-features-grid { grid-template-columns: 1fr; }
+        .bot-hero__title { font-size: var(--text-2xl); }
+    }
+</style>
+
+<div class="bot-page">
+    <div class="bot-hero">
+        <h1 class="bot-hero__title">Bot Integration</h1>
+        <p class="bot-hero__subtitle">Connect your WhatsApp or Telegram group to GroupsMix. Auto-sync member count, display trust scores, and get organic listings without manual submissions.</p>
+    </div>
+
+    <div class="bot-features-grid">
+        <div class="bot-feature">
+            <div class="bot-feature__icon">&#129302;</div>
+            <div class="bot-feature__title">Auto-List Groups</div>
+            <div class="bot-feature__desc">Add our bot to your group and it automatically creates a listing on GroupsMix. No manual work needed.</div>
+        </div>
+        <div class="bot-feature">
+            <div class="bot-feature__icon">&#128202;</div>
+            <div class="bot-feature__title">Sync Member Count</div>
+            <div class="bot-feature__desc">Member count updates automatically so your listing always shows accurate numbers.</div>
+        </div>
+        <div class="bot-feature">
+            <div class="bot-feature__icon">&#128737;</div>
+            <div class="bot-feature__title">Show Trust Score</div>
+            <div class="bot-feature__desc">Display your group's GroupsMix trust score directly in the chat. Build credibility.</div>
+        </div>
+    </div>
+
+    <div class="bot-platforms">
+        <div class="bot-platform-card">
+            <div class="bot-platform-card__header">
+                <span class="bot-platform-card__icon">&#128172;</span>
+                <div>
+                    <div class="bot-platform-card__name">Telegram Bot</div>
+                    <span class="bot-platform-card__status bot-platform-card__status--active">Available</span>
+                </div>
+            </div>
+            <h3 style="font-size:var(--text-base);font-weight:var(--font-semibold);margin-bottom:var(--space-3)">Setup Instructions</h3>
+            <ol class="bot-steps">
+                <li><span class="bot-step-num">1</span><span>Search for <strong>@GroupsMixBot</strong> on Telegram</span></li>
+                <li><span class="bot-step-num">2</span><span>Add the bot to your group as an admin</span></li>
+                <li><span class="bot-step-num">3</span><span>Type <code>/start</code> in your group to activate</span></li>
+                <li><span class="bot-step-num">4</span><span>Use <code>/link</code> to connect your GroupsMix listing</span></li>
+                <li><span class="bot-step-num">5</span><span>The bot will auto-sync member count and trust score</span></li>
+            </ol>
+
+            <div class="bot-commands">
+                <h4 class="bot-commands__title">Bot Commands</h4>
+                <div class="bot-cmd"><span class="bot-cmd__name">/start</span><span class="bot-cmd__desc">Activate the bot in your group</span></div>
+                <div class="bot-cmd"><span class="bot-cmd__name">/link</span><span class="bot-cmd__desc">Link your group to your GroupsMix listing</span></div>
+                <div class="bot-cmd"><span class="bot-cmd__name">/trust</span><span class="bot-cmd__desc">Show your group's current trust score</span></div>
+                <div class="bot-cmd"><span class="bot-cmd__name">/stats</span><span class="bot-cmd__desc">View your group's analytics (views, clicks, joins)</span></div>
+                <div class="bot-cmd"><span class="bot-cmd__name">/sync</span><span class="bot-cmd__desc">Manually sync member count now</span></div>
+                <div class="bot-cmd"><span class="bot-cmd__name">/help</span><span class="bot-cmd__desc">Show all available commands</span></div>
+            </div>
+        </div>
+
+        <div class="bot-platform-card">
+            <div class="bot-platform-card__header">
+                <span class="bot-platform-card__icon">&#128242;</span>
+                <div>
+                    <div class="bot-platform-card__name">WhatsApp Bot</div>
+                    <span class="bot-platform-card__status bot-platform-card__status--coming">Coming Soon</span>
+                </div>
+            </div>
+            <h3 style="font-size:var(--text-base);font-weight:var(--font-semibold);margin-bottom:var(--space-3)">How It Will Work</h3>
+            <ol class="bot-steps">
+                <li><span class="bot-step-num">1</span><span>Save our WhatsApp Business number to your contacts</span></li>
+                <li><span class="bot-step-num">2</span><span>Add the bot number to your group</span></li>
+                <li><span class="bot-step-num">3</span><span>Send "!start" to activate the integration</span></li>
+                <li><span class="bot-step-num">4</span><span>Your group will be auto-listed on GroupsMix</span></li>
+                <li><span class="bot-step-num">5</span><span>Member count and trust score sync automatically</span></li>
+            </ol>
+
+            <div style="background:var(--bg-tertiary);border-radius:var(--radius-lg);padding:var(--space-4);margin-top:var(--space-4);text-align:center">
+                <div style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-2)">Get notified when WhatsApp integration launches</div>
+                <div style="display:flex;gap:var(--space-2)">
+                    <input type="email" id="wa-notify-email" class="form-input" placeholder="your@email.com" style="flex:1">
+                    <button class="btn btn-primary btn-sm" id="wa-notify-btn">Notify Me</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bot-my-integrations" id="my-integrations-section" style="display:none">
+        <h2 style="font-size:var(--text-xl);font-weight:var(--font-bold);margin-bottom:var(--space-4)">Your Integrations</h2>
+        <div id="my-integrations-list"></div>
+    </div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+document.addEventListener('DOMContentLoaded', async function() {
+    // WhatsApp notify button
+    document.getElementById('wa-notify-btn').addEventListener('click', function() {
+        var email = document.getElementById('wa-notify-email').value.trim();
+        if (!email || !Security.isValidEmail(email)) {
+            UI.toast('Please enter a valid email', 'warning');
+            return;
+        }
+        UI.toast('You will be notified when WhatsApp integration launches!', 'success');
+        document.getElementById('wa-notify-email').value = '';
+    });
+
+    // Load user's integrations
+    await Auth.waitForAuth();
+    if (Auth.isLoggedIn()) {
+        loadMyIntegrations();
+    }
+
+    async function loadMyIntegrations() {
+        try {
+            var uid = Auth.getUserId();
+            if (!uid) return;
+            var { data, error } = await window.supabaseClient
+                .from('bot_integrations')
+                .select('*')
+                .eq('owner_uid', uid)
+                .order('created_at', { ascending: false });
+            if (error || !data || !data.length) return;
+
+            document.getElementById('my-integrations-section').style.display = 'block';
+            var list = document.getElementById('my-integrations-list');
+            list.innerHTML = data.map(function(bot) {
+                var platformIcon = bot.platform === 'telegram' ? '&#128172;' : '&#128242;';
+                var statusClass = bot.status === 'active' ? 'background:var(--success);color:#fff' : 'background:var(--warning);color:#000';
+                return '<div class="integration-item">' +
+                    '<span class="integration-item__platform">' + platformIcon + '</span>' +
+                    '<div class="integration-item__info">' +
+                    '<div class="integration-item__name">' + Security.sanitize(bot.platform) + ' Integration</div>' +
+                    '<div class="integration-item__meta">Members: ' + UI.formatNumber(bot.member_count || 0) + ' &middot; Last sync: ' + (bot.last_sync_at ? UI.formatDate(bot.last_sync_at) : 'Never') + '</div>' +
+                    '</div>' +
+                    '<span class="integration-item__status" style="' + statusClass + '">' + Security.sanitize(bot.status) + '</span>' +
+                    '</div>';
+            }).join('');
+        } catch (err) {
+            console.error('loadMyIntegrations:', err);
+        }
+    }
+});
+</script>
+</Fragment>
+</BaseLayout>
