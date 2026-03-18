@@ -1,0 +1,185 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Embeddable Group Widget | GroupsMix"
+  description="Embed a 'Join on GroupsMix' badge on your website, blog, or YouTube description. Free advertising for your group."
+  canonical="https://groupsmix.com/tools/embed-widget"
+>
+<style is:inline>
+    .widget-builder{max-width:var(--container-lg);margin:0 auto;padding:var(--space-6) var(--space-4)}
+    .widget-builder__title{font-size:var(--text-3xl);font-weight:var(--font-extrabold);margin-bottom:var(--space-2);text-align:center}
+    .widget-builder__subtitle{color:var(--text-secondary);text-align:center;margin-bottom:var(--space-8);max-width:600px;margin-left:auto;margin-right:auto}
+    .widget-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6)}
+    @media(max-width:767px){.widget-grid{grid-template-columns:1fr}}
+    .widget-config{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);padding:var(--space-6)}
+    .widget-config__section{margin-bottom:var(--space-6)}
+    .widget-config__label{font-weight:var(--font-semibold);margin-bottom:var(--space-2);display:block;font-size:var(--text-sm)}
+    .widget-preview{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);padding:var(--space-6);position:sticky;top:100px}
+    .widget-preview__title{font-weight:var(--font-semibold);margin-bottom:var(--space-4);display:flex;align-items:center;gap:var(--space-2)}
+    .widget-preview__frame{background:var(--bg-secondary);border-radius:var(--radius-lg);padding:var(--space-6);min-height:120px;display:flex;align-items:center;justify-content:center;margin-bottom:var(--space-4)}
+    .widget-code{background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-md);padding:var(--space-4);font-family:monospace;font-size:var(--text-xs);line-height:1.6;overflow-x:auto;white-space:pre-wrap;word-break:break-all;margin-bottom:var(--space-3);color:var(--text-secondary)}
+    .theme-options{display:flex;gap:var(--space-3)}
+    .theme-option{flex:1;padding:var(--space-3);border-radius:var(--radius-md);border:2px solid var(--border-primary);cursor:pointer;text-align:center;font-size:var(--text-sm);font-weight:var(--font-medium);transition:all .2s}
+    .theme-option:hover{border-color:var(--accent-primary)}
+    .theme-option--active{border-color:var(--accent-primary);background:var(--accent-primary-light)}
+    .size-options{display:flex;gap:var(--space-3)}
+    .size-option{flex:1;padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);border:2px solid var(--border-primary);cursor:pointer;text-align:center;font-size:var(--text-sm);transition:all .2s}
+    .size-option:hover{border-color:var(--accent-primary)}
+    .size-option--active{border-color:var(--accent-primary);background:var(--accent-primary-light)}
+    .benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-top:var(--space-8)}
+    @media(max-width:767px){.benefits{grid-template-columns:1fr}}
+    .benefit{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5);text-align:center}
+    .benefit__icon{font-size:var(--text-3xl);margin-bottom:var(--space-3)}
+    .benefit__title{font-weight:var(--font-bold);margin-bottom:var(--space-2)}
+    .benefit__desc{font-size:var(--text-sm);color:var(--text-secondary)}
+</style>
+
+<div class="widget-builder">
+    <h1 class="widget-builder__title">Embeddable Group Widget</h1>
+    <p class="widget-builder__subtitle">Add a "Join on GroupsMix" badge to your website, blog, or YouTube description. Every embed is free advertising for your group.</p>
+
+    <div class="widget-grid">
+        <div class="widget-config">
+            <div class="widget-config__section">
+                <label class="widget-config__label">Group ID</label>
+                <input type="text" class="form-input" id="widget-group-id" placeholder="Enter your Group ID or paste group URL">
+                <p style="font-size:var(--text-xs);color:var(--text-tertiary);margin-top:var(--space-1)">Find this in your group's profile URL: groupsmix.com/group?id=<strong>YOUR_ID</strong></p>
+            </div>
+
+            <div class="widget-config__section">
+                <label class="widget-config__label">Theme</label>
+                <div class="theme-options">
+                    <div class="theme-option theme-option--active" data-theme="dark" onclick="setWidgetTheme('dark')">
+                        <div style="width:24px;height:24px;border-radius:6px;background:#181824;border:1px solid #2a2a3d;margin:0 auto var(--space-1)"></div>
+                        Dark
+                    </div>
+                    <div class="theme-option" data-theme="light" onclick="setWidgetTheme('light')">
+                        <div style="width:24px;height:24px;border-radius:6px;background:#fff;border:1px solid #e2e8f0;margin:0 auto var(--space-1)"></div>
+                        Light
+                    </div>
+                </div>
+            </div>
+
+            <div class="widget-config__section">
+                <label class="widget-config__label">Size</label>
+                <div class="size-options">
+                    <div class="size-option" data-size="small" onclick="setWidgetSize('small')">Small</div>
+                    <div class="size-option size-option--active" data-size="medium" onclick="setWidgetSize('medium')">Medium</div>
+                    <div class="size-option" data-size="large" onclick="setWidgetSize('large')">Large</div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-full" id="generate-widget-btn" onclick="generateWidget()">Generate Widget Code</button>
+        </div>
+
+        <div class="widget-preview">
+            <div class="widget-preview__title">Preview</div>
+            <div class="widget-preview__frame" id="widget-preview-frame">
+                <p style="color:var(--text-tertiary);font-size:var(--text-sm)">Enter a Group ID and click Generate to preview your widget</p>
+            </div>
+
+            <div id="widget-code-section" style="display:none">
+                <label class="widget-config__label">Embed Code</label>
+                <div class="widget-code" id="widget-embed-code"></div>
+                <button class="btn btn-secondary btn-full" onclick="copyWidgetCode()">Copy Embed Code</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="benefits">
+        <div class="benefit">
+            <div class="benefit__icon">&#127760;</div>
+            <div class="benefit__title">Free Advertising</div>
+            <div class="benefit__desc">Every embed shows "Powered by GroupsMix" &mdash; your group gets discovered by new audiences.</div>
+        </div>
+        <div class="benefit">
+            <div class="benefit__icon">&#128200;</div>
+            <div class="benefit__title">Track Impressions</div>
+            <div class="benefit__desc">See how many people view and click your widget across all embedded sites.</div>
+        </div>
+        <div class="benefit">
+            <div class="benefit__icon">&#128274;</div>
+            <div class="benefit__title">Trust Score Badge</div>
+            <div class="benefit__desc">Your trust score is displayed on the widget, building credibility with potential members.</div>
+        </div>
+    </div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+    var widgetTheme = 'dark';
+    var widgetSize = 'medium';
+
+    function setWidgetTheme(theme) {
+        widgetTheme = theme;
+        document.querySelectorAll('.theme-option').forEach(function(el) {
+            el.classList.toggle('theme-option--active', el.dataset.theme === theme);
+        });
+        updatePreview();
+    }
+
+    function setWidgetSize(size) {
+        widgetSize = size;
+        document.querySelectorAll('.size-option').forEach(function(el) {
+            el.classList.toggle('size-option--active', el.dataset.size === size);
+        });
+        updatePreview();
+    }
+
+    var currentGroupId = '';
+
+    function generateWidget() {
+        var input = document.getElementById('widget-group-id').value.trim();
+        if (!input) { UI.toast('Please enter a Group ID', 'error'); return; }
+
+        // Extract ID from URL if needed
+        if (input.includes('group?id=')) {
+            try { input = new URL(input.startsWith('http') ? input : 'https://' + input).searchParams.get('id') || input; }
+            catch(e) { input = input.split('id=')[1] || input; }
+        }
+
+        currentGroupId = input;
+        updatePreview();
+    }
+
+    function updatePreview() {
+        if (!currentGroupId) return;
+
+        var frame = document.getElementById('widget-preview-frame');
+        frame.innerHTML = '<div class="groupsmix-widget" data-group-id="' + Security.sanitize(currentGroupId) + '" data-theme="' + widgetTheme + '" data-size="' + widgetSize + '"></div>';
+
+        // Load widget script
+        if (window.GroupsMixWidget) {
+            window.GroupsMixWidget.init();
+        } else {
+            var s = document.createElement('script');
+            s.src = '/embed/widget.js';
+            s.onload = function() { if (window.GroupsMixWidget) window.GroupsMixWidget.init(); };
+            document.head.appendChild(s);
+        }
+
+        // Show embed code
+        var code = '<!-- GroupsMix Widget -->\n<div class="groupsmix-widget"\n  data-group-id="' + Security.sanitize(currentGroupId) + '"\n  data-theme="' + widgetTheme + '"\n  data-size="' + widgetSize + '">\n</div>\n<script src="https://groupsmix.com/embed/widget.js" async><\/script>';
+        document.getElementById('widget-embed-code').textContent = code;
+        document.getElementById('widget-code-section').style.display = 'block';
+    }
+
+    function copyWidgetCode() {
+        var code = document.getElementById('widget-embed-code').textContent;
+        UI.copyToClipboard(code);
+        UI.toast('Widget code copied to clipboard!', 'success');
+    }
+
+    // Auto-fill from URL params
+    document.addEventListener('DOMContentLoaded', function() {
+        var params = new URLSearchParams(window.location.search);
+        var gid = params.get('group_id');
+        if (gid) {
+            document.getElementById('widget-group-id').value = gid;
+            generateWidget();
+        }
+    });
+</script>
+</Fragment>
+</BaseLayout>
