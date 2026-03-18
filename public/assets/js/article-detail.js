@@ -117,6 +117,9 @@ const ArticleDetail = {
             // Init advanced features (audio, translate, polls, series, reading lists)
             this._initAdvancedFeatures(article);
 
+            // Load tip section
+            this._loadTipSection(article);
+
         } catch (err) {
             console.error('ArticleDetail.init:', err.message);
             container.innerHTML = '<div style="text-align:center;color:var(--text-tertiary);padding:var(--space-8)">Unable to load article</div>';
@@ -182,6 +185,9 @@ const ArticleDetail = {
                     '<a href="/articles?category=' + encodeURIComponent(t) + '" class="article-detail__tag">#' + Security.sanitize(t) + '</a>'
                 ).join('') + '</div>'
                 : '') +
+
+            // Tip section
+            '<div id="article-tip-section" class="article-detail__tip-section"></div>' +
 
             // Interaction bar
             '<div class="article-detail__interaction">' +
@@ -739,6 +745,149 @@ const ArticleDetail = {
                 if (seriesBottom) seriesBottom.innerHTML = seriesHtml;
                 ArticleSeries.bindFollowHandler();
             }
+        }
+    },
+
+    // ═══════════════════════════════════════
+    // TIP SECTION
+    // ═══════════════════════════════════════
+    async _loadTipSection(article) {
+        var section = document.getElementById('article-tip-section');
+        if (!section) return;
+
+        // Need fuel modules loaded
+        if (typeof TIP_TYPES === 'undefined' || typeof Tips === 'undefined' || typeof Wallet === 'undefined') return;
+
+        try {
+            // Get author's internal user ID
+            var authorUserId = null;
+            var authorName = article.author_name || 'this writer';
+            if (article.user_id) {
+                var { data: authorData } = await window.supabaseClient
+                    .from('users')
+                    .select('id, display_name')
+                    .eq('auth_id', article.user_id)
+                    .single();
+                if (authorData) {
+                    authorUserId = authorData.id;
+                    authorName = authorData.display_name || authorName;
+                }
+            }
+
+            if (!authorUserId) return;
+
+            // Don't show tip section for own articles
+            var currentUser = Auth.isLoggedIn() ? Auth.getUser() : null;
+            var isOwnArticle = currentUser && currentUser.id === authorUserId;
+
+            // Get fee percentage
+            var feePercent = 20;
+            try {
+                var { data: feeData } = await window.supabaseClient.rpc('get_tip_fee_percent');
+                if (feeData !== null && feeData !== undefined) feePercent = feeData;
+            } catch (e) { /* use default */ }
+
+            // Build tip options
+            var tipOptionsHtml = Object.keys(TIP_TYPES).map(function(key) {
+                var tip = TIP_TYPES[key];
+                var authorGets = Math.floor(tip.coins * (100 - feePercent) / 100);
+                var icon = typeof WriterBadges !== 'undefined' ? WriterBadges.getBadgeIcon(tip.icon) : tip.emoji;
+                return '<button class="tip-section__option' + (isOwnArticle ? ' tip-section__option--disabled' : '') + '" data-tip-type="' + key + '" data-coins="' + tip.coins + '"' + (isOwnArticle ? ' disabled' : '') + '>' +
+                    '<span class="tip-section__option-icon" style="color:' + tip.color + '">' + icon + '</span>' +
+                    '<span class="tip-section__option-name">' + tip.name + '</span>' +
+                    '<span class="tip-section__option-coins">' + tip.coins + ' GMX</span>' +
+                    '<span class="tip-section__option-fee">Author gets ' + authorGets + '</span>' +
+                    '</button>';
+            }).join('');
+
+            // Build section HTML
+            section.innerHTML =
+                '<div class="tip-section">' +
+                    '<div class="tip-section__header">' +
+                        '<div class="tip-section__title">' +
+                            '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' +
+                            ' Fuel This Writer' +
+                        '</div>' +
+                        '<div class="tip-section__subtitle">Show your appreciation for <strong>' + Security.sanitize(authorName) + '</strong> with GMX Coins</div>' +
+                        '<div class="tip-section__fee-note">' + feePercent + '% platform fee applies to all tips</div>' +
+                    '</div>' +
+                    '<div class="tip-section__options">' + tipOptionsHtml + '</div>' +
+                    (isOwnArticle ? '<div class="tip-section__own-note">You cannot tip your own article</div>' : '') +
+                    '<div class="tip-section__stats" id="tip-section-stats"></div>' +
+                '</div>';
+
+            // Bind tip buttons
+            if (!isOwnArticle) {
+                section.querySelectorAll('.tip-section__option').forEach(function(btn) {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        if (typeof UI.fuelTipModal === 'function') {
+                            UI.fuelTipModal(authorUserId, authorName, article.id);
+                        } else {
+                            // Fallback: direct tip send
+                            if (!Auth.isLoggedIn()) { UI.authModal('signin'); return; }
+                            var tipType = btn.dataset.tipType;
+                            btn.disabled = true;
+                            btn.querySelector('.tip-section__option-name').textContent = 'Sending...';
+                            Tips.send(authorUserId, article.id, tipType, '', false).then(function(result) {
+                                if (result) {
+                                    ArticleDetail._loadTipStats(article.id);
+                                }
+                                var tipInfo = TIP_TYPES[tipType];
+                                var icon = typeof WriterBadges !== 'undefined' ? WriterBadges.getBadgeIcon(tipInfo.icon) : tipInfo.emoji;
+                                btn.disabled = false;
+                                btn.querySelector('.tip-section__option-name').textContent = tipInfo.name;
+                            });
+                        }
+                    });
+                });
+            }
+
+            // Load tip stats
+            this._loadTipStats(article.id);
+        } catch (err) {
+            console.error('ArticleDetail._loadTipSection:', err.message);
+        }
+    },
+
+    async _loadTipStats(articleId) {
+        var statsEl = document.getElementById('tip-section-stats');
+        if (!statsEl || !articleId) return;
+
+        try {
+            var { data } = await window.supabaseClient.rpc('get_article_tip_stats', { p_article_id: articleId });
+            if (!data) return;
+
+            var html = '';
+            if (data.tip_count > 0) {
+                html += '<div class="tip-stats">';
+                html += '<div class="tip-stats__summary">';
+                html += '<span class="tip-stats__count">' + data.tip_count + ' tip' + (data.tip_count !== 1 ? 's' : '') + '</span>';
+                html += '<span class="tip-stats__total">' + data.tip_total + ' GMX total</span>';
+                html += '</div>';
+
+                // Recent tips
+                if (data.recent_tips && data.recent_tips.length > 0) {
+                    html += '<div class="tip-stats__recent">';
+                    html += '<div class="tip-stats__recent-title">Recent Tips</div>';
+                    data.recent_tips.slice(0, 5).forEach(function(tip) {
+                        var tipInfo = (typeof TIP_TYPES !== 'undefined' && TIP_TYPES[tip.tip_type]) ? TIP_TYPES[tip.tip_type] : { name: 'Tip', color: '#F59E0B', icon: 'star' };
+                        var icon = typeof WriterBadges !== 'undefined' ? WriterBadges.getBadgeIcon(tipInfo.icon) : '';
+                        html += '<div class="tip-stats__item">';
+                        html += '<span class="tip-stats__item-icon" style="color:' + tipInfo.color + '">' + icon + '</span>';
+                        html += '<span class="tip-stats__item-name">' + Security.sanitize(tip.sender_name || 'Anonymous') + '</span>';
+                        html += '<span class="tip-stats__item-type">' + tipInfo.name + '</span>';
+                        html += '<span class="tip-stats__item-time">' + UI.formatDate(tip.created_at) + '</span>';
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                }
+                html += '</div>';
+            }
+
+            statsEl.innerHTML = html;
+        } catch (err) {
+            console.error('ArticleDetail._loadTipStats:', err.message);
         }
     },
 

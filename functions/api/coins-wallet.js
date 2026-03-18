@@ -226,7 +226,7 @@ async function handlePost(request, env, user, origin) {
                     });
                 }
 
-                const allowedMethods = ['paypal', 'wise', 'bank'];
+                const allowedMethods = ['paypal', 'wise', 'bank', 'crypto'];
                 if (!allowedMethods.includes(paymentMethod)) {
                     return new Response(JSON.stringify({ ok: false, error: 'Invalid payment method. Allowed: ' + allowedMethods.join(', ') }), {
                         status: 400, headers: corsHeaders(origin)

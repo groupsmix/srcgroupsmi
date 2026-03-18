@@ -254,6 +254,7 @@ UI.fuelTipModal = function (receiverId, receiverName, articleId) {
     var content = '<div class="fuel-tip-modal">' +
         '<p class="fuel-tip-modal__intro">Send a tip to <strong>' + Security.sanitize(receiverName || 'this writer') + '</strong></p>' +
         '<div class="fuel-tip-modal__options">' + tipOptions + '</div>' +
+        '<div class="fuel-tip-modal__fee-info" id="fuel-tip-fee-info"></div>' +
         '<div class="fuel-tip-modal__message-wrap">' +
         '<textarea id="fuel-tip-message" class="form-input" placeholder="Add a message (optional)" maxlength="200" rows="2"></textarea>' +
         '</div>' +
@@ -278,12 +279,29 @@ UI.fuelTipModal = function (receiverId, receiverName, articleId) {
         }
     });
 
+    // Load fee info
+    var _tipFeePercent = 20;
+    window.supabaseClient.rpc('get_tip_fee_percent').then(function(res) {
+        if (res.data !== null && res.data !== undefined) _tipFeePercent = res.data;
+    }).catch(function() { /* use default */ });
+
     // Bind tip option clicks
     document.querySelectorAll('.fuel-tip-option').forEach(function(btn) {
         btn.addEventListener('click', function() {
             // Visual selection
             document.querySelectorAll('.fuel-tip-option').forEach(function(b) { b.classList.remove('fuel-tip-option--selected'); });
             btn.classList.add('fuel-tip-option--selected');
+
+            // Show fee breakdown
+            var coins = parseInt(btn.dataset.coins) || 0;
+            var fee = Math.floor(coins * _tipFeePercent / 100);
+            var authorGets = coins - fee;
+            var feeEl = document.getElementById('fuel-tip-fee-info');
+            if (feeEl) {
+                feeEl.innerHTML = '<div style="font-size:var(--text-xs);color:var(--text-tertiary);padding:var(--space-2) 0;text-align:center">' +
+                    'You send <strong>' + coins + ' GMX</strong> — Author receives <strong>' + authorGets + ' GMX</strong> (' + _tipFeePercent + '% platform fee)' +
+                    '</div>';
+            }
 
             var tipType = btn.dataset.tipType;
             var message = (document.getElementById('fuel-tip-message') || {}).value || '';
