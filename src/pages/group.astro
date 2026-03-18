@@ -232,14 +232,39 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         async function loadSimilar(group) {
             var section = document.getElementById('similar-section');
             try {
-                var similar = await DB.groups.getSimilar(group.id, group.category, group.platform);
+                // Use new recommendations API for "Find Groups Like This"
+                var res = await fetch('/api/recommendations?group_id=' + encodeURIComponent(group.id) + '&limit=6');
+                var json = res.ok ? await res.json() : null;
+                var similar = (json && json.ok && json.recommendations) ? json.recommendations : null;
+
+                // Fallback to existing method if API fails
+                if (!similar || !similar.length) {
+                    similar = await DB.groups.getSimilar(group.id, group.category, group.platform);
+                }
+
                 if (!similar || !similar.length) { section.innerHTML = ''; return; }
-                var html = '<div class="profile-section"><div class="profile-section__title">&#128279; Similar Groups</div>';
+                var message = (json && json.message) ? json.message : 'Find Groups Like This';
+                var html = '<div class="profile-section">';
+                html += '<div class="profile-section__title" style="display:flex;justify-content:space-between;align-items:center">';
+                html += '<span>&#128269; ' + Security.sanitize(message) + '</span>';
+                html += '<a href="/reviews?group_id=' + encodeURIComponent(group.id) + '" style="font-size:var(--text-sm);font-weight:var(--font-medium);color:var(--text-secondary);text-decoration:none">Review this group →</a>';
+                html += '</div>';
                 html += '<div class="similar-grid">';
                 for (var i = 0; i < Math.min(similar.length, 6); i++) {
                     html += UI.groupCard(similar[i]);
                 }
                 html += '</div></div>';
+
+                // Add growth tools section
+                html += '<div class="profile-section">';
+                html += '<div class="profile-section__title">&#128295; Group Owner Tools</div>';
+                html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-3)">';
+                html += '<a href="/tools/embed-widget?group_id=' + encodeURIComponent(group.id) + '" style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);border-radius:var(--radius-lg);border:1px solid var(--border-primary);text-decoration:none;color:var(--text-primary);transition:all .2s"><span style="font-size:var(--text-xl)">&#128296;</span><span style="font-size:var(--text-sm)">Get Embed Widget</span></a>';
+                html += '<a href="/groups/dashboard?group_id=' + encodeURIComponent(group.id) + '" style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);border-radius:var(--radius-lg);border:1px solid var(--border-primary);text-decoration:none;color:var(--text-primary);transition:all .2s"><span style="font-size:var(--text-xl)">&#128200;</span><span style="font-size:var(--text-sm)">Owner Dashboard</span></a>';
+                html += '<a href="/tools/bot-setup?group_id=' + encodeURIComponent(group.id) + '" style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);border-radius:var(--radius-lg);border:1px solid var(--border-primary);text-decoration:none;color:var(--text-primary);transition:all .2s"><span style="font-size:var(--text-xl)">&#129302;</span><span style="font-size:var(--text-sm)">Connect Bot</span></a>';
+                html += '<a href="/referral" style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);border-radius:var(--radius-lg);border:1px solid var(--border-primary);text-decoration:none;color:var(--text-primary);transition:all .2s"><span style="font-size:var(--text-xl)">&#127873;</span><span style="font-size:var(--text-sm)">Referral Program</span></a>';
+                html += '</div></div>';
+
                 section.innerHTML = html;
             } catch (err) {
                 section.innerHTML = '';

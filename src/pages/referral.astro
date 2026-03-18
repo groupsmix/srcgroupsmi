@@ -1,0 +1,197 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Referral Program | GroupsMix"
+  description="Invite friends to GroupsMix and both earn 50 GMX coins. Share your unique referral link and earn rewards."
+  canonical="https://groupsmix.com/referral"
+>
+<style is:inline>
+    .referral-page{max-width:var(--container-lg);margin:0 auto;padding:var(--space-6) var(--space-4)}
+    .referral-hero{text-align:center;padding:var(--space-8) 0 var(--space-6)}
+    .referral-hero__icon{font-size:3.5rem;margin-bottom:var(--space-4)}
+    .referral-hero__title{font-size:var(--text-3xl);font-weight:var(--font-extrabold);margin-bottom:var(--space-3)}
+    .referral-hero__subtitle{color:var(--text-secondary);max-width:500px;margin:0 auto var(--space-6);line-height:var(--leading-relaxed)}
+    .referral-box{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);padding:var(--space-6);max-width:520px;margin:0 auto var(--space-8)}
+    .referral-code-display{display:flex;align-items:center;gap:var(--space-3);background:var(--bg-tertiary);border:2px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-4)}
+    .referral-code-display__code{flex:1;font-family:monospace;font-size:var(--text-lg);font-weight:var(--font-bold);letter-spacing:.08em;color:var(--accent-primary)}
+    .referral-link-display{background:var(--bg-tertiary);border-radius:var(--radius-md);padding:var(--space-3);font-size:var(--text-sm);color:var(--text-secondary);word-break:break-all;margin-bottom:var(--space-4)}
+    .share-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3);margin-bottom:var(--space-4)}
+    @media(max-width:500px){.share-grid{grid-template-columns:1fr}}
+    .share-btn{display:flex;align-items:center;justify-content:center;gap:var(--space-2);padding:var(--space-3);border-radius:var(--radius-lg);font-size:var(--text-sm);font-weight:var(--font-semibold);cursor:pointer;transition:all .2s;text-decoration:none;border:1px solid var(--border-primary);color:var(--text-primary);background:var(--bg-card)}
+    .share-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+    .share-btn--twitter{background:rgba(29,161,242,.1);border-color:rgba(29,161,242,.3);color:#1da1f2}
+    .share-btn--whatsapp{background:rgba(37,211,102,.1);border-color:rgba(37,211,102,.3);color:#25d366}
+    .share-btn--facebook{background:rgba(24,119,242,.1);border-color:rgba(24,119,242,.3);color:#1877f2}
+    .how-it-works{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-6);margin-bottom:var(--space-8)}
+    @media(max-width:767px){.how-it-works{grid-template-columns:1fr}}
+    .how-step{text-align:center;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);padding:var(--space-6)}
+    .how-step__number{width:48px;height:48px;border-radius:50%;background:var(--gradient-accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:var(--text-xl);font-weight:var(--font-extrabold);margin:0 auto var(--space-4)}
+    .how-step__title{font-weight:var(--font-bold);margin-bottom:var(--space-2)}
+    .how-step__desc{font-size:var(--text-sm);color:var(--text-secondary);line-height:1.6}
+    .referral-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-bottom:var(--space-6)}
+    @media(max-width:600px){.referral-stats{grid-template-columns:repeat(2,1fr)}}
+    .referral-stat{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5);text-align:center}
+    .referral-stat__value{font-size:var(--text-2xl);font-weight:var(--font-extrabold);color:var(--accent-primary)}
+    .referral-stat__label{font-size:var(--text-xs);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-top:var(--space-1)}
+    .referral-history{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);padding:var(--space-6)}
+    .referral-history__title{font-weight:var(--font-bold);margin-bottom:var(--space-4)}
+    .referral-row{display:flex;justify-content:space-between;align-items:center;padding:var(--space-3) 0;border-bottom:1px solid var(--border-primary);font-size:var(--text-sm)}
+    .referral-row:last-child{border-bottom:none}
+    .referral-badge{padding:2px 8px;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:var(--font-semibold)}
+    .referral-badge--completed{background:var(--success-light);color:var(--success)}
+    .referral-badge--pending{background:var(--warning-light);color:var(--warning)}
+</style>
+
+<div class="referral-page">
+    <div class="referral-hero">
+        <div class="referral-hero__icon">&#127873;</div>
+        <h1 class="referral-hero__title">Invite Friends, Earn Rewards</h1>
+        <p class="referral-hero__subtitle">Share GroupsMix with friends and both of you earn <strong>50 GMX coins</strong>. The more you share, the more you earn.</p>
+    </div>
+
+    <div class="referral-box" id="referral-box">
+        <div style="text-align:center;margin-bottom:var(--space-4)">
+            <div style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-2)">Your Referral Code</div>
+            <div class="referral-code-display">
+                <span class="referral-code-display__code" id="referral-code">Sign in to get your code</span>
+                <button class="btn btn-sm btn-secondary" onclick="copyReferralCode()">Copy</button>
+            </div>
+        </div>
+
+        <div style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-2)">Your Referral Link</div>
+        <div class="referral-link-display" id="referral-link">Sign in to generate your referral link</div>
+
+        <div class="share-grid" id="share-buttons">
+            <a href="#" class="share-btn share-btn--twitter" id="share-twitter" target="_blank">&#128038; Twitter</a>
+            <a href="#" class="share-btn share-btn--whatsapp" id="share-whatsapp" target="_blank">&#128172; WhatsApp</a>
+            <a href="#" class="share-btn share-btn--facebook" id="share-facebook" target="_blank">&#128280; Facebook</a>
+        </div>
+
+        <button class="btn btn-primary btn-full" id="referral-cta" onclick="handleReferralCTA()">Sign In to Start Earning</button>
+    </div>
+
+    <h2 style="text-align:center;margin-bottom:var(--space-6)">How It Works</h2>
+    <div class="how-it-works">
+        <div class="how-step">
+            <div class="how-step__number">1</div>
+            <div class="how-step__title">Get Your Link</div>
+            <div class="how-step__desc">Sign in and copy your unique referral code or link. Each code is unique to you.</div>
+        </div>
+        <div class="how-step">
+            <div class="how-step__number">2</div>
+            <div class="how-step__title">Share with Friends</div>
+            <div class="how-step__desc">Share your link on social media, chat groups, or anywhere your friends hang out.</div>
+        </div>
+        <div class="how-step">
+            <div class="how-step__number">3</div>
+            <div class="how-step__title">Both Earn Coins</div>
+            <div class="how-step__desc">When a friend signs up using your link, you <strong>both</strong> get 50 GMX coins instantly.</div>
+        </div>
+    </div>
+
+    <div id="referral-stats-section" style="display:none">
+        <h2 style="margin-bottom:var(--space-4)">Your Referral Stats</h2>
+        <div class="referral-stats" id="referral-stats"></div>
+
+        <div class="referral-history">
+            <div class="referral-history__title">Recent Referrals</div>
+            <div id="referral-history-list">
+                <div style="text-align:center;padding:var(--space-4);color:var(--text-tertiary)">No referrals yet. Start sharing!</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check for referral code in URL and store it
+        var params = new URLSearchParams(window.location.search);
+        var refCode = params.get('ref');
+        if (refCode) {
+            localStorage.setItem('gmx_referral_code', refCode);
+        }
+
+        Auth.waitForAuth().then(function() {
+            if (Auth.getUserId()) {
+                loadReferralData();
+            }
+        });
+    });
+
+    async function loadReferralData() {
+        var uid = Auth.getUserId();
+        if (!uid) return;
+
+        try {
+            var [codeRes, statsRes] = await Promise.all([
+                fetch('/api/referral?action=code&uid=' + encodeURIComponent(uid)),
+                fetch('/api/referral?action=stats&uid=' + encodeURIComponent(uid))
+            ]);
+
+            var codeData = await codeRes.json();
+            var statsData = await statsRes.json();
+
+            if (codeData.ok) {
+                document.getElementById('referral-code').textContent = codeData.referral_code;
+                document.getElementById('referral-link').textContent = codeData.referral_url;
+
+                if (codeData.share_urls) {
+                    document.getElementById('share-twitter').href = codeData.share_urls.twitter || '#';
+                    document.getElementById('share-whatsapp').href = codeData.share_urls.whatsapp || '#';
+                    document.getElementById('share-facebook').href = codeData.share_urls.facebook || '#';
+                }
+
+                document.getElementById('referral-cta').textContent = 'Copy Referral Link';
+                document.getElementById('referral-cta').onclick = function() {
+                    UI.copyToClipboard(codeData.referral_url);
+                    UI.toast('Referral link copied!', 'success');
+                };
+            }
+
+            if (statsData.ok && statsData.stats) {
+                renderStats(statsData.stats);
+            }
+        } catch(e) {
+            console.error('Referral load error:', e);
+        }
+    }
+
+    function renderStats(stats) {
+        document.getElementById('referral-stats-section').style.display = 'block';
+
+        document.getElementById('referral-stats').innerHTML =
+            '<div class="referral-stat"><div class="referral-stat__value">' + (stats.total_referrals || 0) + '</div><div class="referral-stat__label">Friends Invited</div></div>' +
+            '<div class="referral-stat"><div class="referral-stat__value">' + (stats.total_earned || 0) + '</div><div class="referral-stat__label">Coins Earned</div></div>' +
+            '<div class="referral-stat"><div class="referral-stat__value">' + (stats.current_gxp || 0) + '</div><div class="referral-stat__label">Total GXP</div></div>';
+
+        var list = document.getElementById('referral-history-list');
+        if (stats.referrals && stats.referrals.length > 0) {
+            list.innerHTML = stats.referrals.map(function(r) {
+                var badgeClass = r.status === 'completed' || r.status === 'rewarded' ? 'referral-badge--completed' : 'referral-badge--pending';
+                var statusText = r.status === 'completed' || r.status === 'rewarded' ? 'Completed' : 'Pending';
+                return '<div class="referral-row">' +
+                    '<span>Referral &middot; ' + UI.formatDate(r.created_at) + '</span>' +
+                    '<span><span class="referral-badge ' + badgeClass + '">' + statusText + '</span> +' + (r.reward_coins || 50) + ' GMX</span>' +
+                    '</div>';
+            }).join('');
+        }
+    }
+
+    function copyReferralCode() {
+        var code = document.getElementById('referral-code').textContent;
+        if (code && code !== 'Sign in to get your code') {
+            UI.copyToClipboard(code);
+            UI.toast('Referral code copied!', 'success');
+        } else {
+            Auth.requireAuth();
+        }
+    }
+
+    function handleReferralCTA() {
+        Auth.requireAuth();
+    }
+</script>
+</Fragment>
+</BaseLayout>

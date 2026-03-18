@@ -1,0 +1,202 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Link Analytics | GroupsMix"
+  description="Track clicks, countries, devices, and referrers for your GroupsMix shortened links."
+  canonical="https://groupsmix.com/tools/link-analytics"
+>
+<style is:inline>
+    .analytics-page{max-width:var(--container-lg);margin:0 auto;padding:var(--space-6) var(--space-4)}
+    .analytics-page__title{font-size:var(--text-3xl);font-weight:var(--font-extrabold);margin-bottom:var(--space-2)}
+    .analytics-page__subtitle{color:var(--text-secondary);margin-bottom:var(--space-6)}
+    .analytics-search{display:flex;gap:var(--space-3);margin-bottom:var(--space-6)}
+    @media(max-width:600px){.analytics-search{flex-direction:column}}
+    .analytics-search input{flex:1}
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-4);margin-bottom:var(--space-6)}
+    @media(max-width:767px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+    .stat-card{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5);text-align:center}
+    .stat-card__value{font-size:var(--text-2xl);font-weight:var(--font-extrabold);color:var(--text-primary)}
+    .stat-card__label{font-size:var(--text-xs);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-top:var(--space-1)}
+    .analytics-sections{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6)}
+    @media(max-width:767px){.analytics-sections{grid-template-columns:1fr}}
+    .analytics-section{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);padding:var(--space-5)}
+    .analytics-section__title{font-size:var(--text-lg);font-weight:var(--font-bold);margin-bottom:var(--space-4);display:flex;align-items:center;gap:var(--space-2)}
+    .breakdown-list{list-style:none;padding:0}
+    .breakdown-item{display:flex;justify-content:space-between;align-items:center;padding:var(--space-2) 0;border-bottom:1px solid var(--border-primary)}
+    .breakdown-item:last-child{border-bottom:none}
+    .breakdown-item__name{font-size:var(--text-sm)}
+    .breakdown-item__bar{flex:1;margin:0 var(--space-3);height:6px;background:var(--bg-tertiary);border-radius:var(--radius-full);overflow:hidden}
+    .breakdown-item__fill{height:100%;background:var(--gradient-accent);border-radius:var(--radius-full);transition:width .5s ease}
+    .breakdown-item__count{font-size:var(--text-sm);font-weight:var(--font-semibold);min-width:40px;text-align:right}
+    .daily-chart{display:flex;align-items:flex-end;gap:2px;height:120px;padding:var(--space-2) 0}
+    .daily-bar{flex:1;background:var(--gradient-accent);border-radius:3px 3px 0 0;min-width:4px;transition:height .5s ease;position:relative;cursor:pointer}
+    .daily-bar:hover{opacity:.8}
+    .daily-bar__tooltip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-sm);padding:4px 8px;font-size:10px;white-space:nowrap;z-index:10}
+    .daily-bar:hover .daily-bar__tooltip{display:block}
+</style>
+
+<div class="analytics-page">
+    <h1 class="analytics-page__title">Link Analytics</h1>
+    <p class="analytics-page__subtitle">Track clicks, countries, devices, and referrers for your shortened links.</p>
+
+    <div class="analytics-search">
+        <input type="text" class="form-input" id="link-code-input" placeholder="Enter link code (e.g. abc123)">
+        <select class="form-input" id="analytics-days" style="max-width:160px">
+            <option value="7">Last 7 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 90 days</option>
+        </select>
+        <button class="btn btn-primary" id="load-analytics-btn">View Analytics</button>
+    </div>
+
+    <div id="analytics-content" style="display:none">
+        <div class="stats-grid" id="stats-grid"></div>
+        <div class="analytics-sections">
+            <div class="analytics-section">
+                <div class="analytics-section__title">&#127758; Clicks by Country</div>
+                <ul class="breakdown-list" id="country-breakdown"></ul>
+            </div>
+            <div class="analytics-section">
+                <div class="analytics-section__title">&#128241; Clicks by Device</div>
+                <ul class="breakdown-list" id="device-breakdown"></ul>
+            </div>
+            <div class="analytics-section" style="grid-column:1/-1">
+                <div class="analytics-section__title">&#128200; Daily Clicks</div>
+                <div class="daily-chart" id="daily-chart"></div>
+            </div>
+            <div class="analytics-section">
+                <div class="analytics-section__title">&#128279; Top Referrers</div>
+                <ul class="breakdown-list" id="referrer-breakdown"></ul>
+            </div>
+            <div class="analytics-section">
+                <div class="analytics-section__title">&#128203; Link Details</div>
+                <div id="link-details"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="analytics-empty" style="text-align:center;padding:var(--space-16) 0">
+        <div style="font-size:var(--text-5xl);margin-bottom:var(--space-4)">&#128200;</div>
+        <h3 style="margin-bottom:var(--space-3)">Enter a link code to view analytics</h3>
+        <p style="color:var(--text-secondary);max-width:400px;margin:0 auto">Create shortened links from the <a href="/tools/link-generator">Link Generator</a> and track their performance here.</p>
+    </div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('load-analytics-btn').addEventListener('click', loadAnalytics);
+        document.getElementById('link-code-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') loadAnalytics();
+        });
+
+        var params = new URLSearchParams(window.location.search);
+        var code = params.get('code');
+        if (code) {
+            document.getElementById('link-code-input').value = code;
+            loadAnalytics();
+        }
+    });
+
+    async function loadAnalytics() {
+        var code = document.getElementById('link-code-input').value.trim();
+        if (!code) { UI.toast('Please enter a link code', 'error'); return; }
+
+        // Extract code from URL if pasted full link
+        if (code.includes('code=')) {
+            try { code = new URL(code.startsWith('http') ? code : 'https://' + code).searchParams.get('code') || code; }
+            catch(e) { code = code.split('code=')[1] || code; }
+        }
+
+        var days = document.getElementById('analytics-days').value;
+        var btn = document.getElementById('load-analytics-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="btn-spinner"></span> Loading...';
+
+        try {
+            var res = await fetch('/api/link-analytics?code=' + encodeURIComponent(code) + '&days=' + days + '&detail=clicks');
+            var json = await res.json();
+
+            if (!json.ok) {
+                UI.toast(json.error || 'Analytics not found', 'error');
+                return;
+            }
+
+            renderAnalytics(json.data);
+            document.getElementById('analytics-content').style.display = 'block';
+            document.getElementById('analytics-empty').style.display = 'none';
+        } catch(err) {
+            UI.toast('Failed to load analytics', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'View Analytics';
+        }
+    }
+
+    function renderAnalytics(data) {
+        // Stats grid
+        var link = data.link || {};
+        document.getElementById('stats-grid').innerHTML =
+            statCard(UI.formatNumber(link.total_clicks || 0), 'Total Clicks') +
+            statCard(UI.formatNumber(data.period_clicks || 0), 'Period Clicks (' + data.days + 'd)') +
+            statCard(data.countries ? data.countries.length : 0, 'Countries') +
+            statCard(data.devices ? data.devices.length : 0, 'Device Types');
+
+        // Country breakdown
+        renderBreakdown('country-breakdown', data.countries || []);
+
+        // Device breakdown
+        renderBreakdown('device-breakdown', data.devices || []);
+
+        // Referrer breakdown
+        renderBreakdown('referrer-breakdown', data.referrers || []);
+
+        // Daily chart
+        renderDailyChart(data.daily_clicks || []);
+
+        // Link details
+        document.getElementById('link-details').innerHTML =
+            '<div style="font-size:var(--text-sm)">' +
+            '<div style="margin-bottom:var(--space-2)"><strong>Short URL:</strong> <a href="https://groupsmix.com/go?code=' + Security.sanitize(link.code) + '" target="_blank">groupsmix.com/go?code=' + Security.sanitize(link.code) + '</a></div>' +
+            '<div style="margin-bottom:var(--space-2)"><strong>Original URL:</strong> <span style="word-break:break-all;color:var(--text-secondary)">' + Security.sanitize(link.long_url || '') + '</span></div>' +
+            '<div><strong>Created:</strong> ' + UI.formatDate(link.created_at) + '</div>' +
+            '</div>';
+    }
+
+    function statCard(value, label) {
+        return '<div class="stat-card"><div class="stat-card__value">' + value + '</div><div class="stat-card__label">' + label + '</div></div>';
+    }
+
+    function renderBreakdown(containerId, items) {
+        var el = document.getElementById(containerId);
+        if (!items.length) {
+            el.innerHTML = '<li style="padding:var(--space-4);text-align:center;color:var(--text-tertiary)">No data yet</li>';
+            return;
+        }
+        var max = items[0].count;
+        el.innerHTML = items.slice(0, 10).map(function(item) {
+            var pct = max > 0 ? (item.count / max * 100) : 0;
+            return '<li class="breakdown-item">' +
+                '<span class="breakdown-item__name">' + Security.sanitize(item.name) + '</span>' +
+                '<span class="breakdown-item__bar"><span class="breakdown-item__fill" style="width:' + pct + '%"></span></span>' +
+                '<span class="breakdown-item__count">' + item.count + '</span></li>';
+        }).join('');
+    }
+
+    function renderDailyChart(dailyData) {
+        var el = document.getElementById('daily-chart');
+        if (!dailyData.length) {
+            el.innerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary)">No click data</div>';
+            return;
+        }
+        var max = Math.max.apply(null, dailyData.map(function(d) { return d.clicks; }));
+        el.innerHTML = dailyData.map(function(d) {
+            var h = max > 0 ? Math.max(4, (d.clicks / max) * 110) : 4;
+            return '<div class="daily-bar" style="height:' + h + 'px" title="' + d.date + ': ' + d.clicks + ' clicks">' +
+                '<div class="daily-bar__tooltip">' + d.date + '<br>' + d.clicks + ' clicks</div></div>';
+        }).join('');
+    }
+</script>
+</Fragment>
+</BaseLayout>

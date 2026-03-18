@@ -1,0 +1,230 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Bot Integration Setup | GroupsMix"
+  description="Connect a WhatsApp or Telegram bot to auto-sync your group to GroupsMix with real-time member counts and trust scores."
+  canonical="https://groupsmix.com/tools/bot-setup"
+>
+<style is:inline>
+    .bot-page{max-width:var(--container-lg);margin:0 auto;padding:var(--space-6) var(--space-4)}
+    .bot-page__title{font-size:var(--text-3xl);font-weight:var(--font-extrabold);margin-bottom:var(--space-2);text-align:center}
+    .bot-page__subtitle{color:var(--text-secondary);text-align:center;margin-bottom:var(--space-8);max-width:600px;margin-left:auto;margin-right:auto}
+    .platform-tabs{display:flex;gap:var(--space-3);justify-content:center;margin-bottom:var(--space-6)}
+    .platform-tab{padding:var(--space-3) var(--space-6);border-radius:var(--radius-full);border:2px solid var(--border-primary);background:var(--bg-card);cursor:pointer;font-weight:var(--font-semibold);transition:all .2s;display:flex;align-items:center;gap:var(--space-2)}
+    .platform-tab:hover{border-color:var(--accent-primary)}
+    .platform-tab--active{border-color:var(--accent-primary);background:var(--accent-primary-light)}
+    .bot-content{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6)}
+    @media(max-width:767px){.bot-content{grid-template-columns:1fr}}
+    .bot-section{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);padding:var(--space-6)}
+    .bot-section__title{font-size:var(--text-lg);font-weight:var(--font-bold);margin-bottom:var(--space-4)}
+    .step-list{list-style:none;counter-reset:steps}
+    .step-item{counter-increment:steps;display:flex;gap:var(--space-3);margin-bottom:var(--space-4);align-items:flex-start}
+    .step-item::before{content:counter(steps);flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--gradient-accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:var(--text-sm);font-weight:var(--font-bold)}
+    .step-text{font-size:var(--text-sm);color:var(--text-secondary);line-height:1.6;padding-top:4px}
+    .feature-list{list-style:none;padding:0}
+    .feature-item{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) 0;font-size:var(--text-sm);color:var(--text-secondary)}
+    .feature-check{color:var(--success);font-weight:bold}
+    .verification-box{background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5);text-align:center;margin-top:var(--space-4)}
+    .verification-code{font-family:monospace;font-size:var(--text-2xl);font-weight:var(--font-extrabold);letter-spacing:.1em;color:var(--accent-primary);margin:var(--space-3) 0}
+    .bot-status{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-3);border-radius:var(--radius-md);font-size:var(--text-sm);margin-top:var(--space-4)}
+    .bot-status--connected{background:var(--success-light);color:var(--success)}
+    .bot-status--pending{background:var(--warning-light);color:var(--warning)}
+</style>
+
+<div class="bot-page">
+    <h1 class="bot-page__title">Bot Integration</h1>
+    <p class="bot-page__subtitle">Connect a bot to auto-sync your group listing with real-time member counts, trust scores, and scam protection.</p>
+
+    <div class="platform-tabs">
+        <div class="platform-tab platform-tab--active" data-platform="whatsapp" onclick="switchPlatform('whatsapp')">
+            <span>&#128172;</span> WhatsApp
+        </div>
+        <div class="platform-tab" data-platform="telegram" onclick="switchPlatform('telegram')">
+            <span>&#9992;&#65039;</span> Telegram
+        </div>
+    </div>
+
+    <div class="bot-content">
+        <div class="bot-section">
+            <div class="bot-section__title" id="setup-title">WhatsApp Bot Setup</div>
+            <ol class="step-list" id="setup-steps"></ol>
+
+            <div class="verification-box" id="verification-box">
+                <div style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-2)">Your Verification Code</div>
+                <div class="verification-code" id="verification-code">Loading...</div>
+                <button class="btn btn-secondary btn-sm" onclick="copyVerificationCode()">Copy Code</button>
+                <div id="bot-status-indicator"></div>
+            </div>
+        </div>
+
+        <div class="bot-section">
+            <div class="bot-section__title">Features</div>
+            <ul class="feature-list" id="feature-list"></ul>
+
+            <div style="margin-top:var(--space-6)">
+                <div class="bot-section__title">Group Connection</div>
+                <div class="form-group">
+                    <label class="form-label">Select Group</label>
+                    <select class="form-input" id="bot-group-select">
+                        <option value="">Select a group to connect...</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-full" id="register-bot-btn" onclick="registerBot()">Connect Bot</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+    var currentPlatform = 'whatsapp';
+
+    var instructions = {
+        whatsapp: {
+            title: 'WhatsApp Bot Setup',
+            steps: [
+                'Go to your Group Settings on GroupsMix',
+                'Select your group and click "Connect Bot"',
+                'Add the GroupsMix Bot number to your WhatsApp group',
+                'Send the verification code in the group chat',
+                'The bot will auto-sync your group details',
+                'Member count and trust score update automatically every 24h'
+            ],
+            features: [
+                'Auto-sync member count every 24 hours',
+                'Real-time trust score updates',
+                'Scam protection alerts in your group',
+                'Auto-post group to GroupsMix directory',
+                'Group health monitoring dashboard'
+            ]
+        },
+        telegram: {
+            title: 'Telegram Bot Setup',
+            steps: [
+                'Go to your Group Settings on GroupsMix',
+                'Select your group and click "Connect Bot"',
+                'Add @GroupsMixBot to your Telegram group as admin',
+                'Send /verify YOUR_CODE in the group',
+                'The bot will auto-sync your group details',
+                'Member count updates in real-time'
+            ],
+            features: [
+                'Real-time member count sync',
+                'Trust score auto-updates',
+                'Scam detection and alerts in chat',
+                'Auto-post group to GroupsMix directory',
+                '/stats command for quick group insights',
+                'Group analytics delivered in Telegram'
+            ]
+        }
+    };
+
+    function switchPlatform(platform) {
+        currentPlatform = platform;
+        document.querySelectorAll('.platform-tab').forEach(function(el) {
+            el.classList.toggle('platform-tab--active', el.dataset.platform === platform);
+        });
+        renderInstructions();
+    }
+
+    function renderInstructions() {
+        var info = instructions[currentPlatform];
+        document.getElementById('setup-title').textContent = info.title;
+
+        document.getElementById('setup-steps').innerHTML = info.steps.map(function(step) {
+            return '<li class="step-item"><div class="step-text">' + Security.sanitize(step) + '</div></li>';
+        }).join('');
+
+        document.getElementById('feature-list').innerHTML = info.features.map(function(f) {
+            return '<li class="feature-item"><span class="feature-check">&#10003;</span> ' + Security.sanitize(f) + '</li>';
+        }).join('');
+    }
+
+    async function loadVerificationCode() {
+        var params = new URLSearchParams(window.location.search);
+        var groupId = params.get('group_id');
+        try {
+            var url = '/api/bot-webhook?action=bot-config';
+            if (groupId) url += '&group_id=' + encodeURIComponent(groupId);
+            var res = await fetch(url);
+            var json = await res.json();
+            if (json.ok) {
+                if (json.connected) {
+                    document.getElementById('verification-code').textContent = 'Connected';
+                    document.getElementById('bot-status-indicator').innerHTML =
+                        '<div class="bot-status bot-status--connected">&#10003; Bot is connected and syncing</div>';
+                } else {
+                    document.getElementById('verification-code').textContent = json.verification_code || 'GMX-XXXXXX';
+                }
+            }
+        } catch(e) {
+            document.getElementById('verification-code').textContent = 'GMX-XXXXXX';
+        }
+    }
+
+    function copyVerificationCode() {
+        var code = document.getElementById('verification-code').textContent;
+        UI.copyToClipboard(code);
+        UI.toast('Verification code copied!', 'success');
+    }
+
+    async function loadUserGroups() {
+        if (!Auth.getUserId()) return;
+        try {
+            var result = await DB.groups.getByUser(Auth.getUserId());
+            var select = document.getElementById('bot-group-select');
+            (result || []).forEach(function(g) {
+                var opt = document.createElement('option');
+                opt.value = g.id;
+                opt.textContent = g.name || 'Unnamed Group';
+                select.appendChild(opt);
+            });
+        } catch(e) {}
+    }
+
+    async function registerBot() {
+        if (!Auth.requireAuth()) return;
+        var groupId = document.getElementById('bot-group-select').value;
+        if (!groupId) { UI.toast('Please select a group', 'error'); return; }
+
+        var btn = document.getElementById('register-bot-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="btn-spinner"></span> Connecting...';
+
+        try {
+            var res = await fetch('/api/bot-webhook', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'register',
+                    group_id: groupId,
+                    platform: currentPlatform,
+                    admin_uid: Auth.getUserId()
+                })
+            });
+            var json = await res.json();
+            if (json.ok) {
+                document.getElementById('verification-code').textContent = json.verification_code;
+                document.getElementById('bot-status-indicator').innerHTML =
+                    '<div class="bot-status bot-status--pending">&#9203; Waiting for bot verification in your group</div>';
+                UI.toast('Bot registered! Send the verification code in your group.', 'success');
+            } else {
+                UI.toast(json.error || 'Failed to register bot', 'error');
+            }
+        } catch(e) {
+            UI.toast('Connection error', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'Connect Bot';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        renderInstructions();
+        loadVerificationCode();
+        Auth.waitForAuth().then(loadUserGroups);
+    });
+</script>
+</Fragment>
+</BaseLayout>

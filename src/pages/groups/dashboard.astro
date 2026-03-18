@@ -1,0 +1,238 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Group Owner Dashboard | GroupsMix"
+  description="See how your group is performing on GroupsMix. Track views, clicks, trust score, and get growth tips."
+  canonical="https://groupsmix.com/groups/dashboard"
+>
+<style is:inline>
+    .gdash{max-width:var(--container-lg);margin:0 auto;padding:var(--space-6) var(--space-4)}
+    .gdash__title{font-size:var(--text-3xl);font-weight:var(--font-extrabold);margin-bottom:var(--space-2)}
+    .gdash__subtitle{color:var(--text-secondary);margin-bottom:var(--space-6)}
+    .gdash__group-select{display:flex;gap:var(--space-3);margin-bottom:var(--space-6)}
+    @media(max-width:600px){.gdash__group-select{flex-direction:column}}
+    .gdash-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--space-4);margin-bottom:var(--space-6)}
+    @media(max-width:900px){.gdash-stats{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:600px){.gdash-stats{grid-template-columns:repeat(2,1fr)}}
+    .gdash-stat{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5);text-align:center}
+    .gdash-stat__value{font-size:var(--text-2xl);font-weight:var(--font-extrabold)}
+    .gdash-stat__label{font-size:var(--text-xs);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-top:var(--space-1)}
+    .gdash-grid{display:grid;grid-template-columns:2fr 1fr;gap:var(--space-6);margin-bottom:var(--space-6)}
+    @media(max-width:767px){.gdash-grid{grid-template-columns:1fr}}
+    .gdash-card{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);padding:var(--space-6)}
+    .gdash-card__title{font-size:var(--text-lg);font-weight:var(--font-bold);margin-bottom:var(--space-4);display:flex;align-items:center;gap:var(--space-2)}
+    .tip-card{display:flex;gap:var(--space-3);padding:var(--space-4);border-radius:var(--radius-lg);border:1px solid var(--border-primary);margin-bottom:var(--space-3);transition:all .2s}
+    .tip-card:hover{background:var(--bg-card-hover);border-color:var(--accent-primary-light)}
+    .tip-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:var(--text-lg)}
+    .tip-icon--critical{background:var(--error-light);color:var(--error)}
+    .tip-icon--important{background:var(--warning-light);color:var(--warning)}
+    .tip-icon--growth{background:var(--success-light);color:var(--success)}
+    .tip-icon--advanced{background:var(--info-light);color:var(--info)}
+    .tip-content{flex:1}
+    .tip-title{font-weight:var(--font-semibold);font-size:var(--text-sm);margin-bottom:2px}
+    .tip-desc{font-size:var(--text-xs);color:var(--text-secondary);line-height:1.5}
+    .share-buttons{display:flex;gap:var(--space-3);flex-wrap:wrap}
+    .share-btn{display:inline-flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-4);border-radius:var(--radius-full);font-size:var(--text-sm);font-weight:var(--font-medium);border:1px solid var(--border-primary);background:var(--bg-card);cursor:pointer;transition:all .2s;text-decoration:none;color:var(--text-secondary)}
+    .share-btn:hover{background:var(--bg-tertiary);border-color:var(--accent-primary-light);color:var(--text-primary)}
+    .embed-code-box{background:var(--bg-tertiary);border-radius:var(--radius-md);padding:var(--space-3);font-family:monospace;font-size:var(--text-xs);overflow-x:auto;word-break:break-all;margin-bottom:var(--space-3);color:var(--text-secondary)}
+</style>
+
+<div class="gdash">
+    <h1 class="gdash__title">Group Owner Dashboard</h1>
+    <p class="gdash__subtitle">Track how your group performs on GroupsMix and get actionable growth tips.</p>
+
+    <div class="gdash__group-select">
+        <select class="form-input" id="gdash-group-select" style="flex:1">
+            <option value="">Select a group...</option>
+        </select>
+        <button class="btn btn-primary" id="gdash-load-btn">View Dashboard</button>
+    </div>
+
+    <div id="gdash-content" style="display:none">
+        <div class="gdash-stats" id="gdash-stats"></div>
+
+        <div class="gdash-grid">
+            <div class="gdash-card">
+                <div class="gdash-card__title">&#128161; Growth Tips</div>
+                <div id="gdash-tips">
+                    <div class="skeleton" style="height:60px;border-radius:var(--radius-lg);margin-bottom:var(--space-3)"></div>
+                    <div class="skeleton" style="height:60px;border-radius:var(--radius-lg);margin-bottom:var(--space-3)"></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="gdash-card" style="margin-bottom:var(--space-6)">
+                    <div class="gdash-card__title">&#128228; Share Your Group</div>
+                    <div class="share-buttons" id="gdash-share-buttons"></div>
+                </div>
+
+                <div class="gdash-card">
+                    <div class="gdash-card__title">&#128295; Quick Actions</div>
+                    <div style="display:flex;flex-direction:column;gap:var(--space-3)">
+                        <a href="#" id="gdash-embed-link" class="share-btn" style="justify-content:center">&#128296; Get Embed Widget</a>
+                        <a href="#" id="gdash-link-link" class="share-btn" style="justify-content:center">&#128279; Create Short Link</a>
+                        <a href="#" id="gdash-bot-link" class="share-btn" style="justify-content:center">&#129302; Connect Bot</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="gdash-card" id="gdash-embed-section">
+            <div class="gdash-card__title">&#128295; Embed Widget Code</div>
+            <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-3)">Add this code to your website to show a "Join on GroupsMix" badge:</p>
+            <div class="embed-code-box" id="gdash-embed-code"></div>
+            <button class="btn btn-secondary btn-sm" onclick="copyEmbedCode()">Copy Code</button>
+        </div>
+    </div>
+
+    <div id="gdash-empty">
+        <div style="text-align:center;padding:var(--space-16) 0">
+            <div style="font-size:var(--text-5xl);margin-bottom:var(--space-4)">&#128200;</div>
+            <h3 style="margin-bottom:var(--space-3)">Your Group Performance Dashboard</h3>
+            <p style="color:var(--text-secondary);max-width:500px;margin:0 auto var(--space-6)">Sign in and select one of your groups to see performance stats, growth tips, and tools to promote your group.</p>
+            <button class="btn btn-primary" onclick="Auth.requireAuth()">Sign In to Get Started</button>
+        </div>
+    </div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('gdash-load-btn').addEventListener('click', loadDashboard);
+
+        Auth.waitForAuth().then(function() {
+            if (Auth.getUserId()) {
+                document.getElementById('gdash-empty').querySelector('button').style.display = 'none';
+                loadUserGroups();
+            }
+        });
+
+        var params = new URLSearchParams(window.location.search);
+        var gid = params.get('group_id');
+        if (gid) {
+            setTimeout(function() {
+                var select = document.getElementById('gdash-group-select');
+                if (select.querySelector('option[value="' + gid + '"]')) {
+                    select.value = gid;
+                    loadDashboard();
+                }
+            }, 2000);
+        }
+    });
+
+    async function loadUserGroups() {
+        try {
+            var result = await DB.groups.getByUser(Auth.getUserId());
+            var select = document.getElementById('gdash-group-select');
+            (result || []).forEach(function(g) {
+                var opt = document.createElement('option');
+                opt.value = g.id;
+                opt.textContent = Security.sanitize(g.name || 'Unnamed Group');
+                select.appendChild(opt);
+            });
+        } catch(e) {}
+    }
+
+    async function loadDashboard() {
+        var groupId = document.getElementById('gdash-group-select').value;
+        if (!groupId) { UI.toast('Please select a group', 'error'); return; }
+
+        var btn = document.getElementById('gdash-load-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="btn-spinner"></span> Loading...';
+
+        try {
+            var [statsRes, tipsRes] = await Promise.all([
+                fetch('/api/group-dashboard?group_id=' + encodeURIComponent(groupId)),
+                fetch('/api/group-dashboard?group_id=' + encodeURIComponent(groupId) + '&action=tips')
+            ]);
+
+            var stats = await statsRes.json();
+            var tips = await tipsRes.json();
+
+            if (stats.ok) renderStats(stats.data);
+            if (tips.ok) renderTips(tips.tips);
+
+            document.getElementById('gdash-content').style.display = 'block';
+            document.getElementById('gdash-empty').style.display = 'none';
+
+            // Update quick action links
+            document.getElementById('gdash-embed-link').href = '/tools/embed-widget?group_id=' + groupId;
+            document.getElementById('gdash-link-link').href = '/tools/link-generator?group_id=' + groupId;
+            document.getElementById('gdash-bot-link').href = '/tools/bot-setup?group_id=' + groupId;
+
+        } catch(err) {
+            UI.toast('Failed to load dashboard', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'View Dashboard';
+        }
+    }
+
+    function renderStats(data) {
+        var g = data.group || {};
+        document.getElementById('gdash-stats').innerHTML =
+            statCard(UI.formatNumber(g.views || 0), 'Views') +
+            statCard(UI.formatNumber(g.click_count || 0), 'Clicks') +
+            statCard(data.conversion_rate || '0%', 'Conversion') +
+            statCard(g.trust_score || 0, 'Trust Score') +
+            statCard((g.avg_rating || 0).toFixed(1), 'Avg Rating');
+
+        // Share buttons
+        var urls = data.share_urls || {};
+        document.getElementById('gdash-share-buttons').innerHTML =
+            '<a href="' + Security.sanitize(urls.twitter || '#') + '" target="_blank" class="share-btn">&#128038; Twitter</a>' +
+            '<a href="' + Security.sanitize(urls.facebook || '#') + '" target="_blank" class="share-btn">&#128280; Facebook</a>' +
+            '<a href="' + Security.sanitize(urls.whatsapp || '#') + '" target="_blank" class="share-btn">&#128172; WhatsApp</a>' +
+            '<button class="share-btn" onclick="copyProfileLink()">&#128279; Copy Link</button>';
+
+        // Embed code
+        document.getElementById('gdash-embed-code').textContent = data.embed_code || '';
+
+        window._dashboardData = data;
+    }
+
+    function statCard(value, label) {
+        return '<div class="gdash-stat"><div class="gdash-stat__value">' + value + '</div><div class="gdash-stat__label">' + label + '</div></div>';
+    }
+
+    function renderTips(tips) {
+        var el = document.getElementById('gdash-tips');
+        if (!tips || !tips.length) {
+            el.innerHTML = '<p style="color:var(--text-tertiary);text-align:center;padding:var(--space-4)">No tips available</p>';
+            return;
+        }
+
+        var iconMap = {
+            edit: '&#9998;', tag: '&#127991;', shield: '&#128737;', star: '&#11088;',
+            share: '&#128228;', widget: '&#128296;', link: '&#128279;', bot: '&#129302;'
+        };
+
+        el.innerHTML = tips.map(function(tip) {
+            var iconClass = 'tip-icon--' + (tip.type || 'growth');
+            return '<div class="tip-card">' +
+                '<div class="tip-icon ' + iconClass + '">' + (iconMap[tip.icon] || '&#128161;') + '</div>' +
+                '<div class="tip-content">' +
+                '<div class="tip-title">' + Security.sanitize(tip.title) + '</div>' +
+                '<div class="tip-desc">' + Security.sanitize(tip.description) + '</div>' +
+                (tip.action_url ? '<a href="' + Security.sanitize(tip.action_url) + '" style="font-size:var(--text-xs);margin-top:4px;display:inline-block">Take action &rarr;</a>' : '') +
+                '</div></div>';
+        }).join('');
+    }
+
+    function copyProfileLink() {
+        if (window._dashboardData && window._dashboardData.share_urls) {
+            UI.copyToClipboard(window._dashboardData.share_urls.profile);
+            UI.toast('Profile link copied!', 'success');
+        }
+    }
+
+    function copyEmbedCode() {
+        var code = document.getElementById('gdash-embed-code').textContent;
+        UI.copyToClipboard(code);
+        UI.toast('Embed code copied!', 'success');
+    }
+</script>
+</Fragment>
+</BaseLayout>

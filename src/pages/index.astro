@@ -1031,6 +1031,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <!-- Quick Access Bar removed — links already in subnav and bottom nav -->
             </section>
 
+            <!-- ─── Group of the Day ──────────────── -->
+            <section class="home-section" id="group-of-day-section" style="display:none">
+                <div class="home-section__header">
+                    <h2 class="home-section__title"><span>&#127942;</span> Group of the Day</h2>
+                    <a href="/search?sort=ranking" class="home-section__link">See Trending →</a>
+                </div>
+                <div id="group-of-day-card"></div>
+            </section>
+
             <!-- ─── Featured Groups ───────────────── -->
             <section class="home-section" id="featured-section" style="display:none">
                 <div class="home-section__header">
@@ -1355,6 +1364,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             loadMarketplacePreview();
             loadJobsPreview();
             loadStorePreview();
+            loadGroupOfDay();
         }
 
         function renderPlatforms() {
@@ -1736,6 +1746,45 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     '</div>' +
                 '</a>';
             }).join('');
+        }
+
+        // ═══════════════════════════════════════
+        // ── Group of the Day Section ─────────
+        // ═══════════════════════════════════════
+        async function loadGroupOfDay() {
+            var section = document.getElementById('group-of-day-section');
+            var card = document.getElementById('group-of-day-card');
+            if (!section || !card) return;
+            try {
+                var res = await fetch('/api/group-of-day');
+                if (!res.ok) { section.style.display = 'none'; return; }
+                var json = await res.json();
+                if (!json.ok || !json.group) { section.style.display = 'none'; return; }
+                section.style.display = '';
+                var g = json.group;
+                var platform = CONFIG.platforms.find(function(p) { return p.id === g.platform; });
+                var trustScore = g.trust_score || 0;
+                var goUrl = '/group?id=' + encodeURIComponent(g.id);
+                var platformName = platform ? platform.name : (g.platform || 'Group');
+                var platformEmoji = platform ? platform.emoji : '&#128241;';
+                card.innerHTML =
+                    '<a href="' + goUrl + '" style="display:flex;align-items:center;gap:var(--space-5);background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);padding:var(--space-5);text-decoration:none;color:var(--text-primary);transition:all .2s">' +
+                    '<div style="width:64px;height:64px;border-radius:16px;background:var(--gradient-accent);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;color:#fff">&#127942;</div>' +
+                    '<div style="flex:1;min-width:0">' +
+                    '<div style="font-weight:var(--font-bold);font-size:var(--text-lg);margin-bottom:4px">' + Security.sanitize(g.name || 'Featured Group') + '</div>' +
+                    '<div style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:4px">' + platformEmoji + ' ' + Security.sanitize(platformName) +
+                    (g.category ? ' &middot; ' + Security.sanitize(g.category) : '') + '</div>' +
+                    '<div style="font-size:var(--text-xs);color:var(--text-tertiary)">' + Security.sanitize((g.description || '').slice(0, 120)) + '</div>' +
+                    '</div>' +
+                    '<div style="text-align:center;flex-shrink:0">' +
+                    '<div style="font-size:var(--text-2xl);font-weight:var(--font-extrabold);color:var(--accent-primary)">' + trustScore + '</div>' +
+                    '<div style="font-size:var(--text-xs);color:var(--text-tertiary)">Trust</div>' +
+                    '</div>' +
+                    '</a>';
+            } catch(e) {
+                console.error('loadGroupOfDay:', e);
+                section.style.display = 'none';
+            }
         }
 
         function renderStats(stats) {
