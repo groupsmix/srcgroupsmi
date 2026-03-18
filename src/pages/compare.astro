@@ -1,0 +1,322 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Compare Groups Side by Side — GroupsMix"
+  description="Compare up to 5 groups side by side. Trust scores, member counts, activity, reviews — all in one view. Find the best group for you."
+  cssFiles={["/assets/css/features.css?v=20260310b"]}
+  includeFeatures={true}
+>
+<style is:inline>
+    .compare-page { max-width: var(--container-xl); margin: 0 auto; padding: var(--space-8) var(--space-4); }
+    .compare-hero { text-align: center; margin-bottom: var(--space-8); }
+    .compare-hero__title { font-size: var(--text-3xl); font-weight: var(--font-bold); margin-bottom: var(--space-3); }
+    .compare-hero__subtitle { color: var(--text-secondary); font-size: var(--text-base); max-width: 600px; margin: 0 auto; }
+    .compare-search { display: flex; gap: var(--space-2); max-width: 500px; margin: var(--space-6) auto 0; }
+    .compare-slots { display: flex; gap: var(--space-3); margin-bottom: var(--space-6); flex-wrap: wrap; justify-content: center; }
+    .compare-slot { background: var(--bg-card); border: 2px dashed var(--border-primary); border-radius: var(--radius-lg); padding: var(--space-4); min-width: 180px; text-align: center; cursor: pointer; transition: border-color 0.2s; position: relative; }
+    .compare-slot:hover { border-color: var(--accent-primary); }
+    .compare-slot--filled { border-style: solid; border-color: var(--accent-primary); }
+    .compare-slot__name { font-weight: var(--font-bold); font-size: var(--text-sm); margin-top: var(--space-2); }
+    .compare-slot__platform { font-size: var(--text-xs); color: var(--text-tertiary); }
+    .compare-slot__remove { position: absolute; top: 4px; right: 8px; background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: var(--text-lg); }
+    .compare-slot__remove:hover { color: var(--error); }
+    .compare-table { width: 100%; border-collapse: collapse; background: var(--bg-card); border-radius: var(--radius-xl); overflow: hidden; border: 1px solid var(--border-primary); }
+    .compare-table th, .compare-table td { padding: var(--space-3) var(--space-4); text-align: center; border-bottom: 1px solid var(--border-primary); font-size: var(--text-sm); }
+    .compare-table th { background: var(--bg-tertiary); font-weight: var(--font-semibold); color: var(--text-secondary); text-transform: uppercase; font-size: var(--text-xs); letter-spacing: 0.05em; }
+    .compare-table td:first-child, .compare-table th:first-child { text-align: left; font-weight: var(--font-medium); }
+    .compare-winner { background: rgba(99, 102, 241, 0.1); font-weight: var(--font-bold); color: var(--accent-primary); }
+    .compare-actions { display: flex; gap: var(--space-3); justify-content: center; margin: var(--space-6) 0; }
+    .compare-share-url { background: var(--bg-tertiary); border: 1px solid var(--border-primary); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4); font-size: var(--text-sm); color: var(--text-secondary); text-align: center; margin-top: var(--space-4); display: none; word-break: break-all; }
+    .search-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: var(--radius-lg); max-height: 200px; overflow-y: auto; z-index: 10; display: none; }
+    .search-dropdown__item { padding: var(--space-2) var(--space-3); cursor: pointer; font-size: var(--text-sm); text-align: left; border-bottom: 1px solid var(--border-primary); }
+    .search-dropdown__item:hover { background: var(--bg-tertiary); }
+    .search-dropdown__item:last-child { border-bottom: none; }
+    @media (max-width: 767px) {
+        .compare-hero__title { font-size: var(--text-2xl); }
+        .compare-table { font-size: var(--text-xs); }
+        .compare-table th, .compare-table td { padding: var(--space-2); }
+        .compare-slots { flex-direction: column; align-items: center; }
+    }
+</style>
+
+<div class="compare-page">
+    <div class="compare-hero">
+        <h1 class="compare-hero__title">Compare Groups Side by Side</h1>
+        <p class="compare-hero__subtitle">Pick up to 5 groups and see how they stack up. Trust scores, activity, reviews, and more.</p>
+        <div class="compare-search" style="position:relative">
+            <input type="text" class="form-input" id="compare-search" placeholder="Search for a group to add...">
+            <button class="btn btn-primary" id="compare-search-btn">Add</button>
+            <div class="search-dropdown" id="compare-dropdown"></div>
+        </div>
+    </div>
+
+    <div class="compare-slots" id="compare-slots">
+        <div class="compare-slot" id="slot-0" onclick="document.getElementById('compare-search').focus()">
+            <div style="font-size:var(--text-2xl);color:var(--text-tertiary)">+</div>
+            <div class="compare-slot__name" style="color:var(--text-tertiary)">Add Group</div>
+        </div>
+        <div class="compare-slot" id="slot-1" onclick="document.getElementById('compare-search').focus()">
+            <div style="font-size:var(--text-2xl);color:var(--text-tertiary)">+</div>
+            <div class="compare-slot__name" style="color:var(--text-tertiary)">Add Group</div>
+        </div>
+        <div class="compare-slot" id="slot-2" onclick="document.getElementById('compare-search').focus()" style="display:none">
+            <div style="font-size:var(--text-2xl);color:var(--text-tertiary)">+</div>
+            <div class="compare-slot__name" style="color:var(--text-tertiary)">Add Group</div>
+        </div>
+    </div>
+
+    <div class="compare-actions">
+        <button class="btn btn-primary" id="compare-btn" disabled>Compare Now</button>
+        <button class="btn btn-secondary" id="share-compare-btn" style="display:none">Share Comparison</button>
+        <button class="btn btn-ghost" id="reset-compare-btn" style="display:none">Reset</button>
+    </div>
+
+    <div id="compare-results" style="display:none">
+        <div id="compare-table-wrap"></div>
+    </div>
+
+    <div class="compare-share-url" id="compare-share-url"></div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+document.addEventListener('DOMContentLoaded', function() {
+    var selectedGroups = [];
+    var maxGroups = 5;
+    var debounceTimer = null;
+    var searchInput = document.getElementById('compare-search');
+    var dropdown = document.getElementById('compare-dropdown');
+
+    // Check URL params for pre-loaded comparison
+    var params = new URLSearchParams(window.location.search);
+    var compareSlug = params.get('c');
+    var compareIds = params.get('ids');
+    if (compareSlug) loadFromSlug(compareSlug);
+    else if (compareIds) loadFromIds(compareIds.split(','));
+
+    // Search input
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        var q = searchInput.value.trim();
+        if (q.length < 2) { dropdown.style.display = 'none'; return; }
+        debounceTimer = setTimeout(async function() {
+            try {
+                var groups = await DB.groups.search(q, 8);
+                if (!groups || !groups.length) {
+                    dropdown.innerHTML = '<div class="search-dropdown__item" style="color:var(--text-tertiary)">No groups found</div>';
+                    dropdown.style.display = 'block';
+                    return;
+                }
+                dropdown.innerHTML = groups.filter(function(g) {
+                    return !selectedGroups.find(function(s) { return s.id === g.id; });
+                }).map(function(g) {
+                    return '<div class="search-dropdown__item" data-id="' + g.id + '" data-name="' + Security.sanitize(g.name) + '" data-platform="' + Security.sanitize(g.platform || '') + '">' +
+                        '<strong>' + Security.sanitize(g.name) + '</strong>' +
+                        '<span style="color:var(--text-tertiary);margin-left:var(--space-2);font-size:var(--text-xs)">' + Security.sanitize(g.platform || '') + '</span>' +
+                        '</div>';
+                }).join('');
+                dropdown.style.display = 'block';
+                dropdown.querySelectorAll('.search-dropdown__item[data-id]').forEach(function(el) {
+                    el.addEventListener('click', function() {
+                        addGroup({ id: el.dataset.id, name: el.dataset.name, platform: el.dataset.platform });
+                        dropdown.style.display = 'none';
+                        searchInput.value = '';
+                    });
+                });
+            } catch (err) { console.error(err); }
+        }, 300);
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.compare-search')) dropdown.style.display = 'none';
+    });
+
+    function addGroup(g) {
+        if (selectedGroups.length >= maxGroups) { UI.toast('Maximum 5 groups', 'warning'); return; }
+        if (selectedGroups.find(function(s) { return s.id === g.id; })) { UI.toast('Already added', 'info'); return; }
+        selectedGroups.push(g);
+        renderSlots();
+    }
+
+    function removeGroup(idx) {
+        selectedGroups.splice(idx, 1);
+        renderSlots();
+        document.getElementById('compare-results').style.display = 'none';
+    }
+
+    function renderSlots() {
+        var slotsEl = document.getElementById('compare-slots');
+        var html = '';
+        for (var i = 0; i < selectedGroups.length; i++) {
+            html += '<div class="compare-slot compare-slot--filled">' +
+                '<button class="compare-slot__remove" onclick="window._removeGroup(' + i + ')">&times;</button>' +
+                '<div style="font-size:var(--text-xl)">' + platformEmoji(selectedGroups[i].platform) + '</div>' +
+                '<div class="compare-slot__name">' + Security.sanitize(selectedGroups[i].name) + '</div>' +
+                '<div class="compare-slot__platform">' + Security.sanitize(selectedGroups[i].platform) + '</div>' +
+                '</div>';
+        }
+        if (selectedGroups.length < maxGroups) {
+            html += '<div class="compare-slot" onclick="document.getElementById(\'compare-search\').focus()">' +
+                '<div style="font-size:var(--text-2xl);color:var(--text-tertiary)">+</div>' +
+                '<div class="compare-slot__name" style="color:var(--text-tertiary)">Add Group</div></div>';
+        }
+        slotsEl.innerHTML = html;
+        document.getElementById('compare-btn').disabled = selectedGroups.length < 2;
+        document.getElementById('reset-compare-btn').style.display = selectedGroups.length > 0 ? '' : 'none';
+    }
+
+    window._removeGroup = removeGroup;
+
+    function platformEmoji(p) {
+        var map = { whatsapp: '&#128172;', telegram: '&#9992;', discord: '&#127918;', facebook: '&#128077;', signal: '&#128274;' };
+        return map[(p || '').toLowerCase()] || '&#128101;';
+    }
+
+    // Compare button
+    document.getElementById('compare-btn').addEventListener('click', runComparison);
+
+    async function runComparison() {
+        if (selectedGroups.length < 2) return;
+        var btn = document.getElementById('compare-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="btn-spinner"></span> Comparing...';
+
+        try {
+            var ids = selectedGroups.map(function(g) { return g.id; });
+            var res = await fetch('/api/compare-groups?ids=' + ids.join(','));
+            var json = await res.json();
+
+            if (!json.ok || !json.groups || !json.groups.length) {
+                UI.toast('Failed to load comparison', 'error');
+                return;
+            }
+
+            renderComparisonTable(json.groups, json.winners || {});
+            document.getElementById('compare-results').style.display = 'block';
+            document.getElementById('share-compare-btn').style.display = '';
+
+            // Update URL
+            window.history.replaceState({}, '', '/compare?ids=' + ids.join(','));
+        } catch (err) {
+            console.error(err);
+            UI.toast('Comparison failed', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'Compare Now';
+        }
+    }
+
+    function renderComparisonTable(groups, winners) {
+        var metrics = [
+            { key: 'trust_score', label: 'Trust Score', suffix: '/100' },
+            { key: 'members_count', label: 'Members', format: 'number' },
+            { key: 'views', label: 'Total Views', format: 'number' },
+            { key: 'avg_rating', label: 'Avg Rating', suffix: '/5', decimals: 1 },
+            { key: 'review_count', label: 'Reviews', format: 'number' },
+            { key: 'recent_views', label: 'Activity (7d)', format: 'number' },
+            { key: 'clicks', label: 'Join Clicks', format: 'number' },
+            { key: 'reports', label: 'Reports' },
+            { key: 'platform', label: 'Platform', isText: true },
+            { key: 'category', label: 'Category', isText: true },
+            { key: 'country', label: 'Country', isText: true },
+            { key: 'status', label: 'Status', isText: true }
+        ];
+
+        var html = '<table class="compare-table">';
+        html += '<thead><tr><th>Metric</th>';
+        for (var i = 0; i < groups.length; i++) {
+            html += '<th><a href="/group?id=' + groups[i].id + '" style="color:inherit;text-decoration:none">' + Security.sanitize(groups[i].name || 'Group') + '</a></th>';
+        }
+        html += '</tr></thead><tbody>';
+
+        for (var m = 0; m < metrics.length; m++) {
+            var metric = metrics[m];
+            html += '<tr><td>' + metric.label + '</td>';
+            for (var g = 0; g < groups.length; g++) {
+                var val = groups[g][metric.key];
+                var isWinner = winners[metric.key] === groups[g].id;
+                var cls = isWinner ? ' class="compare-winner"' : '';
+                var display = '';
+                if (metric.isText) {
+                    display = Security.sanitize(val || 'N/A');
+                } else if (metric.format === 'number') {
+                    display = UI.formatNumber(val || 0);
+                } else if (metric.decimals) {
+                    display = (parseFloat(val) || 0).toFixed(metric.decimals);
+                } else {
+                    display = (val || 0).toString();
+                }
+                if (metric.suffix) display += metric.suffix;
+                if (isWinner && !metric.isText) display += ' &#127942;';
+                html += '<td' + cls + '>' + display + '</td>';
+            }
+            html += '</tr>';
+        }
+        html += '</tbody></table>';
+        document.getElementById('compare-table-wrap').innerHTML = html;
+    }
+
+    // Share
+    document.getElementById('share-compare-btn').addEventListener('click', async function() {
+        try {
+            var ids = selectedGroups.map(function(g) { return g.id; });
+            var res = await fetch('/api/compare-groups', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ group_ids: ids })
+            });
+            var json = await res.json();
+            if (json.ok && json.share_url) {
+                var shareEl = document.getElementById('compare-share-url');
+                shareEl.textContent = json.share_url;
+                shareEl.style.display = 'block';
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(json.share_url);
+                    UI.toast('Share link copied!', 'success');
+                }
+            }
+        } catch (err) { UI.toast('Failed to generate share link', 'error'); }
+    });
+
+    // Reset
+    document.getElementById('reset-compare-btn').addEventListener('click', function() {
+        selectedGroups = [];
+        renderSlots();
+        document.getElementById('compare-results').style.display = 'none';
+        document.getElementById('share-compare-btn').style.display = 'none';
+        document.getElementById('compare-share-url').style.display = 'none';
+        window.history.replaceState({}, '', '/compare');
+    });
+
+    // Load from slug
+    async function loadFromSlug(slug) {
+        try {
+            var res = await fetch('/api/compare-groups?slug=' + encodeURIComponent(slug));
+            var json = await res.json();
+            if (json.ok && json.groups) {
+                json.groups.forEach(function(g) { addGroup(g); });
+                renderComparisonTable(json.groups, json.winners || {});
+                document.getElementById('compare-results').style.display = 'block';
+                document.getElementById('share-compare-btn').style.display = '';
+            }
+        } catch (err) { console.error(err); }
+    }
+
+    // Load from IDs
+    async function loadFromIds(ids) {
+        try {
+            var res = await fetch('/api/compare-groups?ids=' + ids.join(','));
+            var json = await res.json();
+            if (json.ok && json.groups) {
+                json.groups.forEach(function(g) { addGroup(g); });
+                renderComparisonTable(json.groups, json.winners || {});
+                document.getElementById('compare-results').style.display = 'block';
+                document.getElementById('share-compare-btn').style.display = '';
+            }
+        } catch (err) { console.error(err); }
+    }
+});
+</script>
+</Fragment>
+</BaseLayout>

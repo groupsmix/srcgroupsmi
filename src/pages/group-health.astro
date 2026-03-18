@@ -1,0 +1,246 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Group Health Dashboard — GroupsMix"
+  description="See how your group is performing. Track trust score trends, compare against similar groups, and get actionable tips to grow."
+  cssFiles={["/assets/css/features.css?v=20260310b"]}
+  includeFeatures={true}
+>
+<style is:inline>
+    .health-page { max-width: var(--container-lg); margin: 0 auto; padding: var(--space-8) var(--space-4); }
+    .health-hero { text-align: center; margin-bottom: var(--space-8); }
+    .health-hero__title { font-size: var(--text-3xl); font-weight: var(--font-bold); margin-bottom: var(--space-3); }
+    .health-hero__subtitle { color: var(--text-secondary); max-width: 600px; margin: 0 auto; }
+    .health-score-ring { width: 140px; height: 140px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-4); font-size: var(--text-4xl); font-weight: var(--font-bold); }
+    .health-score-ring--good { background: rgba(76, 175, 80, 0.15); color: #4caf50; border: 3px solid #4caf50; }
+    .health-score-ring--ok { background: rgba(255, 152, 0, 0.15); color: #ff9800; border: 3px solid #ff9800; }
+    .health-score-ring--bad { background: rgba(244, 67, 54, 0.15); color: #f44336; border: 3px solid #f44336; }
+    .health-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); margin-bottom: var(--space-6); }
+    .health-stat { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: var(--radius-lg); padding: var(--space-4); text-align: center; }
+    .health-stat__value { font-size: var(--text-2xl); font-weight: var(--font-bold); }
+    .health-stat__label { font-size: var(--text-xs); color: var(--text-tertiary); margin-top: var(--space-1); }
+    .health-stat__trend { font-size: var(--text-xs); margin-top: var(--space-1); }
+    .health-stat__trend--up { color: #4caf50; }
+    .health-stat__trend--down { color: #f44336; }
+    .health-section { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: var(--radius-xl); padding: var(--space-6); margin-bottom: var(--space-6); }
+    .health-section__title { font-size: var(--text-lg); font-weight: var(--font-bold); margin-bottom: var(--space-4); }
+    .rank-bar { height: 24px; background: var(--bg-tertiary); border-radius: var(--radius-full); overflow: hidden; margin: var(--space-3) 0; }
+    .rank-bar__fill { height: 100%; background: linear-gradient(90deg, var(--accent-primary), #9c27b0); border-radius: var(--radius-full); transition: width 0.5s; }
+    .rank-text { display: flex; justify-content: space-between; font-size: var(--text-sm); color: var(--text-secondary); }
+    .chart-placeholder { height: 200px; display: flex; align-items: flex-end; gap: 2px; padding: var(--space-2); }
+    .chart-bar { flex: 1; background: var(--accent-primary); border-radius: 2px 2px 0 0; min-height: 4px; transition: height 0.3s; opacity: 0.7; }
+    .chart-bar:hover { opacity: 1; }
+    .verified-badge-cta { background: linear-gradient(135deg, var(--accent-primary), #9c27b0); color: #fff; border-radius: var(--radius-xl); padding: var(--space-6); text-align: center; margin-bottom: var(--space-6); }
+    .verified-badge-cta h3 { margin: 0 0 var(--space-2); }
+    .verified-badge-cta p { opacity: 0.9; margin: 0 0 var(--space-4); font-size: var(--text-sm); }
+    @media (max-width: 767px) {
+        .health-hero__title { font-size: var(--text-2xl); }
+        .health-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+</style>
+
+<div class="health-page">
+    <div class="health-hero">
+        <h1 class="health-hero__title">Group Health Dashboard</h1>
+        <p class="health-hero__subtitle">Track your group's performance, see trends, and get tips to rank higher.</p>
+    </div>
+
+    <div id="health-login-prompt" style="display:none;text-align:center;padding:var(--space-12);background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl)">
+        <div style="font-size:var(--text-4xl);margin-bottom:var(--space-4)">&#128274;</div>
+        <h2 style="margin-bottom:var(--space-2)">Sign In Required</h2>
+        <p style="color:var(--text-secondary);margin-bottom:var(--space-4)">Sign in to see your group health metrics.</p>
+        <button class="btn btn-primary" onclick="Auth.showLoginModal()">Sign In</button>
+    </div>
+
+    <div id="health-select-group" style="display:none;text-align:center;padding:var(--space-8)">
+        <h3 style="margin-bottom:var(--space-4)">Select a Group</h3>
+        <div id="health-group-list"></div>
+    </div>
+
+    <div id="health-content" style="display:none">
+        <div style="text-align:center;margin-bottom:var(--space-6)">
+            <div class="health-score-ring" id="health-score-ring">-</div>
+            <div style="font-size:var(--text-lg);font-weight:var(--font-semibold)" id="health-group-name"></div>
+            <div style="font-size:var(--text-sm);color:var(--text-secondary)" id="health-group-meta"></div>
+        </div>
+
+        <div id="verified-cta-wrap"></div>
+
+        <div class="health-stats" id="health-stats-grid"></div>
+
+        <div class="health-section">
+            <div class="health-section__title">&#128200; Category Ranking</div>
+            <div id="rank-section"></div>
+        </div>
+
+        <div class="health-section">
+            <div class="health-section__title">&#128202; Trust Score History (30 days)</div>
+            <div class="chart-placeholder" id="trust-chart"></div>
+        </div>
+
+        <div class="health-section">
+            <div class="health-section__title">&#128161; Growth Tips</div>
+            <div id="health-tips"></div>
+        </div>
+
+        <div style="text-align:center;margin-top:var(--space-4)">
+            <a href="/compare" class="btn btn-secondary">Compare With Other Groups</a>
+            <a href="/owner-dashboard" class="btn btn-ghost">Full Owner Dashboard</a>
+        </div>
+    </div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+document.addEventListener('DOMContentLoaded', async function() {
+    await Auth.waitForAuth();
+
+    var params = new URLSearchParams(window.location.search);
+    var groupIdParam = params.get('group_id') || params.get('id');
+
+    if (groupIdParam) {
+        loadGroupHealth(groupIdParam);
+        return;
+    }
+
+    if (!Auth.isLoggedIn()) {
+        document.getElementById('health-login-prompt').style.display = 'block';
+        return;
+    }
+
+    // Show user's groups to pick from
+    var uid = Auth.getUserId();
+    try {
+        var { data: groups } = await window.supabaseClient
+            .from('groups')
+            .select('id,name,platform,category,trust_score')
+            .eq('submitted_by', uid)
+            .order('created_at', { ascending: false });
+
+        if (!groups || !groups.length) {
+            document.getElementById('health-select-group').style.display = 'block';
+            document.getElementById('health-group-list').innerHTML =
+                '<p style="color:var(--text-tertiary)">You haven\'t submitted any groups yet.</p>' +
+                '<a href="/submit" class="btn btn-primary" style="margin-top:var(--space-3)">Submit Your First Group</a>';
+            return;
+        }
+
+        if (groups.length === 1) {
+            loadGroupHealth(groups[0].id);
+            return;
+        }
+
+        document.getElementById('health-select-group').style.display = 'block';
+        document.getElementById('health-group-list').innerHTML = groups.map(function(g) {
+            return '<button class="btn btn-secondary" style="margin:var(--space-2)" onclick="loadGroupHealth(\'' + g.id + '\')">' +
+                Security.sanitize(g.name) + ' <span style="color:var(--text-tertiary);font-size:var(--text-xs)">' + Security.sanitize(g.platform || '') + '</span></button>';
+        }).join('');
+    } catch (err) {
+        console.error(err);
+        UI.toast('Failed to load groups', 'error');
+    }
+});
+
+async function loadGroupHealth(groupId) {
+    document.getElementById('health-select-group').style.display = 'none';
+    document.getElementById('health-login-prompt').style.display = 'none';
+    document.getElementById('health-content').style.display = 'block';
+
+    try {
+        var res = await fetch('/api/group-health?group_id=' + encodeURIComponent(groupId) + '&days=30');
+        var json = await res.json();
+        if (!json.ok) { UI.toast(json.error || 'Failed to load', 'error'); return; }
+
+        var g = json.group;
+        var score = json.health_score;
+
+        // Health score ring
+        var ringEl = document.getElementById('health-score-ring');
+        ringEl.textContent = score;
+        ringEl.className = 'health-score-ring ' + (score >= 70 ? 'health-score-ring--good' : score >= 40 ? 'health-score-ring--ok' : 'health-score-ring--bad');
+
+        document.getElementById('health-group-name').textContent = g.name;
+        document.getElementById('health-group-meta').textContent = (g.platform || '') + ' \u00B7 ' + (g.category || '') + ' \u00B7 ' + (g.status || '');
+
+        // Verified CTA
+        var ctaWrap = document.getElementById('verified-cta-wrap');
+        if (!json.is_verified) {
+            ctaWrap.innerHTML = '<div class="verified-badge-cta">' +
+                '<h3>&#9989; Get Verified</h3>' +
+                '<p>Verified groups get +15 trust score, a badge on their listing, and higher feed ranking.</p>' +
+                '<a href="/verified?group_id=' + groupId + '" class="btn" style="background:#fff;color:#333;font-weight:var(--font-bold)">Get Verified — 500 GMX</a>' +
+                '</div>';
+        } else {
+            ctaWrap.innerHTML = '<div style="text-align:center;padding:var(--space-3);background:rgba(76,175,80,0.1);border-radius:var(--radius-lg);margin-bottom:var(--space-6);color:#4caf50;font-weight:var(--font-semibold)">&#9989; Verified Group</div>';
+        }
+
+        // Stats
+        var trends = json.trends || {};
+        function trendHtml(val) {
+            if (!val) return '';
+            var cls = val > 0 ? 'health-stat__trend--up' : val < 0 ? 'health-stat__trend--down' : '';
+            return '<div class="health-stat__trend ' + cls + '">' + (val > 0 ? '+' : '') + val + ' (30d)</div>';
+        }
+
+        document.getElementById('health-stats-grid').innerHTML =
+            '<div class="health-stat"><div class="health-stat__value">' + (g.trust_score || 0) + '</div><div class="health-stat__label">Trust Score</div>' + trendHtml(trends.trust_score_change) + '</div>' +
+            '<div class="health-stat"><div class="health-stat__value">' + UI.formatNumber(g.views || 0) + '</div><div class="health-stat__label">Total Views</div>' + trendHtml(trends.views_gained) + '</div>' +
+            '<div class="health-stat"><div class="health-stat__value">' + UI.formatNumber(g.clicks || 0) + '</div><div class="health-stat__label">Join Clicks</div>' + trendHtml(trends.clicks_gained) + '</div>' +
+            '<div class="health-stat"><div class="health-stat__value">' + (g.review_count || 0) + '</div><div class="health-stat__label">Reviews</div>' + trendHtml(trends.reviews_gained) + '</div>';
+
+        // Rank
+        var rankEl = document.getElementById('rank-section');
+        if (json.rank && json.rank.length > 0) {
+            var r = json.rank[0];
+            rankEl.innerHTML =
+                '<div class="rank-text"><span>#' + r.rank_in_category + ' of ' + r.total_in_category + ' in ' + Security.sanitize(r.category || '') + '</span><span>Top ' + (100 - r.percentile).toFixed(0) + '%</span></div>' +
+                '<div class="rank-bar"><div class="rank-bar__fill" style="width:' + Math.max(r.percentile, 5) + '%"></div></div>' +
+                '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3);margin-top:var(--space-4);font-size:var(--text-sm)">' +
+                '<div><strong>Your Trust:</strong> ' + (g.trust_score || 0) + '<br><span style="color:var(--text-tertiary)">Avg: ' + (r.avg_trust_in_category || 0) + '</span></div>' +
+                '<div><strong>Your Views:</strong> ' + UI.formatNumber(g.views || 0) + '<br><span style="color:var(--text-tertiary)">Avg: ' + UI.formatNumber(r.avg_views_in_category || 0) + '</span></div>' +
+                '<div><strong>Your Reviews:</strong> ' + (g.review_count || 0) + '<br><span style="color:var(--text-tertiary)">Avg: ' + (r.avg_reviews_in_category || 0) + '</span></div>' +
+                '</div>';
+        } else {
+            rankEl.innerHTML = '<p style="color:var(--text-tertiary)">Not enough data for ranking yet.</p>';
+        }
+
+        // Trust chart
+        var chartEl = document.getElementById('trust-chart');
+        var history = json.history || [];
+        if (history.length > 0) {
+            var maxTrust = Math.max.apply(null, history.map(function(h) { return h.trust_score || 0; }));
+            chartEl.innerHTML = history.map(function(h) {
+                var pct = maxTrust > 0 ? ((h.trust_score || 0) / maxTrust * 100) : 10;
+                return '<div class="chart-bar" style="height:' + Math.max(pct, 5) + '%" title="' + h.snapshot_date + ': ' + (h.trust_score || 0) + '"></div>';
+            }).join('');
+        } else {
+            chartEl.innerHTML = '<div style="width:100%;text-align:center;color:var(--text-tertiary);align-self:center">No history data yet. Check back tomorrow.</div>';
+        }
+
+        // Tips
+        var tips = [];
+        if ((g.trust_score || 0) < 50) tips.push({ icon: '&#128737;', text: 'Your trust score is below average. Get reviews, verify your group, and add a detailed description to improve it.' });
+        if ((g.review_count || 0) < 3) tips.push({ icon: '&#11088;', text: 'Groups with 3+ reviews rank significantly higher. Ask members to leave reviews.' });
+        if (!json.is_verified) tips.push({ icon: '&#9989;', text: 'Get verified to boost your trust score by 15 points and stand out in search results.' });
+        if ((trends.views_gained || 0) === 0) tips.push({ icon: '&#128200;', text: 'Your views haven\'t grown this month. Try sharing your GroupsMix profile on social media.' });
+        if ((g.clicks || 0) < (g.views || 1) * 0.05) tips.push({ icon: '&#128073;', text: 'Your click-through rate is low. Update your group name and description to be more compelling.' });
+        tips.push({ icon: '&#127760;', text: 'Embed a widget on your website to drive traffic: <a href="/embed?group=' + groupId + '" style="color:var(--accent-primary)">Get Widget</a>' });
+
+        document.getElementById('health-tips').innerHTML = tips.map(function(t) {
+            return '<div style="display:flex;gap:var(--space-3);padding:var(--space-3);background:var(--bg-tertiary);border-radius:var(--radius-lg);margin-bottom:var(--space-2)">' +
+                '<span style="font-size:var(--text-xl);flex-shrink:0">' + t.icon + '</span>' +
+                '<span style="font-size:var(--text-sm)">' + t.text + '</span></div>';
+        }).join('');
+
+        // Update URL
+        window.history.replaceState({}, '', '/group-health?group_id=' + groupId);
+    } catch (err) {
+        console.error('loadGroupHealth:', err);
+        UI.toast('Failed to load health data', 'error');
+    }
+}
+window.loadGroupHealth = loadGroupHealth;
+</script>
+</Fragment>
+</BaseLayout>

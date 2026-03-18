@@ -1,0 +1,151 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Top Group Owners — GroupsMix"
+  description="See the top group owners on GroupsMix this month. Compete for the highest owner score based on groups, views, trust scores, and reviews."
+  cssFiles={["/assets/css/features.css?v=20260310b"]}
+  includeFeatures={true}
+>
+<style is:inline>
+    .olb-page { max-width: var(--container-md); margin: 0 auto; padding: var(--space-8) var(--space-4); }
+    .olb-hero { text-align: center; margin-bottom: var(--space-6); }
+    .olb-hero__title { font-size: var(--text-3xl); font-weight: var(--font-bold); margin-bottom: var(--space-2); }
+    .olb-hero__subtitle { color: var(--text-secondary); max-width: 500px; margin: 0 auto; }
+    .olb-tabs { display: flex; justify-content: center; gap: var(--space-2); margin-bottom: var(--space-6); flex-wrap: wrap; }
+    .olb-podium { display: flex; gap: var(--space-4); justify-content: center; align-items: flex-end; margin-bottom: var(--space-8); }
+    .olb-podium__item { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: var(--radius-xl); padding: var(--space-4); text-align: center; width: 160px; }
+    .olb-podium__item--1 { order: 2; border-color: #ffd700; box-shadow: 0 0 20px rgba(255,215,0,0.15); }
+    .olb-podium__item--2 { order: 1; }
+    .olb-podium__item--3 { order: 3; }
+    .olb-podium__rank { font-size: var(--text-3xl); margin-bottom: var(--space-2); }
+    .olb-podium__avatar { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto var(--space-2); background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; font-size: var(--text-xl); overflow: hidden; }
+    .olb-podium__avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .olb-podium__name { font-weight: var(--font-bold); font-size: var(--text-sm); margin-bottom: var(--space-1); }
+    .olb-podium__score { color: var(--accent-primary); font-weight: var(--font-bold); font-size: var(--text-lg); }
+    .olb-podium__meta { font-size: var(--text-xs); color: var(--text-tertiary); margin-top: var(--space-1); }
+    .olb-list { background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: var(--radius-xl); overflow: hidden; }
+    .olb-row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border-primary); }
+    .olb-row:last-child { border-bottom: none; }
+    .olb-row__rank { font-weight: var(--font-bold); color: var(--text-tertiary); width: 32px; text-align: center; font-size: var(--text-sm); }
+    .olb-row__avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; font-size: var(--text-base); overflow: hidden; flex-shrink: 0; }
+    .olb-row__avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .olb-row__info { flex: 1; min-width: 0; }
+    .olb-row__name { font-weight: var(--font-semibold); font-size: var(--text-sm); }
+    .olb-row__stats { font-size: var(--text-xs); color: var(--text-tertiary); }
+    .olb-row__score { font-weight: var(--font-bold); color: var(--accent-primary); font-size: var(--text-sm); text-align: right; }
+    @media (max-width: 767px) {
+        .olb-hero__title { font-size: var(--text-2xl); }
+        .olb-podium { flex-direction: column; align-items: center; }
+        .olb-podium__item { order: unset !important; width: 100%; max-width: 200px; }
+    }
+</style>
+
+<div class="olb-page">
+    <div class="olb-hero">
+        <h1 class="olb-hero__title">&#127942; Top Group Owners</h1>
+        <p class="olb-hero__subtitle">The most active group owners on GroupsMix. Submit groups, grow your audience, and climb the leaderboard.</p>
+    </div>
+
+    <div class="olb-tabs">
+        <button class="btn btn-sm btn-primary olb-tab" data-sort="score">By Score</button>
+        <button class="btn btn-sm btn-ghost olb-tab" data-sort="groups">Most Groups</button>
+        <button class="btn btn-sm btn-ghost olb-tab" data-sort="views">Most Views</button>
+        <button class="btn btn-sm btn-ghost olb-tab" data-sort="trust">Highest Trust</button>
+    </div>
+
+    <div id="olb-podium" class="olb-podium">
+        <div class="skeleton" style="width:160px;height:200px;border-radius:var(--radius-xl)"></div>
+        <div class="skeleton" style="width:160px;height:230px;border-radius:var(--radius-xl)"></div>
+        <div class="skeleton" style="width:160px;height:200px;border-radius:var(--radius-xl)"></div>
+    </div>
+
+    <div class="olb-list" id="olb-list">
+        <div class="skeleton" style="height:400px"></div>
+    </div>
+
+    <div style="text-align:center;margin-top:var(--space-6)">
+        <a href="/submit" class="btn btn-primary">Submit Your Group</a>
+        <a href="/leaderboard" class="btn btn-ghost">Writer Leaderboard</a>
+    </div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+document.addEventListener('DOMContentLoaded', function() {
+    loadOwnerLeaderboard('score');
+
+    document.querySelectorAll('.olb-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.olb-tab').forEach(function(t) { t.className = 'btn btn-sm btn-ghost olb-tab'; });
+            tab.className = 'btn btn-sm btn-primary olb-tab';
+            loadOwnerLeaderboard(tab.dataset.sort);
+        });
+    });
+});
+
+async function loadOwnerLeaderboard(sortBy) {
+    var podiumEl = document.getElementById('olb-podium');
+    var listEl = document.getElementById('olb-list');
+    podiumEl.innerHTML = '<div class="skeleton" style="width:160px;height:200px;border-radius:var(--radius-xl)"></div><div class="skeleton" style="width:160px;height:230px;border-radius:var(--radius-xl)"></div><div class="skeleton" style="width:160px;height:200px;border-radius:var(--radius-xl)"></div>';
+    listEl.innerHTML = '<div class="skeleton" style="height:400px"></div>';
+
+    try {
+        var res = await fetch('/api/owner-leaderboard?sort=' + sortBy + '&limit=20');
+        var json = await res.json();
+        if (!json.ok || !json.leaderboard || !json.leaderboard.length) {
+            podiumEl.innerHTML = '';
+            listEl.innerHTML = '<div style="padding:var(--space-8);text-align:center;color:var(--text-tertiary)">No group owners yet. Be the first!</div>';
+            return;
+        }
+
+        var lb = json.leaderboard;
+        var medals = ['&#129351;', '&#129352;', '&#129353;'];
+
+        // Podium (top 3)
+        if (lb.length >= 3) {
+            podiumEl.innerHTML = [1, 0, 2].map(function(idx) {
+                var u = lb[idx];
+                return '<div class="olb-podium__item olb-podium__item--' + (idx + 1) + '">' +
+                    '<div class="olb-podium__rank">' + medals[idx] + '</div>' +
+                    '<div class="olb-podium__avatar">' +
+                    (u.photo_url ? '<img src="' + Security.sanitize(u.photo_url) + '" loading="lazy">' : (u.display_name || '?').charAt(0).toUpperCase()) +
+                    '</div>' +
+                    '<div class="olb-podium__name">' + Security.sanitize(u.display_name || 'Anonymous') + '</div>' +
+                    '<div class="olb-podium__score">' + UI.formatNumber(Math.round(u.owner_score || 0)) + '</div>' +
+                    '<div class="olb-podium__meta">' + (u.total_groups || 0) + ' groups &middot; ' + UI.formatNumber(u.total_views || 0) + ' views</div>' +
+                    '</div>';
+            }).join('');
+        } else {
+            podiumEl.innerHTML = '';
+        }
+
+        // List (rank 4+)
+        var startIdx = Math.min(3, lb.length);
+        if (startIdx >= lb.length) {
+            listEl.innerHTML = '';
+            return;
+        }
+
+        listEl.innerHTML = lb.slice(startIdx).map(function(u, i) {
+            return '<div class="olb-row">' +
+                '<div class="olb-row__rank">#' + (i + 4) + '</div>' +
+                '<div class="olb-row__avatar">' +
+                (u.photo_url ? '<img src="' + Security.sanitize(u.photo_url) + '" loading="lazy">' : (u.display_name || '?').charAt(0).toUpperCase()) +
+                '</div>' +
+                '<div class="olb-row__info">' +
+                '<div class="olb-row__name">' + Security.sanitize(u.display_name || 'Anonymous') + '</div>' +
+                '<div class="olb-row__stats">' + (u.total_groups || 0) + ' groups &middot; ' + UI.formatNumber(u.total_views || 0) + ' views &middot; Trust: ' + (parseFloat(u.avg_trust_score) || 0).toFixed(0) + '</div>' +
+                '</div>' +
+                '<div class="olb-row__score">' + UI.formatNumber(Math.round(u.owner_score || 0)) + ' pts</div>' +
+                '</div>';
+        }).join('');
+
+    } catch (err) {
+        console.error('loadOwnerLeaderboard:', err);
+        listEl.innerHTML = '<div style="padding:var(--space-4);text-align:center;color:var(--text-tertiary)">Failed to load leaderboard</div>';
+    }
+}
+</script>
+</Fragment>
+</BaseLayout>
