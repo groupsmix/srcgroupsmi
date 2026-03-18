@@ -1,0 +1,346 @@
+/**
+ * /api/feed — Personalized Smart Feed API
+ *
+ * GET /api/feed?type=groups&user_id=X    — Personalized group feed
+ * GET /api/feed?type=articles&user_id=X  — Personalized article feed
+ * GET /api/feed?type=digest&user_id=X    — "What you missed" digest
+ * GET /api/feed?type=trending            — Trending content (no auth needed)
+ *
+ * Combines 6 algorithm features:
+ * 1. Already-seen filter (decay-based suppression)
+ * 2. Collaborative filtering ("users who liked X also liked Y")
+ * 3. Interest-based ranking (weighted personalized score)
+ * 4. Exploration vs Exploitation (70/30 multi-armed bandit)
+ * 5. Session-aware rotation (fresh content on return)
+ * 6. Trending/velocity scores (engagement per hour)
+ */
+
+var ALLOWED_ORIGINS = ['https://groupsmix.com', 'https://www.groupsmix.com'];
+
+function corsHeaders(origin) {
+    var allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+    return {
+        'Access-Control-Allow-Origin': allowed,
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Content-Type': 'application/json',
+        'Cache-Control': 'private, max-age=60'
+    };
+}
+
+function jsonResponse(data, status, origin) {
+    return new Response(JSON.stringify(data), {
+        status: status,
+        headers: corsHeaders(origin)
+    });
+}
+
+// Call a Supabase RPC function
+async function callRpc(supabaseUrl, supabaseKey, fnName, params) {
+    var res = await fetch(supabaseUrl + '/rest/v1/rpc/' + fnName, {
+        method: 'POST',
+        headers: {
+            'apikey': supabaseKey,
+            'Authorization': 'Bearer ' + supabaseKey,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(params)
+    });
+
+    if (!res.ok) {
+        var errText = await res.text();
+        console.error('RPC ' + fnName + ' error:', res.status, errText);
+        return null;
+    }
+
+    return res.json();
+}
+
+// Query Supabase REST API
+async function queryTable(supabaseUrl, supabaseKey, table, queryParams) {
+    var res = await fetch(
+        supabaseUrl + '/rest/v1/' + table + '?' + queryParams,
+        {
+            headers: {
+                'apikey': supabaseKey,
+                'Authorization': 'Bearer ' + supabaseKey
+            }
+        }
+    );
+
+    if (!res.ok) {
+        console.error('Query ' + table + ' error:', res.status);
+        return [];
+    }
+
+    return res.json();
+}
+
+// Get personalized group feed
+async function getGroupFeed(supabaseUrl, supabaseKey, userId, limit, offset, explorationRatio) {
+    // Try personalized feed via RPC
+    var feed = await callRpc(supabaseUrl, supabaseKey, 'get_personalized_group_feed', {
+        p_user_id: userId,
+        p_limit: limit,
+        p_offset: offset,
+        p_exploration_ratio: explorationRatio
+    });
+
+    if (feed && feed.length > 0) {
+        return {
+            ok: true,
+            feed_type: 'personalized',
+            content_type: 'groups',
+            items: feed.map(function(item) {
+                return {
+                    id: item.group_id,
+                    name: item.group_name,
+                    platform: item.group_platform,
+                    category: item.group_category,
+                    country: item.group_country,
+                    description: item.group_description,
+                    trust_score: item.group_trust_score,
+                    views: item.group_views,
+                    clicks: item.group_clicks,
+                    avg_rating: item.group_avg_rating,
+                    review_count: item.group_review_count,
+                    tags: item.group_tags,
+                    link: item.group_link,
+                    likes_count: item.group_likes_count,
+                    feed_score: item.feed_score,
+                    feed_reason: item.feed_reason,
+                    is_trending: item.is_trending,
+                    is_exploration: item.is_exploration
+                };
+            }),
+            total: feed.length,
+            algorithm: {
+                exploitation_ratio: 1 - explorationRatio,
+                exploration_ratio: explorationRatio
+            }
+        };
+    }
+
+    // Fallback: return trending groups if no personalized results
+    var groups = await queryTable(supabaseUrl, supabaseKey, 'groups',
+        'status=eq.approved&select=id,name,platform,category,country,description,trust_score,views,clicks,avg_rating,review_count,tags,link,likes_count&order=views.desc&limit=' + limit + '&offset=' + offset
+    );
+
+    return {
+        ok: true,
+        feed_type: 'popular',
+        content_type: 'groups',
+        items: groups || [],
+        total: (groups || []).length,
+        algorithm: { note: 'Fallback to popular — no user history yet' }
+    };
+}
+
+// Get personalized article feed
+async function getArticleFeed(supabaseUrl, supabaseKey, userId, limit, offset, explorationRatio) {
+    var feed = await callRpc(supabaseUrl, supabaseKey, 'get_personalized_article_feed', {
+        p_user_id: userId,
+        p_limit: limit,
+        p_offset: offset,
+        p_exploration_ratio: explorationRatio
+    });
+
+    if (feed && feed.length > 0) {
+        return {
+            ok: true,
+            feed_type: 'personalized',
+            content_type: 'articles',
+            items: feed.map(function(item) {
+                return {
+                    id: item.article_id,
+                    title: item.article_title,
+                    slug: item.article_slug,
+                    excerpt: item.article_excerpt,
+                    category: item.article_category,
+                    tags: item.article_tags,
+                    image: item.article_image,
+                    views: item.article_views,
+                    like_count: item.article_like_count,
+                    comment_count: item.article_comment_count,
+                    tip_count: item.article_tip_count,
+                    reading_time: item.article_reading_time,
+                    published_at: item.article_published_at,
+                    author_name: item.article_author_name,
+                    author_avatar: item.article_author_avatar,
+                    user_id: item.article_user_id,
+                    feed_score: item.feed_score,
+                    feed_reason: item.feed_reason,
+                    is_trending: item.is_trending,
+                    is_exploration: item.is_exploration
+                };
+            }),
+            total: feed.length,
+            algorithm: {
+                exploitation_ratio: 1 - explorationRatio,
+                exploration_ratio: explorationRatio
+            }
+        };
+    }
+
+    // Fallback: trending articles
+    var articles = await queryTable(supabaseUrl, supabaseKey, 'articles',
+        'status=eq.published&moderation_status=eq.approved&select=id,title,slug,excerpt,category,tags,image,views,like_count,comment_count,reading_time,published_at,author_name,author_avatar,user_id&order=published_at.desc&limit=' + limit + '&offset=' + offset
+    );
+
+    return {
+        ok: true,
+        feed_type: 'recent',
+        content_type: 'articles',
+        items: articles || [],
+        total: (articles || []).length,
+        algorithm: { note: 'Fallback to recent — no user history yet' }
+    };
+}
+
+// Get "What you missed" digest
+async function getDigest(supabaseUrl, supabaseKey, userId, days, limit) {
+    var sessionGap = await callRpc(supabaseUrl, supabaseKey, 'get_session_gap_hours', {
+        p_user_id: userId
+    });
+
+    var gapHours = (typeof sessionGap === 'number') ? sessionGap : 999;
+    var digestDays = Math.max(Math.ceil(gapHours / 24), days);
+
+    var groupsPromise = callRpc(supabaseUrl, supabaseKey, 'get_missed_digest_groups', {
+        p_user_id: userId,
+        p_days: digestDays,
+        p_limit: limit
+    });
+
+    var articlesPromise = callRpc(supabaseUrl, supabaseKey, 'get_missed_digest_articles', {
+        p_user_id: userId,
+        p_days: digestDays,
+        p_limit: limit
+    });
+
+    var results = await Promise.all([groupsPromise, articlesPromise]);
+
+    return {
+        ok: true,
+        feed_type: 'digest',
+        away_hours: Math.round(gapHours),
+        away_days: Math.ceil(gapHours / 24),
+        digest_window_days: digestDays,
+        groups: results[0] || [],
+        articles: results[1] || [],
+        message: gapHours >= 168
+            ? "Welcome back! Here's what happened while you were away"
+            : gapHours >= 24
+                ? "Here's what's trending since your last visit"
+                : "Here's your latest digest"
+    };
+}
+
+// Get trending content (no auth needed)
+async function getTrending(supabaseUrl, supabaseKey, contentType, limit) {
+    var items = await queryTable(supabaseUrl, supabaseKey, 'trending_scores',
+        'content_type=eq.' + encodeURIComponent(contentType) +
+        '&order=velocity_score.desc&limit=' + limit +
+        '&select=content_id,content_type,velocity_score,hourly_views,hourly_clicks,hourly_likes,hourly_joins,hourly_comments,hourly_tips,total_engagement,computed_at'
+    );
+
+    // Enrich with content details
+    if (items && items.length > 0) {
+        var ids = items.map(function(i) { return i.content_id; });
+
+        if (contentType === 'group') {
+            var groups = await queryTable(supabaseUrl, supabaseKey, 'groups',
+                'id=in.(' + ids.join(',') + ')&status=eq.approved&select=id,name,platform,category,country,description,trust_score,views,clicks,avg_rating,review_count,tags,link,likes_count'
+            );
+            var groupMap = {};
+            (groups || []).forEach(function(g) { groupMap[g.id] = g; });
+
+            items = items.map(function(item) {
+                var group = groupMap[item.content_id] || {};
+                return Object.assign({}, item, { details: group });
+            }).filter(function(item) { return item.details && item.details.id; });
+        } else {
+            var articles = await queryTable(supabaseUrl, supabaseKey, 'articles',
+                'id=in.(' + ids.join(',') + ')&status=eq.published&moderation_status=eq.approved&select=id,title,slug,excerpt,category,tags,image,views,like_count,comment_count,reading_time,published_at,author_name,author_avatar'
+            );
+            var articleMap = {};
+            (articles || []).forEach(function(a) { articleMap[a.id] = a; });
+
+            items = items.map(function(item) {
+                var article = articleMap[item.content_id] || {};
+                return Object.assign({}, item, { details: article });
+            }).filter(function(item) { return item.details && item.details.id; });
+        }
+    }
+
+    return {
+        ok: true,
+        feed_type: 'trending',
+        content_type: contentType,
+        items: items || [],
+        total: (items || []).length
+    };
+}
+
+export async function onRequest(context) {
+    var request = context.request;
+    var env = context.env;
+    var origin = request.headers.get('Origin') || '';
+
+    if (request.method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: corsHeaders(origin) });
+    }
+
+    if (request.method !== 'GET') {
+        return jsonResponse({ ok: false, error: 'Method not allowed' }, 405, origin);
+    }
+
+    var supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';
+    var supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
+
+    if (!supabaseKey) {
+        return jsonResponse({ ok: false, error: 'Server not configured' }, 500, origin);
+    }
+
+    var url = new URL(request.url);
+    var feedType = url.searchParams.get('type') || 'groups';
+    var userId = url.searchParams.get('user_id');
+    var limit = Math.min(parseInt(url.searchParams.get('limit')) || 20, 50);
+    var offset = parseInt(url.searchParams.get('offset')) || 0;
+    var explorationRatio = parseFloat(url.searchParams.get('exploration')) || 0.30;
+    var contentType = url.searchParams.get('content_type') || 'group';
+
+    try {
+        if (feedType === 'trending') {
+            var result = await getTrending(supabaseUrl, supabaseKey, contentType, limit);
+            return jsonResponse(result, 200, origin);
+        }
+
+        if (!userId) {
+            return jsonResponse({ ok: false, error: 'user_id required for personalized feed' }, 400, origin);
+        }
+
+        if (feedType === 'groups') {
+            var result = await getGroupFeed(supabaseUrl, supabaseKey, userId, limit, offset, explorationRatio);
+            return jsonResponse(result, 200, origin);
+        }
+
+        if (feedType === 'articles') {
+            var result = await getArticleFeed(supabaseUrl, supabaseKey, userId, limit, offset, explorationRatio);
+            return jsonResponse(result, 200, origin);
+        }
+
+        if (feedType === 'digest') {
+            var days = parseInt(url.searchParams.get('days')) || 7;
+            var result = await getDigest(supabaseUrl, supabaseKey, userId, days, limit);
+            return jsonResponse(result, 200, origin);
+        }
+
+        return jsonResponse({ ok: false, error: 'Invalid type. Use: groups, articles, digest, trending' }, 400, origin);
+
+    } catch (err) {
+        console.error('feed error:', err);
+        return jsonResponse({ ok: false, error: 'Internal error' }, 500, origin);
+    }
+}
