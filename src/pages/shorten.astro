@@ -1,0 +1,438 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Link Shortener with Analytics — GroupsMix"
+  description="Shorten your group invite links and track clicks, countries, and devices. The go-to link shortener for group admins."
+  cssFiles={["/assets/css/features.css?v=20260310b"]}
+  includeFeatures={true}
+>
+<style is:inline>
+    .shorten-page {
+        max-width: var(--container-lg);
+        margin: 0 auto;
+        padding: var(--space-8) var(--space-4);
+    }
+    .shorten-hero {
+        text-align: center;
+        margin-bottom: var(--space-8);
+    }
+    .shorten-hero__title {
+        font-size: var(--text-3xl);
+        font-weight: var(--font-bold);
+        margin-bottom: var(--space-3);
+    }
+    .shorten-hero__subtitle {
+        color: var(--text-secondary);
+        font-size: var(--text-base);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .shorten-form-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
+        max-width: 640px;
+        margin: 0 auto var(--space-8);
+    }
+    .shorten-input-row {
+        display: flex;
+        gap: var(--space-3);
+    }
+    .shorten-input-row .form-input {
+        flex: 1;
+    }
+    .shorten-result {
+        margin-top: var(--space-4);
+        display: none;
+    }
+    .shorten-result--visible {
+        display: block;
+    }
+    .short-link-box {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-lg);
+        padding: var(--space-3) var(--space-4);
+    }
+    .short-link-box__url {
+        flex: 1;
+        font-weight: var(--font-semibold);
+        color: var(--accent-primary);
+        word-break: break-all;
+        font-size: var(--text-sm);
+    }
+    .my-links {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    .my-links__title {
+        font-size: var(--text-xl);
+        font-weight: var(--font-bold);
+        margin-bottom: var(--space-4);
+    }
+    .link-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .link-table th {
+        text-align: left;
+        padding: var(--space-3) var(--space-4);
+        font-size: var(--text-xs);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-tertiary);
+        border-bottom: 1px solid var(--border-primary);
+    }
+    .link-table td {
+        padding: var(--space-3) var(--space-4);
+        font-size: var(--text-sm);
+        border-bottom: 1px solid var(--border-primary);
+    }
+    .link-table tr:hover td {
+        background: var(--bg-card-hover);
+    }
+    .link-url {
+        color: var(--accent-primary);
+        text-decoration: none;
+        font-weight: var(--font-semibold);
+        word-break: break-all;
+    }
+    .link-long {
+        color: var(--text-tertiary);
+        font-size: var(--text-xs);
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .analytics-modal-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-4);
+        margin-bottom: var(--space-4);
+    }
+    .analytics-stat {
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-lg);
+        padding: var(--space-4);
+        text-align: center;
+    }
+    .analytics-stat__value {
+        font-size: var(--text-2xl);
+        font-weight: var(--font-bold);
+        color: var(--accent-primary);
+    }
+    .analytics-stat__label {
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+        margin-top: var(--space-1);
+    }
+    .analytics-breakdown {
+        margin-top: var(--space-4);
+    }
+    .analytics-breakdown__title {
+        font-size: var(--text-sm);
+        font-weight: var(--font-semibold);
+        margin-bottom: var(--space-2);
+    }
+    .analytics-bar {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        margin-bottom: var(--space-2);
+    }
+    .analytics-bar__label {
+        font-size: var(--text-sm);
+        width: 80px;
+        flex-shrink: 0;
+    }
+    .analytics-bar__track {
+        flex: 1;
+        height: 8px;
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+    }
+    .analytics-bar__fill {
+        height: 100%;
+        background: var(--accent-primary);
+        border-radius: var(--radius-full);
+        transition: width 0.5s ease;
+    }
+    .analytics-bar__count {
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+        width: 40px;
+        text-align: right;
+    }
+    .powered-tag {
+        text-align: center;
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+        margin-top: var(--space-3);
+    }
+    .benefits-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-6);
+        margin-top: var(--space-8);
+    }
+    .benefit-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
+        text-align: center;
+    }
+    .benefit-card__icon {
+        font-size: var(--text-3xl);
+        margin-bottom: var(--space-3);
+    }
+    .benefit-card__title {
+        font-weight: var(--font-semibold);
+        margin-bottom: var(--space-2);
+    }
+    .benefit-card__desc {
+        color: var(--text-secondary);
+        font-size: var(--text-sm);
+    }
+    @media (max-width: 767px) {
+        .shorten-input-row { flex-direction: column; }
+        .benefits-grid { grid-template-columns: 1fr; }
+        .analytics-modal-grid { grid-template-columns: 1fr; }
+        .shorten-hero__title { font-size: var(--text-2xl); }
+        .link-table { font-size: var(--text-xs); }
+    }
+</style>
+
+<div class="shorten-page">
+    <div class="shorten-hero">
+        <h1 class="shorten-hero__title">Group Link Shortener</h1>
+        <p class="shorten-hero__subtitle">Shorten your group invite links and track every click. See which countries and devices your members use.</p>
+    </div>
+
+    <div class="shorten-form-card">
+        <div class="shorten-input-row">
+            <input type="url" id="shorten-url" class="form-input" placeholder="Paste your group invite link here...">
+            <button class="btn btn-primary" id="shorten-btn">Shorten</button>
+        </div>
+        <div class="shorten-result" id="shorten-result">
+            <div class="short-link-box">
+                <span class="short-link-box__url" id="short-link-url"></span>
+                <button class="btn btn-secondary btn-sm" id="copy-short-link">Copy</button>
+            </div>
+            <div class="powered-tag">Powered by GroupsMix</div>
+        </div>
+    </div>
+
+    <div class="my-links" id="my-links-section" style="display:none">
+        <h2 class="my-links__title">Your Shortened Links</h2>
+        <div style="background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);overflow:hidden">
+            <table class="link-table">
+                <thead>
+                    <tr>
+                        <th>Short Link</th>
+                        <th>Original URL</th>
+                        <th>Clicks</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="my-links-body"></tbody>
+            </table>
+        </div>
+        <div id="my-links-empty" style="display:none;text-align:center;padding:var(--space-8);color:var(--text-tertiary)">
+            No shortened links yet. Create your first one above!
+        </div>
+    </div>
+
+    <div class="benefits-grid">
+        <div class="benefit-card">
+            <div class="benefit-card__icon">&#128202;</div>
+            <div class="benefit-card__title">Click Analytics</div>
+            <div class="benefit-card__desc">Track total clicks, unique visitors, and engagement trends for each shortened link.</div>
+        </div>
+        <div class="benefit-card">
+            <div class="benefit-card__icon">&#127758;</div>
+            <div class="benefit-card__title">Country Tracking</div>
+            <div class="benefit-card__desc">See which countries your group members are coming from. Optimize your reach globally.</div>
+        </div>
+        <div class="benefit-card">
+            <div class="benefit-card__icon">&#128241;</div>
+            <div class="benefit-card__title">Device Breakdown</div>
+            <div class="benefit-card__desc">Know whether your audience is on mobile, desktop, or tablet. Tailor your content accordingly.</div>
+        </div>
+    </div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+document.addEventListener('DOMContentLoaded', async function() {
+    await Auth.waitForAuth();
+
+    // Shorten button
+    document.getElementById('shorten-btn').addEventListener('click', async function() {
+        var urlInput = document.getElementById('shorten-url');
+        var url = urlInput.value.trim();
+        if (!url) { UI.toast('Please enter a URL', 'warning'); return; }
+        if (!Security.isValidUrl(url)) { UI.toast('Please enter a valid URL', 'error'); return; }
+
+        var btn = this;
+        btn.disabled = true;
+        btn.textContent = 'Shortening...';
+
+        try {
+            var res = await fetch('/api/shorten', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url })
+            });
+            var data = await res.json();
+            if (data.ok) {
+                var shortUrl = data.shortUrl || ('https://groupsmix.com/go?code=' + data.code);
+                document.getElementById('short-link-url').textContent = shortUrl;
+                document.getElementById('shorten-result').classList.add('shorten-result--visible');
+                UI.toast('Link shortened!', 'success');
+                if (Auth.isLoggedIn()) loadMyLinks();
+            } else {
+                UI.toast(data.errors ? data.errors[0] : 'Failed to shorten link', 'error');
+            }
+        } catch (err) {
+            UI.toast('Failed to shorten link. Try again.', 'error');
+        }
+        btn.disabled = false;
+        btn.textContent = 'Shorten';
+    });
+
+    // Copy short link
+    document.getElementById('copy-short-link').addEventListener('click', function() {
+        var url = document.getElementById('short-link-url').textContent;
+        UI.copyToClipboard(url);
+    });
+
+    // Load user's links if logged in
+    if (Auth.isLoggedIn()) loadMyLinks();
+
+    async function loadMyLinks() {
+        try {
+            var uid = Auth.getUserId();
+            if (!uid) return;
+            var { data, error } = await window.supabaseClient
+                .from('short_links')
+                .select('*')
+                .eq('creator_uid', uid)
+                .order('created_at', { ascending: false })
+                .limit(20);
+            if (error) throw error;
+            if (!data || !data.length) {
+                document.getElementById('my-links-section').style.display = 'block';
+                document.getElementById('my-links-empty').style.display = 'block';
+                return;
+            }
+            document.getElementById('my-links-section').style.display = 'block';
+            document.getElementById('my-links-empty').style.display = 'none';
+            var tbody = document.getElementById('my-links-body');
+            tbody.innerHTML = data.map(function(link) {
+                var shortUrl = 'https://groupsmix.com/go?code=' + link.code;
+                return '<tr>' +
+                    '<td><a href="' + shortUrl + '" class="link-url" target="_blank">' + Security.sanitize(link.code) + '</a></td>' +
+                    '<td><div class="link-long" title="' + Security.sanitize(link.long_url) + '">' + Security.sanitize(link.long_url) + '</div></td>' +
+                    '<td>' + UI.formatNumber(link.clicks || 0) + '</td>' +
+                    '<td>' + UI.formatDate(link.created_at) + '</td>' +
+                    '<td><button class="btn btn-ghost btn-sm analytics-btn" data-link-id="' + link.id + '" data-code="' + link.code + '" data-clicks="' + (link.clicks || 0) + '">Analytics</button></td>' +
+                    '</tr>';
+            }).join('');
+
+            // Analytics button events
+            tbody.querySelectorAll('.analytics-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    showAnalytics(btn.dataset.linkId, btn.dataset.code, parseInt(btn.dataset.clicks) || 0);
+                });
+            });
+        } catch (err) {
+            console.error('loadMyLinks:', err);
+        }
+    }
+
+    async function showAnalytics(linkId, code, totalClicks) {
+        // Fetch click details
+        var clickData = [];
+        try {
+            var { data } = await window.supabaseClient
+                .from('link_clicks')
+                .select('*')
+                .eq('link_id', linkId)
+                .order('clicked_at', { ascending: false })
+                .limit(100);
+            clickData = data || [];
+        } catch (e) { /* empty */ }
+
+        // Aggregate by device
+        var devices = {};
+        var countries = {};
+        clickData.forEach(function(c) {
+            var dev = c.device || 'Unknown';
+            devices[dev] = (devices[dev] || 0) + 1;
+            var country = c.country || 'Unknown';
+            countries[country] = (countries[country] || 0) + 1;
+        });
+
+        var totalTracked = clickData.length;
+        var uniqueCountries = Object.keys(countries).filter(function(k) { return k !== 'Unknown'; }).length;
+
+        // Build analytics content
+        var content = '<div class="analytics-modal-grid">' +
+            '<div class="analytics-stat"><div class="analytics-stat__value">' + UI.formatNumber(totalClicks) + '</div><div class="analytics-stat__label">Total Clicks</div></div>' +
+            '<div class="analytics-stat"><div class="analytics-stat__value">' + uniqueCountries + '</div><div class="analytics-stat__label">Countries</div></div>' +
+            '<div class="analytics-stat"><div class="analytics-stat__value">' + Object.keys(devices).length + '</div><div class="analytics-stat__label">Device Types</div></div>' +
+            '</div>';
+
+        // Device breakdown
+        if (Object.keys(devices).length > 0) {
+            content += '<div class="analytics-breakdown"><div class="analytics-breakdown__title">Device Breakdown</div>';
+            var sortedDevices = Object.entries(devices).sort(function(a, b) { return b[1] - a[1]; });
+            sortedDevices.forEach(function(entry) {
+                var pct = totalTracked > 0 ? Math.round((entry[1] / totalTracked) * 100) : 0;
+                content += '<div class="analytics-bar">' +
+                    '<span class="analytics-bar__label">' + Security.sanitize(entry[0]) + '</span>' +
+                    '<div class="analytics-bar__track"><div class="analytics-bar__fill" style="width:' + pct + '%"></div></div>' +
+                    '<span class="analytics-bar__count">' + entry[1] + '</span>' +
+                    '</div>';
+            });
+            content += '</div>';
+        }
+
+        // Country breakdown
+        if (Object.keys(countries).length > 0) {
+            content += '<div class="analytics-breakdown"><div class="analytics-breakdown__title">Top Countries</div>';
+            var sortedCountries = Object.entries(countries).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 10);
+            sortedCountries.forEach(function(entry) {
+                var pct = totalTracked > 0 ? Math.round((entry[1] / totalTracked) * 100) : 0;
+                content += '<div class="analytics-bar">' +
+                    '<span class="analytics-bar__label">' + Security.sanitize(entry[0]) + '</span>' +
+                    '<div class="analytics-bar__track"><div class="analytics-bar__fill" style="width:' + pct + '%"></div></div>' +
+                    '<span class="analytics-bar__count">' + entry[1] + '</span>' +
+                    '</div>';
+            });
+            content += '</div>';
+        }
+
+        if (!clickData.length) {
+            content += '<div style="text-align:center;padding:var(--space-4);color:var(--text-tertiary)">No detailed click data yet. Analytics start tracking once people click your link.</div>';
+        }
+
+        UI.modal({
+            title: 'Link Analytics — ' + code,
+            content: content,
+            size: 'large'
+        });
+    }
+});
+</script>
+</Fragment>
+</BaseLayout>

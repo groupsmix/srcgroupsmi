@@ -1,0 +1,499 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Group Reviews — GroupsMix"
+  description="Read and write trusted reviews for social media groups. Like Trustpilot but for WhatsApp, Telegram, and Discord groups."
+  cssFiles={["/assets/css/features.css?v=20260310b"]}
+  includeFeatures={true}
+>
+<style is:inline>
+    .reviews-page {
+        max-width: var(--container-lg);
+        margin: 0 auto;
+        padding: var(--space-8) var(--space-4);
+    }
+    .reviews-hero {
+        text-align: center;
+        margin-bottom: var(--space-8);
+    }
+    .reviews-hero__title {
+        font-size: var(--text-3xl);
+        font-weight: var(--font-bold);
+        margin-bottom: var(--space-3);
+    }
+    .reviews-hero__subtitle {
+        color: var(--text-secondary);
+        font-size: var(--text-base);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .reviews-search {
+        display: flex;
+        gap: var(--space-2);
+        max-width: 500px;
+        margin: var(--space-6) auto 0;
+    }
+    .review-summary {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
+        margin-bottom: var(--space-6);
+        display: none;
+    }
+    .review-summary__header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-6);
+        flex-wrap: wrap;
+    }
+    .review-summary__score {
+        text-align: center;
+        min-width: 120px;
+    }
+    .review-summary__avg {
+        font-size: var(--text-4xl);
+        font-weight: var(--font-bold);
+        color: var(--accent-primary);
+    }
+    .review-summary__stars {
+        color: #f59e0b;
+        font-size: var(--text-lg);
+        margin: var(--space-1) 0;
+    }
+    .review-summary__count {
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+    }
+    .review-summary__bars {
+        flex: 1;
+        min-width: 200px;
+    }
+    .review-bar {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin-bottom: var(--space-1);
+        font-size: var(--text-sm);
+    }
+    .review-bar__label {
+        min-width: 20px;
+        text-align: right;
+    }
+    .review-bar__track {
+        flex: 1;
+        height: 8px;
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+    }
+    .review-bar__fill {
+        height: 100%;
+        background: #f59e0b;
+        border-radius: var(--radius-full);
+        transition: width 0.3s;
+    }
+    .review-bar__count {
+        min-width: 24px;
+        color: var(--text-tertiary);
+        font-size: var(--text-xs);
+    }
+    .reviews-list {
+        margin-bottom: var(--space-6);
+    }
+    .review-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-lg);
+        padding: var(--space-5);
+        margin-bottom: var(--space-3);
+    }
+    .review-card__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--space-3);
+    }
+    .review-card__author {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+    .review-card__avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius-full);
+        background: var(--accent-primary);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: var(--font-bold);
+        font-size: var(--text-sm);
+    }
+    .review-card__name {
+        font-weight: var(--font-semibold);
+        font-size: var(--text-sm);
+    }
+    .review-card__date {
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+    }
+    .review-card__stars {
+        color: #f59e0b;
+    }
+    .review-card__body {
+        font-size: var(--text-sm);
+        line-height: var(--leading-relaxed);
+        color: var(--text-secondary);
+        margin-bottom: var(--space-3);
+    }
+    .review-card__footer {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+    }
+    .review-vote-btn {
+        background: none;
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-md);
+        padding: var(--space-1) var(--space-3);
+        font-size: var(--text-xs);
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        transition: all 0.15s;
+    }
+    .review-vote-btn:hover {
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+    }
+    .review-write {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
+        display: none;
+    }
+    .review-write__title {
+        font-size: var(--text-lg);
+        font-weight: var(--font-semibold);
+        margin-bottom: var(--space-4);
+    }
+    .star-input {
+        display: flex;
+        gap: var(--space-1);
+        margin-bottom: var(--space-4);
+    }
+    .star-input__btn {
+        background: none;
+        border: none;
+        font-size: var(--text-2xl);
+        cursor: pointer;
+        color: var(--border-primary);
+        transition: color 0.1s;
+        padding: 0;
+    }
+    .star-input__btn.active, .star-input__btn:hover {
+        color: #f59e0b;
+    }
+    .review-group-info {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-lg);
+        padding: var(--space-4);
+        margin-bottom: var(--space-6);
+        display: none;
+    }
+    .review-group-info__name {
+        font-weight: var(--font-bold);
+        font-size: var(--text-lg);
+    }
+    .review-group-info__meta {
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+    }
+    @media (max-width: 767px) {
+        .reviews-hero__title { font-size: var(--text-2xl); }
+        .review-summary__header { flex-direction: column; }
+    }
+</style>
+
+<div class="reviews-page">
+    <div class="reviews-hero">
+        <h1 class="reviews-hero__title">Group Reviews</h1>
+        <p class="reviews-hero__subtitle">Read trusted reviews from real members. Like Trustpilot, but for social media groups. Is this WhatsApp group legit? Find out here.</p>
+        <div class="reviews-search">
+            <input type="text" class="form-input" id="review-search-input" placeholder="Search for a group to review...">
+            <button class="btn btn-primary" id="review-search-btn">Search</button>
+        </div>
+        <div id="review-search-results" style="max-width:500px;margin:var(--space-3) auto 0;text-align:left"></div>
+    </div>
+
+    <div class="review-group-info" id="review-group-info">
+        <div>
+            <div class="review-group-info__name" id="review-group-name"></div>
+            <div class="review-group-info__meta" id="review-group-meta"></div>
+        </div>
+    </div>
+
+    <div class="review-summary" id="review-summary">
+        <div class="review-summary__header">
+            <div class="review-summary__score">
+                <div class="review-summary__avg" id="review-avg">0.0</div>
+                <div class="review-summary__stars" id="review-stars-display"></div>
+                <div class="review-summary__count" id="review-total-count">0 reviews</div>
+            </div>
+            <div class="review-summary__bars" id="review-bars"></div>
+            <div>
+                <button class="btn btn-primary" id="write-review-btn" style="display:none">Write a Review</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="reviews-list" id="reviews-list"></div>
+
+    <div class="review-write" id="review-write-form">
+        <h3 class="review-write__title">Write Your Review</h3>
+        <div class="star-input" id="star-input">
+            <button class="star-input__btn" data-star="1">&#9733;</button>
+            <button class="star-input__btn" data-star="2">&#9733;</button>
+            <button class="star-input__btn" data-star="3">&#9733;</button>
+            <button class="star-input__btn" data-star="4">&#9733;</button>
+            <button class="star-input__btn" data-star="5">&#9733;</button>
+        </div>
+        <textarea class="form-input" id="review-text" rows="4" placeholder="Share your experience with this group..." style="width:100%;margin-bottom:var(--space-4);resize:vertical"></textarea>
+        <button class="btn btn-primary" id="submit-review-btn">Submit Review</button>
+    </div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+document.addEventListener('DOMContentLoaded', function() {
+    var selectedGroupId = null;
+    var selectedRating = 0;
+    var debounceTimer = null;
+
+    // Check URL params for group ID
+    var params = new URLSearchParams(window.location.search);
+    var groupIdParam = params.get('group');
+    if (groupIdParam) {
+        loadGroupReviews(groupIdParam);
+    }
+
+    // Search functionality
+    var searchInput = document.getElementById('review-search-input');
+    var searchResults = document.getElementById('review-search-results');
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        var q = searchInput.value.trim();
+        if (q.length < 2) { searchResults.innerHTML = ''; return; }
+        debounceTimer = setTimeout(async function() {
+            try {
+                var groups = await DB.groups.search(q, 5);
+                if (!groups || !groups.length) {
+                    searchResults.innerHTML = '<div style="padding:var(--space-2);color:var(--text-tertiary);font-size:var(--text-sm)">No groups found</div>';
+                    return;
+                }
+                searchResults.innerHTML = groups.map(function(g) {
+                    return '<div class="search-result-item" data-id="' + g.id + '" style="padding:var(--space-2) var(--space-3);cursor:pointer;border-radius:var(--radius-md);border:1px solid var(--border-primary);margin-bottom:var(--space-1);background:var(--bg-card)">' +
+                        '<div style="font-weight:var(--font-semibold);font-size:var(--text-sm)">' + Security.sanitize(g.name) + '</div>' +
+                        '<div style="font-size:var(--text-xs);color:var(--text-tertiary)">' + Security.sanitize(g.platform || '') + ' &middot; ' + UI.formatNumber(g.members_count || 0) + ' members</div>' +
+                        '</div>';
+                }).join('');
+                searchResults.querySelectorAll('.search-result-item').forEach(function(el) {
+                    el.addEventListener('click', function() {
+                        loadGroupReviews(el.dataset.id);
+                        searchResults.innerHTML = '';
+                        searchInput.value = '';
+                    });
+                });
+            } catch (err) { console.error(err); }
+        }, 300);
+    });
+
+    document.getElementById('review-search-btn').addEventListener('click', function() {
+        searchInput.dispatchEvent(new Event('input'));
+    });
+
+    // Star rating input
+    var starBtns = document.querySelectorAll('#star-input .star-input__btn');
+    starBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            selectedRating = parseInt(btn.dataset.star);
+            starBtns.forEach(function(b) {
+                b.classList.toggle('active', parseInt(b.dataset.star) <= selectedRating);
+            });
+        });
+        btn.addEventListener('mouseenter', function() {
+            var hover = parseInt(btn.dataset.star);
+            starBtns.forEach(function(b) {
+                b.style.color = parseInt(b.dataset.star) <= hover ? '#f59e0b' : '';
+            });
+        });
+        btn.addEventListener('mouseleave', function() {
+            starBtns.forEach(function(b) {
+                b.style.color = b.classList.contains('active') ? '#f59e0b' : '';
+            });
+        });
+    });
+
+    // Write review button
+    document.getElementById('write-review-btn').addEventListener('click', function() {
+        if (!Auth.isLoggedIn()) {
+            UI.toast('Please sign in to write a review', 'warning');
+            return;
+        }
+        document.getElementById('review-write-form').style.display = 'block';
+        document.getElementById('review-write-form').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Submit review
+    document.getElementById('submit-review-btn').addEventListener('click', async function() {
+        if (!Auth.isLoggedIn()) { UI.toast('Please sign in', 'warning'); return; }
+        if (!selectedGroupId) { UI.toast('No group selected', 'warning'); return; }
+        if (!selectedRating) { UI.toast('Please select a rating', 'warning'); return; }
+        var text = document.getElementById('review-text').value.trim();
+        if (!text || text.length < 10) { UI.toast('Review must be at least 10 characters', 'warning'); return; }
+
+        try {
+            var btn = document.getElementById('submit-review-btn');
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+
+            await DB.reviews.submit(selectedGroupId, selectedRating, text);
+            UI.toast('Review submitted!', 'success');
+            document.getElementById('review-text').value = '';
+            selectedRating = 0;
+            starBtns.forEach(function(b) { b.classList.remove('active'); b.style.color = ''; });
+            document.getElementById('review-write-form').style.display = 'none';
+            loadGroupReviews(selectedGroupId);
+        } catch (err) {
+            UI.toast('Failed to submit review: ' + err.message, 'error');
+        } finally {
+            var btn2 = document.getElementById('submit-review-btn');
+            btn2.disabled = false;
+            btn2.textContent = 'Submit Review';
+        }
+    });
+
+    async function loadGroupReviews(groupId) {
+        selectedGroupId = groupId;
+        try {
+            var group = await DB.groups.getOne(groupId);
+            if (!group) { UI.toast('Group not found', 'error'); return; }
+
+            // Show group info
+            var infoEl = document.getElementById('review-group-info');
+            infoEl.style.display = 'flex';
+            document.getElementById('review-group-name').textContent = group.name;
+            document.getElementById('review-group-meta').textContent = (group.platform || '') + ' \u00B7 ' + UI.formatNumber(group.members_count || 0) + ' members';
+
+            // Show write review button
+            document.getElementById('write-review-btn').style.display = '';
+
+            // Fetch reviews
+            var reviews = await DB.reviews.getByGroup(groupId);
+            var reviewSummary = document.getElementById('review-summary');
+            reviewSummary.style.display = 'block';
+
+            if (!reviews || reviews.length === 0) {
+                document.getElementById('review-avg').textContent = '0.0';
+                document.getElementById('review-stars-display').innerHTML = renderStars(0);
+                document.getElementById('review-total-count').textContent = '0 reviews';
+                document.getElementById('review-bars').innerHTML = '';
+                document.getElementById('reviews-list').innerHTML = '<div style="text-align:center;padding:var(--space-8);color:var(--text-tertiary)">No reviews yet. Be the first to review this group!</div>';
+                return;
+            }
+
+            // Calculate stats
+            var total = reviews.length;
+            var sum = 0;
+            var dist = [0, 0, 0, 0, 0]; // 1-5 stars
+            reviews.forEach(function(r) {
+                sum += r.rating;
+                dist[r.rating - 1]++;
+            });
+            var avg = sum / total;
+
+            document.getElementById('review-avg').textContent = avg.toFixed(1);
+            document.getElementById('review-stars-display').innerHTML = renderStars(avg);
+            document.getElementById('review-total-count').textContent = total + ' review' + (total !== 1 ? 's' : '');
+
+            // Rating bars
+            var barsHtml = '';
+            for (var i = 5; i >= 1; i--) {
+                var pct = total > 0 ? (dist[i - 1] / total * 100) : 0;
+                barsHtml += '<div class="review-bar"><span class="review-bar__label">' + i + '</span><div class="review-bar__track"><div class="review-bar__fill" style="width:' + pct + '%"></div></div><span class="review-bar__count">' + dist[i - 1] + '</span></div>';
+            }
+            document.getElementById('review-bars').innerHTML = barsHtml;
+
+            // Render reviews
+            document.getElementById('reviews-list').innerHTML = reviews.map(function(r) {
+                var initial = (r.profiles && r.profiles.display_name) ? r.profiles.display_name.charAt(0).toUpperCase() : '?';
+                var name = (r.profiles && r.profiles.display_name) ? Security.sanitize(r.profiles.display_name) : 'Anonymous';
+                var date = r.created_at ? new Date(r.created_at).toLocaleDateString() : '';
+                return '<div class="review-card">' +
+                    '<div class="review-card__header">' +
+                    '<div class="review-card__author">' +
+                    '<div class="review-card__avatar">' + initial + '</div>' +
+                    '<div><div class="review-card__name">' + name + '</div><div class="review-card__date">' + date + '</div></div>' +
+                    '</div>' +
+                    '<div class="review-card__stars">' + renderStars(r.rating) + '</div>' +
+                    '</div>' +
+                    '<div class="review-card__body">' + Security.sanitize(r.body || '') + '</div>' +
+                    '<div class="review-card__footer">' +
+                    '<button class="review-vote-btn" onclick="voteReview(\'' + r.id + '\', true)">&#128077; Helpful (' + (r.helpful_count || 0) + ')</button>' +
+                    '<button class="review-vote-btn" onclick="voteReview(\'' + r.id + '\', false)">&#128078; (' + (r.unhelpful_count || 0) + ')</button>' +
+                    '</div></div>';
+            }).join('');
+
+            // Update URL
+            window.history.replaceState({}, '', '/group-reviews?group=' + groupId);
+        } catch (err) {
+            console.error('loadGroupReviews:', err);
+            UI.toast('Failed to load reviews', 'error');
+        }
+    }
+
+    function renderStars(rating) {
+        var html = '';
+        for (var i = 1; i <= 5; i++) {
+            html += '<span style="color:' + (i <= Math.round(rating) ? '#f59e0b' : 'var(--border-primary)') + '">&#9733;</span>';
+        }
+        return html;
+    }
+
+    window.voteReview = async function(reviewId, isHelpful) {
+        if (!Auth.isLoggedIn()) { UI.toast('Please sign in to vote', 'warning'); return; }
+        try {
+            var { error } = await window.supabaseClient
+                .from('review_votes')
+                .upsert({
+                    review_id: reviewId,
+                    user_id: Auth.getUserId(),
+                    is_helpful: isHelpful
+                }, { onConflict: 'review_id,user_id' });
+            if (error) throw error;
+
+            // Increment helpful count via RPC
+            await window.supabaseClient.rpc('increment_review_helpful', {
+                rid: reviewId,
+                delta: isHelpful ? 1 : -1
+            });
+
+            UI.toast('Vote recorded!', 'success');
+            if (selectedGroupId) loadGroupReviews(selectedGroupId);
+        } catch (err) {
+            UI.toast('Could not vote: ' + err.message, 'warning');
+        }
+    };
+});
+</script>
+</Fragment>
+</BaseLayout>
