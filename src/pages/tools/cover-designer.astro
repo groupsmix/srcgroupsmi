@@ -3,7 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 <BaseLayout
   title="AI Cover Designer — GroupsMix"
-  description="Generate AI image prompts and text overlays for stunning group covers. Choose your style, theme, and platform."
+  description="Generate a real downloadable cover image for your group. AI designs it, Canvas renders it — download instantly."
   canonical="https://groupsmix.com/tools/cover-designer"
 >
 <style is:inline>
@@ -61,7 +61,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             <div class="cover-hero">
                 <span class="cover-hero__icon">&#x1F3A8;</span>
                 <h1>AI Cover Designer</h1>
-                <p style="color:var(--text-secondary)">Generate AI image prompts and text overlays for stunning group covers</p>
+                <p style="color:var(--text-secondary)">Generate a real downloadable cover image — rendered on Canvas, not just text prompts</p>
             </div>
             <div class="cover-form" id="input-section">
                 <div class="form-group">
@@ -166,9 +166,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             </div>
             <div class="cover-result" id="cover-result">
                 <div class="cover-preview" id="cover-preview">
-                    <div class="cover-preview__canvas" id="cover-canvas"></div>
+                    <canvas id="cover-canvas" style="width:100%;border-radius:var(--radius-lg);cursor:pointer"></canvas>
                     <div class="cover-preview__footer">
-                        <button class="dl-cover-btn" id="dl-cover">&#x1F4E5; Download Preview</button>
+                        <button class="dl-cover-btn" id="dl-cover">&#x1F4E5; Download Cover Image</button>
                         <button class="copy-prompt-btn" id="copy-all">&#x1F4CB; Copy All</button>
                     </div>
                 </div>
@@ -333,12 +333,116 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             };
         }
 
+        var platformSizes = {
+            whatsapp: { w: 640, h: 360 },
+            telegram: { w: 1280, h: 720 },
+            facebook: { w: 1640, h: 856 },
+            discord: { w: 960, h: 540 },
+            linkedin: { w: 1584, h: 396 },
+            youtube: { w: 2560, h: 1440 }
+        };
+
+        function parseGradientColors(css) {
+            var colors = (css || '').match(/#[0-9a-fA-F]{3,8}/g);
+            if (colors && colors.length >= 2) return colors;
+            return ['#667eea', '#764ba2'];
+        }
+
+        function drawCoverOnCanvas(canvas, data, size) {
+            var w = size.w, h = size.h;
+            canvas.width = w;
+            canvas.height = h;
+            var ctx = canvas.getContext('2d');
+
+            // 1) Gradient background
+            var colors = parseGradientColors(data.gradient_css);
+            var grd = ctx.createLinearGradient(0, 0, w, h);
+            grd.addColorStop(0, colors[0]);
+            grd.addColorStop(1, colors[1] || colors[0]);
+            ctx.fillStyle = grd;
+            ctx.fillRect(0, 0, w, h);
+
+            // 2) Decorative circles
+            ctx.globalAlpha = 0.08;
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(w * 0.15, h * 0.3, w * 0.18, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w * 0.85, h * 0.7, w * 0.22, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w * 0.5, h * 0.1, w * 0.10, 0, Math.PI * 2); ctx.fill();
+            ctx.globalAlpha = 1;
+
+            // 3) Semi-transparent dark overlay for text legibility
+            ctx.fillStyle = 'rgba(0,0,0,0.25)';
+            ctx.fillRect(0, 0, w, h);
+
+            // 4) Title
+            var title = data.title || 'Your Group';
+            var titleSize = Math.round(w * 0.055);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold ' + titleSize + 'px Inter, system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(0,0,0,0.4)';
+            ctx.shadowBlur = 12;
+            ctx.shadowOffsetY = 4;
+            ctx.fillText(title, w / 2, h * 0.42, w * 0.85);
+
+            // 5) Subtitle
+            var subtitle = data.subtitle || 'Join our community';
+            var subSize = Math.round(w * 0.025);
+            ctx.font = '600 ' + subSize + 'px Inter, system-ui, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.88)';
+            ctx.shadowBlur = 6;
+            ctx.fillText(subtitle, w / 2, h * 0.55, w * 0.8);
+
+            // 6) CTA line
+            var overlays = data.text_overlays || [];
+            var cta = '';
+            for (var i = 0; i < overlays.length; i++) {
+                if (/cta/i.test(overlays[i].label)) { cta = overlays[i].text; break; }
+            }
+            if (cta) {
+                var ctaSize = Math.round(w * 0.02);
+                var ctaPadH = Math.round(w * 0.025);
+                var ctaPadV = Math.round(h * 0.02);
+                ctx.font = 'bold ' + ctaSize + 'px Inter, system-ui, sans-serif';
+                var ctaW = ctx.measureText(cta).width + ctaPadH * 2;
+                var ctaH = ctaSize + ctaPadV * 2;
+                var ctaX = (w - ctaW) / 2;
+                var ctaY = h * 0.68;
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                var r = Math.round(ctaH / 2);
+                ctx.beginPath();
+                ctx.moveTo(ctaX + r, ctaY);
+                ctx.lineTo(ctaX + ctaW - r, ctaY);
+                ctx.arcTo(ctaX + ctaW, ctaY, ctaX + ctaW, ctaY + r, r);
+                ctx.arcTo(ctaX + ctaW, ctaY + ctaH, ctaX + ctaW - r, ctaY + ctaH, r);
+                ctx.lineTo(ctaX + r, ctaY + ctaH);
+                ctx.arcTo(ctaX, ctaY + ctaH, ctaX, ctaY + ctaH - r, r);
+                ctx.arcTo(ctaX, ctaY, ctaX + r, ctaY, r);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.fillText(cta, w / 2, ctaY + ctaH / 2, ctaW - ctaPadH);
+            }
+
+            // 7) Watermark
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            var wmSize = Math.round(w * 0.012);
+            ctx.font = '600 ' + wmSize + 'px Inter, system-ui, sans-serif';
+            ctx.fillText('groupsmix.com', w / 2, h * 0.94);
+        }
+
         function renderResult(data) {
             currentData = data;
-            // Render preview canvas
+            var platform = document.getElementById('cover-platform').value;
+            var size = platformSizes[platform] || { w: 1280, h: 720 };
+
+            // Render real canvas cover
             var canvas = document.getElementById('cover-canvas');
-            var gradient = data.gradient_css || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            canvas.innerHTML = '<div style="width:100%;height:100%;background:' + gradient + ';display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center"><div style="font-size:28px;font-weight:800;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,0.3);margin-bottom:8px">' + Security.sanitize(data.title || 'Your Group') + '</div><div style="font-size:14px;color:rgba(255,255,255,0.85);text-shadow:0 1px 5px rgba(0,0,0,0.3)">' + Security.sanitize(data.subtitle || 'Join our community') + '</div></div>';
+            drawCoverOnCanvas(canvas, data, size);
 
             // Render image prompt
             document.getElementById('image-prompt').textContent = data.image_prompt || '';
@@ -356,35 +460,20 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             document.getElementById('cover-result').style.display = 'block';
             document.getElementById('input-section').style.display = '';
             document.getElementById('cover-result').scrollIntoView({behavior:'smooth', block:'start'});
-            UI.toast('Cover design generated!', 'success');
+            UI.toast('Cover image generated! Click Download to save.', 'success');
         }
 
         function downloadPreview() {
-            var canvas = document.createElement('canvas');
-            canvas.width = 1280;
-            canvas.height = 720;
-            var ctx = canvas.getContext('2d');
-            // Draw gradient background
-            var grd = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-            grd.addColorStop(0, '#667eea');
-            grd.addColorStop(1, '#764ba2');
-            ctx.fillStyle = grd;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            // Draw title
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 56px Inter, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(currentData ? (currentData.title || 'Your Group') : 'Your Group', canvas.width/2, canvas.height/2 - 20);
-            // Draw subtitle
-            ctx.font = '28px Inter, sans-serif';
-            ctx.fillStyle = 'rgba(255,255,255,0.85)';
-            ctx.fillText(currentData ? (currentData.subtitle || '') : '', canvas.width/2, canvas.height/2 + 30);
-            // Download
+            var platform = document.getElementById('cover-platform').value;
+            var size = platformSizes[platform] || { w: 1280, h: 720 };
+            // Create a fresh full-resolution canvas for download
+            var dlCanvas = document.createElement('canvas');
+            drawCoverOnCanvas(dlCanvas, currentData, size);
             var link = document.createElement('a');
-            link.download = 'groupsmix-cover.png';
-            link.href = canvas.toDataURL('image/png');
+            link.download = 'groupsmix-cover-' + platform + '.png';
+            link.href = dlCanvas.toDataURL('image/png');
             link.click();
-            UI.toast('Cover preview downloaded!', 'success');
+            UI.toast('Cover image downloaded!', 'success');
         }
     })();
     </script>
