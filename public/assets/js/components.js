@@ -7,9 +7,9 @@ const UI = {
     // ─── Role Badge (RBAC) ──────────────────
     roleBadge(role) {
         if (!role || role === 'user') return '';
-        if (role === 'admin') return ' <span class="role-badge role-badge--admin">' + ICONS.zap + ' Admin</span>';
-        if (role === 'moderator') return ' <span class="role-badge role-badge--moderator">' + ICONS.shield + ' Mod</span>';
-        if (role === 'editor') return ' <span class="role-badge role-badge--editor">' + ICONS.edit + ' Editor</span>';
+        if (role === 'admin') return ` <span class="role-badge role-badge--admin">${ICONS.zap} Admin</span>`;
+        if (role === 'moderator') return ` <span class="role-badge role-badge--moderator">${ICONS.shield} Mod</span>`;
+        if (role === 'editor') return ` <span class="role-badge role-badge--editor">${ICONS.edit} Editor</span>`;
         return '';
     },
 
@@ -73,7 +73,7 @@ const UI = {
             UI.emptyState(containerId, ICONS.inbox, 'No Groups Found', 'Try adjusting your filters or search terms.', 'Browse All', '/search');
             return;
         }
-        container.innerHTML = '<div class="grid grid-4">' + groups.map(g => UI.groupCard(g)).join('') + '</div>';
+        container.innerHTML = `<div class="grid grid-4">${groups.map(g => UI.groupCard(g)).join('')}</div>`;
         container.style.animation = 'fadeIn 0.3s ease';
         container.querySelectorAll('.group-card__btn-join').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -97,7 +97,7 @@ const UI = {
     groupGridSkeleton(count, containerId) {
         const container = document.getElementById(containerId);
         if (!container) return;
-        container.innerHTML = '<div class="grid grid-4">' + Array(count || 12).fill('').map(() => UI.groupCardSkeleton()).join('') + '</div>';
+        container.innerHTML = `<div class="grid grid-4">${Array(count || 12).fill('').map(() => UI.groupCardSkeleton()).join('')}</div>`;
     },
 
     // ─── Common Components ──────────────────
@@ -115,12 +115,7 @@ const UI = {
     errorState(containerId, retryFn) {
         const container = document.getElementById(containerId);
         if (!container) return;
-        container.innerHTML = '<div class="error-state">' +
-            '<div class="error-state__icon">' + ICONS.frown + '</div>' +
-            '<div class="error-state__title">Something went wrong</div>' +
-            '<div class="error-state__text">We couldn\'t load this content. Please try again.</div>' +
-            '<button class="btn btn-primary" id="retry-btn-' + containerId + '">' + ICONS.refresh + ' Try Again</button>' +
-            '</div>';
+        container.innerHTML = `<div class="error-state"><div class="error-state__icon">${ICONS.frown}</div><div class="error-state__title">Something went wrong</div><div class="error-state__text">We couldn't load this content. Please try again.</div><button class="btn btn-primary" id="retry-btn-${containerId}">${ICONS.refresh} Try Again</button></div>`;
         if (retryFn) {
             document.getElementById('retry-btn-' + containerId)?.addEventListener('click', retryFn);
         }
@@ -129,12 +124,7 @@ const UI = {
     timeoutState(containerId) {
         const container = document.getElementById(containerId);
         if (!container) return;
-        container.innerHTML = '<div class="error-state">' +
-            '<div class="error-state__icon">' + ICONS.clock + '</div>' +
-            '<div class="error-state__title">Taking too long</div>' +
-            '<div class="error-state__text">Please refresh the page.</div>' +
-            '<button class="btn btn-primary" id="timeout-refresh-btn-' + containerId + '">' + ICONS.refresh + ' Refresh</button>' +
-            '</div>';
+        container.innerHTML = `<div class="error-state"><div class="error-state__icon">${ICONS.clock}</div><div class="error-state__title">Taking too long</div><div class="error-state__text">Please refresh the page.</div><button class="btn btn-primary" id="timeout-refresh-btn-${containerId}">${ICONS.refresh} Refresh</button></div>`;
         document.getElementById('timeout-refresh-btn-' + containerId)?.addEventListener('click', () => location.reload());
     },
 
@@ -147,9 +137,7 @@ const UI = {
         const icons = { success: ICONS.check_circle, error: ICONS.x_circle, warning: ICONS.warning, info: ICONS.info };
         const toast = document.createElement('div');
         toast.className = 'toast toast--' + type;
-        toast.innerHTML = '<span class="toast__icon">' + (icons[type] || ICONS.info) + '</span>' +
-            '<div class="toast__content"><div class="toast__message">' + Security.sanitize(message) + '</div></div>' +
-            '<button class="toast__close" aria-label="Dismiss">&times;</button>';
+        toast.innerHTML = `<span class="toast__icon">${icons[type] || ICONS.info}</span><div class="toast__content"><div class="toast__message">${Security.sanitize(message)}</div></div><button class="toast__close" aria-label="Dismiss">&times;</button>`;
 
         const dismiss = () => {
             toast.classList.add('toast--exit');
@@ -272,12 +260,7 @@ const UI = {
     _passwordStrengthMeter(password) {
         var strength = Security.getPasswordStrength(password);
         var pct = (strength.score / 4) * 100;
-        return '<div class="password-strength" style="margin-top:var(--space-1)">' +
-            '<div style="height:4px;background:var(--bg-tertiary);border-radius:var(--radius-full);overflow:hidden">' +
-            '<div style="height:100%;width:' + pct + '%;background:' + strength.color + ';border-radius:var(--radius-full);transition:width 0.3s ease,background 0.3s ease"></div>' +
-            '</div>' +
-            '<div style="font-size:var(--text-xs);color:' + strength.color + ';margin-top:2px">' + Security.sanitize(strength.label) + '</div>' +
-            '</div>';
+        return `<div class="password-strength" style="margin-top:var(--space-1)"><div style="height:4px;background:var(--bg-tertiary);border-radius:var(--radius-full);overflow:hidden"><div style="height:100%;width:${pct}%;background:${strength.color};border-radius:var(--radius-full);transition:width 0.3s ease,background 0.3s ease"></div></div><div style="font-size:var(--text-xs);color:${strength.color};margin-top:2px">${Security.sanitize(strength.label)}</div></div>`;
     },
 
     _authModalContent(tab) {
@@ -586,10 +569,10 @@ const UI = {
     // ─── Trust & Rating ─────────────────────
     trustBadge(tier) {
         const badges = {
-            verified: '<span class="vip-badge vip-badge--verified">' + ICONS.check_circle + ' Verified</span>',
-            niche: '<span class="vip-badge vip-badge--niche">' + ICONS.globe + ' Niche</span>',
-            global: '<span class="vip-badge vip-badge--global">' + ICONS.globe + ' Global</span>',
-            diamond: '<span class="vip-badge vip-badge--diamond">' + ICONS.sparkles + ' Diamond</span>'
+            verified: `<span class="vip-badge vip-badge--verified">${ICONS.check_circle} Verified</span>`,
+            niche: `<span class="vip-badge vip-badge--niche">${ICONS.globe} Niche</span>`,
+            global: `<span class="vip-badge vip-badge--global">${ICONS.globe} Global</span>`,
+            diamond: `<span class="vip-badge vip-badge--diamond">${ICONS.sparkles} Diamond</span>`
         };
         return badges[tier] || '';
     },
@@ -600,10 +583,7 @@ const UI = {
         if (s > 80) color = 'var(--success)';
         else if (s > 60) color = 'var(--info)';
         else if (s > 30) color = 'var(--warning)';
-        return '<div class="trust-score">' +
-            '<div class="trust-score__bar"><div class="trust-score__fill" style="width:' + s + '%;background:' + color + '"></div></div>' +
-            '<span class="trust-score__value" style="color:' + color + '">' + s + '</span>' +
-            '</div>';
+        return `<div class="trust-score"><div class="trust-score__bar"><div class="trust-score__fill" style="width:${s}%;background:${color}"></div></div><span class="trust-score__value" style="color:${color}">${s}</span></div>`;
     },
 
     starRating(rating, interactive, onChange) {
@@ -738,7 +718,7 @@ const UI = {
             UI.emptyState(containerId, ICONS.inbox, 'No Listings Found', 'Be the first to sell something! Only social media services accepted.', 'Sell Now', '/sell');
             return;
         }
-        container.innerHTML = '<div class="mk-listings-grid">' + listings.map(function(l) { return UI.marketplaceCard(l); }).join('') + '</div>';
+        container.innerHTML = `<div class="mk-listings-grid">${listings.map(function(l) { return UI.marketplaceCard(l); }).join('')}</div>`;
         container.style.animation = 'fadeIn 0.3s ease';
         // Initialize interaction toolbars
         UI.initInteractionToolbar(container);
@@ -1141,7 +1121,7 @@ const UI = {
         if (!list) return;
         const { data, count } = await Comments.getByContent(contentId, contentType, 20, 0);
         if (!data || data.length === 0) {
-            list.innerHTML = '<div class="comments-panel__empty">No comments yet. Be the first!</div>';
+            list.innerHTML = `<div class="comments-panel__empty">No comments yet. Be the first!</div>`;
             return;
         }
         list.innerHTML = data.map(c => UI._commentItem(c)).join('');
@@ -1151,17 +1131,7 @@ const UI = {
     _commentItem(comment) {
         if (!comment) return '';
         const initial = (comment.display_name || 'U').charAt(0).toUpperCase();
-        return '<div class="comment-item" data-comment-id="' + comment.id + '">' +
-            '<div class="comment-item__avatar">' + initial + '</div>' +
-            '<div class="comment-item__body">' +
-            '<div class="comment-item__header">' +
-            '<span class="comment-item__name">' + Security.sanitize(comment.display_name || 'User') + UI.roleBadge(comment.role) + '</span>' +
-            '<span class="comment-item__date">' + UI.formatDate(comment.created_at) + '</span>' +
-            '</div>' +
-            '<div class="comment-item__text">' + Security.sanitize(comment.body || '') + '</div>' +
-            '</div>' +
-            '<button class="comment-item__report" data-comment-id="' + comment.id + '" aria-label="Report comment" title="Report">&#128681;</button>' +
-            '</div>';
+        return `<div class="comment-item" data-comment-id="${comment.id}"><div class="comment-item__avatar">${initial}</div><div class="comment-item__body"><div class="comment-item__header"><span class="comment-item__name">${Security.sanitize(comment.display_name || 'User')}${UI.roleBadge(comment.role)}</span><span class="comment-item__date">${UI.formatDate(comment.created_at)}</span></div><div class="comment-item__text">${Security.sanitize(comment.body || '')}</div></div><button class="comment-item__report" data-comment-id="${comment.id}" aria-label="Report comment" title="Report">&#128681;</button></div>`;
     },
 
     _initCommentReportBtns(container) {

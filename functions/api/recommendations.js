@@ -8,17 +8,14 @@
  * Cross-pollinates groups to increase engagement.
  */
 
-const ALLOWED_ORIGINS = ['https://groupsmix.com', 'https://www.groupsmix.com'];
+import { corsHeaders, handlePreflight } from './_shared/cors.js';
 
-function corsHeaders(origin) {
-    const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-    return {
-        'Access-Control-Allow-Origin': allowed,
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+/** CORS headers with caching for GET responses */
+function cachedCorsHeaders(origin) {
+    return corsHeaders(origin, {
         'Content-Type': 'application/json',
         'Cache-Control': 'public, max-age=1800'
-    };
+    });
 }
 
 // Calculate similarity score between two groups
@@ -57,12 +54,12 @@ export async function onRequest(context) {
     const origin = request.headers.get('Origin') || '';
 
     if (request.method === 'OPTIONS') {
-        return new Response(null, { status: 204, headers: corsHeaders(origin) });
+        return handlePreflight(origin);
     }
 
     if (request.method !== 'GET') {
         return new Response(JSON.stringify({ ok: false, error: 'Method not allowed' }), {
-            status: 405, headers: corsHeaders(origin)
+            status: 405, headers: cachedCorsHeaders(origin)
         });
     }
 
@@ -71,7 +68,7 @@ export async function onRequest(context) {
 
     if (!supabaseKey) {
         return new Response(JSON.stringify({ ok: false, error: 'Server not configured' }), {
-            status: 500, headers: corsHeaders(origin)
+            status: 500, headers: cachedCorsHeaders(origin)
         });
     }
 
@@ -90,7 +87,7 @@ export async function onRequest(context) {
             const sourceGroups = await sourceRes.json();
             if (!sourceGroups || !sourceGroups.length) {
                 return new Response(JSON.stringify({ ok: false, error: 'Group not found' }), {
-                    status: 404, headers: corsHeaders(origin)
+                    status: 404, headers: cachedCorsHeaders(origin)
                 });
             }
             var source = sourceGroups[0];
@@ -128,7 +125,7 @@ export async function onRequest(context) {
                 message: scored.length > 0
                     ? 'People who joined ' + source.name + ' also liked these groups'
                     : 'No similar groups found yet'
-            }), { status: 200, headers: corsHeaders(origin) });
+            }), { status: 200, headers: cachedCorsHeaders(origin) });
         }
 
         if (category) {
@@ -143,17 +140,17 @@ export async function onRequest(context) {
                 ok: true,
                 category: category,
                 recommendations: groups || []
-            }), { status: 200, headers: corsHeaders(origin) });
+            }), { status: 200, headers: cachedCorsHeaders(origin) });
         }
 
         return new Response(JSON.stringify({ ok: false, error: 'group_id or category parameter required' }), {
-            status: 400, headers: corsHeaders(origin)
+            status: 400, headers: cachedCorsHeaders(origin)
         });
 
     } catch (err) {
         console.error('recommendations error:', err);
         return new Response(JSON.stringify({ ok: false, error: 'Internal error' }), {
-            status: 500, headers: corsHeaders(origin)
+            status: 500, headers: cachedCorsHeaders(origin)
         });
     }
 }

@@ -15,21 +15,8 @@
  * Response: Server-Sent Events (SSE) stream of text chunks
  */
 
-/* ── Allowed origins for CORS ────────────────────────────────── */
-const ALLOWED_ORIGINS = [
-    'https://groupsmix.com',
-    'https://www.groupsmix.com'
-];
-
-/* ── CORS headers ────────────────────────────────────────────── */
-function corsHeaders(origin) {
-    const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-    return {
-        'Access-Control-Allow-Origin': allowed,
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-    };
-}
+import { corsHeaders, handlePreflight } from './_shared/cors.js';
+import { requireAuth } from './_shared/auth.js';
 
 /* ── OpenRouter free models (fallback chain) ─────────────────── */
 const OPENROUTER_MODELS = [
@@ -95,7 +82,7 @@ export async function onRequest(context) {
     const origin = request.headers.get('Origin') || '';
 
     if (request.method === 'OPTIONS') {
-        return new Response(null, { status: 204, headers: corsHeaders(origin) });
+        return handlePreflight(origin);
     }
 
     if (request.method !== 'POST') {
@@ -108,6 +95,10 @@ export async function onRequest(context) {
     // Get available API keys
     const groqKey = env?.GROQ_API_KEY;
     const openrouterKey = env?.OPENROUTER_API_KEY;
+
+    // Verify JWT authentication
+    const authResult = await requireAuth(request, env, corsHeaders(origin));
+    if (authResult instanceof Response) return authResult;
 
     if (!groqKey && !openrouterKey) {
         return new Response(
