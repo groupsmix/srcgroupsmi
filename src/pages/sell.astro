@@ -150,6 +150,86 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             .category-selector { grid-template-columns: repeat(2, 1fr); }
             .platform-selector { grid-template-columns: repeat(3, 1fr); }
         }
+        /* ─── Smart Pricing Suggestion ─── */
+        .sell-pricing-hint {
+            background: var(--info-light);
+            border: 1px solid var(--info);
+            border-radius: var(--radius-md);
+            padding: var(--space-3);
+            margin-top: var(--space-2);
+            font-size: var(--text-sm);
+            color: var(--info);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            transition: opacity 0.3s;
+        }
+        .sell-pricing-hint svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+        /* ─── Listing Quality Score ─── */
+        .sell-quality {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            margin-bottom: var(--space-4);
+        }
+        .sell-quality__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-3);
+        }
+        .sell-quality__label {
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+        }
+        .sell-quality__grade {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-full);
+            font-size: var(--text-sm);
+            font-weight: var(--font-bold);
+            color: #fff;
+        }
+        .sell-quality__bar {
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: var(--space-3);
+        }
+        .sell-quality__fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease, background-color 0.5s ease;
+        }
+        .sell-quality__tips {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sell-quality__tip {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-2);
+            font-size: var(--text-xs);
+            color: var(--text-secondary);
+            padding: var(--space-1) 0;
+        }
+        .sell-quality__tip svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            color: var(--warning);
+            margin-top: 1px;
+        }
     </style>
 
 
@@ -190,11 +270,24 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                             <textarea class="form-textarea" id="sell-description" placeholder="Describe your product in detail — features, what's included, how to use it, etc." required minlength="20" maxlength="1000" rows="4"></textarea>
                             <div class="form-help"><span id="sell-desc-count">0</span>/1000 characters</div>
                         </div>
+                        <!-- Listing Quality Score -->
+                        <div class="sell-quality" id="sell-quality" style="display:none">
+                            <div class="sell-quality__header">
+                                <span class="sell-quality__label">Listing Quality</span>
+                                <span class="sell-quality__grade" id="sell-quality-grade">--</span>
+                            </div>
+                            <div class="sell-quality__bar">
+                                <div class="sell-quality__fill" id="sell-quality-fill" style="width:0%"></div>
+                            </div>
+                            <ul class="sell-quality__tips" id="sell-quality-tips"></ul>
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group" style="flex:1">
                                 <label class="form-label" for="sell-price">Price (GMX Coins) *</label>
                                 <input type="number" class="form-input" id="sell-price" placeholder="50" min="1" step="1" required>
                                 <div class="form-help">Set price in GMX Coins. Buyers pay with coins, you receive earned coins (cashout-able with manual review).</div>
+                                <div id="sell-pricing-hint"></div>
                             </div>
                             <div class="form-group" style="flex:1">
                                 <label class="form-label" for="sell-contact">Contact Link *</label>
@@ -256,7 +349,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         renderCategorySelector();
         document.getElementById('sell-description').addEventListener('input', function() {
             document.getElementById('sell-desc-count').textContent = this.value.length;
+            updateQualityScore();
         });
+        document.getElementById('sell-title').addEventListener('input', updateQualityScore);
+        document.getElementById('sell-price').addEventListener('input', updateQualityScore);
+        var deliveryEl = document.getElementById('sell-delivery-url');
+        if (deliveryEl) deliveryEl.addEventListener('input', updateQualityScore);
         document.getElementById('sell-next-btn').addEventListener('click', goToPreview);
         document.getElementById('sell-back-btn').addEventListener('click', goBack);
         document.getElementById('sell-form').addEventListener('submit', submitListing);
@@ -281,6 +379,70 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
     }
 
+    // ─── Smart Pricing Suggestions ───
+    async function loadPricingSuggestion(category) {
+        var hintEl = document.getElementById('sell-pricing-hint');
+        if (!hintEl) return;
+        if (!category) { hintEl.innerHTML = ''; return; }
+        var pricing = await Marketplace.getSimilarPricing(category);
+        if (!pricing || !pricing.count || pricing.count < 2) {
+            hintEl.innerHTML = '';
+            return;
+        }
+        hintEl.innerHTML = '<div class="sell-pricing-hint">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>' +
+            '<span>' + Security.sanitize(pricing.suggestion) + ' (median: ' + pricing.median + ' GMX)</span>' +
+            '</div>';
+    }
+
+    // ─── Listing Quality Score ───
+    function updateQualityScore() {
+        var title = (document.getElementById('sell-title').value || '').trim();
+        var description = (document.getElementById('sell-description').value || '').trim();
+        var price = parseInt(document.getElementById('sell-price').value) || 0;
+        var category = (document.getElementById('sell-category').value || '');
+        var deliveryUrl = '';
+        var delEl = document.getElementById('sell-delivery-url');
+        if (delEl) deliveryUrl = delEl.value.trim();
+
+        // Only show after some input
+        if (!title && !description) {
+            document.getElementById('sell-quality').style.display = 'none';
+            return;
+        }
+
+        var result = Marketplace.getListingQualityScore({
+            title: title, description: description, price: price,
+            category: category, delivery_url: deliveryUrl
+        });
+
+        var qualityEl = document.getElementById('sell-quality');
+        qualityEl.style.display = '';
+
+        // Grade badge color
+        var gradeEl = document.getElementById('sell-quality-grade');
+        var gradeColors = { 'A+': '#10b981', 'A': '#10b981', 'B': '#3b82f6', 'C': '#f59e0b', 'D': '#f97316', 'F': '#ef4444' };
+        gradeEl.textContent = result.grade;
+        gradeEl.style.background = gradeColors[result.grade] || '#9ca3af';
+
+        // Progress bar
+        var fillEl = document.getElementById('sell-quality-fill');
+        fillEl.style.width = result.score + '%';
+        fillEl.style.background = gradeColors[result.grade] || '#9ca3af';
+
+        // Tips
+        var tipsEl = document.getElementById('sell-quality-tips');
+        if (result.tips.length > 0) {
+            tipsEl.innerHTML = result.tips.map(function(tip) {
+                return '<li class="sell-quality__tip">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+                    '<span>' + Security.sanitize(tip) + '</span></li>';
+            }).join('');
+        } else {
+            tipsEl.innerHTML = '<li class="sell-quality__tip" style="color:var(--success)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span>Great listing! All quality checks passed.</span></li>';
+        }
+    }
+
     function renderCategorySelector() {
         var container = document.getElementById('category-selector');
         if (!container) return;
@@ -298,6 +460,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 var catId = btn.dataset.category;
                 document.getElementById('sell-category').value = catId;
                 sellData.category = catId;
+                loadPricingSuggestion(catId);
+                updateQualityScore();
             });
         });
     }

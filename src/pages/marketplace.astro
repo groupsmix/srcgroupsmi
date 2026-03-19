@@ -297,6 +297,159 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             .mk-trending-scroll > * {
                 flex: 0 0 240px;
             }
+            .mk-flash-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        /* ─── Flash Sales Section ─── */
+        .mk-flash-section {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-radius: var(--radius-xl);
+            padding: var(--space-6);
+            margin-bottom: var(--space-8);
+        }
+        [data-theme="dark"] .mk-flash-section {
+            background: linear-gradient(135deg, #78350f33, #92400e33);
+        }
+        .mk-flash-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            margin-bottom: var(--space-4);
+        }
+        .mk-flash-header svg {
+            width: 24px;
+            height: 24px;
+            color: var(--warning);
+        }
+        .mk-flash-header h2 {
+            font-size: var(--text-lg);
+            font-weight: var(--font-bold);
+            margin: 0;
+        }
+        .mk-flash-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-4);
+        }
+        .mk-flash-card {
+            background: var(--bg-card);
+            border: 2px solid var(--warning);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            position: relative;
+            overflow: hidden;
+        }
+        .mk-flash-card__badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--error);
+            color: #fff;
+            padding: 2px 12px;
+            font-size: 11px;
+            font-weight: var(--font-bold);
+            border-radius: 0 0 0 var(--radius-md);
+        }
+        .mk-flash-card__title {
+            font-weight: var(--font-semibold);
+            margin-bottom: var(--space-2);
+            padding-right: var(--space-8);
+        }
+        .mk-flash-card__prices {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            margin-bottom: var(--space-2);
+        }
+        .mk-flash-card__original {
+            text-decoration: line-through;
+            color: var(--text-tertiary);
+            font-size: var(--text-sm);
+        }
+        .mk-flash-card__sale {
+            font-weight: var(--font-bold);
+            color: var(--error);
+            font-size: var(--text-lg);
+        }
+        .mk-flash-card__timer {
+            display: flex;
+            align-items: center;
+            gap: var(--space-1);
+            font-size: var(--text-xs);
+            color: var(--text-secondary);
+        }
+        .mk-flash-card__timer svg {
+            width: 14px;
+            height: 14px;
+        }
+        /* ─── Offer Modal ─── */
+        .mk-offer-form {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+        .mk-offer-form .form-input {
+            width: 100%;
+        }
+        .mk-offer-suggestion {
+            font-size: var(--text-xs);
+            color: var(--text-tertiary);
+            margin-top: 2px;
+        }
+        /* ─── Seller Trust Mini Badge ─── */
+        .mk-trust-mini {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 1px 6px;
+            border-radius: var(--radius-full);
+            font-size: 10px;
+            font-weight: var(--font-semibold);
+            border: 1px solid;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+        .mk-trust-mini svg {
+            width: 10px;
+            height: 10px;
+        }
+        /* ─── Also Bought Section ─── */
+        .mk-also-bought {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            margin-top: var(--space-4);
+        }
+        .mk-also-bought h3 {
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+            margin-bottom: var(--space-3);
+            color: var(--text-secondary);
+        }
+        .mk-also-bought__list {
+            display: flex;
+            gap: var(--space-3);
+            overflow-x: auto;
+        }
+        .mk-also-bought__item {
+            flex: 0 0 200px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            padding: var(--space-3);
+            font-size: var(--text-sm);
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: border-color 0.2s;
+        }
+        .mk-also-bought__item:hover {
+            border-color: var(--accent-primary);
+        }
+        .mk-also-bought__price {
+            color: var(--success);
+            font-weight: var(--font-semibold);
+            margin-top: var(--space-1);
         }
     </style>
 
@@ -325,6 +478,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <h2 id="mk-categories-title" class="mk-section__title">Browse by Category</h2>
                 <div class="mk-categories" id="mk-categories"></div>
             </section>
+            <!-- Flash Sales Section -->
+            <section class="mk-section" id="mk-flash-section" style="display:none" aria-labelledby="mk-flash-title">
+                <div class="mk-flash-section">
+                    <div class="mk-flash-header">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                        <h2 id="mk-flash-title">Flash Sales</h2>
+                        <span style="margin-left:auto;font-size:var(--text-xs);color:var(--text-secondary)">Limited time deals</span>
+                    </div>
+                    <div class="mk-flash-grid" id="mk-flash-container"></div>
+                </div>
+            </section>
+
             <section class="mk-section" id="mk-trending-section" style="display:none" aria-labelledby="mk-trending-title">
                 <h2 id="mk-trending-title" class="mk-section__title">
                     <span class="mk-trending-badge">
@@ -426,7 +591,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     async function loadMarketplace() {
         try {
-            await Promise.allSettled([loadListings(), loadServiceGroups(), loadTrending()]);
+            await Promise.allSettled([loadListings(), loadServiceGroups(), loadTrending(), loadFlashSales()]);
             clearTimeout(mkTimeout);
             updateStats();
         } catch (err) {
@@ -538,6 +703,90 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
 
     /* renderAds removed — now using UI.marketplaceGrid in loadListings */
+
+    // ─── Flash Sales ───
+    async function loadFlashSales() {
+        try {
+            var sales = await Marketplace.getFlashSales(6);
+            var section = document.getElementById('mk-flash-section');
+            var container = document.getElementById('mk-flash-container');
+            if (!section || !container) return;
+            if (!sales.length) { section.style.display = 'none'; return; }
+            section.style.display = '';
+            container.innerHTML = sales.map(function(l) {
+                var endsAt = new Date(l.sale_ends_at);
+                var now = Date.now();
+                var diff = endsAt.getTime() - now;
+                var hours = Math.max(0, Math.floor(diff / 3600000));
+                var mins = Math.max(0, Math.floor((diff % 3600000) / 60000));
+                var timeStr = hours > 0 ? hours + 'h ' + mins + 'm left' : mins + 'm left';
+                var discount = l.sale_discount || Math.round((1 - l.sale_price / l.price) * 100);
+                return '<div class="mk-flash-card">' +
+                    '<span class="mk-flash-card__badge">-' + discount + '%</span>' +
+                    '<div class="mk-flash-card__title">' + Security.sanitize(l.title || '') + '</div>' +
+                    '<div class="mk-flash-card__prices">' +
+                    '<span class="mk-flash-card__original">' + l.price + ' GMX</span>' +
+                    '<span class="mk-flash-card__sale">' + l.sale_price + ' GMX</span>' +
+                    '</div>' +
+                    '<div class="mk-flash-card__timer" data-ends="' + l.sale_ends_at + '">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
+                    '<span>' + timeStr + '</span>' +
+                    '</div>' +
+                    '</div>';
+            }).join('');
+            // Update timers every minute
+            setInterval(function() {
+                container.querySelectorAll('.mk-flash-card__timer').forEach(function(el) {
+                    var ends = el.dataset.ends;
+                    if (!ends) return;
+                    var diff = new Date(ends).getTime() - Date.now();
+                    if (diff <= 0) { el.querySelector('span').textContent = 'Ended'; return; }
+                    var h = Math.floor(diff / 3600000);
+                    var m = Math.floor((diff % 3600000) / 60000);
+                    el.querySelector('span').textContent = h > 0 ? h + 'h ' + m + 'm left' : m + 'm left';
+                });
+            }, 60000);
+        } catch (err) { console.error('Error loading flash sales:', err); }
+    }
+
+    // ─── Make Offer Modal ───
+    window.openOfferModal = function(listingId, listPrice) {
+        UI.modal({
+            title: 'Make an Offer',
+            content:
+                '<div class="mk-offer-form">' +
+                '<p style="color:var(--text-secondary);font-size:var(--text-sm)">List price: <strong>' + listPrice + ' GMX Coins</strong></p>' +
+                '<div class="form-group">' +
+                '<label class="form-label" for="offer-amount">Your Offer (GMX Coins)</label>' +
+                '<input type="number" class="form-input" id="offer-amount" min="1" max="' + (listPrice - 1) + '" placeholder="Enter your offer">' +
+                '<div class="mk-offer-suggestion">Tip: Offers around ' + Math.round(listPrice * 0.8) + '–' + Math.round(listPrice * 0.9) + ' GMX are more likely to be accepted</div>' +
+                '</div>' +
+                '<div class="form-group">' +
+                '<label class="form-label" for="offer-message">Message (optional)</label>' +
+                '<input type="text" class="form-input" id="offer-message" maxlength="300" placeholder="Hi, I\'m interested in...">' +
+                '</div>' +
+                '</div>',
+            footer: '<button class="btn btn-secondary" onclick="UI.closeModal()" type="button">Cancel</button>' +
+                '<button class="btn btn-primary" id="offer-submit-btn" type="button">Send Offer</button>'
+        });
+        var submitBtn = document.getElementById('offer-submit-btn');
+        if (submitBtn) {
+            submitBtn.addEventListener('click', async function() {
+                var amount = parseInt(document.getElementById('offer-amount').value);
+                var message = (document.getElementById('offer-message').value || '').trim();
+                if (!amount || amount < 1) { UI.toast('Please enter a valid offer amount.', 'error'); return; }
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="btn-spinner"></span>';
+                var result = await Marketplace.makeOffer(listingId, amount, message);
+                if (result) {
+                    UI.closeModal();
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Send Offer';
+                }
+            });
+        }
+    };
 
     function renderServices() {
         UI.groupGrid(serviceGroups, 'mk-services-container');

@@ -735,5 +735,711 @@ const Marketplace = {
             console.error('Marketplace.getProductReviewStats:', err.message);
             return { avg_rating: 0, review_count: 0 };
         }
+    },
+
+    // ═══════════════════════════════════════
+    // FEATURE 1: SELLER TRUST SCORING
+    // ═══════════════════════════════════════
+
+    /**
+     * Compute a seller trust score (0–100) based on multiple factors.
+     * Factors: account age, completed transactions, review ratings, response time, refund rate.
+     * Returns { score, level, badges, factors }.
+     */
+    async getSellerTrustScore(sellerId) {
+        try {
+            if (!sellerId) return Marketplace._defaultTrustScore();
+            var cacheKey = 'mk_trust_' + sellerId;
+            var cached = CACHE.get(cacheKey, 120000);
+            if (cached) return cached;
+
+            // Try server-side RPC first
+            try {
+                var { data, error } = await window.supabaseClient.rpc('get_seller_trust_score', { p_seller_id: sellerId });
+                if (!error && data) {
+                    var serverScore = Array.isArray(data) ? data[0] : data;
+                    if (serverScore && typeof serverScore.score === 'number') {
+                        var result = Marketplace._enrichTrustScore(serverScore);
+                        CACHE.set(cacheKey, result);
+                        return result;
+                    }
+                }
+            } catch (e) { /* RPC may not exist yet — fall back to client computation */ }
+
+            // Client-side computation fallback
+            var [profileResult, escrowResult, disputeResult] = await Promise.allSettled([
+                Marketplace.getSellerProfile(sellerId),
+                window.supabaseClient.from('marketplace_escrow').select('id, status, created_at', { count: 'exact' }).eq('seller_id', sellerId),
+                window.supabaseClient.from('marketplace_disputes').select('id', { count: 'exact' }).eq('seller_id', sellerId)
+            ]);
+
+            var profile = profileResult.status === 'fulfilled' ? profileResult.value : null;
+            var escrows = escrowResult.status === 'fulfilled' && !escrowResult.value.error ? escrowResult.value : { data: [], count: 0 };
+            var disputes = disputeResult.status === 'fulfilled' && !disputeResult.value.error ? disputeResult.value : { data: [], count: 0 };
+
+            if (!profile) return Marketplace._defaultTrustScore();
+
+            // Factor 1: Account age (max 20 points)
+            var accountAgeDays = 0;
+            if (profile.user && profile.user.created_at) {
+                accountAgeDays = (Date.now() - new Date(profile.user.created_at).getTime()) / (24 * 60 * 60 * 1000);
+            }
+            var ageScore = Math.min(20, Math.floor(accountAgeDays / 15));
+
+            // Factor 2: Completed transactions (max 25 points)
+            var completedCount = 0;
+            if (escrows.data) {
+                completedCount = escrows.data.filter(function(e) { return e.status === 'released' || e.status === 'completed'; }).length;
+            }
+            var txScore = Math.min(25, completedCount * 2.5);
+
+            // Factor 3: Review rating (max 25 points)
+            var avgRating = profile.avg_rating || 0;
+            var reviewCount = profile.review_count || 0;
+            var ratingScore = reviewCount > 0 ? (avgRating / 5) * 25 : 10;
+
+            // Factor 4: Response consistency (max 15 points — based on listing count and activity)
+            var listingCount = profile.listings ? profile.listings.length : 0;
+            var responseScore = Math.min(15, listingCount * 3);
+
+            // Factor 5: Refund/dispute rate (max 15 points — lower is better)
+            var totalTx = escrows.count || 0;
+            var disputeCount = disputes.count || 0;
+            var disputeRate = totalTx > 0 ? disputeCount / totalTx : 0;
+            var refundScore = Math.max(0, 15 - Math.floor(disputeRate * 100));
+
+            var totalScore = Math.min(100, Math.round(ageScore + txScore + ratingScore + responseScore + refundScore));
+
+            var result = Marketplace._enrichTrustScore({
+                score: totalScore,
+                factors: {
+                    account_age: { score: ageScore, max: 20, days: Math.floor(accountAgeDays) },
+                    transactions: { score: txScore, max: 25, count: completedCount },
+                    ratings: { score: ratingScore, max: 25, avg: avgRating, count: reviewCount },
+                    response: { score: responseScore, max: 15, listings: listingCount },
+                    refund_rate: { score: refundScore, max: 15, rate: disputeRate, disputes: disputeCount }
+                }
+            });
+
+            CACHE.set(cacheKey, result);
+            return result;
+        } catch (err) {
+            console.error('Marketplace.getSellerTrustScore:', err.message);
+            return Marketplace._defaultTrustScore();
+        }
+    },
+
+    _defaultTrustScore() {
+        return { score: 0, level: 'new', label: 'New Seller', color: '#9ca3af', badges: [], factors: {} };
+    },
+
+    _enrichTrustScore(raw) {
+        var score = raw.score || 0;
+        var level, label, color;
+        if (score >= 90) { level = 'top'; label = 'Top Seller'; color = '#f59e0b'; }
+        else if (score >= 70) { level = 'trusted'; label = 'Trusted Seller'; color = '#10b981'; }
+        else if (score >= 50) { level = 'verified'; label = 'Verified Seller'; color = '#6366f1'; }
+        else if (score >= 25) { level = 'active'; label = 'Active Seller'; color = '#3b82f6'; }
+        else { level = 'new'; label = 'New Seller'; color = '#9ca3af'; }
+
+        var badges = [];
+        if (score >= 90) badges.push({ id: 'top_seller', label: 'Top Seller', icon: 'trophy', color: '#f59e0b' });
+        if (score >= 50) badges.push({ id: 'verified_seller', label: 'Verified Seller', icon: 'shield', color: '#6366f1' });
+        if (raw.factors && raw.factors.transactions && raw.factors.transactions.count >= 10) {
+            badges.push({ id: 'experienced', label: '10+ Sales', icon: 'trending', color: '#10b981' });
+        }
+        if (raw.factors && raw.factors.ratings && raw.factors.ratings.avg >= 4.5 && raw.factors.ratings.count >= 5) {
+            badges.push({ id: 'highly_rated', label: 'Highly Rated', icon: 'star', color: '#f59e0b' });
+        }
+        if (raw.factors && raw.factors.refund_rate && raw.factors.refund_rate.disputes === 0 && raw.factors.transactions && raw.factors.transactions.count >= 5) {
+            badges.push({ id: 'zero_disputes', label: 'Zero Disputes', icon: 'check', color: '#10b981' });
+        }
+
+        return {
+            score: score,
+            level: level,
+            label: label,
+            color: color,
+            badges: badges,
+            factors: raw.factors || {}
+        };
+    },
+
+    // ═══════════════════════════════════════
+    // FEATURE 3: NEGOTIATION / OFFERS
+    // ═══════════════════════════════════════
+
+    /**
+     * Make an offer on a listing (buyer).
+     * @param {string} listingId
+     * @param {number} offerAmount - GMX Coins offered
+     * @param {string} message - optional message to seller
+     */
+    async makeOffer(listingId, offerAmount, message) {
+        try {
+            if (!Security.checkOnline()) { UI.toast('You appear to be offline.', 'error'); return null; }
+            if (!Auth.requireAuth()) return null;
+            if (!Security.checkRateLimit('offer')) { UI.toast('Too many offers. Please wait.', 'error'); return null; }
+
+            var listing = await Marketplace.getOne(listingId);
+            if (!listing) { UI.toast('Listing not found.', 'error'); return null; }
+            if (listing.seller_id === Auth.getUserId()) { UI.toast('You cannot make an offer on your own listing.', 'warning'); return null; }
+            if (offerAmount >= listing.price) { UI.toast('Offer must be below list price. Use Buy Now instead.', 'info'); return null; }
+            if (offerAmount < 1) { UI.toast('Offer must be at least 1 GMX Coin.', 'error'); return null; }
+
+            var row = {
+                listing_id: listingId,
+                buyer_id: Auth.getUserId(),
+                seller_id: listing.seller_id,
+                offer_amount: Math.floor(offerAmount),
+                original_price: listing.price,
+                message: Security.sanitize(message || '').slice(0, 300),
+                status: 'pending'
+            };
+
+            var { data, error } = await window.supabaseClient
+                .from('marketplace_offers').insert(row).select().single();
+            if (error) {
+                if (error.code === '23505') {
+                    UI.toast('You already have a pending offer on this listing.', 'warning');
+                } else {
+                    UI.toast('Failed to submit offer: ' + (error.message || 'Unknown error'), 'error');
+                }
+                return null;
+            }
+            UI.toast('Offer sent! The seller will be notified.', 'success');
+            CACHE.clear();
+            return data;
+        } catch (err) {
+            console.error('Marketplace.makeOffer:', err.message);
+            UI.toast('Failed to send offer.', 'error');
+            return null;
+        }
+    },
+
+    /**
+     * Respond to an offer (seller): accept, reject, or counter.
+     * @param {string} offerId
+     * @param {string} action - 'accept' | 'reject' | 'counter'
+     * @param {number} counterAmount - required if action is 'counter'
+     */
+    async respondToOffer(offerId, action, counterAmount) {
+        try {
+            if (!Auth.requireAuth()) return null;
+            var validActions = ['accept', 'reject', 'counter'];
+            if (validActions.indexOf(action) === -1) { UI.toast('Invalid action.', 'error'); return null; }
+
+            var updates = { status: action === 'accept' ? 'accepted' : action === 'reject' ? 'rejected' : 'countered' };
+            if (action === 'counter') {
+                if (!counterAmount || counterAmount < 1) { UI.toast('Counter amount must be at least 1 GMX Coin.', 'error'); return null; }
+                updates.counter_amount = Math.floor(counterAmount);
+            }
+            updates.responded_at = new Date().toISOString();
+
+            var { data, error } = await window.supabaseClient
+                .from('marketplace_offers').update(updates)
+                .eq('id', offerId).eq('seller_id', Auth.getUserId())
+                .select().single();
+            if (error) throw error;
+
+            var messages = { accepted: 'Offer accepted!', rejected: 'Offer rejected.', countered: 'Counter-offer sent!' };
+            UI.toast(messages[updates.status] || 'Response sent.', 'success');
+
+            // If accepted, auto-create escrow
+            if (action === 'accept' && data) {
+                try {
+                    await Marketplace.purchaseWithCoins(data.listing_id, data.offer_amount);
+                } catch (e) { console.warn('Auto-escrow after offer accept:', e.message); }
+            }
+
+            CACHE.clear();
+            return data;
+        } catch (err) {
+            console.error('Marketplace.respondToOffer:', err.message);
+            UI.toast('Failed to respond to offer.', 'error');
+            return null;
+        }
+    },
+
+    /**
+     * Get offers for a listing (seller view).
+     */
+    async getListingOffers(listingId) {
+        try {
+            if (!listingId || !Auth.requireAuth()) return [];
+            var { data, error } = await window.supabaseClient
+                .from('marketplace_offers').select('*')
+                .eq('listing_id', listingId).eq('seller_id', Auth.getUserId())
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return data || [];
+        } catch (err) { console.error('Marketplace.getListingOffers:', err.message); return []; }
+    },
+
+    /**
+     * Get all offers for the current user (as buyer or seller).
+     */
+    async getMyOffers() {
+        try {
+            if (!Auth.requireAuth()) return [];
+            var userId = Auth.getUserId();
+            var { data, error } = await window.supabaseClient
+                .from('marketplace_offers').select('*, marketplace_listings(title, price)')
+                .or('buyer_id.eq.' + userId + ',seller_id.eq.' + userId)
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return data || [];
+        } catch (err) { console.error('Marketplace.getMyOffers:', err.message); return []; }
+    },
+
+    // ═══════════════════════════════════════
+    // FEATURE 4: SMART PRICING SUGGESTIONS
+    // ═══════════════════════════════════════
+
+    /**
+     * Get pricing suggestions based on similar active listings in same category.
+     * Returns { min, max, median, avg, count, suggestion }.
+     */
+    async getSimilarPricing(category) {
+        try {
+            if (!category) return null;
+            var cacheKey = 'mk_pricing_' + category;
+            var cached = CACHE.get(cacheKey, 300000);
+            if (cached) return cached;
+
+            var { data, error } = await window.supabaseClient
+                .from('marketplace_listings').select('price')
+                .eq('product_category', category).eq('status', 'active')
+                .order('price', { ascending: true });
+            if (error) throw error;
+            var prices = (data || []).map(function(l) { return l.price; }).filter(function(p) { return p > 0; });
+
+            if (prices.length < 2) {
+                var result = { min: 0, max: 0, median: 0, avg: 0, count: 0, suggestion: 'Not enough data — set any price you think is fair.' };
+                CACHE.set(cacheKey, result);
+                return result;
+            }
+
+            var min = prices[0];
+            var max = prices[prices.length - 1];
+            var sum = prices.reduce(function(a, b) { return a + b; }, 0);
+            var avg = Math.round(sum / prices.length);
+            var mid = Math.floor(prices.length / 2);
+            var median = prices.length % 2 === 0 ? Math.round((prices[mid - 1] + prices[mid]) / 2) : prices[mid];
+
+            // Suggest a competitive range (25th to 75th percentile)
+            var p25 = prices[Math.floor(prices.length * 0.25)];
+            var p75 = prices[Math.floor(prices.length * 0.75)];
+            var categoryName = category.replace('_', ' ');
+            var suggestion = 'Similar ' + categoryName + ' sell for ' + p25 + '–' + p75 + ' GMX Coins.';
+
+            var result = { min: min, max: max, median: median, avg: avg, count: prices.length, p25: p25, p75: p75, suggestion: suggestion };
+            CACHE.set(cacheKey, result);
+            return result;
+        } catch (err) {
+            console.error('Marketplace.getSimilarPricing:', err.message);
+            return null;
+        }
+    },
+
+    // ═══════════════════════════════════════
+    // FEATURE 5: LISTING QUALITY SCORE
+    // ═══════════════════════════════════════
+
+    /**
+     * Compute a listing quality score (0–100) based on title, description, price, etc.
+     * Returns { score, grade, tips }.
+     */
+    getListingQualityScore(listingData) {
+        var score = 0;
+        var tips = [];
+        var title = listingData.title || '';
+        var description = listingData.description || '';
+        var price = listingData.price || 0;
+        var category = listingData.category || '';
+        var deliveryUrl = listingData.delivery_url || '';
+
+        // Title quality (max 25)
+        if (title.length >= 5) score += 5;
+        if (title.length >= 20) score += 5;
+        if (title.length >= 40) score += 5;
+        if (/[A-Z]/.test(title.charAt(0))) score += 3; // starts with capital
+        if (/[-—|:]/.test(title)) score += 4; // uses separator (more descriptive)
+        if (title.split(/\s+/).length >= 5) score += 3; // at least 5 words
+        if (title.length < 20) tips.push('Make your title longer and more descriptive (20+ chars)');
+        if (title.split(/\s+/).length < 4) tips.push('Use 4+ words in your title for better visibility');
+
+        // Description quality (max 30)
+        if (description.length >= 20) score += 5;
+        if (description.length >= 100) score += 5;
+        if (description.length >= 250) score += 5;
+        if (description.length >= 500) score += 5;
+        var descWords = description.split(/\s+/).length;
+        if (descWords >= 30) score += 5;
+        if (descWords >= 60) score += 5;
+        if (description.length < 100) tips.push('Write a detailed description (100+ chars) to get 3x more views');
+        if (description.length < 250) tips.push('Descriptions over 250 chars convert 2x better');
+
+        // Category selected (max 10)
+        if (category) score += 10;
+        else tips.push('Select a category to help buyers find your product');
+
+        // Price set (max 10)
+        if (price > 0) score += 10;
+        else tips.push('Set a price to enable purchases');
+
+        // Digital delivery provided (max 15)
+        if (deliveryUrl) {
+            score += 15;
+        } else {
+            tips.push('Add a preview image or download link to get 3x more views');
+        }
+
+        // Formatting bonus (max 10)
+        if (/\n/.test(description) || /\r/.test(description)) score += 5; // uses line breaks
+        if (/[•\-\*]/.test(description)) score += 5; // uses bullet points
+        if (description.indexOf('\n') === -1 && description.length > 100) tips.push('Use line breaks or bullet points to make your description easier to read');
+
+        score = Math.min(100, score);
+        var grade;
+        if (score >= 90) grade = 'A+';
+        else if (score >= 80) grade = 'A';
+        else if (score >= 70) grade = 'B';
+        else if (score >= 60) grade = 'C';
+        else if (score >= 40) grade = 'D';
+        else grade = 'F';
+
+        return { score: score, grade: grade, tips: tips.slice(0, 3) };
+    },
+
+    // ═══════════════════════════════════════
+    // FEATURE 6: PURCHASE-BASED RECOMMENDATIONS
+    // ═══════════════════════════════════════
+
+    /**
+     * Get "also bought" recommendations for a listing.
+     * Finds other listings purchased by buyers who also bought this listing.
+     */
+    async getAlsoBought(listingId) {
+        try {
+            if (!listingId) return [];
+            var cacheKey = 'mk_also_bought_' + listingId;
+            var cached = CACHE.get(cacheKey, 300000);
+            if (cached) return cached;
+
+            // Try RPC first
+            try {
+                var { data, error } = await window.supabaseClient.rpc('get_also_bought', { p_listing_id: listingId });
+                if (!error && data && data.length > 0) {
+                    CACHE.set(cacheKey, data);
+                    return data;
+                }
+            } catch (e) { /* RPC may not exist yet */ }
+
+            // Fallback: get same-category listings
+            var listing = await Marketplace.getOne(listingId);
+            if (!listing) return [];
+            var { data: similar, error: simErr } = await window.supabaseClient
+                .from('marketplace_listings').select('*')
+                .eq('product_category', listing.product_category)
+                .eq('status', 'active')
+                .neq('id', listingId)
+                .order('clicks', { ascending: false })
+                .limit(4);
+            if (simErr) throw simErr;
+            var result = similar || [];
+            CACHE.set(cacheKey, result);
+            return result;
+        } catch (err) {
+            console.error('Marketplace.getAlsoBought:', err.message);
+            return [];
+        }
+    },
+
+    // ═══════════════════════════════════════
+    // FEATURE 7: SELLER ANALYTICS
+    // ═══════════════════════════════════════
+
+    /**
+     * Get analytics data for the current seller.
+     * Returns { totalViews, totalClicks, totalSales, totalRevenue, conversionRate, listings }.
+     */
+    async getSellerAnalytics() {
+        try {
+            if (!Auth.requireAuth()) return null;
+            var sellerId = Auth.getUserId();
+            var cacheKey = 'mk_analytics_' + sellerId;
+            var cached = CACHE.get(cacheKey, 60000);
+            if (cached) return cached;
+
+            var [listingsResult, escrowResult, reviewResult] = await Promise.allSettled([
+                window.supabaseClient.from('marketplace_listings').select('*').eq('seller_id', sellerId).order('created_at', { ascending: false }),
+                window.supabaseClient.from('marketplace_escrow').select('*').eq('seller_id', sellerId),
+                window.supabaseClient.from('product_reviews').select('rating').eq('seller_id', sellerId)
+            ]);
+
+            var listings = listingsResult.status === 'fulfilled' && !listingsResult.value.error ? (listingsResult.value.data || []) : [];
+            var escrows = escrowResult.status === 'fulfilled' && !escrowResult.value.error ? (escrowResult.value.data || []) : [];
+            var reviews = reviewResult.status === 'fulfilled' && !reviewResult.value.error ? (reviewResult.value.data || []) : [];
+
+            var totalViews = 0;
+            var totalClicks = 0;
+            listings.forEach(function(l) {
+                totalViews += (l.impressions || 0);
+                totalClicks += (l.clicks || 0);
+            });
+
+            var completedSales = escrows.filter(function(e) { return e.status === 'released' || e.status === 'completed'; });
+            var totalRevenue = completedSales.reduce(function(sum, e) { return sum + (e.coin_amount || 0); }, 0);
+            var pendingSales = escrows.filter(function(e) { return e.status === 'held' || e.status === 'pending'; });
+
+            var ctr = totalViews > 0 ? ((totalClicks / totalViews) * 100).toFixed(1) : '0.0';
+            var conversionRate = totalClicks > 0 ? ((completedSales.length / totalClicks) * 100).toFixed(1) : '0.0';
+
+            var avgRating = 0;
+            if (reviews.length > 0) {
+                avgRating = reviews.reduce(function(sum, r) { return sum + r.rating; }, 0) / reviews.length;
+            }
+
+            // Best performing listings (by clicks)
+            var bestPerforming = listings.slice().sort(function(a, b) { return (b.clicks || 0) - (a.clicks || 0); }).slice(0, 5);
+
+            // Revenue by month (last 6 months)
+            var revenueByMonth = {};
+            completedSales.forEach(function(e) {
+                if (e.created_at) {
+                    var month = e.created_at.substring(0, 7); // YYYY-MM
+                    revenueByMonth[month] = (revenueByMonth[month] || 0) + (e.coin_amount || 0);
+                }
+            });
+
+            var result = {
+                totalListings: listings.length,
+                activeListings: listings.filter(function(l) { return l.status === 'active'; }).length,
+                totalViews: totalViews,
+                totalClicks: totalClicks,
+                ctr: ctr,
+                totalSales: completedSales.length,
+                pendingSales: pendingSales.length,
+                totalRevenue: totalRevenue,
+                conversionRate: conversionRate,
+                avgRating: avgRating.toFixed(1),
+                reviewCount: reviews.length,
+                bestPerforming: bestPerforming,
+                revenueByMonth: revenueByMonth,
+                listings: listings
+            };
+
+            CACHE.set(cacheKey, result);
+            return result;
+        } catch (err) {
+            console.error('Marketplace.getSellerAnalytics:', err.message);
+            return null;
+        }
+    },
+
+    // ═══════════════════════════════════════
+    // FEATURE 8: DISPUTE RESOLUTION FLOW
+    // ═══════════════════════════════════════
+
+    /**
+     * Seller responds to a dispute.
+     */
+    async respondToDispute(disputeId, response) {
+        try {
+            if (!Auth.requireAuth()) return null;
+            if (!response || response.trim().length < 10) {
+                UI.toast('Please provide a detailed response (at least 10 characters).', 'error');
+                return null;
+            }
+            var { data, error } = await window.supabaseClient
+                .from('marketplace_disputes').update({
+                    seller_response: Security.sanitize(response.trim()).slice(0, 1000),
+                    seller_responded_at: new Date().toISOString(),
+                    status: 'seller_responded'
+                })
+                .eq('id', disputeId).eq('seller_id', Auth.getUserId())
+                .select().single();
+            if (error) throw error;
+            UI.toast('Response submitted. An admin will review the dispute.', 'success');
+            return data;
+        } catch (err) {
+            console.error('Marketplace.respondToDispute:', err.message);
+            UI.toast('Failed to respond to dispute.', 'error');
+            return null;
+        }
+    },
+
+    /**
+     * Get dispute details with timeline.
+     */
+    async getDisputeDetails(disputeId) {
+        try {
+            if (!Auth.requireAuth()) return null;
+            var { data, error } = await window.supabaseClient
+                .from('marketplace_disputes').select('*, marketplace_escrow(*), marketplace_listings(title, description, price)')
+                .eq('id', disputeId).single();
+            if (error) throw error;
+            return data;
+        } catch (err) {
+            console.error('Marketplace.getDisputeDetails:', err.message);
+            return null;
+        }
+    },
+
+    // ═══════════════════════════════════════
+    // FEATURE 9: FLASH SALES
+    // ═══════════════════════════════════════
+
+    /**
+     * Set a flash sale on a listing (seller only).
+     * @param {string} listingId
+     * @param {number} discountPercent - 5–80%
+     * @param {number} durationHours - how long the sale lasts (1–168 hours / 1 week max)
+     */
+    async setFlashSale(listingId, discountPercent, durationHours) {
+        try {
+            if (!Auth.requireAuth()) return null;
+            if (discountPercent < 5 || discountPercent > 80) {
+                UI.toast('Discount must be between 5% and 80%.', 'error');
+                return null;
+            }
+            if (durationHours < 1 || durationHours > 168) {
+                UI.toast('Sale duration must be between 1 hour and 7 days.', 'error');
+                return null;
+            }
+
+            var listing = await Marketplace.getOne(listingId);
+            if (!listing) { UI.toast('Listing not found.', 'error'); return null; }
+            if (listing.seller_id !== Auth.getUserId()) { UI.toast('You can only set sales on your own listings.', 'error'); return null; }
+
+            var salePrice = Math.max(1, Math.floor(listing.price * (1 - discountPercent / 100)));
+            var endsAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
+
+            var { error } = await window.supabaseClient
+                .from('marketplace_listings').update({
+                    sale_price: salePrice,
+                    sale_ends_at: endsAt,
+                    sale_discount: discountPercent,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', listingId).eq('seller_id', Auth.getUserId());
+            if (error) throw error;
+
+            UI.toast('Flash sale activated! ' + discountPercent + '% off for ' + durationHours + ' hours.', 'success');
+            CACHE.clear();
+            return { sale_price: salePrice, sale_ends_at: endsAt, discount: discountPercent };
+        } catch (err) {
+            console.error('Marketplace.setFlashSale:', err.message);
+            UI.toast('Failed to set flash sale.', 'error');
+            return null;
+        }
+    },
+
+    /**
+     * Remove a flash sale from a listing.
+     */
+    async removeFlashSale(listingId) {
+        try {
+            if (!Auth.requireAuth()) return false;
+            var { error } = await window.supabaseClient
+                .from('marketplace_listings').update({
+                    sale_price: null,
+                    sale_ends_at: null,
+                    sale_discount: null,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', listingId).eq('seller_id', Auth.getUserId());
+            if (error) throw error;
+            UI.toast('Flash sale removed.', 'success');
+            CACHE.clear();
+            return true;
+        } catch (err) {
+            console.error('Marketplace.removeFlashSale:', err.message);
+            return false;
+        }
+    },
+
+    /**
+     * Get active flash sales across the marketplace.
+     */
+    async getFlashSales(limit) {
+        try {
+            var l = limit || 6;
+            var cacheKey = 'mk_flash_sales_' + l;
+            var cached = CACHE.get(cacheKey, 60000);
+            if (cached) return cached;
+
+            var { data, error } = await window.supabaseClient
+                .from('marketplace_listings').select('*')
+                .eq('status', 'active')
+                .not('sale_price', 'is', null)
+                .gt('sale_ends_at', new Date().toISOString())
+                .order('sale_ends_at', { ascending: true })
+                .limit(l);
+            if (error) throw error;
+            var result = data || [];
+            CACHE.set(cacheKey, result);
+            return result;
+        } catch (err) {
+            console.error('Marketplace.getFlashSales:', err.message);
+            return [];
+        }
+    },
+
+    // ═══════════════════════════════════════
+    // FEATURE 10: REVIEW VERIFICATION
+    // ═══════════════════════════════════════
+
+    /**
+     * Check if current user has purchased a listing (via escrow).
+     * Returns true if there's a completed escrow for this buyer+listing.
+     */
+    async hasVerifiedPurchase(listingId) {
+        try {
+            if (!listingId || !Auth.getUserId()) return false;
+            var { data, error } = await window.supabaseClient
+                .from('marketplace_escrow').select('id')
+                .eq('listing_id', listingId)
+                .eq('buyer_id', Auth.getUserId())
+                .in('status', ['released', 'completed'])
+                .limit(1);
+            if (error) throw error;
+            return data && data.length > 0;
+        } catch (err) {
+            console.error('Marketplace.hasVerifiedPurchase:', err.message);
+            return false;
+        }
+    },
+
+    /**
+     * Submit a verified product review (only if buyer has completed purchase).
+     */
+    async submitVerifiedReview(listingId, rating, reviewText) {
+        try {
+            if (!Security.checkOnline()) { UI.toast('You appear to be offline.', 'error'); return null; }
+            if (!Auth.requireAuth()) return null;
+
+            // Check verified purchase
+            var hasPurchase = await Marketplace.hasVerifiedPurchase(listingId);
+            if (!hasPurchase) {
+                UI.toast('Only verified buyers can leave reviews. Please purchase this product first.', 'warning');
+                return null;
+            }
+
+            // Get escrow ID for the purchase
+            var { data: escrows } = await window.supabaseClient
+                .from('marketplace_escrow').select('id')
+                .eq('listing_id', listingId).eq('buyer_id', Auth.getUserId())
+                .in('status', ['released', 'completed'])
+                .limit(1);
+            var escrowId = escrows && escrows.length > 0 ? escrows[0].id : null;
+
+            return await Marketplace.submitProductReview(listingId, escrowId, rating, reviewText);
+        } catch (err) {
+            console.error('Marketplace.submitVerifiedReview:', err.message);
+            UI.toast('Failed to submit review.', 'error');
+            return null;
+        }
     }
 };
