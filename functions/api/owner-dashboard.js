@@ -393,7 +393,8 @@ async function handlePost(request, env, admin, origin) {
                             p_type: 'refund',
                             p_description: 'Withdrawal request rejected' + (adminNote ? ': ' + adminNote : ''),
                             p_reference_id: requestId,
-                            p_reference_type: 'withdrawal_refund'
+                            p_reference_type: 'withdrawal_refund',
+                            p_coin_source: 'earned'
                         })
                     });
 

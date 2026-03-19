@@ -193,7 +193,8 @@ async function creditCoinsForPurchase(env, userId, order) {
                 p_description: 'Purchased ' + coinsToCredit + ' GMX Coins (' + packageName + ')',
                 p_reference_id: order.order_id,
                 p_reference_type: 'lemon_order',
-                p_metadata: { product_id: order.product_id, variant_id: order.variant_id, price: order.price, currency: order.currency }
+                p_metadata: { product_id: order.product_id, variant_id: order.variant_id, price: order.price, currency: order.currency },
+                p_coin_source: 'purchased'
             })
         });
 

@@ -34,19 +34,35 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             var el = document.getElementById('wallet-content');
             try {
                 var wallet = await Wallet.getBalance();
-                if (!wallet) wallet = { coins_balance: 0, total_earned: 0, total_spent: 0, total_tipped: 0, total_received: 0 };
+                if (!wallet) wallet = { coins_balance: 0, purchased_balance: 0, earned_balance: 0, total_earned: 0, total_spent: 0, total_tipped: 0, total_received: 0 };
+                var purchasedBal = wallet.purchased_balance || 0;
+                var earnedBal = wallet.earned_balance || 0;
 
                 el.innerHTML =
                     // Balance Header
                     '<div class="fuel-wallet-header">' +
                     '<div class="fuel-wallet-balance">' +
                     '<div class="fuel-wallet-balance__amount">' + Wallet.formatCoins(wallet.coins_balance) + '</div>' +
-                    '<div class="fuel-wallet-balance__label">GMX Coins</div>' +
+                    '<div class="fuel-wallet-balance__label">Total GMX Coins</div>' +
                     '<div class="fuel-wallet-balance__usd">&asymp; $' + Wallet.coinsToUSD(wallet.coins_balance) + ' USD</div>' +
                     '</div>' +
                     '<div class="fuel-wallet-actions">' +
                     '<button class="btn btn-primary btn-sm" id="wallet-buy-btn">Buy Coins</button>' +
-                    '<button class="btn btn-secondary btn-sm" id="wallet-withdraw-btn">Withdraw</button>' +
+                    '<button class="btn btn-secondary btn-sm" id="wallet-withdraw-btn">Cash Out</button>' +
+                    '</div>' +
+                    '</div>' +
+
+                    // Split Balance Breakdown
+                    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-bottom:var(--space-4)">' +
+                    '<div style="background:var(--surface-2);border-radius:var(--radius-lg);padding:var(--space-4);text-align:center;border:1px solid var(--border)">' +
+                    '<div style="font-size:var(--text-xs);color:var(--text-tertiary);margin-bottom:4px">Bought Coins</div>' +
+                    '<div style="font-size:var(--text-xl);font-weight:700;color:var(--fuel-blue)">' + Wallet.formatCoins(purchasedBal) + '</div>' +
+                    '<div style="font-size:var(--text-xs);color:var(--text-tertiary);margin-top:2px">Spend on platform only</div>' +
+                    '</div>' +
+                    '<div style="background:var(--surface-2);border-radius:var(--radius-lg);padding:var(--space-4);text-align:center;border:1px solid var(--border)">' +
+                    '<div style="font-size:var(--text-xs);color:var(--text-tertiary);margin-bottom:4px">Earned Coins</div>' +
+                    '<div style="font-size:var(--text-xl);font-weight:700;color:var(--fuel-green)">' + Wallet.formatCoins(earnedBal) + '</div>' +
+                    '<div style="font-size:var(--text-xs);color:var(--text-tertiary);margin-top:2px">Cashable (min 5,000)</div>' +
                     '</div>' +
                     '</div>' +
 
@@ -185,7 +201,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             try {
                 var data = await Wallet.getWithdrawals();
                 if (!data.length) {
-                    el.innerHTML = '<div class="fuel-wallet-txns"><div style="text-align:center;padding:var(--space-6);color:var(--text-tertiary)">No withdrawal requests yet. Earn tips and request a withdrawal when you have 1,000+ coins.</div></div>';
+                    el.innerHTML = '<div class="fuel-wallet-txns"><div style="text-align:center;padding:var(--space-6);color:var(--text-tertiary)">No cashout requests yet. Earn coins through tips, marketplace sales, referrals, and challenges. You can cash out when you reach 5,000+ earned coins.</div></div>';
                     return;
                 }
                 var statusColors = { pending: 'var(--fuel-orange)', approved: 'var(--fuel-green)', rejected: 'var(--fuel-red)', completed: 'var(--fuel-blue)' };
@@ -208,31 +224,56 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
 
         function openWithdrawModal(wallet) {
-            var balance = wallet ? wallet.coins_balance : 0;
-            if (balance < 1000) {
-                UI.toast('Minimum withdrawal is 1,000 GMX Coins ($7). Your balance: ' + balance + ' coins.', 'error');
+            var earnedBal = wallet ? (wallet.earned_balance || 0) : 0;
+            if (earnedBal < 5000) {
+                UI.toast('Minimum cashout is 5,000 earned coins ($50). Your earned balance: ' + earnedBal + ' coins. Bought coins cannot be cashed out.', 'error');
                 return;
             }
+            var feePercent = 10;
+            var defaultAmount = Math.min(earnedBal, 5000);
+            var feeCoins = Math.floor(defaultAmount * feePercent / 100);
+            var payoutCoins = defaultAmount - feeCoins;
+            var payoutUsd = (payoutCoins * 0.01).toFixed(2);
+
             var content = '<div style="max-width:400px">' +
-                '<p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-4)">Request a withdrawal of your GMX Coins. Minimum: 1,000 coins ($7). You receive 70% ($0.007 per coin).</p>' +
-                '<div style="margin-bottom:var(--space-3)"><label style="font-size:var(--text-sm);font-weight:600;display:block;margin-bottom:4px">Coins to Withdraw</label>' +
-                '<input type="number" id="withdraw-amount" class="form-input" min="1000" max="' + balance + '" value="' + Math.min(balance, 1000) + '" placeholder="Min 1000"></div>' +
-                '<div style="font-size:var(--text-sm);color:var(--fuel-coin);margin-bottom:var(--space-3)" id="withdraw-usd">You receive: $' + Wallet.coinsToUSD(Math.min(balance, 1000)) + '</div>' +
+                '<div style="background:color-mix(in srgb,var(--fuel-green) 10%,transparent);border:1px solid color-mix(in srgb,var(--fuel-green) 30%,transparent);border-radius:var(--radius-md);padding:var(--space-3);margin-bottom:var(--space-4)">' +
+                '<div style="font-size:var(--text-sm);font-weight:600;color:var(--fuel-green);margin-bottom:4px">Earned Coins Available for Cashout</div>' +
+                '<div style="font-size:var(--text-xl);font-weight:700">' + Wallet.formatCoins(earnedBal) + ' GMX</div>' +
+                '<div style="font-size:var(--text-xs);color:var(--text-tertiary);margin-top:2px">Only earned coins (tips, sales, rewards) can be cashed out. Bought coins stay on-platform.</div>' +
+                '</div>' +
+                '<p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-4)">Cash out your earned GMX Coins. Minimum: 5,000 coins ($50). Platform fee: ' + feePercent + '%. Processing time: 7-14 business days with manual review.</p>' +
+                '<div style="margin-bottom:var(--space-3)"><label style="font-size:var(--text-sm);font-weight:600;display:block;margin-bottom:4px">Coins to Cash Out</label>' +
+                '<input type="number" id="withdraw-amount" class="form-input" min="5000" max="' + earnedBal + '" value="' + defaultAmount + '" placeholder="Min 5000"></div>' +
+                '<div style="font-size:var(--text-sm);margin-bottom:var(--space-3);padding:var(--space-2);background:var(--surface-2);border-radius:var(--radius-sm)" id="withdraw-breakdown">' +
+                '<div style="display:flex;justify-content:space-between"><span>Amount:</span><span>' + defaultAmount + ' GMX</span></div>' +
+                '<div style="display:flex;justify-content:space-between;color:var(--fuel-red)"><span>Fee (' + feePercent + '%):</span><span>-' + feeCoins + ' GMX</span></div>' +
+                '<div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid var(--border);padding-top:4px;margin-top:4px"><span>You receive:</span><span style="color:var(--fuel-green)">$' + payoutUsd + '</span></div>' +
+                '</div>' +
                 '<div style="margin-bottom:var(--space-3)"><label style="font-size:var(--text-sm);font-weight:600;display:block;margin-bottom:4px">Payment Method</label>' +
-                '<select id="withdraw-method" class="form-input"><option value="paypal">PayPal</option><option value="wise">Wise (TransferWise)</option><option value="bank">Bank Transfer</option></select></div>' +
+                '<select id="withdraw-method" class="form-input"><option value="paypal">PayPal</option><option value="bank">Bank Transfer</option><option value="crypto">Crypto (NOWPayments)</option><option value="wise">Wise</option></select></div>' +
                 '<div style="margin-bottom:var(--space-4)"><label style="font-size:var(--text-sm);font-weight:600;display:block;margin-bottom:4px">Payment Email / Details</label>' +
-                '<input type="text" id="withdraw-details" class="form-input" placeholder="your@email.com"></div>' +
-                '<button class="btn btn-primary" id="withdraw-submit" style="width:100%">Submit Withdrawal Request</button>' +
+                '<input type="text" id="withdraw-details" class="form-input" placeholder="your@email.com or wallet address"></div>' +
+                '<div style="font-size:var(--text-xs);color:var(--text-tertiary);margin-bottom:var(--space-3);padding:var(--space-2);background:var(--surface-2);border-radius:var(--radius-sm)">' +
+                'Identity verification (email + phone) is required. Each cashout is manually reviewed by our admin team. Suspicious activity may result in payout rejection.</div>' +
+                '<button class="btn btn-primary" id="withdraw-submit" style="width:100%">Submit Cashout Request</button>' +
                 '</div>';
 
-            UI.modal({ title: 'Request Withdrawal', content: content, size: 'small' });
+            UI.modal({ title: 'Cash Out Earned Coins', content: content, size: 'small' });
 
             var amountInput = document.getElementById('withdraw-amount');
             if (amountInput) {
                 amountInput.addEventListener('input', function () {
                     var val = parseInt(amountInput.value) || 0;
-                    var usdEl = document.getElementById('withdraw-usd');
-                    if (usdEl) usdEl.textContent = 'You receive: $' + Wallet.coinsToUSD(val);
+                    var fc = Math.floor(val * feePercent / 100);
+                    var pc = val - fc;
+                    var pu = (pc * 0.01).toFixed(2);
+                    var breakdownEl = document.getElementById('withdraw-breakdown');
+                    if (breakdownEl) {
+                        breakdownEl.innerHTML =
+                            '<div style="display:flex;justify-content:space-between"><span>Amount:</span><span>' + val + ' GMX</span></div>' +
+                            '<div style="display:flex;justify-content:space-between;color:var(--fuel-red)"><span>Fee (' + feePercent + '%):</span><span>-' + fc + ' GMX</span></div>' +
+                            '<div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid var(--border);padding-top:4px;margin-top:4px"><span>You receive:</span><span style="color:var(--fuel-green)">$' + pu + '</span></div>';
+                    }
                 });
             }
 
@@ -242,16 +283,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     var amount = parseInt((document.getElementById('withdraw-amount') || {}).value) || 0;
                     var method = (document.getElementById('withdraw-method') || {}).value || 'paypal';
                     var details = (document.getElementById('withdraw-details') || {}).value || '';
+                    if (amount < 5000) { UI.toast('Minimum cashout is 5,000 earned coins', 'error'); return; }
+                    if (amount > earnedBal) { UI.toast('Amount exceeds your earned balance of ' + earnedBal + ' coins', 'error'); return; }
                     if (!details.trim()) { UI.toast('Please enter payment details', 'error'); return; }
                     submitBtn.disabled = true;
                     submitBtn.textContent = 'Submitting...';
                     var result = await Wallet.requestWithdrawal(amount, method, { email: details.trim() });
                     if (result) {
                         UI.closeModal();
+                        UI.toast('Cashout request submitted! Processing takes 7-14 business days with manual review.', 'success');
                         initWalletPage(); // Refresh
                     } else {
                         submitBtn.disabled = false;
-                        submitBtn.textContent = 'Submit Withdrawal Request';
+                        submitBtn.textContent = 'Submit Cashout Request';
                     }
                 });
             }

@@ -287,10 +287,11 @@ async function handlePost(request, env, origin) {
                                     body: JSON.stringify({
                                         p_user_id: user.userId,
                                         p_amount: ch.reward_coins,
-                                        p_type: 'reward',
+                                        p_type: 'challenge_bonus',
                                         p_description: 'Challenge completion reward',
                                         p_reference_id: challengeId,
-                                        p_reference_type: 'challenge'
+                                        p_reference_type: 'challenge',
+                                        p_coin_source: 'earned'
                                     })
                                 });
                             }
