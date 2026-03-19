@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-build:
+    name: Lint & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check Astro build
+        run: npm run build
+
+      - name: Verify no console.log in Cloudflare Functions (warnings only)
+        run: |
+          echo "::notice::Checking for console.log usage in functions/"
+          count=$(grep -r "console\.log" functions/ --include="*.js" -l | wc -l || true)
+          if [ "$count" -gt 0 ]; then
+            echo "::warning::Found console.log in $count function file(s) — consider using structured logging"
+          fi

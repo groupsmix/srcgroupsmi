@@ -15,7 +15,6 @@ interface Props {
   jsFiles?: string[];
   deferJsFiles?: string[];
   noIndex?: boolean;
-  extraHead?: string;
   bodyClass?: string;
   mainClass?: string;
   mainStyle?: string;
@@ -25,7 +24,6 @@ interface Props {
   includeStore?: boolean;
   includeFuel?: boolean;
   includeFuelComponents?: boolean;
-  includeArticleJs?: boolean[];
   structuredData?: string;
 }
 
@@ -81,15 +79,15 @@ const {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://hmlqppacanpxmrfdlkec.supabase.co">
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js" as="script" crossorigin="anonymous">
-    <link rel="preload" href="/assets/js/app.js?v=20260310b" as="script">
+    <link rel="preload" href="/assets/js/app.js" as="script">
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" as="style">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" media="print" onload="this.media='all'">
     <noscript>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap">
     </noscript>
-    <link rel="stylesheet" href="/assets/css/shared.css?v=20260310b">
+    <link rel="stylesheet" href="/assets/css/shared.css">
     {cssFiles.map(f => <link rel="stylesheet" href={f} />)}
-    <link rel="stylesheet" href="/assets/css/chatbot.css?v=20260310b">
+    <link rel="stylesheet" href="/assets/css/chatbot.css">
     <slot name="head" />
 </head>
 <body class={bodyClass || undefined}>
@@ -103,18 +101,18 @@ const {
     <div id="toast-container" class="toast-container" aria-live="polite"></div>
     <div id="modal-container"></div>
     <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-    <script is:inline src="/assets/js/supabase-config.js?v=20260310b"></script>
-    <script is:inline src="/assets/js/app.js?v=20260310b"></script>
-    <script is:inline src="/assets/js/components.js?v=20260310b"></script>
-    {includeFeatures && <script is:inline src="/assets/js/features.js?v=20260310b"></script>}
-    {includeSmartFilter && <script is:inline src="/assets/js/smart-filter.js?v=20260310b"></script>}
-    {includeJobs && <script is:inline src="/assets/js/jobs.js?v=20260310b"></script>}
-    {includeStore && <script is:inline src="/assets/js/store.js?v=20260310b"></script>}
-    {includeFuel && <script is:inline src="/assets/js/fuel-community.js?v=20260310b"></script>}
-    {includeFuelComponents && <script is:inline src="/assets/js/fuel-components.js?v=20260310b"></script>}
+    <script is:inline src="/assets/js/supabase-config.js"></script>
+    <script is:inline src="/assets/js/app.js"></script>
+    <script is:inline src="/assets/js/components.js"></script>
+    {includeFeatures && <script is:inline src="/assets/js/features.js"></script>}
+    {includeSmartFilter && <script is:inline src="/assets/js/smart-filter.js"></script>}
+    {includeJobs && <script is:inline src="/assets/js/jobs.js"></script>}
+    {includeStore && <script is:inline src="/assets/js/store.js"></script>}
+    {includeFuel && <script is:inline src="/assets/js/fuel-community.js"></script>}
+    {includeFuelComponents && <script is:inline src="/assets/js/fuel-components.js"></script>}
     {jsFiles.map(f => <script is:inline src={f}></script>)}
-    <script is:inline src="/assets/js/ai-features.js?v=20260310b" defer></script>
-    <script is:inline src="/assets/js/chatbot.js?v=20260310b" defer></script>
+    <script is:inline src="/assets/js/ai-features.js" defer></script>
+    <script is:inline src="/assets/js/chatbot.js" defer></script>
     {deferJsFiles.map(f => <script is:inline src={f} defer></script>)}
     <slot name="scripts" />
     {structuredData && <script type="application/ld+json" set:html={structuredData} />}
