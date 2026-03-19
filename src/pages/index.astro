@@ -925,6 +925,141 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             margin-top: 2px;
         }
 
+        /* ─── Trust Badges Strip (Hero) ────────── */
+        .trust-strip {
+            display: flex;
+            justify-content: center;
+            gap: var(--space-4);
+            flex-wrap: wrap;
+            margin: 0 auto var(--space-3);
+            max-width: 600px;
+            animation: fadeIn 0.5s ease 0.4s both;
+        }
+
+        .trust-strip__badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-1) var(--space-3);
+            border-radius: var(--radius-full);
+            font-size: var(--text-xs);
+            font-weight: var(--font-semibold);
+            color: rgba(255,255,255,0.85);
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.10);
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .trust-strip__badge:hover {
+            background: rgba(255,255,255,0.10);
+            border-color: rgba(255,255,255,0.18);
+            transform: translateY(-1px);
+        }
+
+        .trust-strip__badge svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+
+        .trust-strip__badge--verified {
+            background: rgba(16, 185, 129, 0.12);
+            border-color: rgba(16, 185, 129, 0.25);
+            color: #6ee7b7;
+        }
+
+        .trust-strip__badge--rated {
+            background: rgba(251, 191, 36, 0.12);
+            border-color: rgba(251, 191, 36, 0.25);
+            color: #fcd34d;
+        }
+
+        .trust-strip__badge--protected {
+            background: rgba(99, 102, 241, 0.12);
+            border-color: rgba(99, 102, 241, 0.25);
+            color: #a5b4fc;
+        }
+
+        [data-theme="light"] .trust-strip__badge--verified {
+            background: rgba(16, 185, 129, 0.10);
+            border-color: rgba(16, 185, 129, 0.30);
+            color: #059669;
+        }
+        [data-theme="light"] .trust-strip__badge--rated {
+            background: rgba(245, 158, 11, 0.10);
+            border-color: rgba(245, 158, 11, 0.30);
+            color: #b45309;
+        }
+        [data-theme="light"] .trust-strip__badge--protected {
+            background: rgba(99, 102, 241, 0.10);
+            border-color: rgba(99, 102, 241, 0.30);
+            color: #4f46e5;
+        }
+
+        /* ─── Browse Tabs (Progressive Disclosure) ─── */
+        .browse-tabs {
+            display: flex;
+            justify-content: center;
+            gap: var(--space-2);
+            margin-bottom: var(--space-4);
+        }
+
+        .browse-tabs__btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-5);
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border-primary);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+        }
+
+        .browse-tabs__btn:hover {
+            border-color: rgba(255,255,255,0.20);
+            color: rgba(255,255,255,0.85);
+            background: rgba(255,255,255,0.06);
+        }
+
+        .browse-tabs__btn--active {
+            background: var(--gradient-accent);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+        }
+
+        .browse-tabs__btn--active:hover {
+            color: #fff;
+            background: var(--accent-primary-hover);
+        }
+
+        .browse-tabs__btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .browse-tab-panel {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .browse-tab-panel--active {
+            display: block;
+        }
+
+        /* ─── Empty Stats Placeholder ─────────── */
+        .stats-bar__placeholder {
+            font-size: var(--text-xs);
+            color: var(--text-tertiary);
+            font-style: italic;
+        }
+
         /* ─── Responsive ───────────────────────── */
         @media (max-width: 767px) {
             .hero {
@@ -966,6 +1101,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             }
 
             .trust-features { flex-direction: column; }
+
+            .trust-strip { gap: var(--space-2); }
+
+            .browse-tabs { gap: var(--space-1); }
+            .browse-tabs__btn { padding: var(--space-2) var(--space-3); font-size: var(--text-xs); }
 
             .scroll-arrow {
                 display: none !important;
@@ -1028,6 +1168,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                         </div>
                     </div>
                 </div>
+
+                <!-- Trust Badges Strip -->
+                <div class="trust-strip">
+                    <span class="trust-strip__badge trust-strip__badge--verified">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Verified Groups
+                    </span>
+                    <span class="trust-strip__badge trust-strip__badge--rated">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        Community Rated
+                    </span>
+                    <span class="trust-strip__badge trust-strip__badge--protected">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        Scam Protected
+                    </span>
+                </div>
+
                 <!-- Quick Access Bar removed — links already in subnav and bottom nav -->
             </section>
 
@@ -1214,41 +1371,52 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 </div>
             </section>
 
-            <!-- ─── Browse Sections (Grouped) ────── -->
+            <!-- ─── Browse Sections (Tabbed Progressive Disclosure) ────── -->
             <div class="browse-group home-section--alt">
-                <!-- ─── Browse by Platform (Ribbon) ──── -->
                 <section class="home-section">
                     <div class="home-section__header">
-                        <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span> Browse by Platform</h2>
+                        <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span> Browse Groups</h2>
                     </div>
-                    <div class="scroll-container">
-                        <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
-                        <div class="browse-ribbon" id="platform-ribbon"></div>
-                        <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
-                    </div>
-                </section>
 
-                <!-- ─── Browse by Country (Ribbon) ───── -->
-                <section class="home-section">
-                    <div class="home-section__header">
-                        <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></span> Browse by Country</h2>
+                    <!-- Tab Buttons -->
+                    <div class="browse-tabs" id="browse-tabs" role="tablist">
+                        <button class="browse-tabs__btn browse-tabs__btn--active" role="tab" aria-selected="true" aria-controls="panel-platform" data-tab="platform">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                            Platform
+                        </button>
+                        <button class="browse-tabs__btn" role="tab" aria-selected="false" aria-controls="panel-country" data-tab="country">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                            Country
+                        </button>
+                        <button class="browse-tabs__btn" role="tab" aria-selected="false" aria-controls="panel-category" data-tab="category">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                            Category
+                        </button>
                     </div>
-                    <div class="scroll-container">
-                        <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
-                        <div class="browse-ribbon" id="country-ribbon"></div>
-                        <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
-                    </div>
-                </section>
 
-                <!-- ─── Browse by Category (Ribbon) ──── -->
-                <section class="home-section">
-                    <div class="home-section__header">
-                        <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></span> Browse by Category</h2>
+                    <!-- Tab Panels -->
+                    <div class="browse-tab-panel browse-tab-panel--active" id="panel-platform" role="tabpanel">
+                        <div class="scroll-container">
+                            <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
+                            <div class="browse-ribbon" id="platform-ribbon"></div>
+                            <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
+                        </div>
                     </div>
-                    <div class="scroll-container">
-                        <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
-                        <div class="category-ribbon browse-ribbon" id="category-ribbon"></div>
-                        <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
+
+                    <div class="browse-tab-panel" id="panel-country" role="tabpanel">
+                        <div class="scroll-container">
+                            <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
+                            <div class="browse-ribbon" id="country-ribbon"></div>
+                            <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
+                        </div>
+                    </div>
+
+                    <div class="browse-tab-panel" id="panel-category" role="tabpanel">
+                        <div class="scroll-container">
+                            <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
+                            <div class="category-ribbon browse-ribbon" id="category-ribbon"></div>
+                            <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
+                        </div>
                     </div>
                 </section>
             </div>
@@ -1273,6 +1441,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             initScrollAnimations();
             initHeaderScroll();
             initScrollArrows();
+            initBrowseTabs();
         });
 
         // Scroll-based animations
@@ -1810,34 +1979,68 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             }
         }
 
+        // ─── Browse Tabs (Progressive Disclosure) ───
+        function initBrowseTabs() {
+            var tabContainer = document.getElementById('browse-tabs');
+            if (!tabContainer) return;
+            var buttons = tabContainer.querySelectorAll('.browse-tabs__btn');
+            buttons.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var tab = btn.getAttribute('data-tab');
+                    // Update active button
+                    buttons.forEach(function(b) {
+                        b.classList.remove('browse-tabs__btn--active');
+                        b.setAttribute('aria-selected', 'false');
+                    });
+                    btn.classList.add('browse-tabs__btn--active');
+                    btn.setAttribute('aria-selected', 'true');
+                    // Update active panel
+                    document.querySelectorAll('.browse-tab-panel').forEach(function(panel) {
+                        panel.classList.remove('browse-tab-panel--active');
+                    });
+                    var activePanel = document.getElementById('panel-' + tab);
+                    if (activePanel) activePanel.classList.add('browse-tab-panel--active');
+                    // Re-initialize scroll arrows for newly visible panel
+                    initScrollArrows();
+                });
+            });
+        }
+
         function renderStats(stats) {
             const el = document.getElementById('hero-stats');
             if (!el) return;
             var groups = (stats && stats.total_groups) || 0;
             var users = (stats && stats.total_users) || 0;
 
+            // Build display values — show engaging placeholders for zero/empty
+            var groupsDisplay = (groups && groups > 0) ? groups : '<span class="stats-bar__placeholder">Growing...</span>';
+            var usersDisplay = (users && users > 0) ? users : '<span class="stats-bar__placeholder">Join us!</span>';
+            var groupsLabel = (groups && groups > 0) ? 'Groups' : 'Groups &middot; <a href="/submit" style="color:var(--accent-primary);text-decoration:none;font-weight:600">Be first!</a>';
+            var usersLabel = (users && users > 0) ? 'Users' : 'Users &middot; <a href="/submit" style="color:var(--accent-primary);text-decoration:none;font-weight:600">Sign up</a>';
+
             el.innerHTML =
                 '<div class="stats-bar__item">' +
                     '<div class="stats-bar__icon stats-bar__icon--groups"><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>' +
                     '<div class="stats-bar__info">' +
-                        '<div class="stats-bar__value" id="stat-groups">' + (groups != null ? groups : '--') + '</div>' +
-                        '<div class="stats-bar__label">Groups</div>' +
+                        '<div class="stats-bar__value" id="stat-groups">' + groupsDisplay + '</div>' +
+                        '<div class="stats-bar__label">' + groupsLabel + '</div>' +
                     '</div>' +
                 '</div>' +
                 '<div class="stats-bar__item">' +
                     '<div class="stats-bar__icon stats-bar__icon--users"><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>' +
                     '<div class="stats-bar__info">' +
-                        '<div class="stats-bar__value" id="stat-users">' + (users != null ? users : '--') + '</div>' +
-                        '<div class="stats-bar__label">Users</div>' +
+                        '<div class="stats-bar__value" id="stat-users">' + usersDisplay + '</div>' +
+                        '<div class="stats-bar__label">' + usersLabel + '</div>' +
                     '</div>' +
                 '</div>';
 
-            if (groups != null || users != null) {
+            // Only animate count-up when there are actual numbers
+            if (groups > 0 || users > 0) {
                 const observer = new IntersectionObserver((entries) => {
                     entries.forEach(entry => {
                         if (entry.isIntersecting) {
-                            if (groups != null) UI.countUp(document.getElementById('stat-groups'), groups);
-                            if (users != null) UI.countUp(document.getElementById('stat-users'), users);
+                            if (groups > 0) UI.countUp(document.getElementById('stat-groups'), groups);
+                            if (users > 0) UI.countUp(document.getElementById('stat-users'), users);
                             observer.disconnect();
                         }
                     });
