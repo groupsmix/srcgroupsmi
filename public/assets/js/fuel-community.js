@@ -527,7 +527,8 @@ const OwnerDashboard = {
                         p_type: 'refund',
                         p_description: 'Withdrawal request rejected: ' + (adminNote || ''),
                         p_reference_id: requestId,
-                        p_reference_type: 'withdrawal'
+                        p_reference_type: 'withdrawal',
+                        p_coin_source: 'earned'
                     });
                 }
             }
