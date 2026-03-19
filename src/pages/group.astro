@@ -111,6 +111,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             html += '<h1 class="profile-header__name">' + Security.sanitize(g.name || 'Unnamed Group');
             if (tier !== 'none') html += ' ' + UI.trustBadge(tier);
             if (g.is_verified) html += ' ' + UI.trustBadge('owner_verified');
+            var healthData = (typeof GroupHealth !== 'undefined') ? GroupHealth.getCachedStatus(g.id) : null;
+            if (healthData) html += ' ' + GroupHealth.healthBadge(healthData.status);
             html += '</h1>';
             html += '<div class="profile-header__platform">' + (platform ? platform.emoji + ' ' + Security.sanitize(platform.name) : '') +
                 (category ? ' &middot; ' + category.emoji + ' ' + Security.sanitize(category.name) : '') +

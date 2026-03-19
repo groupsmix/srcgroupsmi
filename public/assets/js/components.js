@@ -26,11 +26,16 @@ const UI = {
         const likes = group.likes_count || 0;
         const commentsCount = group.comments_count || 0;
 
+        const healthCache = typeof GroupHealth !== 'undefined' ? GroupHealth.getCachedStatus(group.id) : null;
+
         return '<div class="group-card" data-id="' + group.id + '">' +
             '<div class="group-card__header">' +
             '<span class="group-card__platform">' + (platform?.svgIcon || platform?.emoji || ICONS.smartphone) + ' ' + Security.sanitize(platform?.name || group.platform || '') + '</span>' +
+            '<span style="display:inline-flex;gap:4px;align-items:center">' +
             (tier !== 'none' ? UI.trustBadge(tier) : '') +
             (group.is_verified ? UI.trustBadge('owner_verified') : '') +
+            (healthCache ? GroupHealth.healthBadge(healthCache.status) : '') +
+            '</span>' +
             '</div>' +
             '<div class="group-card__body">' +
             '<div class="group-card__name">' + Security.sanitize(group.name || 'Unnamed') + '</div>' +

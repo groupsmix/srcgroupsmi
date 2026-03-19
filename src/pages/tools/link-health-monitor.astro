@@ -1,0 +1,608 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Group Link Health Monitor — GroupsMix"
+  description="Check if group invite links are still active. Detect expired, revoked, or dead links instantly. A GroupsMix trust signal."
+  canonical="https://groupsmix.com/tools/link-health-monitor"
+  ogTitle="Group Link Health Monitor — GroupsMix"
+  ogDescription="Instantly check if any group invite link is still alive or dead. Never click an expired link again."
+  ogUrl="https://groupsmix.com/tools/link-health-monitor"
+>
+<style is:inline>
+    .health-page {
+        max-width: var(--container-md);
+        margin: 0 auto;
+        padding: var(--space-8) var(--space-4);
+    }
+    .health-hero {
+        text-align: center;
+        margin-bottom: var(--space-8);
+        padding: var(--space-8) var(--space-4);
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.12), rgba(33, 150, 243, 0.08), transparent);
+        border-radius: var(--radius-xl);
+        border: 1px solid rgba(76, 175, 80, 0.2);
+    }
+    .health-hero__badge {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        background: var(--success);
+        color: #fff;
+        padding: var(--space-1) var(--space-3);
+        border-radius: var(--radius-full);
+        font-size: var(--text-xs);
+        font-weight: var(--font-bold);
+        margin-bottom: var(--space-3);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .health-hero__title {
+        font-size: var(--text-3xl);
+        font-weight: var(--font-bold);
+        margin-bottom: var(--space-3);
+    }
+    .health-hero__subtitle {
+        color: var(--text-secondary);
+        font-size: var(--text-base);
+        max-width: 550px;
+        margin: 0 auto;
+    }
+
+    /* ── Check Form ── */
+    .health-check-form {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
+        margin-bottom: var(--space-6);
+    }
+    .health-check-form__row {
+        display: flex;
+        gap: var(--space-3);
+    }
+    .health-check-form__row .form-input {
+        flex: 1;
+    }
+    .health-check-form__btn {
+        white-space: nowrap;
+    }
+
+    /* ── Results ── */
+    .health-result {
+        display: none;
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        overflow: hidden;
+        margin-bottom: var(--space-6);
+        animation: fadeIn 0.4s ease;
+    }
+    .health-result--visible {
+        display: block;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .health-result__header {
+        padding: var(--space-5) var(--space-6);
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+    }
+    .health-result__header--active {
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(76, 175, 80, 0.05));
+        border-bottom: 2px solid rgba(76, 175, 80, 0.3);
+    }
+    .health-result__header--dead {
+        background: linear-gradient(135deg, rgba(244, 67, 54, 0.15), rgba(244, 67, 54, 0.05));
+        border-bottom: 2px solid rgba(244, 67, 54, 0.3);
+    }
+    .health-result__header--uncertain {
+        background: linear-gradient(135deg, rgba(255, 152, 0, 0.15), rgba(255, 152, 0, 0.05));
+        border-bottom: 2px solid rgba(255, 152, 0, 0.3);
+    }
+
+    .health-result__icon {
+        font-size: var(--text-4xl);
+        flex-shrink: 0;
+    }
+    .health-result__status {
+        font-size: var(--text-xl);
+        font-weight: var(--font-bold);
+    }
+    .health-result__status--active { color: var(--success); }
+    .health-result__status--dead { color: var(--error); }
+    .health-result__status--uncertain { color: #ff9800; }
+
+    .health-result__detail {
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+        margin-top: var(--space-1);
+    }
+
+    .health-result__body {
+        padding: var(--space-5) var(--space-6);
+    }
+    .health-result__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: var(--space-4);
+    }
+    .health-result__metric {
+        text-align: center;
+        padding: var(--space-3);
+        background: rgba(255,255,255,0.03);
+        border-radius: var(--radius-md);
+    }
+    .health-result__metric-value {
+        font-size: var(--text-lg);
+        font-weight: var(--font-bold);
+        margin-bottom: var(--space-1);
+    }
+    .health-result__metric-label {
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    /* ── Bulk Check ── */
+    .health-bulk {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
+        margin-bottom: var(--space-6);
+    }
+    .health-bulk__title {
+        font-size: var(--text-lg);
+        font-weight: var(--font-bold);
+        margin-bottom: var(--space-3);
+    }
+    .health-bulk__textarea {
+        width: 100%;
+        min-height: 120px;
+        background: var(--bg-input);
+        border: 2px solid var(--border-primary);
+        border-radius: var(--radius-md);
+        padding: var(--space-3);
+        color: var(--text-primary);
+        font-size: var(--text-sm);
+        resize: vertical;
+        font-family: inherit;
+        margin-bottom: var(--space-3);
+    }
+    .health-bulk__textarea:focus {
+        border-color: var(--accent-primary);
+        outline: none;
+    }
+
+    /* ── Results List ── */
+    .health-list {
+        display: none;
+    }
+    .health-list--visible {
+        display: block;
+    }
+    .health-list__item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        border-bottom: 1px solid var(--border-primary);
+    }
+    .health-list__item:last-child {
+        border-bottom: none;
+    }
+    .health-list__dot {
+        width: 12px;
+        height: 12px;
+        border-radius: var(--radius-full);
+        flex-shrink: 0;
+    }
+    .health-list__dot--active { background: var(--success); }
+    .health-list__dot--dead { background: var(--error); }
+    .health-list__dot--uncertain { background: #ff9800; }
+    .health-list__dot--checking { background: var(--text-tertiary); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .health-list__url {
+        flex: 1;
+        font-size: var(--text-sm);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--text-secondary);
+    }
+    .health-list__status {
+        font-size: var(--text-xs);
+        font-weight: var(--font-bold);
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+    }
+    .health-list__status--active { background: rgba(76, 175, 80, 0.15); color: var(--success); }
+    .health-list__status--dead { background: rgba(244, 67, 54, 0.15); color: var(--error); }
+    .health-list__status--uncertain { background: rgba(255, 152, 0, 0.15); color: #ff9800; }
+    .health-list__status--checking { background: rgba(255,255,255,0.06); color: var(--text-tertiary); }
+
+    /* ── Stats Summary ── */
+    .health-stats {
+        display: none;
+        margin-bottom: var(--space-6);
+    }
+    .health-stats--visible {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-4);
+    }
+    .health-stats__card {
+        text-align: center;
+        padding: var(--space-5);
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border-primary);
+    }
+    .health-stats__card--active {
+        background: linear-gradient(135deg, rgba(76,175,80,0.1), transparent);
+        border-color: rgba(76,175,80,0.3);
+    }
+    .health-stats__card--dead {
+        background: linear-gradient(135deg, rgba(244,67,54,0.1), transparent);
+        border-color: rgba(244,67,54,0.3);
+    }
+    .health-stats__card--uncertain {
+        background: linear-gradient(135deg, rgba(255,152,0,0.1), transparent);
+        border-color: rgba(255,152,0,0.3);
+    }
+    .health-stats__number {
+        font-size: var(--text-3xl);
+        font-weight: var(--font-extrabold);
+    }
+    .health-stats__label {
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+        margin-top: var(--space-1);
+    }
+
+    /* ── Browse Groups Health ── */
+    .health-browse {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
+        margin-bottom: var(--space-6);
+    }
+    .health-browse__title {
+        font-size: var(--text-lg);
+        font-weight: var(--font-bold);
+        margin-bottom: var(--space-2);
+    }
+    .health-browse__subtitle {
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+        margin-bottom: var(--space-4);
+    }
+    .health-browse__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: var(--space-3);
+    }
+    .health-browse__item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        background: rgba(255,255,255,0.03);
+        border-radius: var(--radius-md);
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.15s;
+    }
+    .health-browse__item:hover {
+        background: rgba(255,255,255,0.06);
+    }
+    .health-browse__item-name {
+        flex: 1;
+        font-weight: var(--font-semibold);
+        font-size: var(--text-sm);
+    }
+
+    @media (max-width: 640px) {
+        .health-check-form__row { flex-direction: column; }
+        .health-stats--visible { grid-template-columns: 1fr; }
+        .health-hero__title { font-size: var(--text-2xl); }
+    }
+</style>
+
+<div class="health-page">
+    <!-- Hero -->
+    <div class="health-hero">
+        <span class="health-hero__badge">&#128737;&#65039; Trust Signal</span>
+        <h1 class="health-hero__title">Group Link Health Monitor</h1>
+        <p class="health-hero__subtitle">Never click an expired link again. Check any group invite link instantly — we'll tell you if it's alive, dead, or uncertain.</p>
+    </div>
+
+    <!-- Single Check -->
+    <div class="health-check-form">
+        <label style="font-weight:var(--font-semibold);font-size:var(--text-sm);display:block;margin-bottom:var(--space-2)">Check a single link</label>
+        <div class="health-check-form__row">
+            <input type="url" class="form-input" id="health-url-input" placeholder="Paste invite link (e.g., https://chat.whatsapp.com/...)" autocomplete="off">
+            <button class="btn btn-primary health-check-form__btn" id="health-check-btn">&#128269; Check</button>
+        </div>
+    </div>
+
+    <!-- Single Result -->
+    <div class="health-result" id="health-result">
+        <div class="health-result__header" id="health-result-header">
+            <div class="health-result__icon" id="health-result-icon"></div>
+            <div>
+                <div class="health-result__status" id="health-result-status"></div>
+                <div class="health-result__detail" id="health-result-detail"></div>
+            </div>
+        </div>
+        <div class="health-result__body">
+            <div class="health-result__grid" id="health-result-grid"></div>
+        </div>
+    </div>
+
+    <!-- Bulk Check -->
+    <div class="health-bulk">
+        <div class="health-bulk__title">&#128203; Bulk Link Checker</div>
+        <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-3)">Paste multiple invite links (one per line) to check them all at once. Max 10 links.</p>
+        <textarea class="health-bulk__textarea" id="health-bulk-input" placeholder="https://chat.whatsapp.com/abc123&#10;https://t.me/mygroup&#10;https://discord.gg/xyz789"></textarea>
+        <button class="btn btn-primary" id="health-bulk-btn">&#9889; Check All Links</button>
+    </div>
+
+    <!-- Bulk Stats -->
+    <div class="health-stats" id="health-stats">
+        <div class="health-stats__card health-stats__card--active">
+            <div class="health-stats__number" id="stats-active" style="color:var(--success)">0</div>
+            <div class="health-stats__label">Active</div>
+        </div>
+        <div class="health-stats__card health-stats__card--dead">
+            <div class="health-stats__number" id="stats-dead" style="color:var(--error)">0</div>
+            <div class="health-stats__label">Dead</div>
+        </div>
+        <div class="health-stats__card health-stats__card--uncertain">
+            <div class="health-stats__number" id="stats-uncertain" style="color:#ff9800">0</div>
+            <div class="health-stats__label">Uncertain</div>
+        </div>
+    </div>
+
+    <!-- Bulk Results List -->
+    <div class="health-list" id="health-list"></div>
+
+    <!-- Browse Groups Health -->
+    <div class="health-browse">
+        <div class="health-browse__title">&#128200; Recently Verified Groups</div>
+        <div class="health-browse__subtitle">Groups from GroupsMix with live health status</div>
+        <div class="health-browse__grid" id="health-browse-grid">
+            <div style="text-align:center;color:var(--text-tertiary);padding:var(--space-6);grid-column:1/-1">Loading groups...</div>
+        </div>
+    </div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+document.addEventListener('DOMContentLoaded', function() {
+    var urlInput = document.getElementById('health-url-input');
+    var checkBtn = document.getElementById('health-check-btn');
+    var resultEl = document.getElementById('health-result');
+    var bulkInput = document.getElementById('health-bulk-input');
+    var bulkBtn = document.getElementById('health-bulk-btn');
+
+    // Single check
+    checkBtn.addEventListener('click', function() {
+        var url = urlInput.value.trim();
+        if (!url) { UI.toast('Please paste an invite link.', 'error'); return; }
+        checkSingleLink(url);
+    });
+    urlInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') checkBtn.click();
+    });
+
+    // Bulk check
+    bulkBtn.addEventListener('click', function() {
+        var text = bulkInput.value.trim();
+        if (!text) { UI.toast('Please paste at least one link.', 'error'); return; }
+        var urls = text.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+        if (urls.length > 10) {
+            UI.toast('Maximum 10 links at a time.', 'warning');
+            urls = urls.slice(0, 10);
+        }
+        checkBulkLinks(urls);
+    });
+
+    async function checkSingleLink(url) {
+        checkBtn.disabled = true;
+        checkBtn.textContent = 'Checking...';
+        resultEl.classList.remove('health-result--visible');
+
+        try {
+            var data = await performHealthCheck(url);
+            renderSingleResult(data, url);
+        } catch (err) {
+            UI.toast('Health check failed: ' + err.message, 'error');
+        } finally {
+            checkBtn.disabled = false;
+            checkBtn.innerHTML = '&#128269; Check';
+        }
+    }
+
+    async function checkBulkLinks(urls) {
+        bulkBtn.disabled = true;
+        bulkBtn.textContent = 'Checking...';
+
+        var listEl = document.getElementById('health-list');
+        var statsEl = document.getElementById('health-stats');
+
+        // Initialize list
+        listEl.innerHTML = urls.map(function(url, i) {
+            return '<div class="health-list__item" id="bulk-item-' + i + '">' +
+                '<div class="health-list__dot health-list__dot--checking"></div>' +
+                '<div class="health-list__url">' + Security.sanitize(url) + '</div>' +
+                '<span class="health-list__status health-list__status--checking">Checking</span>' +
+                '</div>';
+        }).join('');
+        listEl.classList.add('health-list--visible');
+        statsEl.classList.add('health-stats--visible');
+
+        var counts = { active: 0, dead: 0, uncertain: 0 };
+
+        // Check sequentially to respect rate limits
+        for (var i = 0; i < urls.length; i++) {
+            try {
+                var data = await performHealthCheck(urls[i]);
+                var status = data.status || 'uncertain';
+                counts[status] = (counts[status] || 0) + 1;
+                updateBulkItem(i, status, urls[i]);
+            } catch (err) {
+                counts.uncertain++;
+                updateBulkItem(i, 'uncertain', urls[i]);
+            }
+            updateStats(counts);
+        }
+
+        bulkBtn.disabled = false;
+        bulkBtn.innerHTML = '&#9889; Check All Links';
+    }
+
+    function updateBulkItem(index, status, url) {
+        var item = document.getElementById('bulk-item-' + index);
+        if (!item) return;
+
+        var dotClass = 'health-list__dot health-list__dot--' + status;
+        var statusClass = 'health-list__status health-list__status--' + status;
+        var statusText = status === 'active' ? 'Active' : status === 'dead' ? 'Dead' : 'Uncertain';
+
+        item.innerHTML = '<div class="' + dotClass + '"></div>' +
+            '<div class="health-list__url">' + Security.sanitize(url) + '</div>' +
+            '<span class="' + statusClass + '">' + statusText + '</span>';
+    }
+
+    function updateStats(counts) {
+        document.getElementById('stats-active').textContent = counts.active;
+        document.getElementById('stats-dead').textContent = counts.dead;
+        document.getElementById('stats-uncertain').textContent = counts.uncertain;
+    }
+
+    function renderSingleResult(data, url) {
+        var status = data.status || 'uncertain';
+        var header = document.getElementById('health-result-header');
+        var icon = document.getElementById('health-result-icon');
+        var statusEl = document.getElementById('health-result-status');
+        var detailEl = document.getElementById('health-result-detail');
+        var gridEl = document.getElementById('health-result-grid');
+
+        header.className = 'health-result__header health-result__header--' + status;
+        statusEl.className = 'health-result__status health-result__status--' + status;
+
+        if (status === 'active') {
+            icon.textContent = '\u2705';
+            statusEl.textContent = 'Link is Active';
+            detailEl.textContent = 'This invite link is working and accessible.';
+        } else if (status === 'dead') {
+            icon.textContent = '\u274C';
+            statusEl.textContent = 'Link is Dead';
+            detailEl.textContent = 'This invite link has expired, been revoked, or the group no longer exists.';
+        } else {
+            icon.textContent = '\u26A0\uFE0F';
+            statusEl.textContent = 'Status Uncertain';
+            detailEl.textContent = 'We could not definitively determine if this link is active. It may be geo-restricted or temporarily unavailable.';
+        }
+
+        gridEl.innerHTML =
+            '<div class="health-result__metric">' +
+                '<div class="health-result__metric-value">' + (data.platform || 'Unknown') + '</div>' +
+                '<div class="health-result__metric-label">Platform</div>' +
+            '</div>' +
+            '<div class="health-result__metric">' +
+                '<div class="health-result__metric-value">' + (data.httpStatus || 'N/A') + '</div>' +
+                '<div class="health-result__metric-label">HTTP Status</div>' +
+            '</div>' +
+            '<div class="health-result__metric">' +
+                '<div class="health-result__metric-value">' + formatDate(data.checkedAt) + '</div>' +
+                '<div class="health-result__metric-label">Checked At</div>' +
+            '</div>';
+
+        resultEl.classList.add('health-result--visible');
+    }
+
+    function formatDate(iso) {
+        if (!iso) return 'Now';
+        var d = new Date(iso);
+        return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) + ' ' +
+               d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+
+    async function performHealthCheck(url) {
+        // First try the API
+        try {
+            var res = await fetch('/api/health-check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url })
+            });
+            var data = await res.json();
+            if (data.ok) return data;
+        } catch (e) {
+            // API unavailable — fall back to client-side heuristic
+        }
+
+        // Client-side fallback: try a no-cors fetch for basic reachability
+        try {
+            var controller = new AbortController();
+            var timeout = setTimeout(function() { controller.abort(); }, 6000);
+            await fetch(url, { method: 'HEAD', mode: 'no-cors', signal: controller.signal });
+            clearTimeout(timeout);
+            return { ok: true, status: 'active', httpStatus: 0, platform: detectPlatformClient(url), checkedAt: new Date().toISOString() };
+        } catch (e) {
+            return { ok: true, status: 'uncertain', httpStatus: 0, platform: detectPlatformClient(url), checkedAt: new Date().toISOString(), reason: 'client_fallback' };
+        }
+    }
+
+    function detectPlatformClient(url) {
+        var l = url.toLowerCase();
+        if (l.includes('chat.whatsapp.com') || l.includes('wa.me')) return 'whatsapp';
+        if (l.includes('t.me') || l.includes('telegram.me')) return 'telegram';
+        if (l.includes('discord.gg') || l.includes('discord.com/invite')) return 'discord';
+        if (l.includes('facebook.com/groups')) return 'facebook';
+        if (l.includes('signal.group')) return 'signal';
+        if (l.includes('reddit.com/r/')) return 'reddit';
+        return 'unknown';
+    }
+
+    // ── Browse recently added groups with health ──
+    async function loadBrowseGroups() {
+        try {
+            var result = await DB.groups.getApproved({ limit: 12, sort: 'newest' });
+            var groups = result.data || result || [];
+            var grid = document.getElementById('health-browse-grid');
+            if (!groups.length) {
+                grid.innerHTML = '<div style="text-align:center;color:var(--text-tertiary);padding:var(--space-6);grid-column:1/-1">No groups found</div>';
+                return;
+            }
+            grid.innerHTML = groups.map(function(g) {
+                var platform = CONFIG.platforms.find(function(p) { return p.id === g.platform; });
+                var healthData = GroupHealth.getCachedStatus(g.id);
+                var healthDot = healthData ? 'health-list__dot--' + healthData.status : 'health-list__dot--uncertain';
+                return '<a href="/group?id=' + g.id + '" class="health-browse__item">' +
+                    '<div class="health-list__dot ' + healthDot + '"></div>' +
+                    '<div class="health-browse__item-name">' +
+                    (platform ? platform.emoji + ' ' : '') +
+                    Security.sanitize((g.name || 'Group').slice(0, 30)) +
+                    '</div>' +
+                    '<span class="health-list__status health-list__status--' + (healthData ? healthData.status : 'uncertain') + '">' +
+                    (healthData ? (healthData.status === 'active' ? 'Active' : healthData.status === 'dead' ? 'Dead' : 'Unknown') : 'Not Checked') +
+                    '</span>' +
+                    '</a>';
+            }).join('');
+        } catch (err) {
+            console.error('loadBrowseGroups:', err);
+        }
+    }
+    loadBrowseGroups();
+});
+</script>
+</Fragment>
+</BaseLayout>
