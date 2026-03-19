@@ -2,8 +2,8 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 <BaseLayout
-  title="Group Marketplace — GroupsMix"
-  description="Discover service-based groups and promoted listings on the GroupsMix Marketplace."
+  title="Digital Products Marketplace — GroupsMix"
+  description="Buy & sell digital products — bot templates, design assets, automation workflows, guides, and community tools."
   canonical="https://groupsmix.com/marketplace"
 >
 <style is:inline>
@@ -193,7 +193,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         /* Category cards */
         .mk-categories {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: var(--space-3);
             margin-bottom: var(--space-6);
         }
@@ -304,8 +304,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="container" style="max-width:var(--container-lg);padding:0 var(--space-4)">
             <section class="mk-hero" aria-labelledby="mk-heading">
                 <span class="mk-hero__badge">Marketplace</span>
-                <h1 id="mk-heading">Trusted Digital Marketplace</h1>
-                <p class="mk-hero__subtitle">Buy &amp; sell digital products — templates, bots, scripts, design assets, guides &amp; tools. Verified sellers, AI-scanned listings, escrow payments.</p>
+                <h1 id="mk-heading">Digital Products Marketplace</h1>
+                <p class="mk-hero__subtitle">Buy & sell digital products — bot templates, design assets, automation workflows, guides, and community management tools. Pay with GMX Coins.</p>
             </section>
             <div class="mk-stats" id="mk-stats" aria-label="Marketplace statistics">
                 <div class="mk-stat">
@@ -353,7 +353,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                         <option value="price_low">Price: Low to High</option>
                         <option value="price_high">Price: High to Low</option>
                     </select>
-                    <a href="/sell" class="btn btn-primary btn-sm" style="margin-left:auto">+ Sell Now</a>
+                    <a href="/sell" class="btn btn-primary btn-sm" style="margin-left:auto">+ List Product</a>
                 </div>
                 <div id="mk-ads-container">
                     <div class="mk-listings-grid">
@@ -376,7 +376,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             </section>
             <section class="mk-cta" aria-labelledby="mk-cta-title">
                 <h2 id="mk-cta-title" class="mk-cta__title">Sell Your Digital Products</h2>
-                <p class="mk-cta__text">List your templates, bots, scripts, design assets, guides, or tools on the GroupsMix Marketplace. Verified sellers only — escrow-protected payments.</p>
+                <p class="mk-cta__text">List your bot templates, design assets, guides, automation workflows, or community tools. Reach thousands of buyers — earn GMX Coins!</p>
                 <div class="mk-cta__actions">
                     <a href="/sell" class="btn btn-primary">Create Listing</a>
                     <button class="btn btn-secondary" id="mk-promote-card-btn" type="button">Promote (Featured)</button>

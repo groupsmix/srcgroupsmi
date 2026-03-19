@@ -109,8 +109,8 @@ const Wallet = {
     async requestWithdrawal(coinsAmount, paymentMethod, paymentDetails) {
         try {
             if (!Auth.requireAuth()) return null;
-            if (coinsAmount < 1000) {
-                UI.toast('Minimum withdrawal is 1,000 coins ($7)', 'error');
+            if (coinsAmount < 5000) {
+                UI.toast('Minimum withdrawal is 5,000 earned coins ($50)', 'error');
                 return null;
             }
             var wallet = await this.getBalance();
@@ -118,7 +118,7 @@ const Wallet = {
                 UI.toast('Insufficient balance', 'error');
                 return null;
             }
-            var usdAmount = (coinsAmount * 0.007).toFixed(2);
+            var usdAmount = (coinsAmount * 0.01).toFixed(2);
             var { data, error } = await window.supabaseClient.from('withdrawal_requests').insert({
                 user_id: Auth.getUserId(),
                 coins_amount: coinsAmount,
@@ -165,7 +165,7 @@ const Wallet = {
     },
 
     coinsToUSD(coins) {
-        return (coins * 0.007).toFixed(2);
+        return (coins * 0.01).toFixed(2);
     }
 };
 

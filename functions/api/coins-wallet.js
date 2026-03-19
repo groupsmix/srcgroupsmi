@@ -316,7 +316,7 @@ async function handlePost(request, env, user, origin) {
                 // Calculate fee and payout
                 var feeCoins = Math.floor(coinsAmount * feePercent / 100);
                 var payoutCoins = coinsAmount - feeCoins;
-                var usdAmount = payoutCoins * 0.01; // $0.01 per coin
+                var usdAmount = payoutCoins * 0.01; // $1 = 100 coins → $0.01 per coin
 
                 // Create withdrawal request with fee details
                 const wRes = await fetch(supabaseUrl + '/rest/v1/withdrawal_requests', {
