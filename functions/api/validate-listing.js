@@ -2,8 +2,8 @@
  * /api/validate-listing — AI Content Filter for Marketplace Listings
  *
  * Cloudflare Pages Function that validates marketplace listing content
- * using OpenRouter AI API to ensure only social media related content
- * is accepted.
+ * using OpenRouter AI API to ensure only digital products are accepted
+ * and prohibited items (accounts, followers, credentials) are blocked.
  *
  * Environment variable required (set in Cloudflare Pages dashboard):
  *   OPENROUTER_API_KEY — your OpenRouter API key

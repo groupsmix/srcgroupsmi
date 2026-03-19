@@ -1893,31 +1893,43 @@ const DB = {
 // MODULE 5a: DB.marketplace (Marketplace Listings System)
 // ═══════════════════════════════════════
 const Marketplace = {
-    // ── Category definitions for marketplace ──
+    // ── Category definitions for digital products marketplace ──
     _categories: [
         {
-            id: 'social_media',
-            name: 'Social Media',
-            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>',
-            platforms: ['facebook', 'instagram', 'twitter', 'snapchat']
+            id: 'bot_templates',
+            name: 'Bot Templates',
+            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>',
+            platforms: ['telegram_bot', 'discord_bot', 'whatsapp_bot', 'slack_bot']
         },
         {
-            id: 'streaming',
-            name: 'Streaming',
-            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>',
-            platforms: ['youtube', 'tiktok', 'twitch', 'kick']
+            id: 'design_templates',
+            name: 'Design Templates',
+            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+            platforms: ['banners', 'sticker_packs', 'welcome_images', 'logos']
         },
         {
-            id: 'messaging',
-            name: 'Messaging',
-            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
-            platforms: ['whatsapp', 'telegram', 'discord', 'signal']
+            id: 'guides_ebooks',
+            name: 'Guides & Ebooks',
+            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>',
+            platforms: ['growth_guides', 'marketing_ebooks', 'community_playbooks', 'monetization_guides']
         },
         {
-            id: 'professional',
-            name: 'Professional',
-            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
-            platforms: ['linkedin', 'reddit', 'quora']
+            id: 'automation',
+            name: 'Automation',
+            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg>',
+            platforms: ['zapier_templates', 'n8n_flows', 'make_scenarios', 'api_scripts']
+        },
+        {
+            id: 'management_tools',
+            name: 'Management Tools',
+            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>',
+            platforms: ['group_tools', 'moderation_scripts', 'analytics_dashboards', 'reporting_templates']
+        },
+        {
+            id: 'premium_packs',
+            name: 'Premium Packs',
+            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+            platforms: ['welcome_packs', 'rules_templates', 'onboarding_kits', 'content_calendars']
         },
         {
             id: 'other',
@@ -2379,28 +2391,41 @@ const Marketplace = {
      */
     getMarketplacePlatforms(categoryId) {
         var allPlatforms = {
-            social_media: [
-                { id: 'facebook', name: 'Facebook', icon: ICONS.facebook },
-                { id: 'instagram', name: 'Instagram', icon: ICONS.instagram || ICONS.camera },
-                { id: 'twitter', name: 'Twitter/X', icon: ICONS.twitter || ICONS.smartphone },
-                { id: 'snapchat', name: 'Snapchat', icon: ICONS.smartphone }
+            bot_templates: [
+                { id: 'telegram_bot', name: 'Telegram Bot', icon: ICONS.telegram },
+                { id: 'discord_bot', name: 'Discord Bot', icon: ICONS.discord },
+                { id: 'whatsapp_bot', name: 'WhatsApp Bot', icon: ICONS.whatsapp },
+                { id: 'slack_bot', name: 'Slack Bot', icon: ICONS.smartphone }
             ],
-            streaming: [
-                { id: 'youtube', name: 'YouTube', icon: ICONS.youtube || ICONS.monitor },
-                { id: 'tiktok', name: 'TikTok', icon: ICONS.tiktok || ICONS.smartphone },
-                { id: 'twitch', name: 'Twitch', icon: ICONS.monitor },
-                { id: 'kick', name: 'Kick', icon: ICONS.monitor }
+            design_templates: [
+                { id: 'banners', name: 'Banners', icon: ICONS.monitor },
+                { id: 'sticker_packs', name: 'Sticker Packs', icon: ICONS.smartphone },
+                { id: 'welcome_images', name: 'Welcome Images', icon: ICONS.camera || ICONS.monitor },
+                { id: 'logos', name: 'Logos', icon: ICONS.globe }
             ],
-            messaging: [
-                { id: 'whatsapp', name: 'WhatsApp', icon: ICONS.whatsapp },
-                { id: 'telegram', name: 'Telegram', icon: ICONS.telegram },
-                { id: 'discord', name: 'Discord', icon: ICONS.discord },
-                { id: 'signal', name: 'Signal', icon: ICONS.smartphone }
+            guides_ebooks: [
+                { id: 'growth_guides', name: 'Growth Guides', icon: ICONS.globe },
+                { id: 'marketing_ebooks', name: 'Marketing Ebooks', icon: ICONS.globe },
+                { id: 'community_playbooks', name: 'Community Playbooks', icon: ICONS.globe },
+                { id: 'monetization_guides', name: 'Monetization Guides', icon: ICONS.globe }
             ],
-            professional: [
-                { id: 'linkedin', name: 'LinkedIn', icon: ICONS.globe },
-                { id: 'reddit', name: 'Reddit', icon: ICONS.globe },
-                { id: 'quora', name: 'Quora', icon: ICONS.globe }
+            automation: [
+                { id: 'zapier_templates', name: 'Zapier Templates', icon: ICONS.globe },
+                { id: 'n8n_flows', name: 'n8n Flows', icon: ICONS.globe },
+                { id: 'make_scenarios', name: 'Make Scenarios', icon: ICONS.globe },
+                { id: 'api_scripts', name: 'API Scripts', icon: ICONS.globe }
+            ],
+            management_tools: [
+                { id: 'group_tools', name: 'Group Tools', icon: ICONS.globe },
+                { id: 'moderation_scripts', name: 'Moderation Scripts', icon: ICONS.globe },
+                { id: 'analytics_dashboards', name: 'Analytics Dashboards', icon: ICONS.monitor },
+                { id: 'reporting_templates', name: 'Reporting Templates', icon: ICONS.globe }
+            ],
+            premium_packs: [
+                { id: 'welcome_packs', name: 'Welcome Packs', icon: ICONS.globe },
+                { id: 'rules_templates', name: 'Rules Templates', icon: ICONS.globe },
+                { id: 'onboarding_kits', name: 'Onboarding Kits', icon: ICONS.globe },
+                { id: 'content_calendars', name: 'Content Calendars', icon: ICONS.globe }
             ],
             other: []
         };
