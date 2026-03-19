@@ -304,8 +304,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="container" style="max-width:var(--container-lg);padding:0 var(--space-4)">
             <section class="mk-hero" aria-labelledby="mk-heading">
                 <span class="mk-hero__badge">Marketplace</span>
-                <h1 id="mk-heading">Group Marketplace</h1>
-                <p class="mk-hero__subtitle">Buy & sell social media accounts, channels, groups, and services. Only social media — trusted marketplace.</p>
+                <h1 id="mk-heading">Trusted Digital Marketplace</h1>
+                <p class="mk-hero__subtitle">Buy &amp; sell digital products — templates, bots, scripts, design assets, guides &amp; tools. Verified sellers, AI-scanned listings, escrow payments.</p>
             </section>
             <div class="mk-stats" id="mk-stats" aria-label="Marketplace statistics">
                 <div class="mk-stat">
@@ -337,16 +337,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <section class="mk-section" aria-labelledby="mk-ads-title">
                 <h2 id="mk-ads-title" class="mk-section__title">Marketplace Listings</h2>
                 <div class="mk-filters">
-                    <select id="mk-filter-platform" aria-label="Filter by platform">
-                        <option value="">All Platforms</option>
-                        <option value="whatsapp">WhatsApp</option>
-                        <option value="telegram">Telegram</option>
-                        <option value="discord">Discord</option>
-                        <option value="facebook">Facebook</option>
-                        <option value="youtube">YouTube</option>
-                        <option value="tiktok">TikTok</option>
-                        <option value="twitter">Twitter/X</option>
-                        <option value="instagram">Instagram</option>
+                    <select id="mk-filter-category" aria-label="Filter by category">
+                        <option value="">All Categories</option>
+                        <option value="templates">Templates</option>
+                        <option value="bots">Bots</option>
+                        <option value="scripts">Scripts</option>
+                        <option value="design_assets">Design Assets</option>
+                        <option value="guides">Guides</option>
+                        <option value="tools">Tools</option>
                     </select>
                     <select id="mk-filter-sort" aria-label="Sort listings">
                         <option value="smart">Smart (Shuffle + Popular)</option>
@@ -377,8 +375,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 </div>
             </section>
             <section class="mk-cta" aria-labelledby="mk-cta-title">
-                <h2 id="mk-cta-title" class="mk-cta__title">Sell Your Social Media Assets</h2>
-                <p class="mk-cta__text">List your channels, groups, accounts, or services on the GroupsMix Marketplace. Reach thousands of buyers — free to list!</p>
+                <h2 id="mk-cta-title" class="mk-cta__title">Sell Your Digital Products</h2>
+                <p class="mk-cta__text">List your templates, bots, scripts, design assets, guides, or tools on the GroupsMix Marketplace. Verified sellers only — escrow-protected payments.</p>
                 <div class="mk-cta__actions">
                     <a href="/sell" class="btn btn-primary">Create Listing</a>
                     <button class="btn btn-secondary" id="mk-promote-card-btn" type="button">Promote (Featured)</button>
@@ -393,7 +391,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     var marketplaceListings = [];
     var serviceGroups = [];
     var mkTimeout = null;
-    var mkCurrentPlatform = '';
     var mkCurrentCategory = '';
     var mkCurrentSort = 'smart';
 
@@ -411,11 +408,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
 
     function initFilters() {
-        var platformFilter = document.getElementById('mk-filter-platform');
+        var categoryFilter = document.getElementById('mk-filter-category');
         var sortFilter = document.getElementById('mk-filter-sort');
-        if (platformFilter) {
-            platformFilter.addEventListener('change', function() {
-                mkCurrentPlatform = this.value;
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', function() {
+                mkCurrentCategory = this.value;
                 loadListings();
             });
         }
@@ -460,9 +457,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 container.querySelectorAll('.mk-category-card').forEach(function(c) { c.classList.remove('mk-category-card--active'); });
                 card.classList.add('mk-category-card--active');
                 mkCurrentCategory = card.dataset.category;
-                mkCurrentPlatform = ''; // Reset platform filter when switching category
-                var platformFilter = document.getElementById('mk-filter-platform');
-                if (platformFilter) platformFilter.value = '';
+                var categoryFilter = document.getElementById('mk-filter-category');
+                if (categoryFilter) categoryFilter.value = mkCurrentCategory;
                 loadListings();
             });
             card.addEventListener('keydown', function(e) {
@@ -502,7 +498,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     async function loadListings() {
         try {
             var result = await Marketplace.getListings({
-                platform: mkCurrentPlatform,
                 category: mkCurrentCategory,
                 sort: mkCurrentSort,
                 limit: 24,

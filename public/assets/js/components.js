@@ -665,19 +665,26 @@ const UI = {
         if (!listing) return '';
         var safeTitle = Security.sanitize(listing.title || 'Untitled');
         var safeDesc = Security.sanitize(listing.description || '');
-        var platformId = listing.platform || 'other';
-        var platformIcon = ICONS[platformId] || ICONS.globe || '';
-        var platformName = platformId.charAt(0).toUpperCase() + platformId.slice(1);
+        var categoryId = listing.product_category || listing.platform || 'other';
+        var categoryName = categoryId.charAt(0).toUpperCase() + categoryId.slice(1).replace('_', ' ');
         var price = parseFloat(listing.price) || 0;
         var currency = listing.currency || 'USD';
         var priceDisplay = price > 0 ? UI.formatCurrency(price) : 'Contact';
         var sellerId = listing.seller_id || '';
         var impressions = listing.impressions || 0;
         var clicks = listing.clicks || 0;
+        var isVerified = listing.seller_verified === true;
+        var verifiedBadge = isVerified
+            ? '<span style="display:inline-flex;align-items:center;gap:2px;background:var(--success-light);color:var(--success);padding:1px 6px;border-radius:var(--radius-full);font-size:10px;font-weight:700" title="Verified Seller">' +
+              '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
+              ' Verified</span>'
+            : '';
+        var categoryBadge = '<span style="display:inline-flex;align-items:center;padding:1px 6px;border-radius:var(--radius-full);font-size:10px;font-weight:600;background:var(--accent-primary-light,rgba(99,102,241,0.1));color:var(--accent-primary)">' + Security.sanitize(categoryName) + '</span>';
 
-        return '<article class="mk-listing-card" data-listing-id="' + listing.id + '" data-seller-id="' + sellerId + '">' +
+        return '<article class="mk-listing-card" data-listing-id="' + listing.id + '" data-seller-id="' + sellerId + '" data-category="' + categoryId + '">' +
             '<div class="mk-listing-card__header">' +
-            '<span class="mk-listing-card__platform" title="' + platformName + '">' + platformIcon + '</span>' +
+            categoryBadge +
+            verifiedBadge +
             '<span class="mk-listing-card__price">' + priceDisplay + '</span>' +
             '<button type="button" class="mk-listing-card__report" data-listing-id="' + listing.id + '" title="Report listing" aria-label="Report listing">' +
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>' +
@@ -715,7 +722,7 @@ const UI = {
         var container = document.getElementById(containerId);
         if (!container) return;
         if (!Array.isArray(listings) || !listings.length) {
-            UI.emptyState(containerId, ICONS.inbox, 'No Listings Found', 'Be the first to sell something! Only social media services accepted.', 'Sell Now', '/sell');
+            UI.emptyState(containerId, ICONS.inbox, 'No Listings Found', 'Be the first to sell a digital product! Templates, bots, scripts, design assets, guides & tools.', 'Sell Now', '/sell');
             return;
         }
         container.innerHTML = `<div class="mk-listings-grid">${listings.map(function(l) { return UI.marketplaceCard(l); }).join('')}</div>`;
