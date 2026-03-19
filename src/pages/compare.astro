@@ -1,0 +1,420 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Compare Groups — GroupsMix"
+  description="Compare 2-3 social media groups side by side. Compare trust scores, member counts, ratings, and activity across WhatsApp, Telegram, Discord groups."
+  canonical="https://groupsmix.com/compare"
+  ogTitle="Compare Groups Side by Side — GroupsMix"
+  ogDescription="Compare trust scores, ratings, member counts, and activity of social media groups side by side."
+  ogUrl="https://groupsmix.com/compare"
+>
+<style is:inline>
+    .compare-page{max-width:var(--container-lg);margin:0 auto;padding:var(--space-8) var(--space-4)}
+    .compare-hero{text-align:center;margin-bottom:var(--space-8)}
+    .compare-hero__title{font-size:var(--text-3xl);font-weight:var(--font-extrabold);margin-bottom:var(--space-3)}
+    .compare-hero__subtitle{color:var(--text-secondary);font-size:var(--text-base);max-width:600px;margin:0 auto}
+    .compare-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-bottom:var(--space-8)}
+    .compare-slot{background:var(--bg-card);border:2px dashed var(--border-primary);border-radius:var(--radius-xl);padding:var(--space-5);text-align:center;min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .2s}
+    .compare-slot--filled{border-style:solid;border-color:var(--accent-primary)}
+    .compare-slot__number{font-size:var(--text-xs);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--space-2)}
+    .compare-slot__search{width:100%;margin-bottom:var(--space-2)}
+    .compare-slot__results{text-align:left;max-height:180px;overflow-y:auto}
+    .compare-slot__result{padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);cursor:pointer;border:1px solid var(--border-primary);margin-bottom:var(--space-1);font-size:var(--text-sm);transition:background .15s}
+    .compare-slot__result:hover{background:var(--bg-card-hover)}
+    .compare-slot__group{display:flex;flex-direction:column;align-items:center;gap:var(--space-2)}
+    .compare-slot__icon{width:48px;height:48px;border-radius:var(--radius-lg);background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;font-size:var(--text-xl)}
+    .compare-slot__name{font-weight:var(--font-bold);font-size:var(--text-sm);word-break:break-word;text-align:center}
+    .compare-slot__platform{font-size:var(--text-xs);color:var(--text-tertiary)}
+    .compare-slot__remove{background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:var(--text-sm);margin-top:var(--space-2);padding:var(--space-1) var(--space-2);border-radius:var(--radius-md);transition:all .15s}
+    .compare-slot__remove:hover{color:var(--error);background:rgba(239,68,68,.1)}
+    .compare-table-wrap{overflow-x:auto;margin-bottom:var(--space-8)}
+    .compare-table{width:100%;border-collapse:separate;border-spacing:0;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);overflow:hidden}
+    .compare-table th,.compare-table td{padding:var(--space-4);text-align:center;border-bottom:1px solid var(--border-primary)}
+    .compare-table th{background:var(--bg-tertiary);font-size:var(--text-sm);font-weight:var(--font-semibold);color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em}
+    .compare-table th:first-child,.compare-table td:first-child{text-align:left;font-weight:var(--font-semibold);color:var(--text-secondary);font-size:var(--text-sm);min-width:140px}
+    .compare-table tr:last-child td{border-bottom:none}
+    .compare-table__best{background:rgba(16,185,129,.08);color:var(--accent-primary);font-weight:var(--font-bold)}
+    .compare-table__bar{display:flex;align-items:center;justify-content:center;gap:var(--space-2)}
+    .compare-table__bar-track{width:80px;height:6px;background:var(--bg-tertiary);border-radius:var(--radius-full);overflow:hidden}
+    .compare-table__bar-fill{height:100%;border-radius:var(--radius-full);transition:width .5s ease}
+    .compare-cta{text-align:center;margin-top:var(--space-6)}
+    .compare-empty{text-align:center;padding:var(--space-12) var(--space-4);color:var(--text-tertiary)}
+    .compare-empty__icon{font-size:var(--text-4xl);margin-bottom:var(--space-3)}
+    .compare-share-bar{display:flex;justify-content:center;gap:var(--space-3);margin-bottom:var(--space-6)}
+    @media(max-width:767px){
+        .compare-slots{grid-template-columns:1fr}
+        .compare-table{font-size:var(--text-sm)}
+        .compare-table th,.compare-table td{padding:var(--space-3)}
+    }
+</style>
+
+<div class="compare-page">
+    <div class="compare-hero">
+        <h1 class="compare-hero__title">Compare Groups</h1>
+        <p class="compare-hero__subtitle">Select 2-3 groups to compare side by side. See how they stack up on trust score, ratings, member count, and activity.</p>
+    </div>
+
+    <div class="compare-slots" id="compare-slots">
+        <div class="compare-slot" id="slot-0">
+            <div class="compare-slot__number">Group 1</div>
+            <input type="text" class="form-input compare-slot__search" placeholder="Search group..." data-slot="0">
+            <div class="compare-slot__results" data-slot="0"></div>
+        </div>
+        <div class="compare-slot" id="slot-1">
+            <div class="compare-slot__number">Group 2</div>
+            <input type="text" class="form-input compare-slot__search" placeholder="Search group..." data-slot="1">
+            <div class="compare-slot__results" data-slot="1"></div>
+        </div>
+        <div class="compare-slot" id="slot-2">
+            <div class="compare-slot__number">Group 3 (optional)</div>
+            <input type="text" class="form-input compare-slot__search" placeholder="Search group..." data-slot="2">
+            <div class="compare-slot__results" data-slot="2"></div>
+        </div>
+    </div>
+
+    <div class="compare-share-bar" id="compare-share-bar" style="display:none">
+        <button class="btn btn-secondary btn-sm" id="compare-share-btn">Share Comparison</button>
+        <button class="btn btn-ghost btn-sm" id="compare-reset-btn">Reset All</button>
+    </div>
+
+    <div id="compare-output">
+        <div class="compare-empty">
+            <div class="compare-empty__icon">&#9878;</div>
+            <div>Select at least 2 groups above to start comparing</div>
+        </div>
+    </div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+document.addEventListener('DOMContentLoaded', function() {
+    var slots = [null, null, null];
+    var searchTimers = [null, null, null];
+
+    // Auto-fill from URL params
+    var params = new URLSearchParams(window.location.search);
+    var idsParam = params.get('ids');
+    if (idsParam) {
+        var ids = idsParam.split(',').slice(0, 3);
+        var loadPromises = ids.map(function(id, i) {
+            return DB.groups.getOne(id.trim()).then(function(group) {
+                if (group) {
+                    slots[i] = group;
+                    renderSlot(i);
+                }
+            });
+        });
+        Promise.all(loadPromises).then(function() {
+            renderComparison();
+        });
+    }
+
+    // Search inputs
+    document.querySelectorAll('.compare-slot__search').forEach(function(input) {
+        var slotIdx = parseInt(input.dataset.slot);
+        input.addEventListener('input', function() {
+            var query = input.value.trim();
+            clearTimeout(searchTimers[slotIdx]);
+            var resultsEl = document.querySelector('.compare-slot__results[data-slot="' + slotIdx + '"]');
+            if (query.length < 2) {
+                resultsEl.innerHTML = '';
+                return;
+            }
+            searchTimers[slotIdx] = setTimeout(function() {
+                searchForSlot(slotIdx, query);
+            }, 300);
+        });
+    });
+
+    async function searchForSlot(slotIdx, query) {
+        var resultsEl = document.querySelector('.compare-slot__results[data-slot="' + slotIdx + '"]');
+        resultsEl.innerHTML = '<div style="font-size:var(--text-xs);color:var(--text-tertiary);padding:var(--space-2)">Searching...</div>';
+        try {
+            var result = await DB.groups.search(query, { limit: 5 });
+            var groups = result.data || result || [];
+            if (!groups.length) {
+                resultsEl.innerHTML = '<div style="font-size:var(--text-xs);color:var(--text-tertiary);padding:var(--space-2)">No groups found</div>';
+                return;
+            }
+            // Filter out already-selected groups
+            var selectedIds = slots.filter(Boolean).map(function(g) { return g.id; });
+            groups = groups.filter(function(g) { return selectedIds.indexOf(g.id) === -1; });
+            if (!groups.length) {
+                resultsEl.innerHTML = '<div style="font-size:var(--text-xs);color:var(--text-tertiary);padding:var(--space-2)">All results already selected</div>';
+                return;
+            }
+            resultsEl.innerHTML = groups.map(function(g) {
+                var platform = CONFIG.platforms.find(function(p) { return p.id === g.platform; });
+                return '<div class="compare-slot__result" data-id="' + g.id + '">' +
+                    '<strong>' + Security.sanitize(g.name) + '</strong>' +
+                    '<span style="color:var(--text-tertiary);margin-left:var(--space-2);font-size:var(--text-xs)">' +
+                    (platform ? platform.emoji + ' ' + Security.sanitize(platform.name) : Security.sanitize(g.platform || '')) +
+                    '</span></div>';
+            }).join('');
+            resultsEl.querySelectorAll('.compare-slot__result').forEach(function(el) {
+                el.addEventListener('click', function() {
+                    var gid = el.dataset.id;
+                    var group = groups.find(function(g) { return g.id === gid; });
+                    if (group) {
+                        slots[slotIdx] = group;
+                        renderSlot(slotIdx);
+                        renderComparison();
+                        updateUrl();
+                    }
+                });
+            });
+        } catch (err) {
+            resultsEl.innerHTML = '<div style="font-size:var(--text-xs);color:var(--error);padding:var(--space-2)">Search failed</div>';
+        }
+    }
+
+    function renderSlot(idx) {
+        var slotEl = document.getElementById('slot-' + idx);
+        var group = slots[idx];
+        if (!group) {
+            var labels = ['Group 1', 'Group 2', 'Group 3 (optional)'];
+            slotEl.className = 'compare-slot';
+            slotEl.innerHTML =
+                '<div class="compare-slot__number">' + labels[idx] + '</div>' +
+                '<input type="text" class="form-input compare-slot__search" placeholder="Search group..." data-slot="' + idx + '">' +
+                '<div class="compare-slot__results" data-slot="' + idx + '"></div>';
+            // Re-attach search listener
+            var input = slotEl.querySelector('.compare-slot__search');
+            input.addEventListener('input', function() {
+                var query = input.value.trim();
+                clearTimeout(searchTimers[idx]);
+                var resultsEl = slotEl.querySelector('.compare-slot__results');
+                if (query.length < 2) { resultsEl.innerHTML = ''; return; }
+                searchTimers[idx] = setTimeout(function() { searchForSlot(idx, query); }, 300);
+            });
+            return;
+        }
+        var platform = CONFIG.platforms.find(function(p) { return p.id === group.platform; });
+        slotEl.className = 'compare-slot compare-slot--filled';
+        slotEl.innerHTML =
+            '<div class="compare-slot__group">' +
+            '<div class="compare-slot__icon">' + (platform ? platform.emoji : '&#128241;') + '</div>' +
+            '<div class="compare-slot__name">' + Security.sanitize(group.name) + '</div>' +
+            '<div class="compare-slot__platform">' + (platform ? Security.sanitize(platform.name) : '') + '</div>' +
+            '<button class="compare-slot__remove" data-slot="' + idx + '">Remove</button>' +
+            '</div>';
+        slotEl.querySelector('.compare-slot__remove').addEventListener('click', function() {
+            slots[idx] = null;
+            renderSlot(idx);
+            renderComparison();
+            updateUrl();
+        });
+    }
+
+    function getFilledSlots() {
+        return slots.filter(Boolean);
+    }
+
+    function renderComparison() {
+        var output = document.getElementById('compare-output');
+        var shareBar = document.getElementById('compare-share-bar');
+        var filled = getFilledSlots();
+        if (filled.length < 2) {
+            shareBar.style.display = 'none';
+            output.innerHTML =
+                '<div class="compare-empty">' +
+                '<div class="compare-empty__icon">&#9878;</div>' +
+                '<div>Select at least 2 groups above to start comparing</div>' +
+                '</div>';
+            return;
+        }
+        shareBar.style.display = 'flex';
+
+        // Calculate metrics for each group
+        var metrics = filled.map(function(g) {
+            var trustScore = typeof Algorithms !== 'undefined' ? Algorithms.calculateTrustScore(g) : 0;
+            var tier = typeof Algorithms !== 'undefined' ? Algorithms.getEffectiveTier(g) : 'none';
+            return {
+                group: g,
+                trustScore: trustScore,
+                tier: tier,
+                rating: parseFloat(g.avg_rating) || 0,
+                reviewCount: g.review_count || 0,
+                views: g.views || 0,
+                clicks: g.click_count || 0,
+                members: g.members_count || 0,
+                reports: g.reports || 0,
+                likes: g.likes_count || 0
+            };
+        });
+
+        // Determine best values for highlighting
+        var bestTrust = Math.max.apply(null, metrics.map(function(m) { return m.trustScore; }));
+        var bestRating = Math.max.apply(null, metrics.map(function(m) { return m.rating; }));
+        var bestReviews = Math.max.apply(null, metrics.map(function(m) { return m.reviewCount; }));
+        var bestViews = Math.max.apply(null, metrics.map(function(m) { return m.views; }));
+        var bestClicks = Math.max.apply(null, metrics.map(function(m) { return m.clicks; }));
+        var bestMembers = Math.max.apply(null, metrics.map(function(m) { return m.members; }));
+        var bestLikes = Math.max.apply(null, metrics.map(function(m) { return m.likes; }));
+        var lowestReports = Math.min.apply(null, metrics.map(function(m) { return m.reports; }));
+
+        var html = '<div class="compare-table-wrap"><table class="compare-table">';
+
+        // Header
+        html += '<thead><tr><th>Metric</th>';
+        for (var i = 0; i < metrics.length; i++) {
+            var platform = CONFIG.platforms.find(function(p) { return p.id === metrics[i].group.platform; });
+            html += '<th>' + (platform ? platform.emoji + ' ' : '') + Security.sanitize(metrics[i].group.name) + '</th>';
+        }
+        html += '</tr></thead><tbody>';
+
+        // Platform row
+        html += '<tr><td>Platform</td>';
+        for (var i = 0; i < metrics.length; i++) {
+            var platform = CONFIG.platforms.find(function(p) { return p.id === metrics[i].group.platform; });
+            html += '<td>' + (platform ? Security.sanitize(platform.name) : Security.sanitize(metrics[i].group.platform || 'N/A')) + '</td>';
+        }
+        html += '</tr>';
+
+        // Trust Score row with bar
+        html += '<tr><td>Trust Score</td>';
+        for (var i = 0; i < metrics.length; i++) {
+            var isBest = metrics[i].trustScore === bestTrust && bestTrust > 0;
+            var barColor = metrics[i].trustScore >= 70 ? '#10b981' : metrics[i].trustScore >= 40 ? '#f59e0b' : '#ef4444';
+            html += '<td class="' + (isBest ? 'compare-table__best' : '') + '">' +
+                '<div class="compare-table__bar">' +
+                '<span>' + metrics[i].trustScore + '/100</span>' +
+                '</div>' +
+                '<div class="compare-table__bar" style="margin-top:var(--space-1)">' +
+                '<div class="compare-table__bar-track"><div class="compare-table__bar-fill" style="width:' + metrics[i].trustScore + '%;background:' + barColor + '"></div></div>' +
+                '</div></td>';
+        }
+        html += '</tr>';
+
+        // Verification Tier
+        html += '<tr><td>Verification</td>';
+        for (var i = 0; i < metrics.length; i++) {
+            var tierLabel = metrics[i].tier === 'none' ? 'Unverified' : metrics[i].tier.charAt(0).toUpperCase() + metrics[i].tier.slice(1);
+            html += '<td>' + (typeof UI !== 'undefined' && metrics[i].tier !== 'none' ? UI.trustBadge(metrics[i].tier) : tierLabel) + '</td>';
+        }
+        html += '</tr>';
+
+        // Rating row
+        html += '<tr><td>Average Rating</td>';
+        for (var i = 0; i < metrics.length; i++) {
+            var isBest = metrics[i].rating === bestRating && bestRating > 0;
+            var stars = '';
+            for (var s = 1; s <= 5; s++) {
+                stars += '<span style="color:' + (s <= Math.round(metrics[i].rating) ? '#f59e0b' : 'var(--border-primary)') + '">&#9733;</span>';
+            }
+            html += '<td class="' + (isBest ? 'compare-table__best' : '') + '">' + metrics[i].rating.toFixed(1) + ' ' + stars + '</td>';
+        }
+        html += '</tr>';
+
+        // Review Count
+        html += '<tr><td>Reviews</td>';
+        for (var i = 0; i < metrics.length; i++) {
+            var isBest = metrics[i].reviewCount === bestReviews && bestReviews > 0;
+            html += '<td class="' + (isBest ? 'compare-table__best' : '') + '">' + UI.formatNumber(metrics[i].reviewCount) + '</td>';
+        }
+        html += '</tr>';
+
+        // Member Count
+        html += '<tr><td>Members</td>';
+        for (var i = 0; i < metrics.length; i++) {
+            var isBest = metrics[i].members === bestMembers && bestMembers > 0;
+            html += '<td class="' + (isBest ? 'compare-table__best' : '') + '">' + UI.formatNumber(metrics[i].members) + '</td>';
+        }
+        html += '</tr>';
+
+        // Views (activity)
+        html += '<tr><td>Views</td>';
+        for (var i = 0; i < metrics.length; i++) {
+            var isBest = metrics[i].views === bestViews && bestViews > 0;
+            html += '<td class="' + (isBest ? 'compare-table__best' : '') + '">' + UI.formatNumber(metrics[i].views) + '</td>';
+        }
+        html += '</tr>';
+
+        // Clicks (activity)
+        html += '<tr><td>Clicks</td>';
+        for (var i = 0; i < metrics.length; i++) {
+            var isBest = metrics[i].clicks === bestClicks && bestClicks > 0;
+            html += '<td class="' + (isBest ? 'compare-table__best' : '') + '">' + UI.formatNumber(metrics[i].clicks) + '</td>';
+        }
+        html += '</tr>';
+
+        // Likes
+        html += '<tr><td>Likes</td>';
+        for (var i = 0; i < metrics.length; i++) {
+            var isBest = metrics[i].likes === bestLikes && bestLikes > 0;
+            html += '<td class="' + (isBest ? 'compare-table__best' : '') + '">' + UI.formatNumber(metrics[i].likes) + '</td>';
+        }
+        html += '</tr>';
+
+        // Reports (lower is better)
+        html += '<tr><td>Reports</td>';
+        for (var i = 0; i < metrics.length; i++) {
+            var isBest = metrics[i].reports === lowestReports;
+            html += '<td class="' + (isBest ? 'compare-table__best' : '') + '">' + metrics[i].reports + '</td>';
+        }
+        html += '</tr>';
+
+        // View Profile links
+        html += '<tr><td></td>';
+        for (var i = 0; i < metrics.length; i++) {
+            html += '<td><a href="/group?id=' + encodeURIComponent(metrics[i].group.id) + '" class="btn btn-primary btn-sm">View Profile</a></td>';
+        }
+        html += '</tr>';
+
+        html += '</tbody></table></div>';
+
+        // Verdict section
+        html += renderVerdict(metrics);
+
+        output.innerHTML = html;
+    }
+
+    function renderVerdict(metrics) {
+        // Simple verdict based on trust score + rating combined
+        var scores = metrics.map(function(m) {
+            return { name: m.group.name, score: m.trustScore * 0.5 + m.rating * 10, trustScore: m.trustScore, rating: m.rating };
+        });
+        scores.sort(function(a, b) { return b.score - a.score; });
+        var winner = scores[0];
+
+        var html = '<div style="background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);padding:var(--space-6);text-align:center">';
+        html += '<div style="font-size:var(--text-lg);font-weight:var(--font-bold);margin-bottom:var(--space-2)">&#127942; Comparison Verdict</div>';
+        html += '<p style="color:var(--text-secondary);margin-bottom:var(--space-3)">';
+        html += '<strong>' + Security.sanitize(winner.name) + '</strong> leads with a trust score of <strong>' + winner.trustScore + '</strong> and a rating of <strong>' + winner.rating.toFixed(1) + '</strong>.';
+        html += '</p>';
+        html += '<p style="font-size:var(--text-sm);color:var(--text-tertiary)">This verdict is based on a combination of trust score and average rating. Always review group details before joining.</p>';
+        html += '</div>';
+        return html;
+    }
+
+    function updateUrl() {
+        var ids = slots.filter(Boolean).map(function(g) { return g.id; });
+        var qs = ids.length ? '?ids=' + ids.join(',') : '';
+        history.replaceState(null, '', '/compare' + qs);
+    }
+
+    // Share button
+    document.getElementById('compare-share-btn').addEventListener('click', function() {
+        var url = window.location.href;
+        if (navigator.share) {
+            navigator.share({ title: 'Group Comparison — GroupsMix', url: url });
+        } else {
+            UI.copyToClipboard(url);
+            UI.toast('Comparison link copied!', 'success');
+        }
+    });
+
+    // Reset button
+    document.getElementById('compare-reset-btn').addEventListener('click', function() {
+        slots = [null, null, null];
+        renderSlot(0);
+        renderSlot(1);
+        renderSlot(2);
+        renderComparison();
+        updateUrl();
+    });
+});
+</script>
+</Fragment>
+</BaseLayout>

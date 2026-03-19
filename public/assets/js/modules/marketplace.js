@@ -6,38 +6,52 @@
 // MODULE 5a: DB.marketplace (Marketplace Listings System)
 // ═══════════════════════════════════════
 const Marketplace = {
-    // ── Category definitions for marketplace ──
+    // ── Digital product category definitions (whitelist — no freeform "Other") ──
     _categories: [
         {
-            id: 'social_media',
-            name: 'Social Media',
-            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>',
-            platforms: ['facebook', 'instagram', 'twitter', 'snapchat']
+            id: 'templates',
+            name: 'Templates',
+            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>',
+            platforms: []
         },
         {
-            id: 'streaming',
-            name: 'Streaming',
-            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>',
-            platforms: ['youtube', 'tiktok', 'twitch', 'kick']
+            id: 'bots',
+            name: 'Bots',
+            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M9 15h6"/><line x1="12" y1="1" x2="12" y2="4"/></svg>',
+            platforms: []
         },
         {
-            id: 'messaging',
-            name: 'Messaging',
-            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
-            platforms: ['whatsapp', 'telegram', 'discord', 'signal']
+            id: 'scripts',
+            name: 'Scripts',
+            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+            platforms: []
         },
         {
-            id: 'professional',
-            name: 'Professional',
-            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
-            platforms: ['linkedin', 'reddit', 'quora']
+            id: 'design_assets',
+            name: 'Design Assets',
+            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>',
+            platforms: []
         },
         {
-            id: 'other',
-            name: 'Other',
-            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>',
+            id: 'guides',
+            name: 'Guides',
+            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>',
+            platforms: []
+        },
+        {
+            id: 'tools',
+            name: 'Tools',
+            icon: '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>',
             platforms: []
         }
+    ],
+
+    // ── Banned keywords — auto-reject listings containing these ──
+    _bannedKeywords: [
+        'account', 'followers', 'subscribers', 'verified badge',
+        'hacked', 'cracked', 'leaked', 'stolen',
+        'login', 'password', 'credentials',
+        'exploit', 'crack', 'nulled', 'warez', 'pirated'
     ],
 
     /**
@@ -48,23 +62,44 @@ const Marketplace = {
     },
 
     /**
-     * Get platforms belonging to a specific category.
+     * Check if a category ID is valid (in the whitelist).
      */
-    getCategoryPlatforms(categoryId) {
-        var cat = this._categories.find(function(c) { return c.id === categoryId; });
-        return cat ? cat.platforms : [];
+    isValidCategory(categoryId) {
+        return this._categories.some(function(c) { return c.id === categoryId; });
     },
 
     /**
-     * Get the category ID for a given platform.
+     * Check text for banned keywords. Returns { banned: boolean, keyword: string }.
      */
-    getPlatformCategory(platformId) {
-        for (var i = 0; i < this._categories.length; i++) {
-            if (this._categories[i].platforms.indexOf(platformId) !== -1) {
-                return this._categories[i].id;
+    checkBannedKeywords(text) {
+        var lower = (text || '').toLowerCase();
+        for (var i = 0; i < this._bannedKeywords.length; i++) {
+            if (lower.indexOf(this._bannedKeywords[i]) !== -1) {
+                return { banned: true, keyword: this._bannedKeywords[i] };
             }
         }
-        return 'other';
+        return { banned: false, keyword: '' };
+    },
+
+    /**
+     * Check if current user is a verified seller (email + phone verified).
+     * Returns { verified: boolean, reason: string }.
+     */
+    async checkSellerVerification() {
+        try {
+            var userId = Auth.getUserId();
+            if (!userId) return { verified: false, reason: 'Not signed in' };
+            var { data, error } = await window.supabaseClient
+                .from('users').select('email, phone_verified').eq('id', userId).single();
+            if (error) throw error;
+            if (!data) return { verified: false, reason: 'User not found' };
+            if (!data.email) return { verified: false, reason: 'Email not verified. Please verify your email in Settings.' };
+            if (!data.phone_verified) return { verified: false, reason: 'Phone not verified. Please verify your phone number in Settings before selling.' };
+            return { verified: true, reason: '' };
+        } catch (err) {
+            console.error('checkSellerVerification:', err.message);
+            return { verified: false, reason: 'Could not verify seller status. Please try again.' };
+        }
     },
 
     /**
@@ -89,22 +124,8 @@ const Marketplace = {
                 .select('*', { count: 'exact' })
                 .eq('status', 'active');
             if (platform) q = q.eq('platform', platform);
-            if (category && !platform) {
-                if (category === 'other') {
-                    // Exclude all known category platforms
-                    var allKnown = [];
-                    Marketplace._categories.forEach(function(c) {
-                        if (c.id !== 'other') allKnown = allKnown.concat(c.platforms);
-                    });
-                    if (allKnown.length > 0) {
-                        q = q.not('platform', 'in', '(' + allKnown.join(',') + ')');
-                    }
-                } else {
-                    var catPlatforms = Marketplace.getCategoryPlatforms(category);
-                    if (catPlatforms.length > 0) {
-                        q = q.in('platform', catPlatforms);
-                    }
-                }
+            if (category) {
+                q = q.eq('product_category', category);
             }
 
             if (sort === 'newest') {
@@ -210,22 +231,44 @@ const Marketplace = {
             if (!Auth.requireAuth()) return null;
             if (!Security.checkRateLimit('submit')) { UI.toast('Too many submissions. Please wait.', 'error'); return null; }
 
+            // Feature 1: Seller verification — require email + phone
+            var verification = await Marketplace.checkSellerVerification();
+            if (!verification.verified) {
+                UI.toast(verification.reason, 'error');
+                return null;
+            }
+
+            // Feature 2: Validate product category is in the whitelist
+            var category = listingData.category || '';
+            if (!Marketplace.isValidCategory(category)) {
+                UI.toast('Please select a valid product category.', 'error');
+                return null;
+            }
+
+            // Feature 5: Banned keywords filter
+            var titleCheck = Marketplace.checkBannedKeywords(listingData.title || '');
+            var descCheck = Marketplace.checkBannedKeywords(listingData.description || '');
+            if (titleCheck.banned) {
+                UI.toast('Listing rejected: title contains banned keyword "' + titleCheck.keyword + '". Please remove it.', 'error');
+                return null;
+            }
+            if (descCheck.banned) {
+                UI.toast('Listing rejected: description contains banned keyword "' + descCheck.keyword + '". Please remove it.', 'error');
+                return null;
+            }
+
             var row = {
                 seller_id: Auth.getUserId(),
                 platform: listingData.platform || '',
-                category: listingData.category || Marketplace.getPlatformCategory(listingData.platform || ''),
+                product_category: category,
                 title: Security.sanitize(listingData.title || '').slice(0, 100),
                 description: Security.sanitize(listingData.description || '').slice(0, 1000),
                 price: Math.max(0, parseFloat(listingData.price) || 0),
                 currency: listingData.currency || 'USD',
                 contact_link: Security.sanitize(listingData.contact_link || ''),
-                status: 'active'
+                status: 'pending',
+                seller_verified: true
             };
-
-            // Track custom platform for auto-growth algorithm
-            if (listingData.custom_platform) {
-                Marketplace.trackCustomPlatform(listingData.custom_platform, row.category);
-            }
 
             var { data, error } = await window.supabaseClient
                 .from('marketplace_listings').insert(row).select().single();
@@ -485,49 +528,211 @@ const Marketplace = {
         }
     },
 
+    // ═══════════════════════════════════════
+    // ESCROW SYSTEM — coin-based purchases
+    // ═══════════════════════════════════════
+
     /**
-     * Get marketplace platforms config for sell form.
-     * @param {string} categoryId - optional, filter by category
-     * @returns {Array} platform objects with id, name, icon
+     * Purchase a listing with coins (creates escrow hold).
+     * Buyer's coins are held until they confirm delivery or 48h auto-release.
      */
-    getMarketplacePlatforms(categoryId) {
-        var allPlatforms = {
-            social_media: [
-                { id: 'facebook', name: 'Facebook', icon: ICONS.facebook },
-                { id: 'instagram', name: 'Instagram', icon: ICONS.instagram || ICONS.camera },
-                { id: 'twitter', name: 'Twitter/X', icon: ICONS.twitter || ICONS.smartphone },
-                { id: 'snapchat', name: 'Snapchat', icon: ICONS.smartphone }
-            ],
-            streaming: [
-                { id: 'youtube', name: 'YouTube', icon: ICONS.youtube || ICONS.monitor },
-                { id: 'tiktok', name: 'TikTok', icon: ICONS.tiktok || ICONS.smartphone },
-                { id: 'twitch', name: 'Twitch', icon: ICONS.monitor },
-                { id: 'kick', name: 'Kick', icon: ICONS.monitor }
-            ],
-            messaging: [
-                { id: 'whatsapp', name: 'WhatsApp', icon: ICONS.whatsapp },
-                { id: 'telegram', name: 'Telegram', icon: ICONS.telegram },
-                { id: 'discord', name: 'Discord', icon: ICONS.discord },
-                { id: 'signal', name: 'Signal', icon: ICONS.smartphone }
-            ],
-            professional: [
-                { id: 'linkedin', name: 'LinkedIn', icon: ICONS.globe },
-                { id: 'reddit', name: 'Reddit', icon: ICONS.globe },
-                { id: 'quora', name: 'Quora', icon: ICONS.globe }
-            ],
-            other: []
-        };
-
-        if (categoryId && allPlatforms[categoryId] !== undefined) {
-            return allPlatforms[categoryId];
+    async purchaseWithCoins(listingId, coinAmount) {
+        try {
+            if (!Security.checkOnline()) { UI.toast('You appear to be offline.', 'error'); return null; }
+            if (!Auth.requireAuth()) return null;
+            var { data, error } = await window.supabaseClient.rpc('create_marketplace_escrow', {
+                p_listing_id: listingId,
+                p_buyer_id: Auth.getUserId(),
+                p_coin_amount: coinAmount
+            });
+            if (error) throw error;
+            UI.toast('Purchase successful! Coins held in escrow until you confirm delivery.', 'success');
+            CACHE.clear();
+            return data;
+        } catch (err) {
+            console.error('Marketplace.purchaseWithCoins:', err.message);
+            UI.toast(err.message || 'Purchase failed.', 'error');
+            return null;
         }
+    },
 
-        // Return all platforms flattened
-        var all = [];
-        Object.keys(allPlatforms).forEach(function(key) {
-            all = all.concat(allPlatforms[key]);
-        });
-        all.push({ id: 'other', name: 'Other', icon: ICONS.globe });
-        return all;
+    /**
+     * Buyer confirms delivery — releases coins to seller.
+     */
+    async confirmDelivery(escrowId) {
+        try {
+            if (!Auth.requireAuth()) return null;
+            var { data, error } = await window.supabaseClient.rpc('release_marketplace_escrow', {
+                p_escrow_id: escrowId,
+                p_buyer_id: Auth.getUserId()
+            });
+            if (error) throw error;
+            UI.toast('Delivery confirmed! Coins released to seller.', 'success');
+            return data;
+        } catch (err) {
+            console.error('Marketplace.confirmDelivery:', err.message);
+            UI.toast(err.message || 'Failed to confirm delivery.', 'error');
+            return null;
+        }
+    },
+
+    /**
+     * Get escrow transactions for current user (as buyer or seller).
+     */
+    async getMyEscrows() {
+        try {
+            if (!Auth.requireAuth()) return [];
+            var userId = Auth.getUserId();
+            var { data, error } = await window.supabaseClient
+                .from('marketplace_escrow').select('*, marketplace_listings(title, description)')
+                .or('buyer_id.eq.' + userId + ',seller_id.eq.' + userId)
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return data || [];
+        } catch (err) {
+            console.error('Marketplace.getMyEscrows:', err.message);
+            return [];
+        }
+    },
+
+    // ═══════════════════════════════════════
+    // DISPUTE / REFUND SYSTEM
+    // ═══════════════════════════════════════
+
+    /**
+     * Open a dispute on an escrow transaction (buyer only, within 24h).
+     */
+    async openDispute(escrowId, reason) {
+        try {
+            if (!Auth.requireAuth()) return null;
+            if (!reason || reason.trim().length < 10) {
+                UI.toast('Please provide a detailed reason for the dispute (at least 10 characters).', 'error');
+                return null;
+            }
+            var { data, error } = await window.supabaseClient.rpc('create_marketplace_dispute', {
+                p_escrow_id: escrowId,
+                p_buyer_id: Auth.getUserId(),
+                p_reason: reason.trim()
+            });
+            if (error) throw error;
+            UI.toast('Dispute opened. An admin will review it within 24 hours.', 'success');
+            return data;
+        } catch (err) {
+            console.error('Marketplace.openDispute:', err.message);
+            UI.toast(err.message || 'Failed to open dispute.', 'error');
+            return null;
+        }
+    },
+
+    /**
+     * Get disputes for current user.
+     */
+    async getMyDisputes() {
+        try {
+            if (!Auth.requireAuth()) return [];
+            var userId = Auth.getUserId();
+            var { data, error } = await window.supabaseClient
+                .from('marketplace_disputes').select('*, marketplace_listings(title)')
+                .or('buyer_id.eq.' + userId + ',seller_id.eq.' + userId)
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return data || [];
+        } catch (err) {
+            console.error('Marketplace.getMyDisputes:', err.message);
+            return [];
+        }
+    },
+
+    // ═══════════════════════════════════════
+    // PRODUCT REVIEWS (buyer reviews on products)
+    // ═══════════════════════════════════════
+
+    /**
+     * Submit a product review (only buyers who purchased via escrow can review).
+     */
+    async submitProductReview(listingId, escrowId, rating, reviewText) {
+        try {
+            if (!Security.checkOnline()) { UI.toast('You appear to be offline.', 'error'); return null; }
+            if (!Auth.requireAuth()) return null;
+            if (!Security.checkRateLimit('review')) { UI.toast('Too many reviews. Please wait.', 'error'); return null; }
+
+            // Get listing to find seller
+            var listing = await Marketplace.getOne(listingId);
+            if (!listing) { UI.toast('Listing not found.', 'error'); return null; }
+            if (listing.seller_id === Auth.getUserId()) { UI.toast('You cannot review your own product.', 'warning'); return null; }
+
+            var row = {
+                listing_id: listingId,
+                escrow_id: escrowId || null,
+                reviewer_id: Auth.getUserId(),
+                seller_id: listing.seller_id,
+                rating: Math.max(1, Math.min(5, parseInt(rating) || 1)),
+                review_text: Security.sanitize(reviewText || '').slice(0, 500)
+            };
+
+            var { data, error } = await window.supabaseClient
+                .from('product_reviews').insert(row).select().single();
+            if (error) {
+                if (error.code === '23505') {
+                    UI.toast('You have already reviewed this product.', 'warning');
+                } else {
+                    UI.toast('Failed to submit review: ' + (error.message || 'Unknown error'), 'error');
+                }
+                return null;
+            }
+
+            // Feature 6: Check seller rating threshold for auto-delisting
+            try {
+                await window.supabaseClient.rpc('check_seller_rating_threshold', { p_seller_id: listing.seller_id });
+            } catch (e) { console.warn('check_seller_rating_threshold:', e.message); }
+
+            UI.toast('Review submitted!', 'success');
+            return data;
+        } catch (err) {
+            console.error('Marketplace.submitProductReview:', err.message);
+            UI.toast('Failed to submit review.', 'error');
+            return null;
+        }
+    },
+
+    /**
+     * Get product reviews for a specific listing.
+     */
+    async getProductReviews(listingId, options) {
+        try {
+            if (!listingId) return { data: [], count: 0 };
+            var opts = options || {};
+            var limit = opts.limit || 20;
+            var offset = opts.offset || 0;
+            var { data, error, count } = await window.supabaseClient
+                .from('product_reviews').select('*', { count: 'exact' })
+                .eq('listing_id', listingId)
+                .order('created_at', { ascending: false })
+                .range(offset, offset + limit - 1);
+            if (error) throw error;
+            return { data: data || [], count: count || 0 };
+        } catch (err) {
+            console.error('Marketplace.getProductReviews:', err.message);
+            return { data: [], count: 0 };
+        }
+    },
+
+    /**
+     * Get product review stats (average rating + count) for a listing.
+     */
+    async getProductReviewStats(listingId) {
+        try {
+            if (!listingId) return { avg_rating: 0, review_count: 0 };
+            var { data, error } = await window.supabaseClient.rpc('get_product_review_stats', { p_listing_id: listingId });
+            if (error) throw error;
+            var stats = Array.isArray(data) && data.length > 0 ? data[0] : (data || {});
+            return {
+                avg_rating: parseFloat(stats.avg_rating) || 0,
+                review_count: parseInt(stats.review_count) || 0
+            };
+        } catch (err) {
+            console.error('Marketplace.getProductReviewStats:', err.message);
+            return { avg_rating: 0, review_count: 0 };
+        }
     }
 };

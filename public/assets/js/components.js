@@ -26,10 +26,16 @@ const UI = {
         const likes = group.likes_count || 0;
         const commentsCount = group.comments_count || 0;
 
+        const healthCache = typeof GroupHealth !== 'undefined' ? GroupHealth.getCachedStatus(group.id) : null;
+
         return '<div class="group-card" data-id="' + group.id + '">' +
             '<div class="group-card__header">' +
             '<span class="group-card__platform">' + (platform?.svgIcon || platform?.emoji || ICONS.smartphone) + ' ' + Security.sanitize(platform?.name || group.platform || '') + '</span>' +
+            '<span style="display:inline-flex;gap:4px;align-items:center">' +
             (tier !== 'none' ? UI.trustBadge(tier) : '') +
+            (group.is_verified ? UI.trustBadge('owner_verified') : '') +
+            (healthCache ? GroupHealth.healthBadge(healthCache.status) : '') +
+            '</span>' +
             '</div>' +
             '<div class="group-card__body">' +
             '<div class="group-card__name">' + Security.sanitize(group.name || 'Unnamed') + '</div>' +
@@ -572,7 +578,8 @@ const UI = {
             verified: `<span class="vip-badge vip-badge--verified">${ICONS.check_circle} Verified</span>`,
             niche: `<span class="vip-badge vip-badge--niche">${ICONS.globe} Niche</span>`,
             global: `<span class="vip-badge vip-badge--global">${ICONS.globe} Global</span>`,
-            diamond: `<span class="vip-badge vip-badge--diamond">${ICONS.sparkles} Diamond</span>`
+            diamond: `<span class="vip-badge vip-badge--diamond">${ICONS.sparkles} Diamond</span>`,
+            owner_verified: '<span class="vip-badge vip-badge--owner-verified">&#9989; Owner Verified</span>'
         };
         return badges[tier] || '';
     },
@@ -665,19 +672,26 @@ const UI = {
         if (!listing) return '';
         var safeTitle = Security.sanitize(listing.title || 'Untitled');
         var safeDesc = Security.sanitize(listing.description || '');
-        var platformId = listing.platform || 'other';
-        var platformIcon = ICONS[platformId] || ICONS.globe || '';
-        var platformName = platformId.charAt(0).toUpperCase() + platformId.slice(1);
+        var categoryId = listing.product_category || listing.platform || 'other';
+        var categoryName = categoryId.charAt(0).toUpperCase() + categoryId.slice(1).replace('_', ' ');
         var price = parseFloat(listing.price) || 0;
         var currency = listing.currency || 'USD';
         var priceDisplay = price > 0 ? UI.formatCurrency(price) : 'Contact';
         var sellerId = listing.seller_id || '';
         var impressions = listing.impressions || 0;
         var clicks = listing.clicks || 0;
+        var isVerified = listing.seller_verified === true;
+        var verifiedBadge = isVerified
+            ? '<span style="display:inline-flex;align-items:center;gap:2px;background:var(--success-light);color:var(--success);padding:1px 6px;border-radius:var(--radius-full);font-size:10px;font-weight:700" title="Verified Seller">' +
+              '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
+              ' Verified</span>'
+            : '';
+        var categoryBadge = '<span style="display:inline-flex;align-items:center;padding:1px 6px;border-radius:var(--radius-full);font-size:10px;font-weight:600;background:var(--accent-primary-light,rgba(99,102,241,0.1));color:var(--accent-primary)">' + Security.sanitize(categoryName) + '</span>';
 
-        return '<article class="mk-listing-card" data-listing-id="' + listing.id + '" data-seller-id="' + sellerId + '">' +
+        return '<article class="mk-listing-card" data-listing-id="' + listing.id + '" data-seller-id="' + sellerId + '" data-category="' + categoryId + '">' +
             '<div class="mk-listing-card__header">' +
-            '<span class="mk-listing-card__platform" title="' + platformName + '">' + platformIcon + '</span>' +
+            categoryBadge +
+            verifiedBadge +
             '<span class="mk-listing-card__price">' + priceDisplay + '</span>' +
             '<button type="button" class="mk-listing-card__report" data-listing-id="' + listing.id + '" title="Report listing" aria-label="Report listing">' +
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>' +
@@ -715,7 +729,7 @@ const UI = {
         var container = document.getElementById(containerId);
         if (!container) return;
         if (!Array.isArray(listings) || !listings.length) {
-            UI.emptyState(containerId, ICONS.inbox, 'No Listings Found', 'Be the first to sell something! Only social media services accepted.', 'Sell Now', '/sell');
+            UI.emptyState(containerId, ICONS.inbox, 'No Listings Found', 'Be the first to sell a digital product! Templates, bots, scripts, design assets, guides & tools.', 'Sell Now', '/sell');
             return;
         }
         container.innerHTML = `<div class="mk-listings-grid">${listings.map(function(l) { return UI.marketplaceCard(l); }).join('')}</div>`;
@@ -921,13 +935,14 @@ const UI = {
             global: '<span class="gpm-badge gpm-badge--global">&#128993; Global Verified</span>',
             diamond: '<span class="gpm-badge gpm-badge--diamond">&#128142; Diamond Verified</span>'
         };
+        const ownerVerifiedBadge = group.is_verified ? ' <span class="gpm-badge gpm-badge--owner-verified">&#9989; Owner Verified</span>' : '';
         const safetyBadge = badgeMap[tier] || '<span class="gpm-badge gpm-badge--default">&#128737; Community Group</span>';
 
         const content = '<div class="gpm-preview">' +
             '<div class="gpm-preview__icon">' + (platform?.emoji || '&#128241;') + '</div>' +
             '<div class="gpm-preview__name">' + Security.sanitize(group.name || 'Unnamed') + '</div>' +
             '<div class="gpm-preview__platform">' + Security.sanitize(platform?.name || group.platform || '') + '</div>' +
-            '<div class="gpm-preview__badge">' + safetyBadge + '</div>' +
+            '<div class="gpm-preview__badge">' + safetyBadge + ownerVerifiedBadge + '</div>' +
             (group.description ? '<div class="gpm-preview__desc">' + Security.sanitize(group.description) + '</div>' : '') +
             '<div class="gpm-preview__stats">' +
             '<div class="gpm-preview__stat"><span class="gpm-preview__stat-value">&#128065; ' + UI.formatNumber(group.views || 0) + '</span><span class="gpm-preview__stat-label">Views</span></div>' +
