@@ -1,0 +1,708 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Employer Dashboard | GroupsMix"
+  description="Manage your job listings, view applicants, schedule interviews, and track your hiring pipeline on GroupsMix."
+  ogTitle="Employer Dashboard | GroupsMix"
+  ogDescription="Your complete hiring dashboard — manage listings, track applicants, and schedule interviews."
+  cssFiles={["/assets/css/jobs.css"]}
+  includeJobs={true}
+>
+
+        <div class="content-wrapper">
+
+            <!-- Header -->
+            <section class="jobs-hero" style="padding-bottom:var(--space-4)">
+                <span class="jobs-hero__badge">
+                    <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    Employer Tools
+                </span>
+                <h1 class="jobs-hero__title">Employer Dashboard</h1>
+                <p class="jobs-hero__subtitle">Manage your job listings, review applicants, and schedule interviews — all in one place.</p>
+            </section>
+
+            <!-- Dashboard Tabs -->
+            <div class="employer-tabs" id="employer-tabs">
+                <button class="employer-tab employer-tab--active" data-tab="profile" onclick="EmployerDash.switchTab('profile')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Company Profile
+                </button>
+                <button class="employer-tab" data-tab="listings" onclick="EmployerDash.switchTab('listings')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+                    My Listings
+                </button>
+                <button class="employer-tab" data-tab="applicants" onclick="EmployerDash.switchTab('applicants')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                    Applicants
+                </button>
+                <button class="employer-tab" data-tab="interviews" onclick="EmployerDash.switchTab('interviews')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    Interviews
+                </button>
+                <button class="employer-tab" data-tab="referrals" onclick="EmployerDash.switchTab('referrals')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                    Referrals
+                </button>
+            </div>
+
+            <!-- Tab Content: Company Profile -->
+            <div class="employer-panel" id="panel-profile">
+                <div class="employer-card">
+                    <h3 class="employer-card__title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        Company Profile
+                    </h3>
+                    <p style="color:var(--text-secondary);margin-bottom:var(--space-4);font-size:var(--text-sm)">Build trust with candidates by completing your employer profile. Verified employers get a badge.</p>
+
+                    <div id="employer-verified-badge" style="display:none;margin-bottom:var(--space-4)">
+                        <span class="employer-verified-badge">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            Verified Employer
+                        </span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="ep-company-name">Company Name *</label>
+                        <input type="text" class="form-input" id="ep-company-name" placeholder="Your company or project name">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="ep-company-desc">About Your Company</label>
+                        <textarea class="form-textarea" id="ep-company-desc" placeholder="Tell candidates about your company, culture, and what makes you a great employer..." rows="4"></textarea>
+                    </div>
+
+                    <div style="display:flex;gap:var(--space-3)">
+                        <div class="form-group" style="flex:1">
+                            <label class="form-label" for="ep-website">Website</label>
+                            <input type="url" class="form-input" id="ep-website" placeholder="https://yourcompany.com">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label class="form-label" for="ep-company-size">Company Size</label>
+                            <select class="form-select" id="ep-company-size">
+                                <option value="">Select size</option>
+                                <option value="1-10">1-10 employees</option>
+                                <option value="11-50">11-50 employees</option>
+                                <option value="51-200">51-200 employees</option>
+                                <option value="201-500">201-500 employees</option>
+                                <option value="500+">500+ employees</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:var(--space-3)">
+                        <div class="form-group" style="flex:1">
+                            <label class="form-label" for="ep-industry">Industry</label>
+                            <input type="text" class="form-input" id="ep-industry" placeholder="e.g., Gaming, DeFi, Social Media">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label class="form-label" for="ep-location">Location</label>
+                            <input type="text" class="form-input" id="ep-location" placeholder="e.g., San Francisco, Remote">
+                        </div>
+                    </div>
+
+                    <!-- Employer Stats -->
+                    <div class="employer-stats" id="employer-stats" style="display:none">
+                        <div class="employer-stats__item">
+                            <div class="employer-stats__value" id="ep-total-jobs">0</div>
+                            <div class="employer-stats__label">Jobs Posted</div>
+                        </div>
+                        <div class="employer-stats__item">
+                            <div class="employer-stats__value" id="ep-total-hires">0</div>
+                            <div class="employer-stats__label">Hires Made</div>
+                        </div>
+                        <div class="employer-stats__item">
+                            <div class="employer-stats__value" id="ep-response-time">—</div>
+                            <div class="employer-stats__label">Avg Response</div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" id="btn-save-profile" style="margin-top:var(--space-4)">Save Profile</button>
+                </div>
+            </div>
+
+            <!-- Tab Content: My Listings -->
+            <div class="employer-panel" id="panel-listings" style="display:none">
+                <div class="employer-card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4)">
+                        <h3 class="employer-card__title" style="margin:0">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+                            My Job Listings
+                        </h3>
+                        <a href="/post-job" class="btn btn-primary btn-sm">Post New Job</a>
+                    </div>
+
+                    <!-- Expiring Jobs Alert -->
+                    <div id="expiring-jobs-alert" style="display:none" class="employer-alert employer-alert--warning">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <div>
+                            <strong>Expiring Soon!</strong>
+                            <span id="expiring-jobs-text">Some of your job listings are about to expire.</span>
+                        </div>
+                    </div>
+
+                    <div id="my-listings-list" class="employer-listings">
+                        <div style="text-align:center;padding:var(--space-8);color:var(--text-tertiary)">
+                            <p>Loading your listings...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Applicants -->
+            <div class="employer-panel" id="panel-applicants" style="display:none">
+                <div class="employer-card">
+                    <h3 class="employer-card__title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                        Applicant Tracking
+                    </h3>
+                    <p style="color:var(--text-secondary);margin-bottom:var(--space-4);font-size:var(--text-sm)">Select a job listing to view and manage applicants.</p>
+
+                    <div class="form-group">
+                        <label class="form-label">Select Job</label>
+                        <select class="form-select" id="applicant-job-select">
+                            <option value="">Choose a job listing...</option>
+                        </select>
+                    </div>
+
+                    <!-- Applicant Pipeline -->
+                    <div id="applicant-pipeline" style="display:none">
+                        <div class="applicant-pipeline-stats" id="applicant-stats">
+                            <div class="pipeline-stat pipeline-stat--pending">
+                                <span class="pipeline-stat__count" id="stat-pending">0</span>
+                                <span class="pipeline-stat__label">Pending</span>
+                            </div>
+                            <div class="pipeline-stat pipeline-stat--reviewed">
+                                <span class="pipeline-stat__count" id="stat-reviewed">0</span>
+                                <span class="pipeline-stat__label">Reviewed</span>
+                            </div>
+                            <div class="pipeline-stat pipeline-stat--shortlisted">
+                                <span class="pipeline-stat__count" id="stat-shortlisted">0</span>
+                                <span class="pipeline-stat__label">Shortlisted</span>
+                            </div>
+                            <div class="pipeline-stat pipeline-stat--hired">
+                                <span class="pipeline-stat__count" id="stat-hired">0</span>
+                                <span class="pipeline-stat__label">Hired</span>
+                            </div>
+                        </div>
+
+                        <div id="applicant-list" class="applicant-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Interviews -->
+            <div class="employer-panel" id="panel-interviews" style="display:none">
+                <div class="employer-card">
+                    <h3 class="employer-card__title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Interview Scheduling
+                    </h3>
+                    <p style="color:var(--text-secondary);margin-bottom:var(--space-4);font-size:var(--text-sm)">Schedule and manage interviews with shortlisted candidates. Includes Google Calendar integration.</p>
+
+                    <div id="interview-list" class="interview-list">
+                        <div style="text-align:center;padding:var(--space-8);color:var(--text-tertiary)">
+                            <p>Loading interviews...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Referrals -->
+            <div class="employer-panel" id="panel-referrals" style="display:none">
+                <div class="employer-card">
+                    <h3 class="employer-card__title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                        Referral Bounties
+                    </h3>
+                    <p style="color:var(--text-secondary);margin-bottom:var(--space-4);font-size:var(--text-sm)">Set up referral bounties for your jobs. When someone refers a candidate who gets hired, they earn GMX Coins.</p>
+
+                    <div id="referral-bounties-list">
+                        <div style="text-align:center;padding:var(--space-8);color:var(--text-tertiary)">
+                            <p>Loading referral bounties...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    var EmployerDash = (function() {
+        var currentTab = 'profile';
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.employer-tab').forEach(function(t) {
+                t.classList.toggle('employer-tab--active', t.dataset.tab === tab);
+            });
+            document.querySelectorAll('.employer-panel').forEach(function(p) {
+                p.style.display = 'none';
+            });
+            var panel = document.getElementById('panel-' + tab);
+            if (panel) panel.style.display = '';
+
+            if (tab === 'listings') loadMyListings();
+            if (tab === 'applicants') loadApplicantJobSelect();
+            if (tab === 'interviews') loadInterviews();
+            if (tab === 'referrals') loadReferralBounties();
+        }
+
+        async function apiCall(action, data) {
+            data = data || {};
+            data.action = action;
+            if (Auth.isLoggedIn()) data.user_id = Auth.user.id;
+            var res = await fetch('/api/jobs-board', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return res.json();
+        }
+
+        async function loadProfile() {
+            if (!Auth.isLoggedIn()) return;
+            try {
+                var result = await apiCall('employer-profile', { sub_action: 'get' });
+                if (result.ok && result.profile) {
+                    var p = result.profile;
+                    document.getElementById('ep-company-name').value = p.company_name || '';
+                    document.getElementById('ep-company-desc').value = p.company_description || '';
+                    document.getElementById('ep-website').value = p.company_website || '';
+                    document.getElementById('ep-company-size').value = p.company_size || '';
+                    document.getElementById('ep-industry').value = p.industry || '';
+                    document.getElementById('ep-location').value = p.location || '';
+
+                    if (p.is_verified) {
+                        document.getElementById('employer-verified-badge').style.display = '';
+                    }
+                    if (p.total_jobs_posted > 0 || p.total_hires > 0) {
+                        document.getElementById('employer-stats').style.display = '';
+                        document.getElementById('ep-total-jobs').textContent = p.total_jobs_posted || 0;
+                        document.getElementById('ep-total-hires').textContent = p.total_hires || 0;
+                        document.getElementById('ep-response-time').textContent = p.avg_response_hours ? Math.round(p.avg_response_hours) + 'h' : '—';
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        async function saveProfile() {
+            if (!Auth.isLoggedIn()) { UI.authModal('signin'); return; }
+            var btn = document.getElementById('btn-save-profile');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="btn-spinner"></div> Saving...';
+
+            try {
+                var result = await apiCall('employer-profile', {
+                    sub_action: 'upsert',
+                    company_name: document.getElementById('ep-company-name').value.trim(),
+                    company_description: document.getElementById('ep-company-desc').value.trim(),
+                    company_website: document.getElementById('ep-website').value.trim(),
+                    company_size: document.getElementById('ep-company-size').value,
+                    industry: document.getElementById('ep-industry').value.trim(),
+                    location: document.getElementById('ep-location').value.trim()
+                });
+                if (result.ok) {
+                    UI.toast('Profile saved successfully!', 'success');
+                } else {
+                    UI.toast(result.error || 'Failed to save', 'error');
+                }
+            } catch (e) {
+                UI.toast('Failed to save profile', 'error');
+            }
+            btn.disabled = false;
+            btn.textContent = 'Save Profile';
+        }
+
+        async function loadMyListings() {
+            if (!Auth.isLoggedIn()) return;
+            var container = document.getElementById('my-listings-list');
+            try {
+                var result = await window.supabaseClient
+                    .from('jobs')
+                    .select('*')
+                    .eq('poster_id', Auth.user.id)
+                    .order('created_at', { ascending: false });
+
+                var jobs = result.data || [];
+                if (jobs.length === 0) {
+                    container.innerHTML = '<div style="text-align:center;padding:var(--space-8);color:var(--text-tertiary)">' +
+                        '<p>You haven\'t posted any jobs yet.</p>' +
+                        '<a href="/post-job" class="btn btn-primary" style="margin-top:var(--space-3)">Post Your First Job</a></div>';
+                    return;
+                }
+
+                // Check for expiring jobs
+                var expiringResult = await apiCall('job-expiration', { sub_action: 'my-expiring' });
+                if (expiringResult.ok && expiringResult.expiring_jobs && expiringResult.expiring_jobs.length > 0) {
+                    var alertEl = document.getElementById('expiring-jobs-alert');
+                    alertEl.style.display = '';
+                    document.getElementById('expiring-jobs-text').textContent =
+                        expiringResult.expiring_jobs.length + ' job(s) expiring within 7 days.';
+                }
+
+                container.innerHTML = jobs.map(function(job) {
+                    var statusBadge = '<span class="employer-listing__status employer-listing__status--' + (job.status || 'active') + '">' + (job.status || 'active') + '</span>';
+                    if (job.is_expired) statusBadge = '<span class="employer-listing__status employer-listing__status--expired">Expired</span>';
+                    var boostBadge = job.is_promoted ? '<span class="employer-listing__boost">Featured</span>' : '';
+                    var expiresText = job.expires_at ? 'Expires: ' + new Date(job.expires_at).toLocaleDateString() : '';
+
+                    return '<div class="employer-listing">' +
+                        '<div class="employer-listing__info">' +
+                        '<div class="employer-listing__title">' + Security.sanitize(job.title) + '</div>' +
+                        '<div class="employer-listing__meta">' +
+                        statusBadge + boostBadge +
+                        '<span class="employer-listing__views">' + (job.views || 0) + ' views</span>' +
+                        '<span class="employer-listing__apps">' + (job.applications_count || 0) + ' applicants</span>' +
+                        '</div>' +
+                        (expiresText ? '<div class="employer-listing__expires">' + expiresText + '</div>' : '') +
+                        '</div>' +
+                        '<div class="employer-listing__actions">' +
+                        (job.is_expired ? '<button class="btn btn-sm btn-primary" onclick="EmployerDash.renewJob(\'' + job.id + '\',' + (job.renewal_count || 0) + ')">Renew</button>' : '') +
+                        (!job.is_promoted ? '<button class="btn btn-sm btn-secondary" onclick="EmployerDash.boostJob(\'' + job.id + '\')">Boost</button>' : '') +
+                        '</div></div>';
+                }).join('');
+            } catch (e) {
+                container.innerHTML = '<div style="text-align:center;padding:var(--space-8);color:var(--text-tertiary)"><p>Could not load listings.</p></div>';
+            }
+        }
+
+        async function renewJob(jobId, currentCount) {
+            try {
+                var result = await apiCall('job-expiration', {
+                    sub_action: 'renew',
+                    job_id: jobId,
+                    current_renewal_count: currentCount || 0
+                });
+                if (result.ok) {
+                    UI.toast('Job renewed! Active for 30 more days.', 'success');
+                    loadMyListings();
+                } else {
+                    UI.toast(result.error || 'Renewal failed', 'error');
+                }
+            } catch (e) { UI.toast('Renewal failed', 'error'); }
+        }
+
+        async function boostJob(jobId) {
+            try {
+                var pricing = await apiCall('job-boost', { sub_action: 'pricing' });
+                if (!pricing.ok) return;
+
+                var content = '<p style="color:var(--text-secondary);margin-bottom:var(--space-4)">Boost your job listing for more visibility. Pay with GMX Coins.</p>' +
+                    '<div class="boost-plans">' +
+                    pricing.plans.map(function(plan) {
+                        return '<div class="boost-plan" data-type="' + plan.type + '">' +
+                            '<div class="boost-plan__name">' + plan.name + '</div>' +
+                            '<div class="boost-plan__price">' + plan.coins + ' <span>GMX Coins</span></div>' +
+                            '<div class="boost-plan__duration">' + plan.duration + ' days</div>' +
+                            '<div class="boost-plan__desc">' + plan.description + '</div>' +
+                            '<button class="btn btn-sm btn-primary" onclick="EmployerDash.confirmBoost(\'' + jobId + '\',\'' + plan.type + '\',' + plan.coins + ')">Select</button>' +
+                            '</div>';
+                    }).join('') +
+                    '</div>';
+
+                UI.modal({
+                    title: 'Boost Job Listing',
+                    content: content,
+                    size: 'large'
+                });
+            } catch (e) { UI.toast('Could not load boost options', 'error'); }
+        }
+
+        async function confirmBoost(jobId, boostType, coins) {
+            UI.closeModal();
+            try {
+                var result = await apiCall('job-boost', {
+                    sub_action: 'boost',
+                    job_id: jobId,
+                    boost_type: boostType
+                });
+                if (result.ok) {
+                    UI.toast('Job boosted! ' + result.coins_spent + ' GMX Coins spent. Active until ' + new Date(result.ends_at).toLocaleDateString(), 'success');
+                    loadMyListings();
+                } else {
+                    UI.toast(result.error || 'Boost failed', 'error');
+                }
+            } catch (e) { UI.toast('Boost failed', 'error'); }
+        }
+
+        async function loadApplicantJobSelect() {
+            if (!Auth.isLoggedIn()) return;
+            var select = document.getElementById('applicant-job-select');
+            try {
+                var result = await window.supabaseClient
+                    .from('jobs')
+                    .select('id, title')
+                    .eq('poster_id', Auth.user.id)
+                    .order('created_at', { ascending: false });
+
+                var jobs = result.data || [];
+                select.innerHTML = '<option value="">Choose a job listing...</option>' +
+                    jobs.map(function(j) {
+                        return '<option value="' + j.id + '">' + Security.sanitize(j.title) + '</option>';
+                    }).join('');
+            } catch (e) { /* ignore */ }
+
+            select.addEventListener('change', function() {
+                if (select.value) loadApplicants(select.value);
+                else document.getElementById('applicant-pipeline').style.display = 'none';
+            });
+        }
+
+        async function loadApplicants(jobId) {
+            var pipeline = document.getElementById('applicant-pipeline');
+            pipeline.style.display = '';
+            var list = document.getElementById('applicant-list');
+            list.innerHTML = '<div style="text-align:center;padding:var(--space-4)"><div class="btn-spinner" style="margin:0 auto"></div></div>';
+
+            try {
+                var result = await apiCall('applications', {
+                    sub_action: 'employer-list',
+                    job_id: jobId
+                });
+                var apps = result.applications || [];
+
+                // Update stats
+                var counts = { pending: 0, reviewed: 0, shortlisted: 0, hired: 0 };
+                apps.forEach(function(a) { if (counts[a.status] !== undefined) counts[a.status]++; });
+                document.getElementById('stat-pending').textContent = counts.pending;
+                document.getElementById('stat-reviewed').textContent = counts.reviewed;
+                document.getElementById('stat-shortlisted').textContent = counts.shortlisted;
+                document.getElementById('stat-hired').textContent = counts.hired;
+
+                if (apps.length === 0) {
+                    list.innerHTML = '<div style="text-align:center;padding:var(--space-6);color:var(--text-tertiary)">No applicants yet for this listing.</div>';
+                    return;
+                }
+
+                list.innerHTML = apps.map(function(app) {
+                    var statusClass = 'applicant-card__status--' + (app.status || 'pending');
+                    return '<div class="applicant-card">' +
+                        '<div class="applicant-card__header">' +
+                        '<div>' +
+                        '<div class="applicant-card__name">' + Security.sanitize(app.applicant_name || 'Anonymous') + '</div>' +
+                        '<div class="applicant-card__email">' + Security.sanitize(app.applicant_email || '') + '</div>' +
+                        '</div>' +
+                        '<span class="applicant-card__status ' + statusClass + '">' + (app.status || 'pending') + '</span>' +
+                        '</div>' +
+                        (app.cover_message ? '<div class="applicant-card__message">' + Security.sanitize(app.cover_message) + '</div>' : '') +
+                        (app.portfolio_url ? '<a href="' + Security.sanitize(app.portfolio_url) + '" target="_blank" class="applicant-card__link">View Portfolio</a>' : '') +
+                        '<div class="applicant-card__actions">' +
+                        '<select class="form-select form-select--sm" onchange="EmployerDash.updateAppStatus(\'' + app.id + '\', this.value, \'' + jobId + '\')">' +
+                        '<option value="pending"' + (app.status === 'pending' ? ' selected' : '') + '>Pending</option>' +
+                        '<option value="reviewed"' + (app.status === 'reviewed' ? ' selected' : '') + '>Reviewed</option>' +
+                        '<option value="shortlisted"' + (app.status === 'shortlisted' ? ' selected' : '') + '>Shortlisted</option>' +
+                        '<option value="rejected"' + (app.status === 'rejected' ? ' selected' : '') + '>Rejected</option>' +
+                        '<option value="hired"' + (app.status === 'hired' ? ' selected' : '') + '>Hired</option>' +
+                        '</select>' +
+                        (app.status === 'shortlisted' ? '<button class="btn btn-sm btn-secondary" onclick="EmployerDash.proposeInterview(\'' + app.id + '\',\'' + (app.user_id || '') + '\',\'' + jobId + '\')">Schedule Interview</button>' : '') +
+                        '</div></div>';
+                }).join('');
+            } catch (e) {
+                list.innerHTML = '<div style="text-align:center;padding:var(--space-6);color:var(--text-tertiary)">Could not load applicants.</div>';
+            }
+        }
+
+        async function updateAppStatus(appId, status, jobId) {
+            try {
+                await apiCall('applications', {
+                    sub_action: 'update-status',
+                    application_id: appId,
+                    status: status
+                });
+                UI.toast('Status updated to: ' + status, 'success');
+                loadApplicants(jobId);
+            } catch (e) { UI.toast('Failed to update status', 'error'); }
+        }
+
+        function proposeInterview(applicationId, candidateId, jobId) {
+            var content = '<p style="color:var(--text-secondary);margin-bottom:var(--space-4)">Propose up to 3 time slots for the candidate to choose from.</p>' +
+                '<div class="form-group"><label class="form-label">Time Slot 1 *</label>' +
+                '<input type="datetime-local" class="form-input" id="int-time-1"></div>' +
+                '<div class="form-group"><label class="form-label">Time Slot 2</label>' +
+                '<input type="datetime-local" class="form-input" id="int-time-2"></div>' +
+                '<div class="form-group"><label class="form-label">Time Slot 3</label>' +
+                '<input type="datetime-local" class="form-input" id="int-time-3"></div>' +
+                '<div class="form-group"><label class="form-label">Duration (minutes)</label>' +
+                '<select class="form-select" id="int-duration">' +
+                '<option value="15">15 min</option><option value="30" selected>30 min</option>' +
+                '<option value="45">45 min</option><option value="60">60 min</option></select></div>' +
+                '<div class="form-group"><label class="form-label">Notes</label>' +
+                '<textarea class="form-textarea" id="int-notes" placeholder="Any notes for the candidate..." rows="2"></textarea></div>';
+
+            UI.modal({
+                title: 'Schedule Interview',
+                content: content,
+                footer: '<button class="btn btn-secondary" onclick="UI.closeModal()">Cancel</button>' +
+                    '<button class="btn btn-primary" id="btn-send-interview">Send Invite</button>',
+                size: 'large'
+            });
+
+            document.getElementById('btn-send-interview').addEventListener('click', async function() {
+                var times = [];
+                for (var i = 1; i <= 3; i++) {
+                    var el = document.getElementById('int-time-' + i);
+                    if (el && el.value) times.push({ datetime: new Date(el.value).toISOString(), duration_minutes: parseInt(document.getElementById('int-duration').value) });
+                }
+                if (times.length === 0) { UI.toast('Add at least one time slot', 'warning'); return; }
+
+                try {
+                    var result = await apiCall('interviews', {
+                        sub_action: 'propose',
+                        application_id: applicationId,
+                        candidate_id: candidateId,
+                        job_id: jobId,
+                        proposed_times: times,
+                        notes: document.getElementById('int-notes').value.trim()
+                    });
+                    if (result.ok) {
+                        UI.toast('Interview invite sent!', 'success');
+                        UI.closeModal();
+                    } else {
+                        UI.toast(result.error || 'Failed to send invite', 'error');
+                    }
+                } catch (e) { UI.toast('Failed to send invite', 'error'); }
+            });
+        }
+
+        async function loadInterviews() {
+            if (!Auth.isLoggedIn()) return;
+            var container = document.getElementById('interview-list');
+            try {
+                var result = await apiCall('interviews', { sub_action: 'my-interviews' });
+                var interviews = result.interviews || [];
+
+                if (interviews.length === 0) {
+                    container.innerHTML = '<div style="text-align:center;padding:var(--space-8);color:var(--text-tertiary)">' +
+                        '<p>No interviews scheduled yet.</p><p style="font-size:var(--text-sm)">Shortlist a candidate first, then schedule an interview.</p></div>';
+                    return;
+                }
+
+                container.innerHTML = interviews.map(function(iv) {
+                    var statusBadge = '<span class="interview-status interview-status--' + iv.status + '">' + iv.status + '</span>';
+                    var timesHTML = '';
+                    if (iv.status === 'confirmed' && iv.selected_time) {
+                        timesHTML = '<div class="interview-time">Confirmed: ' + new Date(iv.selected_time).toLocaleString() + '</div>';
+                    } else if (iv.proposed_times && iv.proposed_times.length > 0) {
+                        timesHTML = '<div class="interview-time">Proposed: ' +
+                            iv.proposed_times.map(function(t) { return new Date(t.datetime).toLocaleString(); }).join(' | ') + '</div>';
+                    }
+
+                    var calLink = '';
+                    if (iv.status === 'confirmed' && iv.selected_time) {
+                        var start = new Date(iv.selected_time);
+                        var end = new Date(start.getTime() + (iv.selected_duration || 30) * 60000);
+                        calLink = '<a href="https://calendar.google.com/calendar/render?action=TEMPLATE' +
+                            '&text=' + encodeURIComponent('Interview - GroupsMix') +
+                            '&dates=' + start.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '') +
+                            '/' + end.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '') +
+                            '" target="_blank" class="btn btn-sm btn-secondary">Add to Google Calendar</a>';
+                    }
+
+                    return '<div class="interview-card">' +
+                        '<div class="interview-card__header">' + statusBadge + '</div>' +
+                        timesHTML +
+                        (iv.notes ? '<div class="interview-card__notes">' + Security.sanitize(iv.notes) + '</div>' : '') +
+                        '<div class="interview-card__actions">' + calLink +
+                        (iv.status === 'pending' ? '<button class="btn btn-sm btn-danger" onclick="EmployerDash.cancelInterview(\'' + iv.id + '\')">Cancel</button>' : '') +
+                        '</div></div>';
+                }).join('');
+            } catch (e) {
+                container.innerHTML = '<div style="text-align:center;padding:var(--space-8);color:var(--text-tertiary)"><p>Could not load interviews.</p></div>';
+            }
+        }
+
+        async function cancelInterview(interviewId) {
+            try {
+                await apiCall('interviews', { sub_action: 'cancel', interview_id: interviewId });
+                UI.toast('Interview cancelled', 'info');
+                loadInterviews();
+            } catch (e) { UI.toast('Failed to cancel', 'error'); }
+        }
+
+        async function loadReferralBounties() {
+            if (!Auth.isLoggedIn()) return;
+            var container = document.getElementById('referral-bounties-list');
+            try {
+                var jobsResult = await window.supabaseClient
+                    .from('jobs')
+                    .select('id, title')
+                    .eq('poster_id', Auth.user.id)
+                    .order('created_at', { ascending: false });
+
+                var jobs = jobsResult.data || [];
+                if (jobs.length === 0) {
+                    container.innerHTML = '<div style="text-align:center;padding:var(--space-8);color:var(--text-tertiary)">Post a job first to set up referral bounties.</div>';
+                    return;
+                }
+
+                var html = '<div class="referral-setup">' +
+                    '<h4 style="margin-bottom:var(--space-3)">Set Up a Referral Bounty</h4>' +
+                    '<div class="form-group"><label class="form-label">Job</label>' +
+                    '<select class="form-select" id="ref-job-select">' +
+                    '<option value="">Select a job...</option>' +
+                    jobs.map(function(j) { return '<option value="' + j.id + '">' + Security.sanitize(j.title) + '</option>'; }).join('') +
+                    '</select></div>' +
+                    '<div style="display:flex;gap:var(--space-3)">' +
+                    '<div class="form-group" style="flex:1"><label class="form-label">Bounty (GMX Coins)</label>' +
+                    '<input type="number" class="form-input" id="ref-bounty-coins" value="500" min="50" step="50"></div>' +
+                    '<div class="form-group" style="flex:1"><label class="form-label">Description</label>' +
+                    '<input type="text" class="form-input" id="ref-bounty-desc" placeholder="Refer someone who gets hired!"></div>' +
+                    '</div>' +
+                    '<button class="btn btn-primary btn-sm" id="btn-set-bounty">Set Bounty</button></div>';
+
+                container.innerHTML = html;
+
+                document.getElementById('btn-set-bounty').addEventListener('click', async function() {
+                    var jobId = document.getElementById('ref-job-select').value;
+                    if (!jobId) { UI.toast('Select a job', 'warning'); return; }
+                    var coins = parseInt(document.getElementById('ref-bounty-coins').value) || 500;
+                    var desc = document.getElementById('ref-bounty-desc').value.trim();
+
+                    try {
+                        var result = await apiCall('referrals', {
+                            sub_action: 'set-bounty',
+                            job_id: jobId,
+                            bounty_coins: coins,
+                            bounty_description: desc
+                        });
+                        if (result.ok) UI.toast('Referral bounty set! Candidates can now earn ' + coins + ' GMX Coins.', 'success');
+                        else UI.toast(result.error || 'Failed', 'error');
+                    } catch (e) { UI.toast('Failed to set bounty', 'error'); }
+                });
+            } catch (e) {
+                container.innerHTML = '<div style="text-align:center;padding:var(--space-8);color:var(--text-tertiary)">Could not load referrals.</div>';
+            }
+        }
+
+        function init() {
+            Auth.waitForAuth().then(function() {
+                if (!Auth.isLoggedIn()) {
+                    UI.toast('Please sign in to access the employer dashboard', 'info');
+                    setTimeout(function() { UI.authModal('signin'); }, 500);
+                    return;
+                }
+                loadProfile();
+            });
+
+            document.getElementById('btn-save-profile').addEventListener('click', saveProfile);
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+
+        return {
+            switchTab: switchTab,
+            renewJob: renewJob,
+            boostJob: boostJob,
+            confirmBoost: confirmBoost,
+            updateAppStatus: updateAppStatus,
+            proposeInterview: proposeInterview,
+            cancelInterview: cancelInterview
+        };
+    })();
+</script>
+</Fragment>
+</BaseLayout>

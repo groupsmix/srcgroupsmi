@@ -204,8 +204,48 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                             <h2>Job Posted Successfully!</h2>
                             <p style="color:var(--text-secondary);margin:var(--space-4) 0;max-width:400px;margin-left:auto;margin-right:auto">Your job listing has been submitted and is under review. It will appear on the jobs board once approved by our AI quality filter.</p>
                             <div id="pj-ai-feedback" style="margin-bottom:var(--space-4)"></div>
+
+                            <!-- Boost & Referral Options (shown after successful post) -->
+                            <div class="post-job__success-options" id="pj-success-options">
+                                <!-- Featured/Boost Option -->
+                                <div class="post-job__success-card">
+                                    <div class="post-job__success-card-icon" style="background:rgba(255,215,0,0.1);color:#D4A017">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                    </div>
+                                    <div>
+                                        <strong>Boost Your Listing</strong>
+                                        <p style="font-size:var(--text-sm);color:var(--text-secondary)">Get 5x more views with a Featured badge, highlighted border, or pinned placement. Pay with GMX Coins.</p>
+                                    </div>
+                                    <button class="btn btn-sm btn-primary" id="pj-boost-btn" style="flex-shrink:0">Boost Now</button>
+                                </div>
+
+                                <!-- Referral Bounty Option -->
+                                <div class="post-job__success-card">
+                                    <div class="post-job__success-card-icon" style="background:rgba(16,185,129,0.1);color:#10B981">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                                    </div>
+                                    <div>
+                                        <strong>Set a Referral Bounty</strong>
+                                        <p style="font-size:var(--text-sm);color:var(--text-secondary)">Incentivize users to share your job. Set a GMX Coins bounty for successful referrals.</p>
+                                    </div>
+                                    <button class="btn btn-sm btn-secondary" id="pj-referral-btn" style="flex-shrink:0">Set Bounty</button>
+                                </div>
+
+                                <!-- Job Expiration Notice -->
+                                <div class="post-job__success-card" style="background:var(--bg-tertiary)">
+                                    <div class="post-job__success-card-icon" style="background:rgba(99,102,241,0.1);color:var(--accent-primary)">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                    </div>
+                                    <div>
+                                        <strong>Auto-Expiration</strong>
+                                        <p style="font-size:var(--text-sm);color:var(--text-secondary)">Your listing will be active for 30 days. We'll notify you before it expires so you can renew or boost it.</p>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div style="display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap;margin-top:var(--space-6)">
                                 <a href="/post-job" class="btn btn-secondary">Post Another Job</a>
+                                <a href="/employer-dashboard" class="btn btn-secondary">Employer Dashboard</a>
                                 <a href="/jobs" class="btn btn-primary">View Jobs Board</a>
                             </div>
                         </div>
