@@ -201,6 +201,211 @@ async function handleGet(request, env, user, origin) {
                 });
             }
 
+            case 'spending-insights': {
+                // Fetch all transactions for this user to build spending breakdown
+                const insightDays = parseInt(url.searchParams.get('days')) || 30;
+                const insightCutoff = new Date(Date.now() - insightDays * 86400000).toISOString();
+
+                const allTxnRes = await fetch(
+                    supabaseUrl + '/rest/v1/wallet_transactions?user_id=eq.' + encodeURIComponent(user.userId) +
+                    '&created_at=gte.' + encodeURIComponent(insightCutoff) + '&select=type,amount,created_at,coin_source&order=created_at.desc&limit=500',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                );
+                const allTxns = await allTxnRes.json();
+                var txnList = Array.isArray(allTxns) ? allTxns : [];
+
+                // Categorize spending
+                var categories = {
+                    tips: { total: 0, count: 0, label: 'Tips Sent' },
+                    purchases: { total: 0, count: 0, label: 'Store Purchases' },
+                    boosts: { total: 0, count: 0, label: 'Boosts & Promotions' },
+                    withdrawals_cat: { total: 0, count: 0, label: 'Withdrawals' },
+                    other_spending: { total: 0, count: 0, label: 'Other' }
+                };
+                var earnings = {
+                    purchases_received: { total: 0, count: 0, label: 'Coins Purchased' },
+                    tips_received: { total: 0, count: 0, label: 'Tips Received' },
+                    rewards: { total: 0, count: 0, label: 'Rewards & Bonuses' },
+                    referrals: { total: 0, count: 0, label: 'Referral Bonuses' },
+                    other_earning: { total: 0, count: 0, label: 'Other Earnings' }
+                };
+
+                // Daily spending for chart data
+                var dailySpending = {};
+                var dailyEarning = {};
+
+                txnList.forEach(function(t) {
+                    var amt = Math.abs(t.amount || 0);
+                    var day = (t.created_at || '').substring(0, 10);
+                    var txType = t.type || '';
+
+                    if (t.amount < 0) {
+                        // Spending
+                        if (txType === 'tip_sent' || txType === 'tip') categories.tips.total += amt, categories.tips.count++;
+                        else if (txType === 'purchase' || txType === 'store_purchase') categories.purchases.total += amt, categories.purchases.count++;
+                        else if (txType === 'boost' || txType === 'promote') categories.boosts.total += amt, categories.boosts.count++;
+                        else if (txType === 'withdrawal') categories.withdrawals_cat.total += amt, categories.withdrawals_cat.count++;
+                        else categories.other_spending.total += amt, categories.other_spending.count++;
+
+                        dailySpending[day] = (dailySpending[day] || 0) + amt;
+                    } else if (t.amount > 0) {
+                        // Earnings
+                        if (txType === 'purchase' || txType === 'coin_purchase') earnings.purchases_received.total += amt, earnings.purchases_received.count++;
+                        else if (txType === 'tip_received') earnings.tips_received.total += amt, earnings.tips_received.count++;
+                        else if (txType === 'reward' || txType === 'bonus' || txType === 'signup_bonus') earnings.rewards.total += amt, earnings.rewards.count++;
+                        else if (txType === 'referral' || txType === 'referral_bonus') earnings.referrals.total += amt, earnings.referrals.count++;
+                        else earnings.other_earning.total += amt, earnings.other_earning.count++;
+
+                        dailyEarning[day] = (dailyEarning[day] || 0) + amt;
+                    }
+                });
+
+                // Build chart-friendly daily data (last N days)
+                var chartData = [];
+                for (var d = 0; d < insightDays; d++) {
+                    var date = new Date(Date.now() - d * 86400000);
+                    var dayKey = date.toISOString().substring(0, 10);
+                    chartData.unshift({
+                        date: dayKey,
+                        spent: dailySpending[dayKey] || 0,
+                        earned: dailyEarning[dayKey] || 0
+                    });
+                }
+
+                var totalSpent = Object.values(categories).reduce(function(s, c) { return s + c.total; }, 0);
+                var totalEarned = Object.values(earnings).reduce(function(s, c) { return s + c.total; }, 0);
+
+                return new Response(JSON.stringify({
+                    ok: true,
+                    data: {
+                        period_days: insightDays,
+                        total_spent: totalSpent,
+                        total_earned: totalEarned,
+                        net_flow: totalEarned - totalSpent,
+                        spending_breakdown: categories,
+                        earning_breakdown: earnings,
+                        chart_data: chartData,
+                        transaction_count: txnList.length
+                    }
+                }), { status: 200, headers: corsHeaders(origin) });
+            }
+
+            case 'earn-more': {
+                // Get user profile data to determine personalized earn suggestions
+                var profileRes2 = await fetch(
+                    supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(user.authId) +
+                    '&select=id,display_name,photo_url,bio,article_count,writer_xp,gxp,referral_code&limit=1',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                );
+                var profile = (await profileRes2.json())[0] || {};
+
+                // Get wallet balance
+                var walletRes2 = await fetch(
+                    supabaseUrl + '/rest/v1/user_wallets?user_id=eq.' + encodeURIComponent(user.userId) + '&limit=1',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                );
+                var wallet = ((await walletRes2.json()) || [])[0] || {};
+
+                var suggestions = [];
+
+                // Suggest based on what the user hasn't done yet
+                if ((profile.article_count || 0) === 0) {
+                    suggestions.push({
+                        type: 'write',
+                        icon: 'pencil',
+                        title: 'Write Your First Article',
+                        title_ar: 'اكتب أول مقال لك',
+                        description: 'Earn 50-200 coins per article. Quality articles earn tips from readers too!',
+                        description_ar: 'اربح 50-200 عملة لكل مقال. المقالات المميزة تكسب إكراميات من القراء!',
+                        potential_coins: 200,
+                        action_url: '/pages/user/write-article.html',
+                        priority: 'high'
+                    });
+                } else if ((profile.article_count || 0) < 5) {
+                    suggestions.push({
+                        type: 'write',
+                        icon: 'pencil',
+                        title: 'Write More Articles',
+                        title_ar: 'اكتب مزيداً من المقالات',
+                        description: 'You have ' + profile.article_count + ' articles. Writers with 5+ articles earn 3x more tips!',
+                        description_ar: 'لديك ' + profile.article_count + ' مقالات. الكتّاب بـ 5+ مقالات يكسبون 3 أضعاف الإكراميات!',
+                        potential_coins: 150,
+                        action_url: '/pages/user/write-article.html',
+                        priority: 'high'
+                    });
+                }
+
+                if (!profile.photo_url) {
+                    suggestions.push({
+                        type: 'profile',
+                        icon: 'camera',
+                        title: 'Add a Profile Photo',
+                        title_ar: 'أضف صورة شخصية',
+                        description: 'Complete your profile to earn 25 bonus coins.',
+                        description_ar: 'أكمل ملفك الشخصي للحصول على 25 عملة إضافية.',
+                        potential_coins: 25,
+                        action_url: '/pages/user/settings.html',
+                        priority: 'medium'
+                    });
+                }
+
+                if (!profile.bio || profile.bio.length < 20) {
+                    suggestions.push({
+                        type: 'profile',
+                        icon: 'edit',
+                        title: 'Complete Your Bio',
+                        title_ar: 'أكمل النبذة الشخصية',
+                        description: 'Add a bio (20+ characters) to earn 15 bonus coins.',
+                        description_ar: 'أضف نبذة (20+ حرف) للحصول على 15 عملة إضافية.',
+                        potential_coins: 15,
+                        action_url: '/pages/user/settings.html',
+                        priority: 'medium'
+                    });
+                }
+
+                if (profile.referral_code) {
+                    suggestions.push({
+                        type: 'referral',
+                        icon: 'users',
+                        title: 'Refer Friends',
+                        title_ar: 'ادعُ أصدقاءك',
+                        description: 'Earn 100 coins for each friend who signs up with your referral code: ' + profile.referral_code,
+                        description_ar: 'اربح 100 عملة لكل صديق يسجل برمز الإحالة: ' + profile.referral_code,
+                        potential_coins: 100,
+                        action_url: '/pages/user/referral.html',
+                        priority: 'high'
+                    });
+                }
+
+                suggestions.push({
+                    type: 'engage',
+                    icon: 'message-circle',
+                    title: 'Review Groups You\'ve Joined',
+                    title_ar: 'قيّم المجموعات التي انضممت إليها',
+                    description: 'Earn 10 coins per review. Helpful reviews earn extra tips!',
+                    description_ar: 'اربح 10 عملات لكل تقييم. التقييمات المفيدة تكسب إكراميات إضافية!',
+                    potential_coins: 10,
+                    action_url: '/',
+                    priority: 'low'
+                });
+
+                // Sort by priority
+                var priorityOrder = { high: 0, medium: 1, low: 2 };
+                suggestions.sort(function(a, b) {
+                    return (priorityOrder[a.priority] || 2) - (priorityOrder[b.priority] || 2);
+                });
+
+                return new Response(JSON.stringify({
+                    ok: true,
+                    data: {
+                        suggestions: suggestions,
+                        current_balance: wallet.coins_balance || 0,
+                        is_low_balance: (wallet.coins_balance || 0) < 100,
+                        total_potential: suggestions.reduce(function(s, sg) { return s + (sg.potential_coins || 0); }, 0)
+                    }
+                }), { status: 200, headers: corsHeaders(origin) });
+            }
+
             default:
                 return new Response(JSON.stringify({ ok: false, error: 'Unknown action: ' + action }), {
                     status: 400, headers: corsHeaders(origin)

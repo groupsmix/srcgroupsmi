@@ -154,6 +154,219 @@ export async function onRequest(context) {
             });
         }
 
+        if (action === 'predictive-growth') {
+            // Predictive growth analytics using linear regression on the last 30 days
+            var days = parseInt(url.searchParams.get('days')) || 30;
+
+            // Get daily view snapshots (using analytics events if available)
+            var cutoff = new Date(Date.now() - days * 86400000).toISOString();
+
+            // Get reviews over time for growth tracking
+            var growthReviewsRes = await fetch(
+                supabaseUrl + '/rest/v1/reviews?group_id=eq.' + encodeURIComponent(groupId) + '&created_at=gte.' + encodeURIComponent(cutoff) + '&select=rating,created_at&order=created_at.asc',
+                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+            );
+            var growthReviews = await growthReviewsRes.json();
+            growthReviews = Array.isArray(growthReviews) ? growthReviews : [];
+
+            // Build daily data points
+            var dailyData = [];
+            var cumulativeReviews = 0;
+            for (var d = 0; d < days; d++) {
+                var dayDate = new Date(Date.now() - (days - 1 - d) * 86400000);
+                var dayKey = dayDate.toISOString().substring(0, 10);
+
+                var dayReviews = growthReviews.filter(function(r) {
+                    return (r.created_at || '').substring(0, 10) === dayKey;
+                });
+                cumulativeReviews += dayReviews.length;
+
+                dailyData.push({
+                    date: dayKey,
+                    day_index: d,
+                    new_reviews: dayReviews.length,
+                    cumulative_reviews: cumulativeReviews,
+                    avg_rating: dayReviews.length > 0
+                        ? dayReviews.reduce(function(s, r) { return s + (r.rating || 0); }, 0) / dayReviews.length
+                        : null
+                });
+            }
+
+            // Simple linear regression on cumulative reviews
+            var n = dailyData.length;
+            var sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+            dailyData.forEach(function(dp) {
+                sumX += dp.day_index;
+                sumY += dp.cumulative_reviews;
+                sumXY += dp.day_index * dp.cumulative_reviews;
+                sumXX += dp.day_index * dp.day_index;
+            });
+
+            var slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX) || 0;
+            var intercept = (sumY - slope * sumX) / n || 0;
+
+            // Project next 14 days
+            var projections = [];
+            for (var p = 1; p <= 14; p++) {
+                var projDay = n + p - 1;
+                var projDate = new Date(Date.now() + p * 86400000);
+                projections.push({
+                    date: projDate.toISOString().substring(0, 10),
+                    projected_cumulative_reviews: Math.max(cumulativeReviews, Math.round(slope * projDay + intercept)),
+                    confidence: Math.max(0.3, 1 - (p * 0.04)) // confidence decreases over time
+                });
+            }
+
+            var growthRate = cumulativeReviews > 0 ? (slope / Math.max(1, cumulativeReviews / n) * 100) : 0;
+
+            return new Response(JSON.stringify({
+                ok: true,
+                data: {
+                    group_id: groupId,
+                    period_days: days,
+                    current_stats: {
+                        total_reviews: group.review_count || 0,
+                        views: group.views || 0,
+                        trust_score: group.trust_score || 0,
+                        avg_rating: parseFloat(group.avg_rating) || 0
+                    },
+                    daily_data: dailyData,
+                    trend: {
+                        slope: parseFloat(slope.toFixed(4)),
+                        direction: slope > 0.1 ? 'growing' : (slope < -0.1 ? 'declining' : 'stable'),
+                        growth_rate_pct: parseFloat(growthRate.toFixed(2)),
+                        reviews_per_day_avg: parseFloat((cumulativeReviews / days).toFixed(2))
+                    },
+                    projections: projections
+                }
+            }), { status: 200, headers: corsHeaders(origin) });
+        }
+
+        if (action === 'insights') {
+            // Actionable insights — derive patterns from group data
+            var insightsDays = parseInt(url.searchParams.get('days')) || 30;
+            var insightsCutoff = new Date(Date.now() - insightsDays * 86400000).toISOString();
+
+            // Get reviews with timestamps for pattern analysis
+            var insightReviewsRes = await fetch(
+                supabaseUrl + '/rest/v1/reviews?group_id=eq.' + encodeURIComponent(groupId) + '&created_at=gte.' + encodeURIComponent(insightsCutoff) + '&select=rating,created_at&order=created_at.asc',
+                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+            );
+            var insightReviews = await insightReviewsRes.json();
+            insightReviews = Array.isArray(insightReviews) ? insightReviews : [];
+
+            var insights = [];
+
+            // Pattern 1: Best day of week for engagement
+            var dayOfWeekCounts = [0, 0, 0, 0, 0, 0, 0]; // Sun-Sat
+            var dayNames = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'];
+            insightReviews.forEach(function(r) {
+                var dow = new Date(r.created_at).getDay();
+                dayOfWeekCounts[dow]++;
+            });
+            var bestDay = dayOfWeekCounts.indexOf(Math.max.apply(null, dayOfWeekCounts));
+            var worstDay = dayOfWeekCounts.indexOf(Math.min.apply(null, dayOfWeekCounts));
+            if (insightReviews.length >= 5 && dayOfWeekCounts[bestDay] > dayOfWeekCounts[worstDay] * 1.5) {
+                var boost = dayOfWeekCounts[worstDay] > 0
+                    ? Math.round((dayOfWeekCounts[bestDay] / dayOfWeekCounts[worstDay] - 1) * 100)
+                    : 100;
+                insights.push({
+                    type: 'engagement_pattern',
+                    icon: 'calendar',
+                    title: 'Best Day for Engagement: ' + dayNames[bestDay],
+                    description: 'Your group gets ' + boost + '% more engagement on ' + dayNames[bestDay] + ' compared to ' + dayNames[worstDay] + '. Consider posting updates on ' + dayNames[bestDay] + '.',
+                    impact: 'high',
+                    data: { best_day: dayNames[bestDay], worst_day: dayNames[worstDay], boost_pct: boost }
+                });
+            }
+
+            // Pattern 2: Rating trend
+            if (insightReviews.length >= 3) {
+                var firstHalf = insightReviews.slice(0, Math.floor(insightReviews.length / 2));
+                var secondHalf = insightReviews.slice(Math.floor(insightReviews.length / 2));
+                var avgFirst = firstHalf.reduce(function(s, r) { return s + (r.rating || 0); }, 0) / firstHalf.length;
+                var avgSecond = secondHalf.reduce(function(s, r) { return s + (r.rating || 0); }, 0) / secondHalf.length;
+
+                if (avgSecond > avgFirst + 0.3) {
+                    insights.push({
+                        type: 'rating_trend',
+                        icon: 'trending-up',
+                        title: 'Rating Is Improving!',
+                        description: 'Your average rating improved from ' + avgFirst.toFixed(1) + ' to ' + avgSecond.toFixed(1) + ' in the recent period. Keep up the great work!',
+                        impact: 'medium',
+                        data: { old_avg: parseFloat(avgFirst.toFixed(1)), new_avg: parseFloat(avgSecond.toFixed(1)) }
+                    });
+                } else if (avgSecond < avgFirst - 0.3) {
+                    insights.push({
+                        type: 'rating_trend',
+                        icon: 'trending-down',
+                        title: 'Rating Needs Attention',
+                        description: 'Your average rating dropped from ' + avgFirst.toFixed(1) + ' to ' + avgSecond.toFixed(1) + '. Consider engaging more with your community to improve satisfaction.',
+                        impact: 'high',
+                        data: { old_avg: parseFloat(avgFirst.toFixed(1)), new_avg: parseFloat(avgSecond.toFixed(1)) }
+                    });
+                }
+            }
+
+            // Pattern 3: Conversion rate insight
+            var conversionRate = (group.views || 0) > 0 ? ((group.click_count || 0) / group.views * 100) : 0;
+            if (conversionRate < 5 && (group.views || 0) > 50) {
+                insights.push({
+                    type: 'conversion',
+                    icon: 'zap',
+                    title: 'Low Conversion Rate (' + conversionRate.toFixed(1) + '%)',
+                    description: 'Your group has ' + group.views + ' views but only ' + (group.click_count || 0) + ' clicks. Improve your description, add tags, and share a smart link to boost conversions.',
+                    impact: 'high',
+                    data: { views: group.views, clicks: group.click_count || 0, rate: parseFloat(conversionRate.toFixed(1)) }
+                });
+            } else if (conversionRate > 20) {
+                insights.push({
+                    type: 'conversion',
+                    icon: 'award',
+                    title: 'Excellent Conversion Rate (' + conversionRate.toFixed(1) + '%)',
+                    description: 'Your group converts ' + conversionRate.toFixed(1) + '% of visitors into clicks — well above average! Your listing is compelling.',
+                    impact: 'low',
+                    data: { views: group.views, clicks: group.click_count || 0, rate: parseFloat(conversionRate.toFixed(1)) }
+                });
+            }
+
+            // Pattern 4: Trust score insight
+            if ((group.trust_score || 0) < 30) {
+                insights.push({
+                    type: 'trust',
+                    icon: 'shield-off',
+                    title: 'Trust Score Is Low (' + (group.trust_score || 0) + '/100)',
+                    description: 'Groups with trust scores above 50 get 4x more visibility. Get more reviews, verify your group, and add a detailed description.',
+                    impact: 'high',
+                    data: { trust_score: group.trust_score || 0 }
+                });
+            }
+
+            // Pattern 5: Review velocity
+            var recentReviewCount = insightReviews.length;
+            var reviewsPerWeek = recentReviewCount / (insightsDays / 7);
+            if (reviewsPerWeek > 2) {
+                insights.push({
+                    type: 'momentum',
+                    icon: 'rocket',
+                    title: 'Strong Review Momentum',
+                    description: 'You\'re getting ' + reviewsPerWeek.toFixed(1) + ' reviews per week — great engagement! Consider adding a review widget to your website to maintain this.',
+                    impact: 'medium',
+                    data: { reviews_per_week: parseFloat(reviewsPerWeek.toFixed(1)) }
+                });
+            }
+
+            return new Response(JSON.stringify({
+                ok: true,
+                data: {
+                    group_id: groupId,
+                    insights: insights,
+                    period_days: insightsDays,
+                    total_reviews_in_period: recentReviewCount
+                }
+            }), { status: 200, headers: corsHeaders(origin) });
+        }
+
         // Default: stats
         // Get review stats
         const reviewsRes = await fetch(

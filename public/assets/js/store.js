@@ -40,6 +40,7 @@
         sort_price_low: isArabic ? 'السعر: الأقل' : 'Price: Low to High',
         sort_price_high: isArabic ? 'السعر: الأعلى' : 'Price: High to Low',
         sort_name: isArabic ? 'الاسم' : 'Name',
+        sort_personalized: isArabic ? 'مخصص لك' : 'For You',
         buy_now: isArabic ? 'اشتر الآن' : 'Buy Now',
         subscribe: isArabic ? 'اشترك الآن' : 'Subscribe',
         free: isArabic ? 'مجاناً' : 'Free',
@@ -70,7 +71,7 @@
         filteredProducts: [],
         allProducts: [],
         currentType: 'all',
-        currentSort: 'newest',
+        currentSort: 'personalized',
         searchQuery: '',
         isLoading: true,
         isAISearching: false,
@@ -164,7 +165,16 @@
             }
         }
 
-        var res = await fetch(STORE_CONFIG.apiEndpoint);
+        // Build personalized query params
+        var endpoint = STORE_CONFIG.apiEndpoint + '?sort=personalized';
+        var viewedCats = getStored(STORE_CONFIG.viewedCategoriesKey) || [];
+        var viewedIds = getStored(STORE_CONFIG.viewedKey) || [];
+        var groupCats = getStored('gm_user_group_categories') || [];
+        if (viewedCats.length) endpoint += '&viewed_types=' + encodeURIComponent(viewedCats.join(','));
+        if (viewedIds.length) endpoint += '&viewed_ids=' + encodeURIComponent(viewedIds.slice(0, 20).join(','));
+        if (groupCats.length) endpoint += '&group_categories=' + encodeURIComponent(groupCats.join(','));
+
+        var res = await fetch(endpoint);
         if (!res.ok) throw new Error('API error: ' + res.status);
         var json = await res.json();
         if (!json.ok) throw new Error(json.error || 'Unknown error');
@@ -427,6 +437,9 @@
             case 'name':
                 products.sort(function (a, b) { return a.name.localeCompare(b.name); });
                 break;
+            case 'personalized':
+                // Products are already ranked by server; keep order
+                break;
         }
 
         state.filteredProducts = products;
@@ -601,6 +614,7 @@
             '<option value="price-low"' + (state.currentSort === 'price-low' ? ' selected' : '') + '>' + sanitize(i18n.sort_price_low) + '</option>' +
             '<option value="price-high"' + (state.currentSort === 'price-high' ? ' selected' : '') + '>' + sanitize(i18n.sort_price_high) + '</option>' +
             '<option value="name"' + (state.currentSort === 'name' ? ' selected' : '') + '>' + sanitize(i18n.sort_name) + '</option>' +
+            '<option value="personalized"' + (state.currentSort === 'personalized' ? ' selected' : '') + '>' + sanitize(i18n.sort_personalized) + '</option>' +
             '</select>' +
             '</div>' +
             '</div>';

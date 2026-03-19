@@ -222,6 +222,215 @@ async function handleGet(request, env, admin, origin) {
                 });
             }
 
+            case 'predictive-growth': {
+                // Platform-wide predictive growth analytics using linear regression
+                const growthDays = parseInt(url.searchParams.get('days')) || 30;
+                const growthCutoff = new Date(Date.now() - growthDays * 86400000).toISOString();
+
+                // Fetch daily user signups
+                const signupsRes = await fetch(
+                    supabaseUrl + '/rest/v1/users?created_at=gte.' + encodeURIComponent(growthCutoff) + '&select=created_at&order=created_at.asc&limit=5000',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                );
+                const signups = await signupsRes.json();
+
+                // Fetch daily article creation
+                const articleGrowthRes = await fetch(
+                    supabaseUrl + '/rest/v1/articles?created_at=gte.' + encodeURIComponent(growthCutoff) + '&select=created_at&order=created_at.asc&limit=5000',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                );
+                const articleGrowth = await articleGrowthRes.json();
+
+                // Build daily data
+                var dailyGrowth = [];
+                var cumUsers = 0, cumArticles = 0;
+                for (var gd = 0; gd < growthDays; gd++) {
+                    var gdDate = new Date(Date.now() - (growthDays - 1 - gd) * 86400000);
+                    var gdKey = gdDate.toISOString().substring(0, 10);
+
+                    var dayUsers = (signups || []).filter(function(u) { return (u.created_at || '').substring(0, 10) === gdKey; }).length;
+                    var dayArticles = (articleGrowth || []).filter(function(a) { return (a.created_at || '').substring(0, 10) === gdKey; }).length;
+                    cumUsers += dayUsers;
+                    cumArticles += dayArticles;
+
+                    dailyGrowth.push({
+                        date: gdKey,
+                        day_index: gd,
+                        new_users: dayUsers,
+                        new_articles: dayArticles,
+                        cumulative_users: cumUsers,
+                        cumulative_articles: cumArticles
+                    });
+                }
+
+                // Linear regression on cumulative users
+                var gn = dailyGrowth.length;
+                var gsumX = 0, gsumY = 0, gsumXY = 0, gsumXX = 0;
+                dailyGrowth.forEach(function(dp) {
+                    gsumX += dp.day_index;
+                    gsumY += dp.cumulative_users;
+                    gsumXY += dp.day_index * dp.cumulative_users;
+                    gsumXX += dp.day_index * dp.day_index;
+                });
+                var userSlope = (gn * gsumXY - gsumX * gsumY) / (gn * gsumXX - gsumX * gsumX) || 0;
+                var userIntercept = (gsumY - userSlope * gsumX) / gn || 0;
+
+                // Linear regression on cumulative articles
+                var asumY = 0, asumXY = 0;
+                dailyGrowth.forEach(function(dp) {
+                    asumY += dp.cumulative_articles;
+                    asumXY += dp.day_index * dp.cumulative_articles;
+                });
+                var articleSlope = (gn * asumXY - gsumX * asumY) / (gn * gsumXX - gsumX * gsumX) || 0;
+
+                // Project next 14 days
+                var growthProjections = [];
+                for (var gp = 1; gp <= 14; gp++) {
+                    var gpDay = gn + gp - 1;
+                    var gpDate = new Date(Date.now() + gp * 86400000);
+                    growthProjections.push({
+                        date: gpDate.toISOString().substring(0, 10),
+                        projected_cumulative_users: Math.max(cumUsers, Math.round(userSlope * gpDay + userIntercept)),
+                        projected_cumulative_articles: Math.max(cumArticles, Math.round(articleSlope * gpDay + (asumY - articleSlope * gsumX) / gn)),
+                        confidence: Math.max(0.3, 1 - (gp * 0.04))
+                    });
+                }
+
+                return new Response(JSON.stringify({
+                    ok: true,
+                    data: {
+                        period_days: growthDays,
+                        daily_data: dailyGrowth,
+                        trends: {
+                            users: {
+                                slope: parseFloat(userSlope.toFixed(4)),
+                                direction: userSlope > 0.5 ? 'growing' : (userSlope < -0.5 ? 'declining' : 'stable'),
+                                avg_per_day: parseFloat((cumUsers / growthDays).toFixed(2))
+                            },
+                            articles: {
+                                slope: parseFloat(articleSlope.toFixed(4)),
+                                direction: articleSlope > 0.2 ? 'growing' : (articleSlope < -0.2 ? 'declining' : 'stable'),
+                                avg_per_day: parseFloat((cumArticles / growthDays).toFixed(2))
+                            }
+                        },
+                        projections: growthProjections
+                    }
+                }), { status: 200, headers: corsHeaders(origin) });
+            }
+
+            case 'insights': {
+                // Platform-wide actionable insights
+                const insightDays = parseInt(url.searchParams.get('days')) || 30;
+                const insightCutoff = new Date(Date.now() - insightDays * 86400000).toISOString();
+                const prevCutoff = new Date(Date.now() - insightDays * 2 * 86400000).toISOString();
+
+                // Current period users
+                const curUsersRes = await fetch(
+                    supabaseUrl + '/rest/v1/users?created_at=gte.' + encodeURIComponent(insightCutoff) + '&select=created_at&limit=1',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
+                );
+                const curUsersCount = parseInt((curUsersRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
+
+                // Previous period users
+                const prevUsersRes = await fetch(
+                    supabaseUrl + '/rest/v1/users?created_at=gte.' + encodeURIComponent(prevCutoff) + '&created_at=lt.' + encodeURIComponent(insightCutoff) + '&select=created_at&limit=1',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
+                );
+                const prevUsersCount = parseInt((prevUsersRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
+
+                // Current period articles
+                const curArticlesRes = await fetch(
+                    supabaseUrl + '/rest/v1/articles?created_at=gte.' + encodeURIComponent(insightCutoff) + '&select=created_at&limit=1',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
+                );
+                const curArticlesCount = parseInt((curArticlesRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
+
+                const prevArticlesRes = await fetch(
+                    supabaseUrl + '/rest/v1/articles?created_at=gte.' + encodeURIComponent(prevCutoff) + '&created_at=lt.' + encodeURIComponent(insightCutoff) + '&select=created_at&limit=1',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
+                );
+                const prevArticlesCount = parseInt((prevArticlesRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
+
+                var platformInsights = [];
+
+                // User growth comparison
+                if (prevUsersCount > 0) {
+                    var userGrowthPct = ((curUsersCount - prevUsersCount) / prevUsersCount * 100);
+                    if (userGrowthPct > 20) {
+                        platformInsights.push({
+                            type: 'growth',
+                            icon: 'trending-up',
+                            title: 'User Growth Accelerating',
+                            description: 'User signups grew ' + userGrowthPct.toFixed(0) + '% compared to the previous ' + insightDays + ' days (' + curUsersCount + ' vs ' + prevUsersCount + ').',
+                            impact: 'high',
+                            data: { current: curUsersCount, previous: prevUsersCount, change_pct: parseFloat(userGrowthPct.toFixed(1)) }
+                        });
+                    } else if (userGrowthPct < -20) {
+                        platformInsights.push({
+                            type: 'growth',
+                            icon: 'trending-down',
+                            title: 'User Growth Slowing',
+                            description: 'User signups dropped ' + Math.abs(userGrowthPct).toFixed(0) + '% compared to the previous period. Consider increasing marketing efforts.',
+                            impact: 'high',
+                            data: { current: curUsersCount, previous: prevUsersCount, change_pct: parseFloat(userGrowthPct.toFixed(1)) }
+                        });
+                    }
+                }
+
+                // Article growth comparison
+                if (prevArticlesCount > 0) {
+                    var articleGrowthPct = ((curArticlesCount - prevArticlesCount) / prevArticlesCount * 100);
+                    if (articleGrowthPct > 30) {
+                        platformInsights.push({
+                            type: 'content',
+                            icon: 'file-text',
+                            title: 'Content Creation Surging',
+                            description: 'Article creation is up ' + articleGrowthPct.toFixed(0) + '% this period (' + curArticlesCount + ' articles). Your content strategy is working!',
+                            impact: 'medium',
+                            data: { current: curArticlesCount, previous: prevArticlesCount, change_pct: parseFloat(articleGrowthPct.toFixed(1)) }
+                        });
+                    } else if (articleGrowthPct < -30) {
+                        platformInsights.push({
+                            type: 'content',
+                            icon: 'alert-triangle',
+                            title: 'Content Creation Declining',
+                            description: 'Article creation dropped ' + Math.abs(articleGrowthPct).toFixed(0) + '%. Consider incentivizing writers with higher coin rewards.',
+                            impact: 'high',
+                            data: { current: curArticlesCount, previous: prevArticlesCount, change_pct: parseFloat(articleGrowthPct.toFixed(1)) }
+                        });
+                    }
+                }
+
+                // Users per article ratio
+                if (curArticlesCount > 0 && curUsersCount > 0) {
+                    var usersPerArticle = curUsersCount / curArticlesCount;
+                    if (usersPerArticle > 50) {
+                        platformInsights.push({
+                            type: 'content_gap',
+                            icon: 'edit',
+                            title: 'Content Gap Detected',
+                            description: 'You have ' + usersPerArticle.toFixed(0) + ' users per article. Encouraging more content creation could improve engagement and retention.',
+                            impact: 'medium',
+                            data: { ratio: parseFloat(usersPerArticle.toFixed(1)) }
+                        });
+                    }
+                }
+
+                return new Response(JSON.stringify({
+                    ok: true,
+                    data: {
+                        insights: platformInsights,
+                        period_days: insightDays,
+                        summary: {
+                            users_this_period: curUsersCount,
+                            users_prev_period: prevUsersCount,
+                            articles_this_period: curArticlesCount,
+                            articles_prev_period: prevArticlesCount
+                        }
+                    }
+                }), { status: 200, headers: corsHeaders(origin) });
+            }
+
             case 'leaderboard': {
                 const type = url.searchParams.get('type') || 'xp';
                 const limit = Math.min(parseInt(url.searchParams.get('limit')) || 10, 100);
