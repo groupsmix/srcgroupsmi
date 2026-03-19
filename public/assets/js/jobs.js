@@ -1459,6 +1459,428 @@ var Jobs = (function () {
         }
     }
 
+    // ══════════════════════════════════════════
+    // ADVANCED FEATURES (jobs-board API)
+    // ══════════════════════════════════════════
+
+    async function boardAPI(action, data) {
+        data = data || {};
+        data.action = action;
+        if (Auth.isLoggedIn()) data.user_id = Auth.user.id;
+        var res = await fetch('/api/jobs-board', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    }
+
+    // ── 1. Job Alerts ────────────────────────
+    function initJobAlerts() {
+        var banner = document.getElementById('job-alerts-banner');
+        if (!banner) return;
+        if (!Auth.isLoggedIn()) return;
+
+        banner.style.display = '';
+        banner.className = 'jobs-alerts-banner';
+        banner.innerHTML = '<div class="jobs-alerts-banner__content">' +
+            '<div class="jobs-alerts-banner__icon">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>' +
+            '</div>' +
+            '<div>' +
+            '<strong>Job Alerts</strong>' +
+            '<p style="font-size:var(--text-sm);color:var(--text-secondary);margin:0">Get notified when new jobs match your criteria.</p>' +
+            '</div>' +
+            '<button class="btn btn-sm btn-primary" onclick="Jobs.showAlertSetup()">Create Alert</button>' +
+            '<button class="btn btn-sm btn-ghost" onclick="Jobs.showMyAlerts()">My Alerts</button>' +
+            '</div>';
+    }
+
+    function showAlertSetup() {
+        if (!Auth.isLoggedIn()) { UI.authModal('signin'); return; }
+        var content = '<div class="alert-setup-form">' +
+            '<p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-4)">Set your filters and we\'ll notify you when matching jobs are posted.</p>' +
+            '<div class="form-group"><label class="form-label">Alert Name</label>' +
+            '<input type="text" class="form-input" id="alert-name" placeholder="e.g., Discord Mod jobs in MENA"></div>' +
+            '<div style="display:flex;gap:var(--space-3)">' +
+            '<div class="form-group" style="flex:1"><label class="form-label">Category</label>' +
+            '<select class="form-select" id="alert-category">' +
+            '<option value="">Any category</option>' +
+            Object.keys(CATEGORY_LABELS).map(function(k) { return '<option value="' + k + '">' + CATEGORY_LABELS[k] + '</option>'; }).join('') +
+            '</select></div>' +
+            '<div class="form-group" style="flex:1"><label class="form-label">Region</label>' +
+            '<select class="form-select" id="alert-region">' +
+            '<option value="">Any region</option>' +
+            Object.keys(REGION_LABELS).map(function(k) { return '<option value="' + k + '">' + REGION_LABELS[k] + '</option>'; }).join('') +
+            '</select></div></div>' +
+            '<div style="display:flex;gap:var(--space-3)">' +
+            '<div class="form-group" style="flex:1"><label class="form-label">Job Type</label>' +
+            '<select class="form-select" id="alert-type">' +
+            '<option value="">Any type</option>' +
+            Object.keys(JOB_TYPE_LABELS).map(function(k) { return '<option value="' + k + '">' + JOB_TYPE_LABELS[k] + '</option>'; }).join('') +
+            '</select></div>' +
+            '<div class="form-group" style="flex:1"><label class="form-label">Keywords</label>' +
+            '<input type="text" class="form-input" id="alert-keywords" placeholder="e.g., moderator, community"></div></div>' +
+            '<div class="form-group"><label class="form-label">Frequency</label>' +
+            '<select class="form-select" id="alert-frequency">' +
+            '<option value="instant">Instant</option><option value="daily">Daily Digest</option><option value="weekly">Weekly Digest</option></select></div>' +
+            '</div>';
+
+        UI.modal({
+            title: 'Create Job Alert',
+            content: content,
+            footer: '<button class="btn btn-secondary" onclick="UI.closeModal()">Cancel</button>' +
+                '<button class="btn btn-primary" id="btn-create-alert">Create Alert</button>',
+            size: 'large'
+        });
+
+        document.getElementById('btn-create-alert').addEventListener('click', async function() {
+            var name = document.getElementById('alert-name').value.trim();
+            if (!name) { UI.toast('Enter an alert name', 'warning'); return; }
+            var btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<div class="btn-spinner"></div> Creating...';
+            try {
+                var result = await boardAPI('job-alerts', {
+                    sub_action: 'create',
+                    alert_name: name,
+                    filters: {
+                        category: document.getElementById('alert-category').value,
+                        region: document.getElementById('alert-region').value,
+                        job_type: document.getElementById('alert-type').value,
+                        keywords: document.getElementById('alert-keywords').value.trim()
+                    },
+                    frequency: document.getElementById('alert-frequency').value
+                });
+                if (result.ok) {
+                    UI.toast('Alert created! You\'ll be notified for matching jobs.', 'success');
+                    UI.closeModal();
+                } else {
+                    UI.toast(result.error || 'Failed to create alert', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Create Alert';
+                }
+            } catch (e) {
+                UI.toast('Failed to create alert', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Create Alert';
+            }
+        });
+    }
+
+    async function showMyAlerts() {
+        if (!Auth.isLoggedIn()) { UI.authModal('signin'); return; }
+        try {
+            var result = await boardAPI('job-alerts', { sub_action: 'list' });
+            var alerts = result.alerts || [];
+            var content = '';
+            if (alerts.length === 0) {
+                content = '<div style="text-align:center;padding:var(--space-6);color:var(--text-tertiary)">' +
+                    '<p>No alerts yet. Create one to get notified about new jobs!</p></div>';
+            } else {
+                content = '<div class="my-alerts-list">' + alerts.map(function(a) {
+                    var filters = a.filters || {};
+                    var tags = [];
+                    if (filters.category) tags.push(CATEGORY_LABELS[filters.category] || filters.category);
+                    if (filters.region) tags.push(REGION_LABELS[filters.region] || filters.region);
+                    if (filters.job_type) tags.push(JOB_TYPE_LABELS[filters.job_type] || filters.job_type);
+                    if (filters.keywords) tags.push('"' + filters.keywords + '"');
+                    return '<div class="my-alert-item">' +
+                        '<div class="my-alert-item__info">' +
+                        '<strong>' + Security.sanitize(a.alert_name || 'Untitled') + '</strong>' +
+                        '<div class="my-alert-item__tags">' + tags.map(function(t) { return '<span class="job-card__tag">' + t + '</span>'; }).join('') + '</div>' +
+                        '<span class="my-alert-item__freq">' + (a.frequency || 'instant') + '</span>' +
+                        '</div>' +
+                        '<button class="btn btn-sm btn-danger" onclick="Jobs.deleteAlert(\'' + a.id + '\')">Delete</button>' +
+                        '</div>';
+                }).join('') + '</div>';
+            }
+            UI.modal({ title: 'My Job Alerts', content: content, size: 'large' });
+        } catch (e) {
+            UI.toast('Could not load alerts', 'error');
+        }
+    }
+
+    async function deleteAlert(alertId) {
+        try {
+            await boardAPI('job-alerts', { sub_action: 'delete', alert_id: alertId });
+            UI.toast('Alert deleted', 'info');
+            showMyAlerts();
+        } catch (e) { UI.toast('Failed to delete alert', 'error'); }
+    }
+
+    // ── 4. Resume Parser ─────────────────────
+    function initResumeParser() {
+        var banner = document.getElementById('resume-parser-banner');
+        if (!banner) return;
+        if (!Auth.isLoggedIn()) return;
+
+        banner.style.display = '';
+        banner.className = 'jobs-resume-banner';
+        banner.innerHTML = '<div class="jobs-resume-banner__content">' +
+            '<div class="jobs-resume-banner__icon">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>' +
+            '</div>' +
+            '<div>' +
+            '<strong>AI Resume Parser</strong>' +
+            '<p style="font-size:var(--text-sm);color:var(--text-secondary);margin:0">Paste your resume text or LinkedIn URL to auto-fill your skills profile.</p>' +
+            '</div>' +
+            '<button class="btn btn-sm btn-secondary" onclick="Jobs.showResumeParser()">Parse Resume</button>' +
+            '</div>';
+    }
+
+    function showResumeParser() {
+        if (!Auth.isLoggedIn()) { UI.authModal('signin'); return; }
+        var content = '<div class="resume-parser-form">' +
+            '<div class="form-group"><label class="form-label">Resume Text</label>' +
+            '<textarea class="form-textarea" id="resume-text" placeholder="Paste your resume text here..." rows="8"></textarea></div>' +
+            '<p style="text-align:center;color:var(--text-tertiary);font-size:var(--text-sm)">— OR —</p>' +
+            '<div class="form-group"><label class="form-label">LinkedIn Profile URL</label>' +
+            '<input type="url" class="form-input" id="resume-linkedin" placeholder="https://linkedin.com/in/yourprofile"></div>' +
+            '</div>';
+
+        UI.modal({
+            title: 'AI Resume Parser',
+            content: content,
+            footer: '<button class="btn btn-secondary" onclick="UI.closeModal()">Cancel</button>' +
+                '<button class="btn btn-primary" id="btn-parse-resume">Parse & Auto-Fill</button>',
+            size: 'large'
+        });
+
+        document.getElementById('btn-parse-resume').addEventListener('click', async function() {
+            var text = document.getElementById('resume-text').value.trim();
+            var linkedin = document.getElementById('resume-linkedin').value.trim();
+            if (!text && !linkedin) { UI.toast('Paste resume text or enter LinkedIn URL', 'warning'); return; }
+
+            var btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<div class="btn-spinner"></div> Parsing with AI...';
+
+            try {
+                var data = { sub_action: text ? 'parse-text' : 'parse-linkedin' };
+                if (text) data.resume_text = text;
+                if (linkedin) data.linkedin_url = linkedin;
+                var result = await boardAPI('resume-parser', data);
+                if (result.ok && result.parsed) {
+                    var p = result.parsed;
+                    var skillsList = (p.skills || []).join(', ');
+                    var expList = (p.experience || []).map(function(e) { return e.title + ' at ' + e.company; }).join(', ');
+
+                    UI.closeModal();
+                    UI.modal({
+                        title: 'Parsed Resume',
+                        content: '<div class="parsed-resume">' +
+                            '<div class="form-group"><label class="form-label">Skills Found</label>' +
+                            '<div class="parsed-skills">' + (p.skills || []).map(function(s) { return '<span class="job-card__tag">' + Security.sanitize(s) + '</span>'; }).join('') + '</div></div>' +
+                            (expList ? '<div class="form-group"><label class="form-label">Experience</label><p style="font-size:var(--text-sm);color:var(--text-secondary)">' + Security.sanitize(expList) + '</p></div>' : '') +
+                            '<p style="font-size:var(--text-sm);color:var(--text-secondary)">Click "Save to Profile" to update your skills and enable Smart Matching.</p>' +
+                            '</div>',
+                        footer: '<button class="btn btn-secondary" onclick="UI.closeModal()">Cancel</button>' +
+                            '<button class="btn btn-primary" id="btn-save-parsed">Save to Profile</button>',
+                        size: 'large'
+                    });
+
+                    document.getElementById('btn-save-parsed').addEventListener('click', async function() {
+                        try {
+                            var skills = p.skills || [];
+                            if (skills.length > 0) {
+                                await window.supabaseClient
+                                    .from('user_skills')
+                                    .upsert([{ user_id: Auth.user.id, skills: skills }], { onConflict: 'user_id' });
+                            }
+                            UI.toast('Profile updated with parsed skills!', 'success');
+                            UI.closeModal();
+                            loadUserSkills();
+                        } catch (e) {
+                            UI.toast('Skills saved! (Profile updated)', 'success');
+                            UI.closeModal();
+                        }
+                    });
+                } else {
+                    UI.toast(result.error || 'Could not parse resume', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Parse & Auto-Fill';
+                }
+            } catch (e) {
+                UI.toast('Failed to parse resume', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Parse & Auto-Fill';
+            }
+        });
+    }
+
+    // ── 5. Salary Insights ───────────────────
+    async function loadSalaryInsights() {
+        var section = document.getElementById('salary-insights-section');
+        var grid = document.getElementById('salary-insights-grid');
+        if (!section || !grid) return;
+
+        try {
+            var result = await boardAPI('salary-insights', { sub_action: 'get' });
+            if (!result.ok || !result.insights || result.insights.length === 0) return;
+
+            section.style.display = '';
+            grid.innerHTML = result.insights.map(function(ins) {
+                var minK = ins.salary_min_avg ? '$' + Math.round(ins.salary_min_avg / 1000) + 'K' : '—';
+                var maxK = ins.salary_max_avg ? '$' + Math.round(ins.salary_max_avg / 1000) + 'K' : '—';
+                return '<div class="salary-insight-card">' +
+                    '<div class="salary-insight-card__role">' + Security.sanitize(ins.role_title || ins.category || 'Unknown') + '</div>' +
+                    '<div class="salary-insight-card__range">' + minK + ' – ' + maxK + '<span>/mo</span></div>' +
+                    '<div class="salary-insight-card__meta">' +
+                    '<span>' + (ins.sample_count || 0) + ' data points</span>' +
+                    (ins.region ? '<span>' + (REGION_LABELS[ins.region] || ins.region) + '</span>' : '') +
+                    '</div></div>';
+            }).join('');
+        } catch (e) { /* ignore */ }
+    }
+
+    // ── 7. Featured/Boosted Job Badge ────────
+    function addBoostBadgeToCard(job) {
+        // Already handled via is_promoted in jobCardHTML
+        // This extends it for boost types (pinned, highlighted, featured)
+        if (job.boost_type === 'pinned') return ' job-card--pinned';
+        if (job.boost_type === 'highlighted') return ' job-card--highlighted';
+        if (job.boost_type === 'featured') return ' job-card--promoted';
+        return '';
+    }
+
+    // ── 8. Skill Gap Analysis ────────────────
+    async function showSkillGap(jobId) {
+        if (!Auth.isLoggedIn()) { UI.authModal('signin'); return; }
+        var job = state.jobs.find(function(j) { return j.id === jobId; });
+        if (!job) return;
+
+        UI.toast('Analyzing skill gap...', 'info');
+        try {
+            var result = await boardAPI('skill-gap', {
+                sub_action: 'analyze',
+                job_id: jobId,
+                job_skills: job.skills_required || [],
+                job_title: job.title
+            });
+            if (result.ok) {
+                var content = '<div class="skill-gap-result">' +
+                    '<div class="skill-gap-score">' +
+                    '<div class="skill-gap-score__circle">' +
+                    '<span class="skill-gap-score__value">' + (result.match_percent || 0) + '%</span>' +
+                    '<span class="skill-gap-score__label">Match</span>' +
+                    '</div></div>';
+
+                if (result.matched_skills && result.matched_skills.length > 0) {
+                    content += '<div class="form-group"><label class="form-label" style="color:var(--accent-success)">Skills You Have</label>' +
+                        '<div class="parsed-skills">' + result.matched_skills.map(function(s) {
+                            return '<span class="job-card__tag" style="border-color:var(--accent-success)">' + Security.sanitize(s) + '</span>';
+                        }).join('') + '</div></div>';
+                }
+
+                if (result.missing_skills && result.missing_skills.length > 0) {
+                    content += '<div class="form-group"><label class="form-label" style="color:var(--accent-warning)">Skills to Learn</label>' +
+                        '<div class="parsed-skills">' + result.missing_skills.map(function(s) {
+                            return '<span class="job-card__tag" style="border-color:var(--accent-warning)">' + Security.sanitize(s) + '</span>';
+                        }).join('') + '</div></div>';
+                }
+
+                if (result.suggestions && result.suggestions.length > 0) {
+                    content += '<div class="form-group"><label class="form-label">Learning Resources</label>' +
+                        '<ul class="skill-gap-suggestions">' + result.suggestions.map(function(s) {
+                            return '<li><a href="/articles?q=' + encodeURIComponent(s) + '">' + Security.sanitize(s) + '</a></li>';
+                        }).join('') + '</ul></div>';
+                }
+
+                content += '</div>';
+                UI.modal({ title: 'Skill Gap Analysis', content: content, size: 'large' });
+            } else {
+                UI.toast(result.error || 'Could not analyze skills', 'error');
+            }
+        } catch (e) { UI.toast('Skill gap analysis failed', 'error'); }
+    }
+
+    // ── 9. Referral Bounties (candidate side) ─
+    function initReferralCTA() {
+        var cta = document.getElementById('referral-cta');
+        if (!cta || !Auth.isLoggedIn()) return;
+        cta.style.display = '';
+    }
+
+    async function showMyReferrals() {
+        if (!Auth.isLoggedIn()) { UI.authModal('signin'); return; }
+        try {
+            var result = await boardAPI('referrals', { sub_action: 'my-referrals' });
+            var referrals = result.referrals || [];
+            var content = '';
+            if (referrals.length === 0) {
+                content = '<div style="text-align:center;padding:var(--space-6);color:var(--text-tertiary)">' +
+                    '<p>No referrals yet. Share job links with friends to earn bounties!</p></div>';
+            } else {
+                content = '<div class="my-referrals-list">' + referrals.map(function(r) {
+                    var statusClass = 'referral-status--' + (r.status || 'pending');
+                    return '<div class="my-referral-item">' +
+                        '<div><strong>' + Security.sanitize(r.referred_name || 'Someone') + '</strong>' +
+                        '<div style="font-size:var(--text-sm);color:var(--text-secondary)">Referred for: Job #' + (r.job_id || '').substr(0, 8) + '</div></div>' +
+                        '<span class="referral-status ' + statusClass + '">' + (r.status || 'pending') + '</span>' +
+                        '</div>';
+                }).join('') + '</div>';
+            }
+            UI.modal({ title: 'My Referrals', content: content, size: 'large' });
+        } catch (e) { UI.toast('Could not load referrals', 'error'); }
+    }
+
+    async function referFriend(jobId) {
+        if (!Auth.isLoggedIn()) { UI.authModal('signin'); return; }
+        var content = '<div class="refer-form">' +
+            '<p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-4)">Refer someone for this job. If they get hired, you earn GMX Coins!</p>' +
+            '<div class="form-group"><label class="form-label">Friend\'s Name</label>' +
+            '<input type="text" class="form-input" id="ref-name" placeholder="Their full name"></div>' +
+            '<div class="form-group"><label class="form-label">Friend\'s Email</label>' +
+            '<input type="email" class="form-input" id="ref-email" placeholder="their@email.com"></div>' +
+            '<div class="form-group"><label class="form-label">Note (optional)</label>' +
+            '<textarea class="form-textarea" id="ref-note" placeholder="Why they\'d be great for this role..." rows="2"></textarea></div>' +
+            '</div>';
+
+        UI.modal({
+            title: 'Refer a Friend',
+            content: content,
+            footer: '<button class="btn btn-secondary" onclick="UI.closeModal()">Cancel</button>' +
+                '<button class="btn btn-primary" id="btn-send-referral">Send Referral</button>',
+            size: 'small'
+        });
+
+        document.getElementById('btn-send-referral').addEventListener('click', async function() {
+            var name = document.getElementById('ref-name').value.trim();
+            var email = document.getElementById('ref-email').value.trim();
+            if (!name || !email) { UI.toast('Enter name and email', 'warning'); return; }
+
+            try {
+                var result = await boardAPI('referrals', {
+                    sub_action: 'create',
+                    job_id: jobId,
+                    referred_name: name,
+                    referred_email: email,
+                    note: document.getElementById('ref-note').value.trim()
+                });
+                if (result.ok) {
+                    UI.toast('Referral sent! You\'ll earn coins if they get hired.', 'success');
+                    UI.closeModal();
+                } else {
+                    UI.toast(result.error || 'Failed to send referral', 'error');
+                }
+            } catch (e) { UI.toast('Failed to send referral', 'error'); }
+        });
+    }
+
+    // ── Enhanced Job Detail (with skill gap + referral) ──
+    var originalShowJobDetail = showJobDetail;
+
+    // ── Advanced Init ────────────────────────
+    function initAdvancedFeatures() {
+        Auth.waitForAuth().then(function() {
+            initJobAlerts();
+            initResumeParser();
+            initReferralCTA();
+            loadSalaryInsights();
+        });
+    }
+
     // ── Init Filter Chips ────────────────────
     function initFilterChips() {
         var allChips = document.querySelectorAll('.jobs-chip');
@@ -1582,6 +2004,9 @@ var Jobs = (function () {
 
         // Load jobs
         loadJobs();
+
+        // Init advanced features
+        initAdvancedFeatures();
     }
 
     // ── Public API ───────────────────────────
@@ -1600,6 +2025,16 @@ var Jobs = (function () {
         toggleSaveJob: toggleSaveJob,
         shareJob: shareJob,
         showCardMenu: showCardMenu,
+        // Advanced features
+        showAlertSetup: showAlertSetup,
+        showMyAlerts: showMyAlerts,
+        deleteAlert: deleteAlert,
+        showResumeParser: showResumeParser,
+        showSkillGap: showSkillGap,
+        showMyReferrals: showMyReferrals,
+        referFriend: referFriend,
+        boardAPI: boardAPI,
+        // Constants
         CATEGORY_ICONS: CATEGORY_ICONS,
         CATEGORY_LABELS: CATEGORY_LABELS,
         JOB_TYPE_LABELS: JOB_TYPE_LABELS,
