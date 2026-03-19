@@ -168,6 +168,7 @@ export async function onRequest(context) {
 
     try {
         let products = null;
+        let servedFromCache = false;
 
         // Try to get from KV cache first
         if (env?.STORE_KV) {
@@ -177,6 +178,7 @@ export async function onRequest(context) {
                     const age = (Date.now() - cached.timestamp) / 1000;
                     if (age < CACHE_TTL) {
                         products = cached.products;
+                        servedFromCache = true;
                         console.info('Serving products from KV cache (age: ' + Math.round(age) + 's)');
                     }
                 }
@@ -243,7 +245,7 @@ export async function onRequest(context) {
                 products: filtered,
                 total: products.length,
                 filtered_count: filtered.length,
-                cached: products === filtered ? false : true
+                cached: servedFromCache
             }),
             {
                 status: 200,

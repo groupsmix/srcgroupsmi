@@ -75,12 +75,12 @@ function getAccessTokenFromCookies(cookieHeader) {
  * Verify the access token with Supabase Auth server
  * and check admin role in the users table.
  */
-async function verifyAdmin(accessToken) {
+async function verifyAdmin(accessToken, supabaseUrl, supabaseAnonKey) {
     // Step 1: Verify token with Supabase Auth (getUser endpoint)
-    const userRes = await fetch(SUPABASE_URL + '/auth/v1/user', {
+    const userRes = await fetch(supabaseUrl + '/auth/v1/user', {
         headers: {
             'Authorization': 'Bearer ' + accessToken,
-            'apikey': SUPABASE_ANON_KEY
+            'apikey': supabaseAnonKey
         }
     });
 
@@ -91,11 +91,11 @@ async function verifyAdmin(accessToken) {
 
     // Step 2: Check the user's role in the users table via PostgREST
     const roleRes = await fetch(
-        SUPABASE_URL + '/rest/v1/users?select=id,role&auth_id=eq.' + userData.id + '&limit=1',
+        supabaseUrl + '/rest/v1/users?select=id,role&auth_id=eq.' + userData.id + '&limit=1',
         {
             headers: {
                 'Authorization': 'Bearer ' + accessToken,
-                'apikey': SUPABASE_ANON_KEY,
+                'apikey': supabaseAnonKey,
                 'Accept': 'application/json'
             }
         }
@@ -131,7 +131,7 @@ export async function onRequest(context) {
     }
 
     try {
-        const isAdmin = await verifyAdmin(accessToken);
+        const isAdmin = await verifyAdmin(accessToken, SUPABASE_URL, SUPABASE_ANON_KEY);
         if (!isAdmin) {
             // Cookie exists but user is NOT admin → block at server level
             return Response.redirect(new URL('/', request.url).toString(), 302);
