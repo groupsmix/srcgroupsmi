@@ -1,0 +1,185 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Embeddable Review Widget | GroupsMix"
+  description="Embed your GroupsMix reviews on your website. Show trusted reviews and ratings to drive backlinks and traffic to your group."
+  canonical="https://groupsmix.com/tools/review-widget"
+>
+<style is:inline>
+    .rw-builder{max-width:var(--container-lg);margin:0 auto;padding:var(--space-6) var(--space-4)}
+    .rw-builder__title{font-size:var(--text-3xl);font-weight:var(--font-extrabold);margin-bottom:var(--space-2);text-align:center}
+    .rw-builder__subtitle{color:var(--text-secondary);text-align:center;margin-bottom:var(--space-8);max-width:600px;margin-left:auto;margin-right:auto}
+    .rw-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6)}
+    @media(max-width:767px){.rw-grid{grid-template-columns:1fr}}
+    .rw-config{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);padding:var(--space-6)}
+    .rw-config__section{margin-bottom:var(--space-6)}
+    .rw-config__label{font-weight:var(--font-semibold);margin-bottom:var(--space-2);display:block;font-size:var(--text-sm)}
+    .rw-preview{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);padding:var(--space-6);position:sticky;top:100px}
+    .rw-preview__title{font-weight:var(--font-semibold);margin-bottom:var(--space-4);display:flex;align-items:center;gap:var(--space-2)}
+    .rw-preview__frame{background:var(--bg-secondary);border-radius:var(--radius-lg);padding:var(--space-6);min-height:200px;display:flex;align-items:center;justify-content:center;margin-bottom:var(--space-4)}
+    .rw-code{background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-md);padding:var(--space-4);font-family:monospace;font-size:var(--text-xs);line-height:1.6;overflow-x:auto;white-space:pre-wrap;word-break:break-all;margin-bottom:var(--space-3);color:var(--text-secondary)}
+    .rw-theme-options{display:flex;gap:var(--space-3)}
+    .rw-theme-option{flex:1;padding:var(--space-3);border-radius:var(--radius-md);border:2px solid var(--border-primary);cursor:pointer;text-align:center;font-size:var(--text-sm);font-weight:var(--font-medium);transition:all .2s}
+    .rw-theme-option:hover{border-color:var(--accent-primary)}
+    .rw-theme-option--active{border-color:var(--accent-primary);background:var(--accent-primary-light)}
+    .rw-max-options{display:flex;gap:var(--space-3)}
+    .rw-max-option{flex:1;padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);border:2px solid var(--border-primary);cursor:pointer;text-align:center;font-size:var(--text-sm);transition:all .2s}
+    .rw-max-option:hover{border-color:var(--accent-primary)}
+    .rw-max-option--active{border-color:var(--accent-primary);background:var(--accent-primary-light)}
+    .rw-benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-top:var(--space-8)}
+    @media(max-width:767px){.rw-benefits{grid-template-columns:1fr}}
+    .rw-benefit{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5);text-align:center}
+    .rw-benefit__icon{font-size:var(--text-3xl);margin-bottom:var(--space-3)}
+    .rw-benefit__title{font-weight:var(--font-bold);margin-bottom:var(--space-2)}
+    .rw-benefit__desc{font-size:var(--text-sm);color:var(--text-secondary)}
+</style>
+
+<div class="rw-builder">
+    <h1 class="rw-builder__title">Embeddable Review Widget</h1>
+    <p class="rw-builder__subtitle">Embed your GroupsMix reviews on your website. Show social proof with trusted ratings and reviews. Drives backlinks and traffic.</p>
+
+    <div class="rw-grid">
+        <div class="rw-config">
+            <div class="rw-config__section">
+                <label class="rw-config__label">Group ID</label>
+                <input type="text" class="form-input" id="rw-group-id" placeholder="Enter your Group ID or paste group URL">
+                <p style="font-size:var(--text-xs);color:var(--text-tertiary);margin-top:var(--space-1)">Find this in your group's profile URL: groupsmix.com/group?id=<strong>YOUR_ID</strong></p>
+            </div>
+
+            <div class="rw-config__section">
+                <label class="rw-config__label">Theme</label>
+                <div class="rw-theme-options">
+                    <div class="rw-theme-option rw-theme-option--active" data-theme="dark" onclick="setRwTheme('dark')">
+                        <div style="width:24px;height:24px;border-radius:6px;background:#181824;border:1px solid #2a2a3d;margin:0 auto var(--space-1)"></div>
+                        Dark
+                    </div>
+                    <div class="rw-theme-option" data-theme="light" onclick="setRwTheme('light')">
+                        <div style="width:24px;height:24px;border-radius:6px;background:#fff;border:1px solid #e2e8f0;margin:0 auto var(--space-1)"></div>
+                        Light
+                    </div>
+                </div>
+            </div>
+
+            <div class="rw-config__section">
+                <label class="rw-config__label">Max Reviews Shown</label>
+                <div class="rw-max-options">
+                    <div class="rw-max-option" data-max="3" onclick="setRwMax(3)">3</div>
+                    <div class="rw-max-option rw-max-option--active" data-max="5" onclick="setRwMax(5)">5</div>
+                    <div class="rw-max-option" data-max="10" onclick="setRwMax(10)">10</div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-full" id="rw-generate-btn" onclick="generateReviewWidget()">Generate Widget Code</button>
+        </div>
+
+        <div class="rw-preview">
+            <div class="rw-preview__title">Preview</div>
+            <div class="rw-preview__frame" id="rw-preview-frame">
+                <p style="color:var(--text-tertiary);font-size:var(--text-sm)">Enter a Group ID and click Generate to preview your review widget</p>
+            </div>
+
+            <div id="rw-code-section" style="display:none">
+                <label class="rw-config__label">Embed Code</label>
+                <div class="rw-code" id="rw-embed-code"></div>
+                <button class="btn btn-secondary btn-full" onclick="copyRwCode()">Copy Embed Code</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="rw-benefits">
+        <div class="rw-benefit">
+            <div class="rw-benefit__icon">&#11088;</div>
+            <div class="rw-benefit__title">Social Proof</div>
+            <div class="rw-benefit__desc">Show real reviews from verified members on your website. Build trust with potential new members.</div>
+        </div>
+        <div class="rw-benefit">
+            <div class="rw-benefit__icon">&#128279;</div>
+            <div class="rw-benefit__title">Backlinks & SEO</div>
+            <div class="rw-benefit__desc">Every embed links back to your GroupsMix profile, boosting your search engine visibility.</div>
+        </div>
+        <div class="rw-benefit">
+            <div class="rw-benefit__icon">&#128200;</div>
+            <div class="rw-benefit__title">Drive Traffic</div>
+            <div class="rw-benefit__desc">Visitors can write reviews and join your group directly from the widget. More traffic, more members.</div>
+        </div>
+    </div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+    var rwTheme = 'dark';
+    var rwMax = 5;
+
+    function setRwTheme(theme) {
+        rwTheme = theme;
+        document.querySelectorAll('.rw-theme-option').forEach(function(el) {
+            el.classList.toggle('rw-theme-option--active', el.dataset.theme === theme);
+        });
+        updateRwPreview();
+    }
+
+    function setRwMax(max) {
+        rwMax = max;
+        document.querySelectorAll('.rw-max-option').forEach(function(el) {
+            el.classList.toggle('rw-max-option--active', parseInt(el.dataset.max) === max);
+        });
+        updateRwPreview();
+    }
+
+    var currentRwGroupId = '';
+
+    function generateReviewWidget() {
+        var input = document.getElementById('rw-group-id').value.trim();
+        if (!input) { UI.toast('Please enter a Group ID', 'error'); return; }
+
+        // Extract ID from URL if needed
+        if (input.includes('group?id=')) {
+            try { input = new URL(input.startsWith('http') ? input : 'https://' + input).searchParams.get('id') || input; }
+            catch(e) { input = input.split('id=')[1] || input; }
+        }
+
+        currentRwGroupId = input;
+        updateRwPreview();
+    }
+
+    function updateRwPreview() {
+        if (!currentRwGroupId) return;
+
+        var frame = document.getElementById('rw-preview-frame');
+        frame.innerHTML = '<div class="groupsmix-reviews" data-group-id="' + Security.sanitize(currentRwGroupId) + '" data-theme="' + rwTheme + '" data-max="' + rwMax + '"></div>';
+
+        // Load review widget script
+        if (window.GroupsMixReviewWidget) {
+            window.GroupsMixReviewWidget.init();
+        } else {
+            var s = document.createElement('script');
+            s.src = '/embed/review-widget.js';
+            s.onload = function() { if (window.GroupsMixReviewWidget) window.GroupsMixReviewWidget.init(); };
+            document.head.appendChild(s);
+        }
+
+        // Show embed code
+        var code = '<!-- GroupsMix Review Widget -->\n<div class="groupsmix-reviews"\n  data-group-id="' + Security.sanitize(currentRwGroupId) + '"\n  data-theme="' + rwTheme + '"\n  data-max="' + rwMax + '">\n</div>\n<script src="https://groupsmix.com/embed/review-widget.js" async><\/script>';
+        document.getElementById('rw-embed-code').textContent = code;
+        document.getElementById('rw-code-section').style.display = 'block';
+    }
+
+    function copyRwCode() {
+        var code = document.getElementById('rw-embed-code').textContent;
+        UI.copyToClipboard(code);
+        UI.toast('Review widget code copied to clipboard!', 'success');
+    }
+
+    // Auto-fill from URL params
+    document.addEventListener('DOMContentLoaded', function() {
+        var params = new URLSearchParams(window.location.search);
+        var gid = params.get('group_id');
+        if (gid) {
+            document.getElementById('rw-group-id').value = gid;
+            generateReviewWidget();
+        }
+    });
+</script>
+</Fragment>
+</BaseLayout>
