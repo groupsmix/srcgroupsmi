@@ -1,0 +1,252 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Create Event | GroupsMix"
+  description="Create a community event or meetup for your group on GroupsMix."
+  canonical="https://groupsmix.com/events/create"
+  cssFiles={['/assets/css/events.css']}
+>
+
+<div class="events-page" style="max-width:var(--container-md);margin:0 auto;padding:var(--space-6) var(--space-4)">
+    <h1 style="font-size:var(--text-3xl);font-weight:var(--font-extrabold);margin-bottom:var(--space-2)">&#127881; Create Event</h1>
+    <p style="color:var(--text-secondary);margin-bottom:var(--space-6)">Post an event for your community. Users can discover and RSVP to it.</p>
+
+    <div id="create-auth-gate">
+        <div style="text-align:center;padding:var(--space-8) 0;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl)">
+            <div style="font-size:var(--text-5xl);margin-bottom:var(--space-4)">&#128274;</div>
+            <h3 style="margin-bottom:var(--space-3)">Sign In to Create Events</h3>
+            <p style="color:var(--text-secondary);margin-bottom:var(--space-6)">You need to be signed in to create events.</p>
+            <button class="btn btn-primary" onclick="Auth.requireAuth()">Sign In</button>
+        </div>
+    </div>
+
+    <form id="create-event-form" style="display:none">
+        <div class="form-group">
+            <label class="form-label" for="event-title">Event Title *</label>
+            <input type="text" id="event-title" class="form-input" placeholder="e.g., Weekly Crypto Meetup" required minlength="3" maxlength="200">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="event-description">Description</label>
+            <textarea id="event-description" class="form-textarea" placeholder="What's your event about?" maxlength="5000" rows="4"></textarea>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+            <div class="form-group">
+                <label class="form-label" for="event-type">Event Type *</label>
+                <select id="event-type" class="form-input" required>
+                    <option value="online">&#128187; Online</option>
+                    <option value="in_person">&#128205; In Person</option>
+                    <option value="hybrid">&#128256; Hybrid</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="event-category">Category</label>
+                <select id="event-category" class="form-input">
+                    <option value="">Select category...</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+            <div class="form-group">
+                <label class="form-label" for="event-start">Start Date & Time *</label>
+                <input type="datetime-local" id="event-start" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="event-end">End Date & Time</label>
+                <input type="datetime-local" id="event-end" class="form-input">
+            </div>
+        </div>
+
+        <div class="form-group" id="event-platform-group">
+            <label class="form-label" for="event-platform-link">Join Link (for online events)</label>
+            <input type="url" id="event-platform-link" class="form-input" placeholder="https://zoom.us/j/... or https://meet.google.com/...">
+        </div>
+
+        <div class="form-group" id="event-location-group" style="display:none">
+            <label class="form-label" for="event-location">Location</label>
+            <input type="text" id="event-location" class="form-input" placeholder="Venue name or address">
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+            <div class="form-group">
+                <label class="form-label" for="event-city">City</label>
+                <input type="text" id="event-city" class="form-input" placeholder="City name">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="event-country">Country</label>
+                <select id="event-country" class="form-input">
+                    <option value="">Select country...</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="event-group">Associated Group (optional)</label>
+            <select id="event-group" class="form-input">
+                <option value="">No group association</option>
+            </select>
+            <p style="font-size:var(--text-xs);color:var(--text-tertiary);margin-top:var(--space-1)">Link this event to one of your groups.</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+            <div class="form-group">
+                <label class="form-label" for="event-max">Max Attendees</label>
+                <input type="number" id="event-max" class="form-input" placeholder="0 = unlimited" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="event-timezone">Timezone</label>
+                <select id="event-timezone" class="form-input">
+                    <option value="UTC">UTC</option>
+                    <option value="America/New_York">Eastern (ET)</option>
+                    <option value="America/Chicago">Central (CT)</option>
+                    <option value="America/Denver">Mountain (MT)</option>
+                    <option value="America/Los_Angeles">Pacific (PT)</option>
+                    <option value="Europe/London">London (GMT)</option>
+                    <option value="Europe/Paris">Central European (CET)</option>
+                    <option value="Asia/Dubai">Gulf (GST)</option>
+                    <option value="Asia/Kolkata">India (IST)</option>
+                    <option value="Asia/Shanghai">China (CST)</option>
+                    <option value="Asia/Tokyo">Japan (JST)</option>
+                    <option value="Australia/Sydney">Sydney (AEST)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="event-tags">Tags (comma-separated)</label>
+            <input type="text" id="event-tags" class="form-input" placeholder="e.g., crypto, meetup, networking">
+        </div>
+
+        <div style="display:flex;gap:var(--space-3);margin-top:var(--space-6)">
+            <button type="submit" class="btn btn-primary btn-lg" id="create-event-btn">&#127881; Create Event</button>
+            <a href="/events" class="btn btn-secondary btn-lg">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+    document.addEventListener('DOMContentLoaded', function() {
+        Auth.waitForAuth().then(function() {
+            if (Auth.getUserId()) {
+                document.getElementById('create-auth-gate').style.display = 'none';
+                document.getElementById('create-event-form').style.display = 'block';
+                populateFormSelects();
+            }
+        });
+
+        document.getElementById('event-type').addEventListener('change', function() {
+            var type = this.value;
+            document.getElementById('event-platform-group').style.display = (type === 'in_person') ? 'none' : 'block';
+            document.getElementById('event-location-group').style.display = (type === 'online') ? 'none' : 'block';
+        });
+
+        document.getElementById('create-event-form').addEventListener('submit', handleCreateEvent);
+    });
+
+    function populateFormSelects() {
+        var catSelect = document.getElementById('event-category');
+        CONFIG.categories.forEach(function(c) {
+            var opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.name;
+            catSelect.appendChild(opt);
+        });
+
+        var countrySelect = document.getElementById('event-country');
+        CONFIG.countries.forEach(function(c) {
+            var opt = document.createElement('option');
+            opt.value = c.code;
+            opt.textContent = c.name;
+            countrySelect.appendChild(opt);
+        });
+
+        // Load user's groups
+        DB.groups.getByUser(Auth.getUserId()).then(function(groups) {
+            var groupSelect = document.getElementById('event-group');
+            (groups || []).forEach(function(g) {
+                var opt = document.createElement('option');
+                opt.value = g.id;
+                opt.textContent = Security.sanitize(g.name || 'Unnamed');
+                groupSelect.appendChild(opt);
+            });
+        });
+
+        // Try to detect user timezone
+        try {
+            var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            var tzSelect = document.getElementById('event-timezone');
+            if (tzSelect.querySelector('option[value="' + tz + '"]')) {
+                tzSelect.value = tz;
+            }
+        } catch (e) {}
+    }
+
+    async function handleCreateEvent(e) {
+        e.preventDefault();
+
+        var title = document.getElementById('event-title').value.trim();
+        var startDate = document.getElementById('event-start').value;
+
+        if (!title || title.length < 3) {
+            UI.toast('Event title must be at least 3 characters.', 'error');
+            return;
+        }
+        if (!startDate) {
+            UI.toast('Start date is required.', 'error');
+            return;
+        }
+
+        var btn = document.getElementById('create-event-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="btn-spinner"></span> Creating...';
+
+        var tagsRaw = document.getElementById('event-tags').value;
+        var tags = tagsRaw ? tagsRaw.split(',').map(function(t) { return t.trim(); }).filter(Boolean) : [];
+
+        var eventData = {
+            action: 'create',
+            title: title,
+            description: document.getElementById('event-description').value.trim(),
+            event_type: document.getElementById('event-type').value,
+            category: document.getElementById('event-category').value,
+            start_date: new Date(startDate).toISOString(),
+            end_date: document.getElementById('event-end').value ? new Date(document.getElementById('event-end').value).toISOString() : null,
+            platform_link: document.getElementById('event-platform-link').value.trim(),
+            location: document.getElementById('event-location').value.trim(),
+            city: document.getElementById('event-city').value.trim(),
+            country: document.getElementById('event-country').value,
+            group_id: document.getElementById('event-group').value || null,
+            max_attendees: parseInt(document.getElementById('event-max').value) || 0,
+            timezone: document.getElementById('event-timezone').value,
+            tags: tags
+        };
+
+        try {
+            var token = Auth.getToken();
+            var res = await fetch('/api/events', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify(eventData)
+            });
+            var json = await res.json();
+
+            if (json.ok && json.event) {
+                UI.toast('Event created!', 'success');
+                window.location.href = '/events/event?id=' + json.event.id;
+            } else {
+                UI.toast(json.error || 'Failed to create event', 'error');
+            }
+        } catch (err) {
+            UI.toast('Failed to create event. Please try again.', 'error');
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '&#127881; Create Event';
+    }
+</script>
+</Fragment>
+</BaseLayout>

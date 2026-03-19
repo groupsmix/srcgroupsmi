@@ -70,6 +70,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 <div class="gdash-card">
                     <div class="gdash-card__title">&#128295; Quick Actions</div>
                     <div style="display:flex;flex-direction:column;gap:var(--space-3)">
+                        <a href="#" id="gdash-verify-link" class="share-btn" style="justify-content:center">&#9989; Verify Ownership</a>
                         <a href="#" id="gdash-embed-link" class="share-btn" style="justify-content:center">&#128296; Get Embed Widget</a>
                         <a href="#" id="gdash-link-link" class="share-btn" style="justify-content:center">&#128279; Create Short Link</a>
                         <a href="#" id="gdash-bot-link" class="share-btn" style="justify-content:center">&#129302; Connect Bot</a>
@@ -158,6 +159,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             document.getElementById('gdash-empty').style.display = 'none';
 
             // Update quick action links
+            document.getElementById('gdash-verify-link').href = '/groups/verify?group_id=' + groupId;
             document.getElementById('gdash-embed-link').href = '/tools/embed-widget?group_id=' + groupId;
             document.getElementById('gdash-link-link').href = '/tools/link-generator?group_id=' + groupId;
             document.getElementById('gdash-bot-link').href = '/tools/bot-setup?group_id=' + groupId;
