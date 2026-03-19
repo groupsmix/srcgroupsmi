@@ -15,7 +15,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   structuredData={`[{"@context":"https://schema.org","@type":"WebSite","name":"GroupsMix","url":"https://groupsmix.com","description":"Discover Trusted Social Media Groups","potentialAction":{"@type":"SearchAction","target":"https://groupsmix.com/search?q={search_term_string}","query-input":"required name=search_term_string"}},{"@context":"https://schema.org","@type":"Organization","name":"GroupsMix","url":"https://groupsmix.com","logo":"https://groupsmix.com/assets/img/og-default.png","description":"The #1 directory for discovering trusted social media groups across WhatsApp, Telegram, Discord and more.","sameAs":[]},{"@context":"https://schema.org","@type":"ItemList","name":"Trending Groups on GroupsMix","description":"Popular verified social media groups trending on GroupsMix","url":"https://groupsmix.com","numberOfItems":8,"itemListOrder":"https://schema.org/ItemListOrderDescending"}]`}
 >
 <style is:inline>
-        /* ─── Hero Section (Premium Redesign) ─── */
+        /* CHANGED: Added ambient radial glow + tighter padding */
         .hero {
             position: relative;
             min-height: auto;
@@ -25,13 +25,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             justify-content: center;
             overflow: hidden;
             text-align: center;
-            padding: var(--space-4) 0 var(--space-3);
+            padding: var(--space-8) 0 var(--space-5);
         }
-
-        .hero > * {
-            position: relative;
-            z-index: 1;
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -80px; left: 50%;
+            transform: translateX(-50%);
+            width: 700px; height: 400px;
+            background: radial-gradient(ellipse at center, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.06) 40%, transparent 70%);
+            pointer-events: none; z-index: 0;
         }
+        .hero > * { position: relative; z-index: 1; }
 
         .hero__badge {
             display: inline-flex;
@@ -51,11 +56,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         .hero__title {
             font-family: var(--font-display);
             /* Issue #19 fix: static fallback before clamp() for Safari < 13.1 */
-            font-size: 1.75rem;
-            font-size: clamp(1.5rem, 3vw, 2.25rem);
-            font-weight: var(--font-extrabold);
-            line-height: var(--leading-tight);
-            letter-spacing: -0.02em;
+            /* CHANGED: Tighter tracking + slight size bump */
+            font-size: 1.875rem;
+            font-size: clamp(1.6rem, 3.5vw, 2.5rem);
+            font-weight: 800;
+            line-height: 1.08;
+            letter-spacing: -0.03em;
             margin-bottom: var(--space-2);
             color: var(--text-primary);
             animation: fadeIn 0.5s ease 0.1s both;
@@ -90,10 +96,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             padding: 0 52px 0 20px;
             border-radius: var(--radius-full);
             font-size: var(--text-base);
-            background: var(--bg-card);
-            border: 2px solid var(--border-primary);
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-sm);
+            /* CHANGED: Frosted glass search input */
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-primary);
+            transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
         }
 
         .hero__search-input:focus {
@@ -109,8 +119,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             width: 36px;
             height: 36px;
             border-radius: var(--radius-full);
-            background: rgba(255,255,255,0.12);
-            color: rgba(255,255,255,0.7);
+            /* CHANGED: Gradient search button */
+            background: var(--gradient-accent);
+            color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -123,9 +134,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         .hero__search-btn:hover {
             transform: translateY(-50%) scale(1.03);
-            background: rgba(255,255,255,0.18);
-            color: #fff;
-            box-shadow: none;
+            background: var(--gradient-accent);
+            box-shadow: 0 4px 16px rgba(99,102,241,0.4);
         }
 
         .hero__search-btn:active {
@@ -232,10 +242,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             gap: var(--space-2);
             padding: var(--space-3) var(--space-4);
             /* Issue #18 fix: solid background fallback for browsers without backdrop-filter */
-            background: rgba(var(--stats-card-rgb, 22, 22, 31), 0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            /* CHANGED: Richer frosted glass stats */
+            background: rgba(22, 22, 35, 0.75);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.07);
             border-radius: 12px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
@@ -248,9 +259,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             border: 1px solid rgba(226, 232, 240, 0.8);
         }
 
+        /* CHANGED: Elevation on hover */
         .stats-bar__item:hover {
-            transform: translateY(-1px);
-            box-shadow: none;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
             border-color: rgba(255,255,255,0.12);
         }
 
@@ -270,12 +282,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         .stats-bar__info { text-align: left; }
 
+        /* CHANGED: White gradient text */
         .stats-bar__value {
             font-family: var(--font-display);
-            font-size: var(--text-lg);
-            font-weight: var(--font-extrabold);
-            color: var(--text-primary);
+            font-size: var(--text-xl);
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             line-height: 1;
+            letter-spacing: -0.02em;
         }
 
         .stats-bar__label {
@@ -778,11 +795,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         .cta-section {
             text-align: center;
             padding: var(--space-12) var(--space-8);
-            background: var(--gradient-accent);
+            /* CHANGED: Richer purple gradient with deeper shadow */
+            background: linear-gradient(135deg, #6366F1 0%, #7C3AED 50%, #9333EA 100%);
             border-radius: var(--radius-xl);
             margin: var(--space-4) 0;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 8px 32px rgba(99,102,241,0.35);
         }
 
         .cta-section::before {
@@ -856,18 +875,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             align-items: center;
             gap: var(--space-3);
             padding: var(--space-3) var(--space-4);
-            background: var(--bg-card);
-            border: 1px solid var(--border-primary);
-            border-radius: 12px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            /* CHANGED: Glass surface */
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
             flex: 1 1 0;
             min-width: 200px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
         }
 
         .trust-feature:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.1);
-            border-color: rgba(99, 102, 241, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+            border-color: rgba(99,102,241,0.25);
+            background: rgba(99,102,241,0.05);
         }
 
         .trust-feature__icon {
@@ -913,18 +935,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             align-items: center;
             gap: var(--space-3);
             padding: var(--space-3) var(--space-4);
-            background: var(--bg-card);
-            border: 1px solid var(--border-primary);
-            border-radius: 12px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            /* CHANGED: Subtle glass surface */
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
             flex: 1 1 0;
             min-width: 200px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
         }
 
         .how-it-works__step:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.1);
-            border-color: rgba(99, 102, 241, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+            border-color: rgba(99,102,241,0.25);
+            background: rgba(99,102,241,0.05);
         }
 
         .how-it-works__number {
