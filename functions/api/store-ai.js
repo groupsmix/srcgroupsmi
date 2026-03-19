@@ -1050,6 +1050,180 @@ async function handleReviewVerification(env, body) {
     };
 }
 
+/* ── Action: Frequently Bought Together (pre-computed from purchase data) ── */
+async function handleFrequentlyBought(env, body) {
+    const productId = (body.product_id || '').trim();
+    const products = body.products || [];
+    if (!productId || !products.length) return { ok: false, error: 'Missing product_id or products' };
+
+    const supabaseUrl = env?.SUPABASE_URL;
+    const supabaseKey = env?.SUPABASE_SERVICE_KEY;
+
+    // If we have Supabase access, query actual purchase co-occurrence data
+    if (supabaseUrl && supabaseKey) {
+        try {
+            // Find users who bought this product
+            const buyersRes = await fetch(
+                supabaseUrl + '/rest/v1/wallet_transactions?type=eq.purchase&description=like.*' + encodeURIComponent(productId) + '*&select=user_id&limit=200',
+                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+            );
+            const buyers = await buyersRes.json();
+            const buyerIds = [...new Set((buyers || []).map(b => b.user_id).filter(Boolean))];
+
+            if (buyerIds.length >= 3) {
+                // Find other products these users also bought
+                const coProducts = {};
+                for (const uid of buyerIds.slice(0, 50)) {
+                    const otherRes = await fetch(
+                        supabaseUrl + '/rest/v1/wallet_transactions?type=eq.purchase&user_id=eq.' + encodeURIComponent(uid) + '&select=description&limit=50',
+                        { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                    );
+                    const otherTxns = await otherRes.json();
+                    (otherTxns || []).forEach(t => {
+                        // Extract product IDs from transaction descriptions
+                        const desc = t.description || '';
+                        products.forEach(p => {
+                            if (p.id !== productId && desc.includes(p.id)) {
+                                coProducts[p.id] = (coProducts[p.id] || 0) + 1;
+                            }
+                        });
+                    });
+                }
+
+                // Sort by co-occurrence frequency
+                const ranked = Object.entries(coProducts)
+                    .filter(([, count]) => count >= 2)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 4)
+                    .map(([id, count]) => ({
+                        product_id: id,
+                        co_purchase_count: count,
+                        confidence: Math.min(0.99, count / buyerIds.length)
+                    }));
+
+                if (ranked.length > 0) {
+                    return {
+                        ok: true,
+                        source: 'purchase_data',
+                        product_id: productId,
+                        frequently_bought_together: ranked,
+                        sample_size: buyerIds.length
+                    };
+                }
+            }
+        } catch (e) {
+            console.error('Frequently bought query error:', e);
+        }
+    }
+
+    // Fallback: use product type + price proximity heuristic
+    const sourceProduct = products.find(p => p.id === productId);
+    if (!sourceProduct) return { ok: true, frequently_bought_together: [] };
+
+    const candidates = products
+        .filter(p => p.id !== productId)
+        .map(p => {
+            let score = 0;
+            if (p.product_type === sourceProduct.product_type) score += 3;
+            // Complementary types boost
+            const complementary = {
+                'guide': ['template', 'tool'],
+                'template': ['guide', 'tool'],
+                'course': ['guide', 'tool'],
+                'tool': ['guide', 'template'],
+                'membership': ['course', 'guide'],
+                'bundle': [],
+                'service': ['tool', 'guide']
+            };
+            if ((complementary[sourceProduct.product_type] || []).includes(p.product_type)) score += 5;
+            // Price proximity bonus
+            if (sourceProduct.price > 0 && p.price > 0) {
+                const ratio = Math.min(sourceProduct.price, p.price) / Math.max(sourceProduct.price, p.price);
+                score += ratio * 3;
+            }
+            return { product_id: p.id, score, confidence: Math.min(0.8, score / 10) };
+        })
+        .filter(c => c.score > 2)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 4)
+        .map(c => ({ product_id: c.product_id, confidence: parseFloat(c.confidence.toFixed(2)) }));
+
+    return {
+        ok: true,
+        source: 'heuristic',
+        product_id: productId,
+        frequently_bought_together: candidates
+    };
+}
+
+/* ── Action: Wishlist Price Drop Alerts ──────────────────────── */
+async function handleWishlistAlerts(env, body) {
+    const userId = (body.user_id || '').trim();
+    const wishlistItems = body.wishlist || [];
+    const products = body.products || [];
+
+    if (!userId || !wishlistItems.length || !products.length) {
+        return { ok: false, error: 'Missing user_id, wishlist, or products' };
+    }
+
+    const supabaseUrl = env?.SUPABASE_URL;
+    const supabaseKey = env?.SUPABASE_SERVICE_KEY;
+
+    const alerts = [];
+
+    for (const item of wishlistItems) {
+        const product = products.find(p => p.id === item.product_id);
+        if (!product) continue;
+
+        const savedPrice = item.price_when_added || 0;
+        const currentPrice = product.price || 0;
+
+        if (savedPrice > 0 && currentPrice > 0 && currentPrice < savedPrice) {
+            const dropPercent = Math.round((1 - currentPrice / savedPrice) * 100);
+            alerts.push({
+                product_id: product.id,
+                product_name: product.name,
+                original_price: savedPrice,
+                current_price: currentPrice,
+                drop_percent: dropPercent,
+                savings_formatted: '$' + ((savedPrice - currentPrice) / 100).toFixed(2)
+            });
+        }
+    }
+
+    // Store alerts in Supabase notifications if available
+    if (alerts.length > 0 && supabaseUrl && supabaseKey) {
+        for (const alert of alerts) {
+            try {
+                await fetch(supabaseUrl + '/rest/v1/notifications', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': supabaseKey,
+                        'Authorization': 'Bearer ' + supabaseKey
+                    },
+                    body: JSON.stringify({
+                        uid: userId,
+                        type: 'price_drop',
+                        title: 'Price Drop Alert! 🔥',
+                        message: alert.product_name + ' dropped ' + alert.drop_percent + '% — save ' + alert.savings_formatted + '!',
+                        link: '/pages/store.html?product=' + alert.product_id,
+                        metadata: JSON.stringify(alert)
+                    })
+                });
+            } catch (e) {
+                console.error('Notification error:', e);
+            }
+        }
+    }
+
+    return {
+        ok: true,
+        alerts: alerts,
+        total_drops: alerts.length
+    };
+}
+
 /* ── Main handler ────────────────────────────────────────────── */
 export async function onRequest(context) {
     const { request, env } = context;
@@ -1122,6 +1296,12 @@ export async function onRequest(context) {
             break;
         case 'review-verification':
             result = await handleReviewVerification(env, body);
+            break;
+        case 'frequently-bought':
+            result = await handleFrequentlyBought(env, body);
+            break;
+        case 'wishlist-alerts':
+            result = await handleWishlistAlerts(env, body);
             break;
         default:
             result = { ok: false, error: 'Unknown action: ' + action };

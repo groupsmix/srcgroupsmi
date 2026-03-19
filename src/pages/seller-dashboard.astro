@@ -1,0 +1,688 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Seller Dashboard — GroupsMix Marketplace"
+  description="View your marketplace seller analytics — views, clicks, sales, revenue, and listing performance."
+  noIndex={true}
+>
+<style is:inline>
+        .sd-page {
+            max-width: var(--container-lg);
+            margin: 0 auto;
+            padding: var(--space-8) var(--space-4);
+        }
+        .sd-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-6);
+            flex-wrap: wrap;
+            gap: var(--space-3);
+        }
+        .sd-header h1 {
+            font-size: var(--text-xl);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+        .sd-header h1 svg {
+            width: 24px;
+            height: 24px;
+            color: var(--accent-primary);
+        }
+        .sd-header__actions {
+            display: flex;
+            gap: var(--space-2);
+        }
+        /* Stats Grid */
+        .sd-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-4);
+            margin-bottom: var(--space-6);
+        }
+        .sd-stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+        }
+        .sd-stat-card__icon {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: var(--space-3);
+        }
+        .sd-stat-card__icon svg {
+            width: 20px;
+            height: 20px;
+            color: #fff;
+        }
+        .sd-stat-card__value {
+            font-size: var(--text-2xl);
+            font-weight: var(--font-bold);
+            margin-bottom: 2px;
+        }
+        .sd-stat-card__label {
+            font-size: var(--text-xs);
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        /* Performance Section */
+        .sd-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-5);
+            margin-bottom: var(--space-6);
+        }
+        .sd-section__title {
+            font-size: var(--text-base);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--space-4);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+        .sd-section__title svg {
+            width: 18px;
+            height: 18px;
+            color: var(--accent-primary);
+        }
+        /* Revenue Chart (simplified bar chart) */
+        .sd-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: var(--space-2);
+            height: 160px;
+            padding-top: var(--space-4);
+        }
+        .sd-chart__bar-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-1);
+            height: 100%;
+            justify-content: flex-end;
+        }
+        .sd-chart__bar {
+            width: 100%;
+            max-width: 48px;
+            background: linear-gradient(to top, var(--accent-primary), var(--accent-secondary, #818cf8));
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+            min-height: 4px;
+            transition: height 0.8s ease;
+        }
+        .sd-chart__bar-value {
+            font-size: 10px;
+            font-weight: var(--font-semibold);
+            color: var(--text-secondary);
+        }
+        .sd-chart__bar-label {
+            font-size: 10px;
+            color: var(--text-tertiary);
+        }
+        /* Listings Table */
+        .sd-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .sd-table th {
+            text-align: left;
+            padding: var(--space-2) var(--space-3);
+            font-size: var(--text-xs);
+            font-weight: var(--font-semibold);
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid var(--border-primary);
+        }
+        .sd-table td {
+            padding: var(--space-3);
+            font-size: var(--text-sm);
+            border-bottom: 1px solid var(--border-primary);
+            vertical-align: middle;
+        }
+        .sd-table tr:hover td {
+            background: var(--bg-tertiary);
+        }
+        .sd-table__title {
+            font-weight: var(--font-semibold);
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .sd-table__status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            font-weight: var(--font-semibold);
+        }
+        .sd-table__status--active {
+            background: var(--success-light);
+            color: var(--success);
+        }
+        .sd-table__status--pending {
+            background: var(--warning-light, #fef3c7);
+            color: var(--warning);
+        }
+        .sd-table__status--rejected {
+            background: var(--error-light);
+            color: var(--error);
+        }
+        /* Trust Score Mini */
+        .sd-trust {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-4);
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--space-6);
+        }
+        .sd-trust__ring {
+            position: relative;
+            width: 56px;
+            height: 56px;
+            flex-shrink: 0;
+        }
+        .sd-trust__ring svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+        .sd-trust__ring-bg {
+            fill: none;
+            stroke: var(--border-primary);
+            stroke-width: 4;
+        }
+        .sd-trust__ring-fill {
+            fill: none;
+            stroke-width: 4;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s ease;
+        }
+        .sd-trust__value {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--text-sm);
+            font-weight: var(--font-bold);
+        }
+        .sd-trust__info {
+            flex: 1;
+        }
+        .sd-trust__label {
+            font-weight: var(--font-semibold);
+            margin-bottom: 2px;
+        }
+        .sd-trust__sublabel {
+            font-size: var(--text-xs);
+            color: var(--text-tertiary);
+        }
+        .sd-trust__badges {
+            display: flex;
+            gap: var(--space-2);
+            flex-wrap: wrap;
+        }
+        .sd-trust__badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            font-weight: var(--font-semibold);
+            border: 1px solid;
+        }
+        .sd-trust__badge svg {
+            width: 12px;
+            height: 12px;
+        }
+        /* Offers Section */
+        .sd-offer {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-3);
+            border-bottom: 1px solid var(--border-primary);
+        }
+        .sd-offer:last-child {
+            border-bottom: none;
+        }
+        .sd-offer__info {
+            flex: 1;
+            font-size: var(--text-sm);
+        }
+        .sd-offer__amount {
+            font-weight: var(--font-bold);
+            color: var(--accent-primary);
+        }
+        .sd-offer__actions {
+            display: flex;
+            gap: var(--space-2);
+        }
+        /* Flash Sale Manager */
+        .sd-flash-form {
+            display: flex;
+            gap: var(--space-3);
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        .sd-flash-form .form-group {
+            flex: 1;
+            min-width: 120px;
+        }
+        /* Disputes Section */
+        .sd-dispute {
+            padding: var(--space-3);
+            border-bottom: 1px solid var(--border-primary);
+        }
+        .sd-dispute:last-child {
+            border-bottom: none;
+        }
+        .sd-dispute__header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: var(--space-2);
+        }
+        .sd-dispute__status {
+            font-size: 11px;
+            font-weight: var(--font-semibold);
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+        }
+        /* Responsive */
+        @media (max-width: 899px) {
+            .sd-stats { grid-template-columns: repeat(2, 1fr); }
+            .sd-table__title { max-width: 140px; }
+        }
+        @media (max-width: 599px) {
+            .sd-stats { grid-template-columns: 1fr 1fr; }
+            .sd-header { flex-direction: column; align-items: flex-start; }
+            .sd-flash-form { flex-direction: column; }
+        }
+    </style>
+
+
+        <div class="sd-page">
+            <div id="sd-loading">
+                <div style="text-align:center;padding:var(--space-8) 0">
+                    <div class="skeleton" style="height:24px;width:200px;margin:0 auto var(--space-6)"></div>
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-4);margin-bottom:var(--space-6)">
+                        <div class="skeleton" style="height:100px;border-radius:var(--radius-lg)"></div>
+                        <div class="skeleton" style="height:100px;border-radius:var(--radius-lg)"></div>
+                        <div class="skeleton" style="height:100px;border-radius:var(--radius-lg)"></div>
+                        <div class="skeleton" style="height:100px;border-radius:var(--radius-lg)"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sd-content" class="hidden">
+                <!-- Header -->
+                <div class="sd-header">
+                    <h1>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><polyline points="18 17 12 11 8 15 2 9"/></svg>
+                        Seller Dashboard
+                    </h1>
+                    <div class="sd-header__actions">
+                        <a href="/sell" class="btn btn-primary btn-sm">+ New Listing</a>
+                        <a href="/marketplace" class="btn btn-secondary btn-sm">View Marketplace</a>
+                    </div>
+                </div>
+
+                <!-- Trust Score -->
+                <div class="sd-trust" id="sd-trust"></div>
+
+                <!-- Stats Grid -->
+                <div class="sd-stats" id="sd-stats"></div>
+
+                <!-- Revenue Chart -->
+                <div class="sd-section">
+                    <div class="sd-section__title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                        Revenue Over Time
+                    </div>
+                    <div class="sd-chart" id="sd-chart">
+                        <div style="color:var(--text-tertiary);font-size:var(--text-sm);text-align:center;width:100%">No sales data yet</div>
+                    </div>
+                </div>
+
+                <!-- Offers Section -->
+                <div class="sd-section" id="sd-offers-section" style="display:none">
+                    <div class="sd-section__title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                        Pending Offers
+                    </div>
+                    <div id="sd-offers-container"></div>
+                </div>
+
+                <!-- Flash Sale Manager -->
+                <div class="sd-section">
+                    <div class="sd-section__title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                        Flash Sale Manager
+                    </div>
+                    <div class="sd-flash-form" id="sd-flash-form">
+                        <div class="form-group">
+                            <label class="form-label" for="sd-flash-listing">Listing</label>
+                            <select class="form-select" id="sd-flash-listing" style="background:var(--bg-tertiary);border:1px solid var(--border-primary);color:var(--text-primary);padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);font-size:var(--text-sm);width:100%">
+                                <option value="">Select a listing...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="sd-flash-discount">Discount %</label>
+                            <input type="number" class="form-input" id="sd-flash-discount" min="5" max="80" placeholder="20" style="width:100%">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="sd-flash-duration">Duration (hours)</label>
+                            <input type="number" class="form-input" id="sd-flash-duration" min="1" max="168" placeholder="24" style="width:100%">
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm" id="sd-flash-btn" style="margin-bottom:var(--space-4)">Start Sale</button>
+                    </div>
+                </div>
+
+                <!-- Disputes Section -->
+                <div class="sd-section" id="sd-disputes-section" style="display:none">
+                    <div class="sd-section__title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        Disputes
+                    </div>
+                    <div id="sd-disputes-container"></div>
+                </div>
+
+                <!-- Listings Table -->
+                <div class="sd-section">
+                    <div class="sd-section__title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                        All Listings
+                    </div>
+                    <div style="overflow-x:auto">
+                        <table class="sd-table" id="sd-listings-table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Status</th>
+                                    <th>Price</th>
+                                    <th>Views</th>
+                                    <th>Clicks</th>
+                                    <th>CTR</th>
+                                    <th>Sales</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sd-listings-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    document.addEventListener('DOMContentLoaded', initSellerDashboard);
+
+    var sdAnalytics = null;
+    var sdTrust = null;
+
+    async function initSellerDashboard() {
+        await Auth.waitForAuth();
+        if (!Auth.requireAuth()) return;
+
+        try {
+            var [analyticsResult, trustResult, offersResult, disputesResult] = await Promise.allSettled([
+                Marketplace.getSellerAnalytics(),
+                Marketplace.getSellerTrustScore(Auth.getUserId()),
+                Marketplace.getMyOffers(),
+                Marketplace.getMyDisputes()
+            ]);
+
+            sdAnalytics = analyticsResult.status === 'fulfilled' ? analyticsResult.value : null;
+            sdTrust = trustResult.status === 'fulfilled' ? trustResult.value : null;
+            var offers = offersResult.status === 'fulfilled' ? offersResult.value : [];
+            var disputes = disputesResult.status === 'fulfilled' ? disputesResult.value : [];
+
+            if (!sdAnalytics) {
+                document.getElementById('sd-loading').innerHTML = '<div style="text-align:center;padding:var(--space-8) 0"><h2>No seller data</h2><p style="color:var(--text-secondary);margin:var(--space-4) 0">You haven\'t listed any products yet.</p><a href="/sell" class="btn btn-primary">Create Your First Listing</a></div>';
+                return;
+            }
+
+            document.getElementById('sd-loading').classList.add('hidden');
+            document.getElementById('sd-content').classList.remove('hidden');
+
+            renderTrust();
+            renderStats();
+            renderChart();
+            renderListings();
+            renderOffers(offers);
+            renderDisputes(disputes);
+            initFlashSaleForm();
+        } catch (err) {
+            console.error('Seller dashboard error:', err);
+            document.getElementById('sd-loading').innerHTML = '<div style="text-align:center;padding:var(--space-8) 0;color:var(--error)">Failed to load dashboard. Please try again.</div>';
+        }
+    }
+
+    function renderTrust() {
+        var container = document.getElementById('sd-trust');
+        if (!container || !sdTrust) { container.style.display = 'none'; return; }
+        var circumference = 2 * Math.PI * 22;
+        var offset = circumference * (1 - sdTrust.score / 100);
+        var badgesHtml = sdTrust.badges.map(function(b) {
+            return '<span class="sd-trust__badge" style="color:' + b.color + ';border-color:' + b.color + ';background:' + b.color + '14"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> ' + Security.sanitize(b.label) + '</span>';
+        }).join('');
+
+        container.innerHTML =
+            '<div class="sd-trust__ring"><svg viewBox="0 0 56 56"><circle class="sd-trust__ring-bg" cx="28" cy="28" r="22"/><circle class="sd-trust__ring-fill" cx="28" cy="28" r="22" stroke="' + sdTrust.color + '" stroke-dasharray="' + circumference.toFixed(2) + '" stroke-dashoffset="' + offset.toFixed(2) + '"/></svg><span class="sd-trust__value" style="color:' + sdTrust.color + '">' + sdTrust.score + '</span></div>' +
+            '<div class="sd-trust__info"><div class="sd-trust__label" style="color:' + sdTrust.color + '">' + sdTrust.label + '</div><div class="sd-trust__sublabel">Trust Score \u2014 based on sales, ratings, account age & dispute history</div><div class="sd-trust__badges" style="margin-top:var(--space-2)">' + badgesHtml + '</div></div>';
+    }
+
+    function renderStats() {
+        var a = sdAnalytics;
+        var stats = [
+            { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>', value: a.totalViews, label: 'Total Views', bg: '#6366f1' },
+            { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>', value: a.totalClicks, label: 'Total Clicks', bg: '#3b82f6' },
+            { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>', value: a.totalSales, label: 'Completed Sales', bg: '#10b981' },
+            { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>', value: a.totalRevenue + ' GMX', label: 'Total Revenue', bg: '#f59e0b' }
+        ];
+        var secondRow = [
+            { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>', value: a.ctr + '%', label: 'Click Rate (CTR)', bg: '#8b5cf6' },
+            { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>', value: a.conversionRate + '%', label: 'Conversion Rate', bg: '#ec4899' },
+            { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>', value: a.avgRating, label: 'Avg Rating (' + a.reviewCount + ')', bg: '#f59e0b' },
+            { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>', value: a.activeListings + '/' + a.totalListings, label: 'Active Listings', bg: '#14b8a6' }
+        ];
+        var allStats = stats.concat(secondRow);
+        document.getElementById('sd-stats').innerHTML = allStats.map(function(s) {
+            return '<div class="sd-stat-card">' +
+                '<div class="sd-stat-card__icon" style="background:' + s.bg + '">' + s.icon + '</div>' +
+                '<div class="sd-stat-card__value">' + s.value + '</div>' +
+                '<div class="sd-stat-card__label">' + s.label + '</div>' +
+                '</div>';
+        }).join('');
+    }
+
+    function renderChart() {
+        var container = document.getElementById('sd-chart');
+        if (!container) return;
+        var months = sdAnalytics.revenueByMonth || {};
+        var keys = Object.keys(months).sort().slice(-6);
+        if (!keys.length) return;
+        var maxVal = Math.max.apply(null, keys.map(function(k) { return months[k]; })) || 1;
+        container.innerHTML = keys.map(function(k) {
+            var val = months[k];
+            var pct = Math.max(5, (val / maxVal) * 100);
+            var label = k.substring(5); // MM from YYYY-MM
+            var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            var monthLabel = monthNames[parseInt(label) - 1] || label;
+            return '<div class="sd-chart__bar-wrap">' +
+                '<span class="sd-chart__bar-value">' + val + '</span>' +
+                '<div class="sd-chart__bar" style="height:' + pct + '%"></div>' +
+                '<span class="sd-chart__bar-label">' + monthLabel + '</span>' +
+                '</div>';
+        }).join('');
+    }
+
+    function renderListings() {
+        var tbody = document.getElementById('sd-listings-body');
+        if (!tbody) return;
+        var listings = sdAnalytics.listings || [];
+        if (!listings.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-tertiary);padding:var(--space-6)">No listings yet. <a href="/sell">Create your first listing</a></td></tr>';
+            return;
+        }
+        tbody.innerHTML = listings.map(function(l) {
+            var views = l.impressions || 0;
+            var clicks = l.clicks || 0;
+            var ctr = views > 0 ? ((clicks / views) * 100).toFixed(1) + '%' : '0%';
+            var statusClass = l.status === 'active' ? 'active' : l.status === 'pending' ? 'pending' : 'rejected';
+            var saleInfo = '';
+            if (l.sale_price && l.sale_ends_at && new Date(l.sale_ends_at) > new Date()) {
+                saleInfo = ' <span style="color:var(--error);font-size:10px;font-weight:bold">SALE</span>';
+            }
+            return '<tr>' +
+                '<td><span class="sd-table__title">' + Security.sanitize(l.title || '') + saleInfo + '</span></td>' +
+                '<td><span class="sd-table__status sd-table__status--' + statusClass + '">' + (l.status || 'unknown') + '</span></td>' +
+                '<td>' + (l.sale_price && l.sale_ends_at && new Date(l.sale_ends_at) > new Date() ? '<s style="color:var(--text-tertiary)">' + l.price + '</s> ' + l.sale_price : l.price) + ' GMX</td>' +
+                '<td>' + views + '</td>' +
+                '<td>' + clicks + '</td>' +
+                '<td>' + ctr + '</td>' +
+                '<td>' + (l.purchase_count || 0) + '</td>' +
+                '</tr>';
+        }).join('');
+    }
+
+    function renderOffers(offers) {
+        var pendingOffers = offers.filter(function(o) { return o.status === 'pending' && o.seller_id === Auth.getUserId(); });
+        var section = document.getElementById('sd-offers-section');
+        var container = document.getElementById('sd-offers-container');
+        if (!section || !container) return;
+        if (!pendingOffers.length) { section.style.display = 'none'; return; }
+        section.style.display = '';
+        container.innerHTML = pendingOffers.map(function(o) {
+            var listingTitle = o.marketplace_listings ? o.marketplace_listings.title : 'Unknown listing';
+            return '<div class="sd-offer">' +
+                '<div class="sd-offer__info">' +
+                '<div><strong>' + Security.sanitize(listingTitle) + '</strong></div>' +
+                '<div>Offer: <span class="sd-offer__amount">' + o.offer_amount + ' GMX</span> (list: ' + o.original_price + ' GMX)</div>' +
+                (o.message ? '<div style="color:var(--text-tertiary);font-size:var(--text-xs);margin-top:2px">"' + Security.sanitize(o.message) + '"</div>' : '') +
+                '</div>' +
+                '<div class="sd-offer__actions">' +
+                '<button class="btn btn-sm" style="background:var(--success);color:#fff" onclick="handleOffer(\'' + o.id + '\',\'accept\')">Accept</button>' +
+                '<button class="btn btn-sm btn-secondary" onclick="openCounterModal(\'' + o.id + '\',' + o.offer_amount + ',' + o.original_price + ')">Counter</button>' +
+                '<button class="btn btn-sm" style="background:var(--error);color:#fff" onclick="handleOffer(\'' + o.id + '\',\'reject\')">Reject</button>' +
+                '</div>' +
+                '</div>';
+        }).join('');
+    }
+
+    window.handleOffer = async function(offerId, action) {
+        var result = await Marketplace.respondToOffer(offerId, action);
+        if (result) {
+            var offers = await Marketplace.getMyOffers();
+            renderOffers(offers);
+        }
+    };
+
+    window.openCounterModal = function(offerId, currentOffer, originalPrice) {
+        UI.modal({
+            title: 'Counter Offer',
+            content: '<div class="form-group"><label class="form-label">Counter Amount (GMX Coins)</label><input type="number" class="form-input" id="counter-amount" min="' + (currentOffer + 1) + '" max="' + originalPrice + '" value="' + Math.round((currentOffer + originalPrice) / 2) + '"><div class="form-help">Current offer: ' + currentOffer + ' GMX. List price: ' + originalPrice + ' GMX.</div></div>',
+            footer: '<button class="btn btn-secondary" onclick="UI.closeModal()">Cancel</button><button class="btn btn-primary" id="counter-submit-btn">Send Counter</button>'
+        });
+        var btn = document.getElementById('counter-submit-btn');
+        if (btn) {
+            btn.addEventListener('click', async function() {
+                var amount = parseInt(document.getElementById('counter-amount').value);
+                btn.disabled = true;
+                btn.innerHTML = '<span class="btn-spinner"></span>';
+                var result = await Marketplace.respondToOffer(offerId, 'counter', amount);
+                if (result) {
+                    UI.closeModal();
+                    var offers = await Marketplace.getMyOffers();
+                    renderOffers(offers);
+                } else {
+                    btn.disabled = false;
+                    btn.textContent = 'Send Counter';
+                }
+            });
+        }
+    };
+
+    function renderDisputes(disputes) {
+        var sellerDisputes = disputes.filter(function(d) { return d.seller_id === Auth.getUserId(); });
+        var section = document.getElementById('sd-disputes-section');
+        var container = document.getElementById('sd-disputes-container');
+        if (!section || !container) return;
+        if (!sellerDisputes.length) { section.style.display = 'none'; return; }
+        section.style.display = '';
+        container.innerHTML = sellerDisputes.map(function(d) {
+            var statusColors = { open: 'var(--error)', seller_responded: 'var(--warning)', resolved: 'var(--success)', closed: 'var(--text-tertiary)' };
+            var statusColor = statusColors[d.status] || 'var(--text-tertiary)';
+            var needsResponse = d.status === 'open';
+            return '<div class="sd-dispute">' +
+                '<div class="sd-dispute__header">' +
+                '<span style="font-weight:var(--font-semibold);font-size:var(--text-sm)">Dispute #' + (d.id || '').substring(0, 8) + '</span>' +
+                '<span class="sd-dispute__status" style="background:' + statusColor + '22;color:' + statusColor + '">' + (d.status || 'unknown').replace('_', ' ') + '</span>' +
+                '</div>' +
+                '<p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-2)">' + Security.sanitize(d.reason || 'No reason provided') + '</p>' +
+                (needsResponse ? '<div style="background:var(--warning-light,#fef3c7);padding:var(--space-3);border-radius:var(--radius-md);margin-bottom:var(--space-2);font-size:var(--text-xs);color:var(--warning)"><strong>Action Required:</strong> You have 48 hours to respond.</div><div class="form-group" style="margin-bottom:var(--space-2)"><textarea class="form-textarea" id="dispute-response-' + d.id + '" rows="2" placeholder="Explain your side..." style="font-size:var(--text-sm)"></textarea></div><button class="btn btn-sm btn-primary" onclick="respondDispute(\'' + d.id + '\')">Submit Response</button>' : '') +
+                (d.seller_response ? '<div style="margin-top:var(--space-2);padding:var(--space-2);background:var(--bg-tertiary);border-radius:var(--radius-md);font-size:var(--text-xs)"><strong>Your response:</strong> ' + Security.sanitize(d.seller_response) + '</div>' : '') +
+                '</div>';
+        }).join('');
+    }
+
+    window.respondDispute = async function(disputeId) {
+        var textarea = document.getElementById('dispute-response-' + disputeId);
+        if (!textarea) return;
+        var response = textarea.value.trim();
+        var result = await Marketplace.respondToDispute(disputeId, response);
+        if (result) {
+            var disputes = await Marketplace.getMyDisputes();
+            renderDisputes(disputes);
+        }
+    };
+
+    function initFlashSaleForm() {
+        var select = document.getElementById('sd-flash-listing');
+        if (!select || !sdAnalytics) return;
+        var activeListings = sdAnalytics.listings.filter(function(l) { return l.status === 'active'; });
+        activeListings.forEach(function(l) {
+            var opt = document.createElement('option');
+            opt.value = l.id;
+            opt.textContent = Security.sanitize(l.title || 'Untitled') + ' (' + l.price + ' GMX)';
+            select.appendChild(opt);
+        });
+        var btn = document.getElementById('sd-flash-btn');
+        if (btn) {
+            btn.addEventListener('click', async function() {
+                var listingId = select.value;
+                var discount = parseInt(document.getElementById('sd-flash-discount').value);
+                var duration = parseInt(document.getElementById('sd-flash-duration').value);
+                if (!listingId) { UI.toast('Select a listing.', 'error'); return; }
+                if (!discount) { UI.toast('Enter discount percentage.', 'error'); return; }
+                if (!duration) { UI.toast('Enter duration in hours.', 'error'); return; }
+                btn.disabled = true;
+                btn.innerHTML = '<span class="btn-spinner"></span>';
+                var result = await Marketplace.setFlashSale(listingId, discount, duration);
+                btn.disabled = false;
+                btn.textContent = 'Start Sale';
+                if (result) {
+                    // Refresh analytics
+                    sdAnalytics = await Marketplace.getSellerAnalytics();
+                    renderListings();
+                }
+            });
+        }
+    }
+    </script>
+</Fragment>
+</BaseLayout>

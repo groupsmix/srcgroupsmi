@@ -139,6 +139,64 @@ function extractProductType(name, description) {
     return 'digital';
 }
 
+/* ── Personalized ranking algorithm ──────────────────────────── */
+function rankPersonalized(products, viewedTypes, viewedIds, groupCategories) {
+    // Build a relevance score for each product based on user signals
+    const typeFrequency = {};
+    viewedTypes.forEach((t, i) => {
+        // More recent views get higher weight (index 0 = most recent)
+        typeFrequency[t] = (typeFrequency[t] || 0) + Math.max(1, 10 - i);
+    });
+
+    // Map group categories to product types for cross-signal boosting
+    const categoryTypeMap = {
+        'education': ['course', 'guide'],
+        'technology': ['tool', 'template'],
+        'business': ['guide', 'service', 'template'],
+        'marketing': ['guide', 'tool', 'template'],
+        'design': ['template', 'tool'],
+        'community': ['membership', 'guide'],
+        'entertainment': ['digital', 'membership'],
+        'gaming': ['digital', 'membership'],
+        'health': ['course', 'guide'],
+        'finance': ['guide', 'tool', 'course']
+    };
+
+    const boostedTypes = new Set();
+    groupCategories.forEach(cat => {
+        const mapped = categoryTypeMap[cat.toLowerCase()] || [];
+        mapped.forEach(t => boostedTypes.add(t));
+    });
+
+    const scored = products.map(p => {
+        let score = 0;
+
+        // Boost by viewed type frequency (strongest signal)
+        if (typeFrequency[p.product_type]) {
+            score += typeFrequency[p.product_type] * 5;
+        }
+
+        // Boost by group category alignment
+        if (boostedTypes.has(p.product_type)) {
+            score += 20;
+        }
+
+        // Penalize already-viewed products (push to end so user sees new items)
+        if (viewedIds.includes(p.id)) {
+            score -= 30;
+        }
+
+        // Small recency bonus so newer products break ties
+        const ageHours = (Date.now() - new Date(p.created_at).getTime()) / 3600000;
+        score += Math.max(0, 10 - ageHours / 168); // bonus decays over ~1 week
+
+        return { product: p, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored.map(s => s.product);
+}
+
 /* ── Main handler ────────────────────────────────────────────── */
 export async function onRequest(context) {
     const { request, env } = context;
@@ -229,7 +287,14 @@ export async function onRequest(context) {
         }
 
         // Sort
-        if (sortParam === 'newest') {
+        if (sortParam === 'personalized') {
+            // Personalized ranking based on user signals passed via query params
+            const viewedTypes = (url.searchParams.get('viewed_types') || '').split(',').filter(Boolean);
+            const viewedIds = (url.searchParams.get('viewed_ids') || '').split(',').filter(Boolean);
+            const groupCategories = (url.searchParams.get('group_categories') || '').split(',').filter(Boolean);
+
+            filtered = rankPersonalized(filtered, viewedTypes, viewedIds, groupCategories);
+        } else if (sortParam === 'newest') {
             filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         } else if (sortParam === 'price-low') {
             filtered.sort((a, b) => a.price - b.price);
