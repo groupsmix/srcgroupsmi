@@ -2,8 +2,8 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 <BaseLayout
-  title="Sell — GroupsMix Marketplace"
-  description="List your digital product for sale on GroupsMix Marketplace. Templates, bots, scripts, design assets, guides, and tools."
+  title="Sell a Product — GroupsMix Marketplace"
+  description="List your digital product on GroupsMix Marketplace. Sell bot templates, scripts, design assets, guides, and tools for GMX Coins."
 >
 <style is:inline>
         .sell-page {
@@ -156,9 +156,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="sell-page">
             <h1 style="text-align:center;margin-bottom:var(--space-2)">
                 <svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.2em;height:1.2em;vertical-align:-0.125em"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
-                Sell on Marketplace
+                Sell a Product
             </h1>
-            <p style="text-align:center;color:var(--text-secondary);margin-bottom:var(--space-8)">List your digital product — templates, bots, scripts, design assets, guides &amp; tools</p>
+            <p style="text-align:center;color:var(--text-secondary);margin-bottom:var(--space-8)">List your digital product &mdash; bot templates, scripts, design assets, guides &amp; tools. Priced in GMX Coins.</p>
 
             <div class="sell-steps" id="sell-steps">
                 <div class="sell-step sell-step--active" id="sell-step-1">1. Details</div>
@@ -192,15 +192,25 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                         </div>
                         <div class="form-row">
                             <div class="form-group" style="flex:1">
-                                <label class="form-label" for="sell-price">Price (USD) *</label>
-                                <input type="number" class="form-input" id="sell-price" placeholder="0.00" min="0" step="0.01" required>
-                                <div class="form-help">Set to 0 for "Contact for price"</div>
+                                <label class="form-label" for="sell-price">Price (GMX Coins) *</label>
+                                <input type="number" class="form-input" id="sell-price" placeholder="100" min="1" step="1" required>
+                                <div class="form-help">Set price in GMX Coins. Buyers pay with coins, you receive earned coins (cashout with manual review).</div>
                             </div>
                             <div class="form-group" style="flex:1">
                                 <label class="form-label" for="sell-contact">Contact Link *</label>
                                 <input type="url" class="form-input" id="sell-contact" placeholder="https://t.me/yourusername" required>
                                 <div class="form-help">How buyers can reach you</div>
                             </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="sell-delivery">Digital Delivery *</label>
+                            <select class="form-input" id="sell-delivery-type" style="height:48px;margin-bottom:var(--space-2)">
+                                <option value="link">Download Link (URL to file)</option>
+                                <option value="upload">Upload File (zip, pdf, etc.)</option>
+                            </select>
+                            <input type="url" class="form-input" id="sell-delivery-link" placeholder="https://drive.google.com/file/... or direct download URL">
+                            <input type="file" class="form-input" id="sell-delivery-file" accept=".zip,.pdf,.rar,.tar.gz,.json,.txt,.py,.js" style="display:none;margin-top:var(--space-2)">
+                            <div class="form-help">Buyer gets access to your file after payment is confirmed. Max 50MB for uploads.</div>
                         </div>
                         <div id="sell-ai-status"></div>
                         <button type="button" class="btn btn-primary btn-full" id="sell-next-btn">Preview Listing</button>
@@ -238,7 +248,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 <script is:inline>
     document.addEventListener('DOMContentLoaded', initSellPage);
 
-    var sellData = { platform: '', category: '', title: '', description: '', price: 0, contact_link: '' };
+    var sellData = { platform: '', category: '', title: '', description: '', price: 0, currency: 'coins', contact_link: '', delivery_type: 'link', delivery_url: '' };
 
     async function initSellPage() {
         // Require authentication
@@ -251,6 +261,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         renderCategorySelector();
         document.getElementById('sell-description').addEventListener('input', function() {
             document.getElementById('sell-desc-count').textContent = this.value.length;
+        });
+        // Toggle delivery type UI
+        document.getElementById('sell-delivery-type').addEventListener('change', function() {
+            var isUpload = this.value === 'upload';
+            document.getElementById('sell-delivery-link').style.display = isUpload ? 'none' : '';
+            document.getElementById('sell-delivery-file').style.display = isUpload ? '' : 'none';
         });
         document.getElementById('sell-next-btn').addEventListener('click', goToPreview);
         document.getElementById('sell-back-btn').addEventListener('click', goBack);
@@ -311,6 +327,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         if (!description || description.length < 20) { UI.toast('Description must be at least 20 characters', 'error'); return; }
         if (!contact) { UI.toast('Please provide a contact link', 'error'); return; }
 
+        // Validate delivery
+        var deliveryType = document.getElementById('sell-delivery-type').value;
+        var deliveryLink = document.getElementById('sell-delivery-link').value.trim();
+        var deliveryFile = document.getElementById('sell-delivery-file').files[0];
+        if (deliveryType === 'link' && !deliveryLink) { UI.toast('Please provide a download link for your product', 'error'); return; }
+        if (deliveryType === 'upload' && !deliveryFile) { UI.toast('Please upload your product file', 'error'); return; }
+        if (deliveryType === 'upload' && deliveryFile && deliveryFile.size > 50 * 1024 * 1024) { UI.toast('File too large. Maximum 50MB allowed.', 'error'); return; }
+
         // Feature 5: Client-side banned keywords check
         var titleBanned = Marketplace.checkBannedKeywords(title);
         if (titleBanned.banned) {
@@ -340,8 +364,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         sellData.category = category;
         sellData.title = title;
         sellData.description = description;
-        sellData.price = parseFloat(price) || 0;
+        sellData.price = parseInt(price) || 0;
+        sellData.currency = 'coins';
         sellData.contact_link = contact;
+        sellData.delivery_type = deliveryType;
+        sellData.delivery_url = deliveryType === 'link' ? deliveryLink : (deliveryFile ? deliveryFile.name : '');
 
         // Render preview
         var preview = document.getElementById('sell-preview-content');
@@ -350,7 +377,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             '<div class="sell-preview__row"><span class="sell-preview__label">Category</span><span class="sell-preview__value">' + Security.sanitize(categoryName) + '</span></div>' +
             '<div class="sell-preview__row"><span class="sell-preview__label">Title</span><span class="sell-preview__value">' + Security.sanitize(title) + '</span></div>' +
             '<div class="sell-preview__row"><span class="sell-preview__label">Description</span><span class="sell-preview__value">' + Security.sanitize(description) + '</span></div>' +
-            '<div class="sell-preview__row"><span class="sell-preview__label">Price</span><span class="sell-preview__value">' + (sellData.price > 0 ? UI.formatCurrency(sellData.price) : 'Contact for price') + '</span></div>' +
+            '<div class="sell-preview__row"><span class="sell-preview__label">Price</span><span class="sell-preview__value">' + sellData.price + ' GMX Coins</span></div>' +
+            '<div class="sell-preview__row"><span class="sell-preview__label">Delivery</span><span class="sell-preview__value">' + (sellData.delivery_type === 'upload' ? 'File Upload: ' + Security.sanitize(sellData.delivery_url) : 'Download Link') + '</span></div>' +
             '<div class="sell-preview__row"><span class="sell-preview__label">Contact</span><span class="sell-preview__value">' + Security.sanitize(contact) + '</span></div>';
 
         // Switch steps

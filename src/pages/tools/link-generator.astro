@@ -71,8 +71,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 <p style="color:var(--text-secondary)">Create clean short links and premium QR codes for your group</p>
             </div>
             <div class="link-form" id="input-section">
-                <label class="form-label">Paste your long group link here</label>
+                <label class="form-label">Paste your group invite link</label>
                 <input type="url" id="link-input" placeholder="https://chat.whatsapp.com/your-long-invite-link...">
+                <div class="form-help" style="margin-top:var(--space-2);font-size:var(--text-xs);color:var(--text-tertiary)">Supported: chat.whatsapp.com, t.me, discord.gg, facebook.com/groups</div>
                 <div class="custom-toggle">
                     <input type="checkbox" id="custom-check">
                     <label for="custom-check">Customize link name?</label>
@@ -161,6 +162,22 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             if (!url) { UI.toast('Please paste a link.', 'error'); return; }
             if (!url.match(/^https?:\/\//)) url = 'https://' + url;
 
+            // Restrict to group invite links only
+            var allowedDomains = [
+                'chat.whatsapp.com', 'wa.me',
+                't.me', 'telegram.me',
+                'discord.gg', 'discord.com/invite',
+                'facebook.com/groups', 'www.facebook.com/groups',
+                'signal.group'
+            ];
+            var isGroupLink = allowedDomains.some(function(d) {
+                return url.indexOf(d) !== -1;
+            });
+            if (!isGroupLink) {
+                UI.toast('Only group invite links are supported (WhatsApp, Telegram, Discord, Facebook Groups).', 'error');
+                return;
+            }
+
             var btn = document.getElementById('gen-btn');
             btn.disabled = true;
             document.getElementById('input-section').style.display = 'none';
@@ -180,10 +197,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 });
                 if (!res.ok) throw new Error('API unavailable');
                 var data = await res.json();
-                currentShortUrl = data.shortUrl || data.short_url || data.url || generateClientShort(url, slug);
+                currentShortUrl = data.shortUrl || data.short_url || data.url;
+                if (!currentShortUrl) throw new Error('No short URL returned');
             } catch (err) {
-                console.error('Shorten failed, using client fallback:', err);
-                currentShortUrl = generateClientShort(url, slug);
+                console.error('Shorten failed:', err);
+                document.getElementById('link-loading').style.display = 'none';
+                document.getElementById('input-section').style.display = '';
+                btn.disabled = false;
+                UI.toast('Unable to shorten link right now. Please try again later.', 'error');
+                return;
             }
 
             document.getElementById('short-link').textContent = currentShortUrl;
@@ -238,12 +260,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             }).join('');
         }
 
-        function generateClientShort(url, slug) {
-            if (slug) return 'groupsmix.com/g/' + slug;
-            var hash = 0;
-            for (var i = 0; i < url.length; i++) { hash = ((hash << 5) - hash) + url.charCodeAt(i); hash |= 0; }
-            return 'groupsmix.com/g/' + Math.abs(hash).toString(36).slice(0, 6);
-        }
 
         function generateQR(url) {
             var canvas = document.getElementById('qr-canvas');

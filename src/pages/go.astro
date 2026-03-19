@@ -382,15 +382,29 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             }
 
             // 3. Check for group ID
+            var groupInfo = null;
             if (!targetUrl && id) {
                 try {
                     var group = await DB.groups.getOne(id);
                     if (group && group.link && Security.isValidUrl(group.link)) {
                         targetUrl = group.link;
+                        groupInfo = group;
                         DB.groups.incrementClicks(id);
                         RecentlyViewed.add(group);
                     }
                 } catch (e) { /* fall through */ }
+            }
+
+            // Show group info on the landing page if available
+            if (groupInfo) {
+                var platformName = (groupInfo.platform || 'Chat').charAt(0).toUpperCase() + (groupInfo.platform || 'chat').slice(1);
+                document.getElementById('go-title').textContent = "You're about to join " + (groupInfo.name || 'a group') + ' on ' + platformName;
+                var trustScore = groupInfo.trust_score || groupInfo.trustScore || null;
+                if (trustScore) {
+                    document.getElementById('go-message').innerHTML = 'Trust Score: <strong style="color:var(--accent-primary);font-size:var(--text-lg)">' + trustScore + '/100</strong> &mdash; Verified by GroupsMix';
+                } else {
+                    document.getElementById('go-message').textContent = 'Verified link on GroupsMix directory. Redirecting shortly.';
+                }
             }
 
             if (!targetUrl) {
