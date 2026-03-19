@@ -41,7 +41,10 @@ export async function onRequestPost(context) {
             'article-summary',
             'article-translate',
             'article-to-thread',
-            'article-smart-search'
+            'article-smart-search',
+            'article-trending-topics',
+            'article-reading-stats',
+            'article-related'
         ];
 
         if (!allowedTasks.includes(task)) {
@@ -77,11 +80,14 @@ export async function onRequestPost(context) {
             'article-summary': 'You are a content summarizer. Create concise, accurate summaries. Always return valid JSON.',
             'article-translate': 'You are a professional translator. Maintain tone and style. Always return valid JSON.',
             'article-to-thread': 'You are a social media expert who converts articles into engaging thread format. Always return valid JSON array.',
-            'article-smart-search': 'You are a search intent analyzer. Understand user queries and extract search parameters. Always return valid JSON.'
+            'article-smart-search': 'You are a search intent analyzer. Understand user queries and extract search parameters. Always return valid JSON.',
+            'article-trending-topics': 'You are a content strategist. Analyze engagement data and suggest trending topics that will perform well. Return valid JSON with key "topics" containing an array of objects with: "title" (suggested topic), "title_ar" (Arabic title), "reasoning" (why it is trending), "estimated_engagement" (high/medium/low), "category" (best category slug), "keywords" (array of SEO keywords). Maximum 8 topics.',
+            'article-reading-stats': 'You are a content analyst. Analyze the given article text and return valid JSON with: "reading_time_minutes" (integer, estimated reading time based on ~200 words/minute), "word_count" (integer), "difficulty" ("beginner", "intermediate", or "advanced"), "difficulty_score" (1-10 integer), "difficulty_reasons" (array of short reasons for the difficulty rating, e.g. technical jargon, complex sentence structure), "target_audience" (short description of ideal reader).',
+            'article-related': 'You are a content recommendation engine. Given a source article and a list of candidate articles, find the most related ones based on topic similarity, shared concepts, and complementary content. Return valid JSON with key "related" containing an array of objects with: "index" (1-based index from the candidate list), "relevance_score" (0.0-1.0), "connection" (short explanation of why they are related). Maximum 6 results, ordered by relevance.'
         };
 
         // Select model based on task complexity
-        const complexTasks = ['article-moderate', 'article-improve-writing', 'article-translate'];
+        const complexTasks = ['article-moderate', 'article-improve-writing', 'article-translate', 'article-trending-topics', 'article-related'];
         const model = complexTasks.includes(task) ? 'llama-3.3-70b-versatile' : 'llama-3.1-8b-instant';
 
         // Max tokens based on task
@@ -97,8 +103,67 @@ export async function onRequestPost(context) {
             'article-summary': 400,
             'article-translate': 1500,
             'article-to-thread': 800,
-            'article-smart-search': 200
+            'article-smart-search': 200,
+            'article-trending-topics': 800,
+            'article-reading-stats': 300,
+            'article-related': 600
         };
+
+        // Call Groq API
+        // For reading-stats, compute locally without AI for speed
+        if (task === 'article-reading-stats') {
+            const text = (body.prompt || '').replace(/<[^>]*>/g, '').trim();
+            const words = text.split(/\s+/).filter(Boolean);
+            const wordCount = words.length;
+            const readingTimeMinutes = Math.max(1, Math.ceil(wordCount / 200));
+
+            // Difficulty heuristics
+            const avgWordLength = words.reduce((sum, w) => sum + w.length, 0) / (wordCount || 1);
+            const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+            const avgSentenceLength = wordCount / (sentences.length || 1);
+            const complexWords = words.filter(w => w.length > 10).length;
+            const complexRatio = complexWords / (wordCount || 1);
+
+            let difficultyScore = 3; // baseline
+            const difficultyReasons = [];
+
+            if (avgWordLength > 6) { difficultyScore += 2; difficultyReasons.push('Long average word length'); }
+            else if (avgWordLength > 5) { difficultyScore += 1; difficultyReasons.push('Moderate vocabulary complexity'); }
+
+            if (avgSentenceLength > 25) { difficultyScore += 2; difficultyReasons.push('Complex sentence structure'); }
+            else if (avgSentenceLength > 18) { difficultyScore += 1; difficultyReasons.push('Moderate sentence length'); }
+
+            if (complexRatio > 0.15) { difficultyScore += 2; difficultyReasons.push('High density of technical/complex terms'); }
+            else if (complexRatio > 0.08) { difficultyScore += 1; difficultyReasons.push('Some technical terminology'); }
+
+            if (wordCount > 3000) { difficultyScore += 1; difficultyReasons.push('Long-form content'); }
+
+            difficultyScore = Math.min(10, Math.max(1, difficultyScore));
+
+            let difficulty = 'beginner';
+            if (difficultyScore >= 7) difficulty = 'advanced';
+            else if (difficultyScore >= 4) difficulty = 'intermediate';
+
+            let targetAudience = 'General readers';
+            if (difficulty === 'advanced') targetAudience = 'Experienced professionals and experts';
+            else if (difficulty === 'intermediate') targetAudience = 'Readers with some background knowledge';
+
+            if (difficultyReasons.length === 0) difficultyReasons.push('Straightforward, accessible writing');
+
+            return new Response(JSON.stringify({
+                result: JSON.stringify({
+                    reading_time_minutes: readingTimeMinutes,
+                    word_count: wordCount,
+                    difficulty: difficulty,
+                    difficulty_score: difficultyScore,
+                    difficulty_reasons: difficultyReasons,
+                    target_audience: targetAudience
+                }),
+                task: task,
+                model: 'local',
+                usage: null
+            }), { status: 200, headers: corsHeaders });
+        }
 
         // Call Groq API
         const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
