@@ -33,6 +33,7 @@ const UI = {
             '<span class="group-card__platform">' + (platform?.svgIcon || platform?.emoji || ICONS.smartphone) + ' ' + Security.sanitize(platform?.name || group.platform || '') + '</span>' +
             '<span style="display:inline-flex;gap:4px;align-items:center">' +
             (tier !== 'none' ? UI.trustBadge(tier) : '') +
+            (group.is_verified ? UI.trustBadge('owner_verified') : '') +
             (healthCache ? GroupHealth.healthBadge(healthCache.status) : '') +
             '</span>' +
             '</div>' +
@@ -577,7 +578,8 @@ const UI = {
             verified: `<span class="vip-badge vip-badge--verified">${ICONS.check_circle} Verified</span>`,
             niche: `<span class="vip-badge vip-badge--niche">${ICONS.globe} Niche</span>`,
             global: `<span class="vip-badge vip-badge--global">${ICONS.globe} Global</span>`,
-            diamond: `<span class="vip-badge vip-badge--diamond">${ICONS.sparkles} Diamond</span>`
+            diamond: `<span class="vip-badge vip-badge--diamond">${ICONS.sparkles} Diamond</span>`,
+            owner_verified: '<span class="vip-badge vip-badge--owner-verified">&#9989; Owner Verified</span>'
         };
         return badges[tier] || '';
     },
@@ -926,13 +928,14 @@ const UI = {
             global: '<span class="gpm-badge gpm-badge--global">&#128993; Global Verified</span>',
             diamond: '<span class="gpm-badge gpm-badge--diamond">&#128142; Diamond Verified</span>'
         };
+        const ownerVerifiedBadge = group.is_verified ? ' <span class="gpm-badge gpm-badge--owner-verified">&#9989; Owner Verified</span>' : '';
         const safetyBadge = badgeMap[tier] || '<span class="gpm-badge gpm-badge--default">&#128737; Community Group</span>';
 
         const content = '<div class="gpm-preview">' +
             '<div class="gpm-preview__icon">' + (platform?.emoji || '&#128241;') + '</div>' +
             '<div class="gpm-preview__name">' + Security.sanitize(group.name || 'Unnamed') + '</div>' +
             '<div class="gpm-preview__platform">' + Security.sanitize(platform?.name || group.platform || '') + '</div>' +
-            '<div class="gpm-preview__badge">' + safetyBadge + '</div>' +
+            '<div class="gpm-preview__badge">' + safetyBadge + ownerVerifiedBadge + '</div>' +
             (group.description ? '<div class="gpm-preview__desc">' + Security.sanitize(group.description) + '</div>' : '') +
             '<div class="gpm-preview__stats">' +
             '<div class="gpm-preview__stat"><span class="gpm-preview__stat-value">&#128065; ' + UI.formatNumber(group.views || 0) + '</span><span class="gpm-preview__stat-label">Views</span></div>' +

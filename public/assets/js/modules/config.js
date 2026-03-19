@@ -129,6 +129,7 @@ const CONFIG = {
         review_received: { icon: ICONS.message_circle, title: 'New Review' },
         report_resolved: { icon: ICONS.shield, title: 'Report Resolved' },
         gxp_awarded: { icon: ICONS.sparkles, title: 'GXP Awarded' },
+        group_verified: { icon: ICONS.check_circle, title: 'Group Verified' },
         system: { icon: ICONS.info, title: 'System Notice' },
         info: { icon: ICONS.info, title: 'Info' }
     },
