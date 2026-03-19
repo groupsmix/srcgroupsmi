@@ -5,8 +5,8 @@
  * Returns the authenticated user object or null if verification fails.
  */
 
-const SUPABASE_URL = 'https://hmlqppacanpxmrfdlkec.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtbHFwcGFjYW5weG1yZmRsa2VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDkxMTUsImV4cCI6MjA4NzkyNTExNX0.xRDweHu4st7Hk--lQyLYlRU5ufUsXWbArvsIjVznr9o';
+const SUPABASE_URL_FALLBACK = 'https://hmlqppacanpxmrfdlkec.supabase.co';
+const SUPABASE_ANON_KEY_FALLBACK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtbHFwcGFjYW5weG1yZmRsa2VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDkxMTUsImV4cCI6MjA4NzkyNTExNX0.xRDweHu4st7Hk--lQyLYlRU5ufUsXWbArvsIjVznr9o';
 
 /**
  * Extract the Bearer token from the Authorization header.
@@ -46,8 +46,8 @@ export function extractToken(request) {
 export async function verifyToken(accessToken, env) {
     if (!accessToken) return null;
 
-    const url = (env && env.SUPABASE_URL) || SUPABASE_URL;
-    const key = (env && env.SUPABASE_ANON_KEY) || SUPABASE_ANON_KEY;
+    const url = (env && env.SUPABASE_URL) || SUPABASE_URL_FALLBACK;
+    const key = (env && env.SUPABASE_ANON_KEY) || SUPABASE_ANON_KEY_FALLBACK;
 
     try {
         const res = await fetch(url + '/auth/v1/user', {

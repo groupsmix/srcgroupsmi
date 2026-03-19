@@ -9,7 +9,7 @@
  * Cached for 1 hour to avoid excessive DB queries.
  */
 
-const SUPABASE_URL = 'https://hmlqppacanpxmrfdlkec.supabase.co';
+const SUPABASE_URL_FALLBACK = 'https://hmlqppacanpxmrfdlkec.supabase.co';
 
 const STATIC_PAGES = [
     { loc: '/', priority: '1.0', changefreq: 'daily' },
@@ -84,12 +84,13 @@ export async function onRequest(context) {
     });
 
     // Fetch approved groups from Supabase
+    var supabaseUrl = env?.SUPABASE_URL || SUPABASE_URL_FALLBACK;
     var anonKey = env?.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtbHFwcGFjYW5weG1yZmRsa2VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDkxMTUsImV4cCI6MjA4NzkyNTExNX0.xRDweHu4st7Hk--lQyLYlRU5ufUsXWbArvsIjVznr9o';
 
     try {
         // Fetch groups (id and updated_at for sitemap)
         var groupsRes = await fetch(
-            SUPABASE_URL + '/rest/v1/groups?select=id,updated_at&status=eq.approved&order=updated_at.desc&limit=5000',
+            supabaseUrl + '/rest/v1/groups?select=id,updated_at&status=eq.approved&order=updated_at.desc&limit=5000',
             {
                 headers: {
                     'apikey': anonKey,
@@ -117,7 +118,7 @@ export async function onRequest(context) {
     try {
         // Fetch active jobs
         var jobsRes = await fetch(
-            SUPABASE_URL + '/rest/v1/jobs?select=id,updated_at&status=eq.active&order=updated_at.desc&limit=2000',
+            supabaseUrl + '/rest/v1/jobs?select=id,updated_at&status=eq.active&order=updated_at.desc&limit=2000',
             {
                 headers: {
                     'apikey': anonKey,

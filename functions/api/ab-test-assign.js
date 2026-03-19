@@ -9,20 +9,11 @@
  *   SUPABASE_SERVICE_KEY — Supabase service role key
  */
 
-/* ── Allowed origins for CORS ───────────────────────────────────── */
-const ALLOWED_ORIGINS = [
-    'https://groupsmix.com',
-    'https://www.groupsmix.com'
-];
+import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
 
+/** CORS headers with Content-Type for JSON responses */
 function corsHeaders(origin) {
-    const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-    return {
-        'Access-Control-Allow-Origin': allowed,
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-Type': 'application/json'
-    };
+    return _corsHeaders(origin, { 'Content-Type': 'application/json' });
 }
 
 /* ── Sanitize input ──────────────────────────────────────────────── */
@@ -49,7 +40,7 @@ export async function onRequest(context) {
 
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
-        return new Response(null, { status: 204, headers: corsHeaders(origin) });
+        return handlePreflight(origin);
     }
 
     if (request.method !== 'GET' && request.method !== 'POST') {

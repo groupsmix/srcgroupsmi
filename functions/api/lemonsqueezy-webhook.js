@@ -90,7 +90,7 @@ async function syncOrderToSupabase(env, payload) {
             const errText = await res.text();
             console.error('Supabase purchase sync error:', res.status, errText);
         } else {
-            console.log('Purchase synced to Supabase:', order.order_id);
+            console.info('Purchase synced to Supabase:', order.order_id);
         }
 
         // Track referral purchase if referral code exists
@@ -157,7 +157,7 @@ async function creditCoinsForPurchase(env, userId, order) {
         }
 
         if (coinsToCredit <= 0) {
-            console.log('Not a coin purchase or zero coins — skipping wallet credit for order:', order.order_id);
+            console.info('Not a coin purchase or zero coins — skipping wallet credit for order:', order.order_id);
             return;
         }
 
@@ -204,7 +204,7 @@ async function creditCoinsForPurchase(env, userId, order) {
             return;
         }
 
-        console.log('Credited', coinsToCredit, 'GMX Coins to user', internalUserId, 'for order', order.order_id);
+        console.info('Credited', coinsToCredit, 'GMX Coins to user', internalUserId, 'for order', order.order_id);
 
         // Send notification to user
         await fetch(supabaseUrl + '/rest/v1/notifications', {
@@ -262,7 +262,7 @@ async function handleCoinRefund(env, payload) {
         );
         const txns = await txnRes.json();
         if (!txns || !txns.length) {
-            console.log('No coin purchase transaction found for refunded order:', orderId);
+            console.info('No coin purchase transaction found for refunded order:', orderId);
             return;
         }
 
@@ -293,7 +293,7 @@ async function handleCoinRefund(env, payload) {
         if (!debitRes.ok) {
             console.error('Failed to debit coins for refund:', await debitRes.text());
         } else {
-            console.log('Debited', coinsToDebit, 'coins from user', userId, 'for refund on order', orderId);
+            console.info('Debited', coinsToDebit, 'coins from user', userId, 'for refund on order', orderId);
         }
 
         // Notify user
@@ -361,7 +361,7 @@ async function trackReferralPurchase(env, refCode, order) {
             body: JSON.stringify({ p_code: refCode })
         });
 
-        console.log('Referral purchase tracked for code:', refCode);
+        console.info('Referral purchase tracked for code:', refCode);
     } catch (err) {
         console.error('trackReferralPurchase error:', err);
     }
@@ -397,7 +397,7 @@ async function syncSubscriptionEvent(env, eventName, payload) {
             body: JSON.stringify({ status: status })
         });
 
-        console.log('Subscription status updated:', orderId, '->', status);
+        console.info('Subscription status updated:', orderId, '->', status);
     } catch (err) {
         console.error('syncSubscriptionEvent error:', err);
     }
@@ -442,7 +442,7 @@ export async function onRequest(context) {
     }
 
     const eventName = request.headers.get('X-Event-Name') || payload.meta?.event_name || 'unknown';
-    console.log('LemonSqueezy webhook received:', eventName);
+    console.info('LemonSqueezy webhook received:', eventName);
 
     // Events that should trigger cache invalidation
     const cacheInvalidationEvents = [
@@ -474,7 +474,7 @@ export async function onRequest(context) {
         if (env?.STORE_KV) {
             try {
                 await env.STORE_KV.delete(CACHE_KEY);
-                console.log('KV cache invalidated for event:', eventName);
+                console.info('KV cache invalidated for event:', eventName);
             } catch (kvErr) {
                 console.error('KV delete error:', kvErr);
             }

@@ -290,7 +290,7 @@ async function callOpenRouter(apiKey, messages, maxTokens, temperature, category
                 })
             });
             if (res.ok) {
-                console.log('OpenRouter success with model:', model);
+                console.info('OpenRouter success with model:', model);
                 return res;
             }
             console.error('OpenRouter error (' + model + '):', res.status);
@@ -459,7 +459,7 @@ export async function onRequest(context) {
                 aiRes = await callOpenRouter(openrouterKey, messages, maxTokens, temperature, routing.category);
             }
             if (!aiRes && groqKey) {
-                console.log('OpenRouter unavailable for ' + (toolId || 'request') + ', falling back to Groq');
+                console.warn('OpenRouter unavailable for ' + (toolId || 'request') + ', falling back to Groq');
                 aiRes = await callGroq(groqKey, messages, maxTokens, temperature);
             }
         } else {
@@ -468,7 +468,7 @@ export async function onRequest(context) {
                 aiRes = await callGroq(groqKey, messages, maxTokens, temperature);
             }
             if (!aiRes && openrouterKey) {
-                console.log('Groq unavailable for ' + (toolId || 'request') + ', falling back to OpenRouter');
+                console.warn('Groq unavailable for ' + (toolId || 'request') + ', falling back to OpenRouter');
                 aiRes = await callOpenRouter(openrouterKey, messages, maxTokens, temperature, routing.category);
             }
         }

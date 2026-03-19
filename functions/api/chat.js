@@ -196,7 +196,7 @@ export async function onRequest(context) {
                     })
                 });
                 if (res.ok) {
-                    console.log('OpenRouter success with model:', model);
+                    console.info('OpenRouter success with model:', model);
                     return res;
                 }
                 console.error('OpenRouter error (' + model + '):', res.status);
@@ -212,13 +212,13 @@ export async function onRequest(context) {
         if (useGroqFirst) {
             aiRes = await tryGroq();
             if (!aiRes) {
-                console.log('Groq unavailable for chat, falling back to OpenRouter');
+                console.warn('Groq unavailable for chat, falling back to OpenRouter');
                 aiRes = await tryOpenRouter();
             }
         } else {
             aiRes = await tryOpenRouter();
             if (!aiRes) {
-                console.log('OpenRouter unavailable for chat, falling back to Groq');
+                console.warn('OpenRouter unavailable for chat, falling back to Groq');
                 aiRes = await tryGroq();
             }
         }

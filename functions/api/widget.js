@@ -22,8 +22,8 @@ export async function onRequest(context) {
         return new Response(null, { status: 204, headers: corsHeaders() });
     }
 
-    const supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';
-    const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
+    const supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';  // fallback for local dev
+    const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';  // prefer service key
 
     if (!supabaseKey) {
         return new Response(

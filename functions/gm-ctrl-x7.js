@@ -10,8 +10,8 @@
  * The admin HTML is NEVER served to unauthenticated or non-admin users.
  */
 
-const SUPABASE_URL = 'https://hmlqppacanpxmrfdlkec.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtbHFwcGFjYW5weG1yZmRsa2VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDkxMTUsImV4cCI6MjA4NzkyNTExNX0.xRDweHu4st7Hk--lQyLYlRU5ufUsXWbArvsIjVznr9o';
+const SUPABASE_URL_FALLBACK = 'https://hmlqppacanpxmrfdlkec.supabase.co';
+const SUPABASE_ANON_KEY_FALLBACK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtbHFwcGFjYW5weG1yZmRsa2VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDkxMTUsImV4cCI6MjA4NzkyNTExNX0.xRDweHu4st7Hk--lQyLYlRU5ufUsXWbArvsIjVznr9o';
 
 /**
  * Parse the Supabase auth token from cookies.
@@ -110,7 +110,10 @@ async function verifyAdmin(accessToken) {
 }
 
 export async function onRequest(context) {
-    const { request, next } = context;
+    const { request, next, env } = context;
+
+    const SUPABASE_URL = (env && env.SUPABASE_URL) || SUPABASE_URL_FALLBACK;
+    const SUPABASE_ANON_KEY = (env && env.SUPABASE_ANON_KEY) || SUPABASE_ANON_KEY_FALLBACK;
 
     // Only gate GET requests to the admin page
     if (request.method !== 'GET') {

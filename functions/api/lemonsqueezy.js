@@ -177,7 +177,7 @@ export async function onRequest(context) {
                     const age = (Date.now() - cached.timestamp) / 1000;
                     if (age < CACHE_TTL) {
                         products = cached.products;
-                        console.log('Serving products from KV cache (age: ' + Math.round(age) + 's)');
+                        console.info('Serving products from KV cache (age: ' + Math.round(age) + 's)');
                     }
                 }
             } catch (kvErr) {
@@ -196,7 +196,7 @@ export async function onRequest(context) {
                         products: products,
                         timestamp: Date.now()
                     }), { expirationTtl: CACHE_TTL + 300 }); // Extra 5 min buffer
-                    console.log('Products cached in KV (' + products.length + ' items)');
+                    console.info('Products cached in KV (' + products.length + ' items)');
                 } catch (kvErr) {
                     console.error('KV write error:', kvErr);
                 }
