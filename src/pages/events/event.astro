@@ -1,0 +1,194 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Event Details | GroupsMix"
+  description="View event details, RSVP, and join community events on GroupsMix."
+  cssFiles={['/assets/css/events.css']}
+>
+
+<div class="event-detail" id="event-detail">
+    <div class="event-detail__loading" style="max-width:var(--container-md);margin:0 auto;padding:var(--space-8) var(--space-4)">
+        <div class="skeleton" style="height:200px;border-radius:var(--radius-xl);margin-bottom:var(--space-6)"></div>
+        <div class="skeleton" style="width:60%;height:36px;margin-bottom:var(--space-3)"></div>
+        <div class="skeleton" style="width:40%;height:24px;margin-bottom:var(--space-6)"></div>
+        <div class="skeleton" style="height:120px;border-radius:var(--radius-lg)"></div>
+    </div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+    document.addEventListener('DOMContentLoaded', function() { loadEventDetail(); });
+
+    async function loadEventDetail() {
+        var params = new URLSearchParams(window.location.search);
+        var eventId = params.get('id');
+        if (!eventId) {
+            showEventError('No event specified.');
+            return;
+        }
+
+        try {
+            var res = await fetch('/api/events?action=detail&event_id=' + encodeURIComponent(eventId));
+            var json = await res.json();
+
+            if (!json.ok || !json.event) {
+                showEventError('Event not found or has been removed.');
+                return;
+            }
+
+            renderEvent(json.event);
+            document.title = Security.sanitize(json.event.title) + ' | GroupsMix Events';
+        } catch (err) {
+            showEventError('Failed to load event. Please try again.');
+        }
+    }
+
+    function showEventError(msg) {
+        document.getElementById('event-detail').innerHTML =
+            '<div style="text-align:center;padding:var(--space-16) var(--space-4);max-width:var(--container-md);margin:0 auto">' +
+            '<div style="font-size:var(--text-5xl);margin-bottom:var(--space-4)">&#128197;</div>' +
+            '<h2 style="margin-bottom:var(--space-3)">Event Not Found</h2>' +
+            '<p style="color:var(--text-secondary);margin-bottom:var(--space-6)">' + Security.sanitize(msg) + '</p>' +
+            '<a href="/events" class="btn btn-primary">Browse Events</a>' +
+            '</div>';
+    }
+
+    function renderEvent(event) {
+        var startDate = new Date(event.start_date);
+        var endDate = event.end_date ? new Date(event.end_date) : null;
+        var dateStr = startDate.toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        var timeStr = startDate.toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit', hour12: true });
+        if (endDate) timeStr += ' - ' + endDate.toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+        var typeIcons = { online: '&#128187; Online', in_person: '&#128205; In Person', hybrid: '&#128256; Hybrid' };
+        var statusBadges = {
+            published: '',
+            cancelled: '<span style="color:var(--error);font-weight:var(--font-bold)">&#10060; CANCELLED</span>',
+            completed: '<span style="color:var(--text-tertiary);font-weight:var(--font-bold)">&#9989; COMPLETED</span>'
+        };
+
+        var verifiedBadge = event.group_is_verified
+            ? ' <span class="event-verified-badge" title="Verified Group">&#9989; Verified</span>'
+            : '';
+
+        var isPast = startDate < new Date();
+        var isCancelled = event.status === 'cancelled';
+
+        var html = '<div style="max-width:var(--container-md);margin:0 auto;padding:var(--space-6) var(--space-4)">';
+
+        // Header
+        html += '<div class="event-detail__header">';
+        if (statusBadges[event.status]) html += '<div style="margin-bottom:var(--space-3)">' + statusBadges[event.status] + '</div>';
+        html += '<h1 class="event-detail__title">' + Security.sanitize(event.title) + '</h1>';
+        html += '<div class="event-detail__meta">';
+        html += '<span>' + (typeIcons[event.event_type] || 'Event') + '</span>';
+        if (event.category) html += '<span>' + Security.sanitize(event.category) + '</span>';
+        html += '</div>';
+        html += '</div>';
+
+        // Info grid
+        html += '<div class="event-detail__info">';
+        html += '<div class="event-info-card">';
+        html += '<div class="event-info-card__icon">&#128197;</div>';
+        html += '<div><div class="event-info-card__label">Date & Time</div>';
+        html += '<div class="event-info-card__value">' + dateStr + '</div>';
+        html += '<div class="event-info-card__value" style="font-size:var(--text-sm);color:var(--text-secondary)">' + timeStr + (event.timezone ? ' (' + event.timezone + ')' : '') + '</div>';
+        html += '</div></div>';
+
+        if (event.location || event.city || event.country) {
+            html += '<div class="event-info-card">';
+            html += '<div class="event-info-card__icon">&#128205;</div>';
+            html += '<div><div class="event-info-card__label">Location</div>';
+            html += '<div class="event-info-card__value">' + Security.sanitize([event.location, event.city, event.country].filter(Boolean).join(', ')) + '</div>';
+            html += '</div></div>';
+        }
+
+        if (event.group_name) {
+            html += '<div class="event-info-card">';
+            html += '<div class="event-info-card__icon">&#128101;</div>';
+            html += '<div><div class="event-info-card__label">Hosted by</div>';
+            html += '<div class="event-info-card__value"><a href="/group?id=' + (event.group_id || '') + '" style="color:var(--accent-primary);text-decoration:none">' + Security.sanitize(event.group_name) + '</a>' + verifiedBadge + '</div>';
+            html += '</div></div>';
+        }
+
+        html += '<div class="event-info-card">';
+        html += '<div class="event-info-card__icon">&#128101;</div>';
+        html += '<div><div class="event-info-card__label">Attendees</div>';
+        html += '<div class="event-info-card__value">' + (event.rsvp_count || 0) + ' going &middot; ' + (event.interested_count || 0) + ' interested</div>';
+        if (event.max_attendees > 0) html += '<div style="font-size:var(--text-xs);color:var(--text-tertiary)">' + event.max_attendees + ' max capacity</div>';
+        html += '</div></div>';
+        html += '</div>';
+
+        // RSVP buttons
+        if (!isPast && !isCancelled) {
+            html += '<div class="event-detail__rsvp" id="event-rsvp">';
+            html += '<button class="btn btn-primary btn-lg" id="rsvp-going" data-event-id="' + event.id + '">&#128075; Going</button>';
+            html += '<button class="btn btn-secondary btn-lg" id="rsvp-interested" data-event-id="' + event.id + '">&#11088; Interested</button>';
+            if (event.platform_link) {
+                html += '<a href="' + Security.sanitize(event.platform_link) + '" target="_blank" rel="noopener" class="btn btn-secondary btn-lg">&#128279; Join Link</a>';
+            }
+            html += '</div>';
+        }
+
+        // Description
+        if (event.description) {
+            html += '<div class="event-detail__section">';
+            html += '<h3>About this event</h3>';
+            html += '<p style="color:var(--text-secondary);line-height:var(--leading-relaxed);white-space:pre-wrap">' + Security.sanitize(event.description) + '</p>';
+            html += '</div>';
+        }
+
+        // Tags
+        if (event.tags && event.tags.length) {
+            html += '<div class="event-detail__section">';
+            html += '<div style="display:flex;gap:var(--space-2);flex-wrap:wrap">';
+            event.tags.forEach(function(t) {
+                html += '<span class="tag">' + Security.sanitize(t) + '</span>';
+            });
+            html += '</div></div>';
+        }
+
+        html += '<div style="margin-top:var(--space-6)"><a href="/events" class="btn btn-secondary">&larr; Back to Events</a></div>';
+        html += '</div>';
+
+        document.getElementById('event-detail').innerHTML = html;
+
+        // RSVP handlers
+        var goingBtn = document.getElementById('rsvp-going');
+        var interestedBtn = document.getElementById('rsvp-interested');
+        if (goingBtn) goingBtn.addEventListener('click', function() { rsvpEvent(event.id, 'going'); });
+        if (interestedBtn) interestedBtn.addEventListener('click', function() { rsvpEvent(event.id, 'interested'); });
+    }
+
+    async function rsvpEvent(eventId, status) {
+        if (!Auth.requireAuth()) return;
+
+        var btn = document.getElementById('rsvp-' + status);
+        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span>'; }
+
+        try {
+            var token = Auth.getToken();
+            var res = await fetch('/api/events', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ action: 'rsvp', event_id: eventId, status: status })
+            });
+            var json = await res.json();
+
+            if (json.ok) {
+                UI.toast('RSVP updated! You are ' + status + '.', 'success');
+                // Reload to reflect updated counts
+                loadEventDetail();
+            } else {
+                UI.toast(json.error || 'RSVP failed', 'error');
+            }
+        } catch (e) {
+            UI.toast('RSVP failed. Please try again.', 'error');
+        }
+
+        if (btn) { btn.disabled = false; btn.innerHTML = status === 'going' ? '&#128075; Going' : '&#11088; Interested'; }
+    }
+</script>
+</Fragment>
+</BaseLayout>

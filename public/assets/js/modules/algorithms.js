@@ -25,6 +25,8 @@ const Algorithms = {
         if (reports === 0) score += 10;
         else if (reports <= 2) score += 5;
         else score -= Math.min(30, reports * 5);
+        // Owner verification bonus
+        if (group.is_verified) score += 10;
         return Math.max(0, Math.min(100, score));
     },
     calculateRankingScore(group) {
@@ -37,7 +39,9 @@ const Algorithms = {
         const tier = Algorithms.getEffectiveTier(group);
         const tierMultiplier = { none: 1, verified: 1.2, niche: 1.5, global: 2.0, diamond: 3.0 };
         const base = (trust * 2) + (views * 0.01) + (clicks * 0.05) + (rating * 10) + (reviews * 3);
-        return Math.round(base * (tierMultiplier[tier] || 1) * 100) / 100;
+        // Owner verification boost
+        const verifiedMultiplier = group.is_verified ? 1.15 : 1;
+        return Math.round(base * (tierMultiplier[tier] || 1) * verifiedMultiplier * 100) / 100;
     },
     getEffectiveTier(group) {
         if (!group?.vip_tier || group.vip_tier === 'none') return 'none';

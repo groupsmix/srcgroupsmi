@@ -72,6 +72,7 @@ function renderHeader() {
                 '<a href="/marketplace" class="subnav__item' + navActive(['/marketplace', '/sell']) + '">Markets</a>' +
                 '<a href="/store" class="subnav__item' + navActive(['/store']) + '">Store</a>' +
                 '<a href="/tools" class="subnav__item' + navActive(['/tools']) + '">AI Tools</a>' +
+                '<a href="/events" class="subnav__item' + navActive(['/events']) + '">Events</a>' +
                 '<a href="/articles" class="subnav__item' + navActive(['/articles']) + '">Articles</a>' +
         '</div>' +
         '</div>';
@@ -216,6 +217,7 @@ function openDrawer() {
     links += '<a href="/marketplace" class="drawer__item">' + ICONS.store + ' Marketplace</a>';
     links += '<a href="/jobs" class="drawer__item">' + ICONS.briefcase + ' Jobs</a>';
     links += '<a href="/browse" class="drawer__item">' + ICONS.users + ' Groups</a>';
+    links += '<a href="/events" class="drawer__item">' + ICONS.clock + ' Events</a>';
     links += '<a href="/tools" class="drawer__item">' + ICONS.tools + ' Tools</a>';
     links += '<div class="drawer__divider"></div>';
     // User profile & settings

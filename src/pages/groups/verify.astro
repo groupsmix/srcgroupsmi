@@ -1,0 +1,307 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Verify Group Ownership | GroupsMix"
+  description="Verify ownership of your group on GroupsMix. Verified groups get a badge and rank higher in search results."
+  canonical="https://groupsmix.com/groups/verify"
+>
+<style is:inline>
+    .verify{max-width:var(--container-md);margin:0 auto;padding:var(--space-6) var(--space-4)}
+    .verify__title{font-size:var(--text-3xl);font-weight:var(--font-extrabold);margin-bottom:var(--space-2)}
+    .verify__subtitle{color:var(--text-secondary);margin-bottom:var(--space-6);line-height:var(--leading-relaxed)}
+    .verify-benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-bottom:var(--space-8)}
+    @media(max-width:767px){.verify-benefits{grid-template-columns:1fr}}
+    .verify-benefit{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);padding:var(--space-5);text-align:center}
+    .verify-benefit__icon{font-size:var(--text-3xl);margin-bottom:var(--space-3)}
+    .verify-benefit__title{font-weight:var(--font-bold);margin-bottom:var(--space-1)}
+    .verify-benefit__desc{font-size:var(--text-sm);color:var(--text-secondary)}
+    .verify-card{background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-xl);padding:var(--space-8);margin-bottom:var(--space-6)}
+    .verify-card__title{font-size:var(--text-xl);font-weight:var(--font-bold);margin-bottom:var(--space-4)}
+    .verify-steps{list-style:none;padding:0;counter-reset:vstep}
+    .verify-step{counter-increment:vstep;display:flex;gap:var(--space-4);margin-bottom:var(--space-5);align-items:flex-start}
+    .verify-step::before{content:counter(vstep);background:var(--accent-primary);color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:var(--font-bold);font-size:var(--text-sm);flex-shrink:0}
+    .verify-step__content{flex:1}
+    .verify-step__title{font-weight:var(--font-semibold);margin-bottom:var(--space-1)}
+    .verify-step__desc{font-size:var(--text-sm);color:var(--text-secondary)}
+    .verify-code{background:var(--bg-tertiary);border:2px dashed var(--accent-primary);border-radius:var(--radius-lg);padding:var(--space-4);text-align:center;margin:var(--space-4) 0;font-family:monospace;font-size:var(--text-lg);font-weight:var(--font-bold);letter-spacing:.1em;user-select:all;cursor:pointer}
+    .verify-code:hover{border-color:var(--accent-primary-light);background:var(--bg-card-hover)}
+    .verify-status{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);border-radius:var(--radius-lg);margin-bottom:var(--space-4)}
+    .verify-status--verified{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3)}
+    .verify-status--pending{background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.3)}
+    .verify-status__icon{font-size:var(--text-2xl)}
+    .verify-status__text{font-weight:var(--font-semibold)}
+    .verify-status__sub{font-size:var(--text-sm);color:var(--text-secondary)}
+</style>
+
+<div class="verify">
+    <h1 class="verify__title">&#9989; Verify Group Ownership</h1>
+    <p class="verify__subtitle">Prove you own your group and unlock a verified badge, higher trust score, and better search rankings.</p>
+
+    <div class="verify-benefits">
+        <div class="verify-benefit">
+            <div class="verify-benefit__icon">&#128737;&#65039;</div>
+            <div class="verify-benefit__title">Verified Badge</div>
+            <div class="verify-benefit__desc">Stand out with a verified owner badge on your group listing.</div>
+        </div>
+        <div class="verify-benefit">
+            <div class="verify-benefit__icon">&#128200;</div>
+            <div class="verify-benefit__title">Higher Rankings</div>
+            <div class="verify-benefit__desc">Verified groups get a ranking boost in search results.</div>
+        </div>
+        <div class="verify-benefit">
+            <div class="verify-benefit__icon">&#11088;</div>
+            <div class="verify-benefit__title">Trust Score Boost</div>
+            <div class="verify-benefit__desc">Earn +10 trust score points for verification.</div>
+        </div>
+    </div>
+
+    <div class="verify-card" id="verify-auth-gate">
+        <div style="text-align:center;padding:var(--space-8) 0">
+            <div style="font-size:var(--text-5xl);margin-bottom:var(--space-4)">&#128274;</div>
+            <h3 style="margin-bottom:var(--space-3)">Sign In to Verify</h3>
+            <p style="color:var(--text-secondary);margin-bottom:var(--space-6)">You need to be signed in to verify your groups.</p>
+            <button class="btn btn-primary" onclick="Auth.requireAuth()">Sign In</button>
+        </div>
+    </div>
+
+    <div class="verify-card" id="verify-wizard" style="display:none">
+        <div class="verify-card__title">Verify Your Group</div>
+
+        <!-- Step 1: Select Group -->
+        <div id="verify-step-1">
+            <div class="form-group" style="margin-bottom:var(--space-4)">
+                <label class="form-label" for="verify-group-select">Select a Group to Verify</label>
+                <select class="form-input" id="verify-group-select">
+                    <option value="">Choose a group...</option>
+                </select>
+            </div>
+            <div id="verify-group-status"></div>
+            <button class="btn btn-primary" id="verify-generate-btn" disabled>Generate Verification Code</button>
+        </div>
+
+        <!-- Step 2: Show Code -->
+        <div id="verify-step-2" style="display:none">
+            <ol class="verify-steps">
+                <li class="verify-step">
+                    <div class="verify-step__content">
+                        <div class="verify-step__title">Copy the verification code</div>
+                        <div class="verify-step__desc">Click the code below to copy it to your clipboard.</div>
+                    </div>
+                </li>
+                <li class="verify-step">
+                    <div class="verify-step__content">
+                        <div class="verify-step__title">Post it in your group description</div>
+                        <div class="verify-step__desc">Add this code anywhere in your group's description or about section. You can remove it after verification.</div>
+                    </div>
+                </li>
+                <li class="verify-step">
+                    <div class="verify-step__content">
+                        <div class="verify-step__title">Click "Confirm Verification"</div>
+                        <div class="verify-step__desc">Come back here and confirm once you've posted the code.</div>
+                    </div>
+                </li>
+            </ol>
+            <div class="verify-code" id="verify-code-display" title="Click to copy"></div>
+            <p style="font-size:var(--text-xs);color:var(--text-tertiary);text-align:center;margin-bottom:var(--space-4)" id="verify-expires"></p>
+            <div style="display:flex;gap:var(--space-3);justify-content:center">
+                <button class="btn btn-secondary" id="verify-copy-btn">&#128203; Copy Code</button>
+                <button class="btn btn-primary" id="verify-confirm-btn">&#9989; Confirm Verification</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Success -->
+        <div id="verify-step-3" style="display:none">
+            <div class="verify-status verify-status--verified">
+                <div class="verify-status__icon">&#9989;</div>
+                <div>
+                    <div class="verify-status__text">Group Verified!</div>
+                    <div class="verify-status__sub">Your group is now verified. The badge and ranking boost are active.</div>
+                </div>
+            </div>
+            <p style="color:var(--text-secondary);font-size:var(--text-sm)">You can now remove the verification code from your group description. Your verified status is permanent.</p>
+            <div style="margin-top:var(--space-4)">
+                <a href="/groups/dashboard" class="btn btn-primary">Go to Dashboard</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="verify-card">
+        <div class="verify-card__title">&#128221; How It Works</div>
+        <div id="verify-platform-instructions">
+            <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-3)">
+                <strong>WhatsApp:</strong> Open group &rarr; Tap group name &rarr; Tap "Description" &rarr; Paste code &rarr; Save.
+            </p>
+            <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-3)">
+                <strong>Telegram:</strong> Open group &rarr; Tap group name &rarr; Edit &rarr; "Description" &rarr; Paste code &rarr; Save.
+            </p>
+            <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-3)">
+                <strong>Discord:</strong> Server Settings &rarr; Overview &rarr; "Server Description" or a channel topic &rarr; Paste code &rarr; Save.
+            </p>
+            <p style="color:var(--text-secondary);font-size:var(--text-sm)">
+                <strong>Facebook:</strong> Group Settings &rarr; "Description" &rarr; Paste code &rarr; Save.
+            </p>
+        </div>
+    </div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+    var _verifyGroupId = '';
+    var _verifyCode = '';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        Auth.waitForAuth().then(function() {
+            if (Auth.getUserId()) {
+                document.getElementById('verify-auth-gate').style.display = 'none';
+                document.getElementById('verify-wizard').style.display = 'block';
+                loadVerifyGroups();
+            }
+        });
+
+        document.getElementById('verify-group-select').addEventListener('change', onGroupSelect);
+        document.getElementById('verify-generate-btn').addEventListener('click', generateCode);
+        document.getElementById('verify-copy-btn').addEventListener('click', copyCode);
+        document.getElementById('verify-confirm-btn').addEventListener('click', confirmVerification);
+    });
+
+    async function loadVerifyGroups() {
+        try {
+            var groups = await DB.groups.getByUser(Auth.getUserId());
+            var select = document.getElementById('verify-group-select');
+            (groups || []).forEach(function(g) {
+                var opt = document.createElement('option');
+                opt.value = g.id;
+                opt.textContent = Security.sanitize(g.name || 'Unnamed') + ' (' + (g.platform || 'unknown') + ')';
+                opt.dataset.verified = g.is_verified ? 'true' : 'false';
+                select.appendChild(opt);
+            });
+
+            // Auto-select if group_id is in URL
+            var params = new URLSearchParams(window.location.search);
+            var gid = params.get('group_id');
+            if (gid && select.querySelector('option[value="' + gid + '"]')) {
+                select.value = gid;
+                onGroupSelect();
+            }
+        } catch (e) {
+            console.error('loadVerifyGroups:', e);
+        }
+    }
+
+    async function onGroupSelect() {
+        var groupId = document.getElementById('verify-group-select').value;
+        var statusDiv = document.getElementById('verify-group-status');
+        var generateBtn = document.getElementById('verify-generate-btn');
+
+        if (!groupId) {
+            statusDiv.innerHTML = '';
+            generateBtn.disabled = true;
+            return;
+        }
+
+        _verifyGroupId = groupId;
+        generateBtn.disabled = true;
+        statusDiv.innerHTML = '<div class="skeleton" style="height:48px;border-radius:var(--radius-lg)"></div>';
+
+        try {
+            var res = await fetch('/api/group-verify?group_id=' + encodeURIComponent(groupId) + '&action=status');
+            var json = await res.json();
+
+            if (json.ok && json.data) {
+                if (json.data.is_verified) {
+                    statusDiv.innerHTML = '<div class="verify-status verify-status--verified"><div class="verify-status__icon">&#9989;</div><div><div class="verify-status__text">Already Verified</div><div class="verify-status__sub">This group is verified since ' + (json.data.verified_at ? UI.formatDate(json.data.verified_at) : 'earlier') + '.</div></div></div>';
+                    generateBtn.disabled = true;
+                    return;
+                }
+
+                if (json.data.pending_code) {
+                    _verifyCode = json.data.pending_code;
+                    statusDiv.innerHTML = '<div class="verify-status verify-status--pending"><div class="verify-status__icon">&#9203;</div><div><div class="verify-status__text">Pending Verification</div><div class="verify-status__sub">You have an active code. Post it in your group description and click Confirm.</div></div></div>';
+                    showStep2(json.data.pending_code, json.data.pending_expires_at);
+                    return;
+                }
+            }
+
+            statusDiv.innerHTML = '';
+            generateBtn.disabled = false;
+        } catch (e) {
+            statusDiv.innerHTML = '';
+            generateBtn.disabled = false;
+        }
+    }
+
+    async function generateCode() {
+        var btn = document.getElementById('verify-generate-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="btn-spinner"></span> Generating...';
+
+        try {
+            var token = Auth.getToken();
+            var res = await fetch('/api/group-verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ action: 'generate', group_id: _verifyGroupId })
+            });
+            var json = await res.json();
+
+            if (json.ok && json.data) {
+                _verifyCode = json.data.verification_code;
+                showStep2(json.data.verification_code, json.data.expires_at);
+                UI.toast('Verification code generated!', 'success');
+            } else {
+                UI.toast(json.error || 'Failed to generate code', 'error');
+                btn.disabled = false;
+            }
+        } catch (e) {
+            UI.toast('Failed to generate code', 'error');
+            btn.disabled = false;
+        }
+        btn.innerHTML = 'Generate Verification Code';
+    }
+
+    function showStep2(code, expiresAt) {
+        document.getElementById('verify-step-1').style.display = 'none';
+        document.getElementById('verify-step-2').style.display = 'block';
+        document.getElementById('verify-code-display').textContent = code;
+        if (expiresAt) {
+            document.getElementById('verify-expires').textContent = 'Code expires: ' + UI.formatDate(expiresAt);
+        }
+    }
+
+    function copyCode() {
+        UI.copyToClipboard(_verifyCode);
+        UI.toast('Code copied to clipboard!', 'success');
+    }
+
+    async function confirmVerification() {
+        var btn = document.getElementById('verify-confirm-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="btn-spinner"></span> Verifying...';
+
+        try {
+            var token = Auth.getToken();
+            var res = await fetch('/api/group-verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ action: 'confirm', group_id: _verifyGroupId, code: _verifyCode })
+            });
+            var json = await res.json();
+
+            if (json.ok && json.verified) {
+                document.getElementById('verify-step-2').style.display = 'none';
+                document.getElementById('verify-step-3').style.display = 'block';
+                UI.toast('Group verified successfully!', 'success');
+            } else {
+                UI.toast(json.error || 'Verification failed. Make sure the code is in your group description.', 'error');
+            }
+        } catch (e) {
+            UI.toast('Verification failed. Please try again.', 'error');
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '&#9989; Confirm Verification';
+    }
+</script>
+</Fragment>
+</BaseLayout>

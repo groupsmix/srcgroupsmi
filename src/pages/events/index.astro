@@ -1,0 +1,171 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Community Events & Meetups | GroupsMix"
+  description="Discover upcoming events, meetups, and community gatherings from groups on GroupsMix."
+  canonical="https://groupsmix.com/events"
+  cssFiles={['/assets/css/events.css']}
+>
+
+<div class="events-page">
+    <div class="events-hero">
+        <h1 class="events-hero__title">&#127881; Community Events</h1>
+        <p class="events-hero__subtitle">Discover events, meetups, and gatherings from groups on GroupsMix.</p>
+        <div class="events-hero__actions">
+            <a href="/events/create" class="btn btn-primary">&#10133; Create Event</a>
+        </div>
+    </div>
+
+    <div class="events-filters" id="events-filters">
+        <select class="form-input events-filter" id="filter-event-type">
+            <option value="">All Types</option>
+            <option value="online">&#128187; Online</option>
+            <option value="in_person">&#128205; In Person</option>
+            <option value="hybrid">&#128256; Hybrid</option>
+        </select>
+        <select class="form-input events-filter" id="filter-event-category">
+            <option value="">All Categories</option>
+        </select>
+        <select class="form-input events-filter" id="filter-event-country">
+            <option value="">All Countries</option>
+        </select>
+    </div>
+
+    <div id="events-list">
+        <div class="events-grid">
+            <div class="skeleton skeleton-card" style="height:280px"></div>
+            <div class="skeleton skeleton-card" style="height:280px"></div>
+            <div class="skeleton skeleton-card" style="height:280px"></div>
+            <div class="skeleton skeleton-card" style="height:280px"></div>
+            <div class="skeleton skeleton-card" style="height:280px"></div>
+            <div class="skeleton skeleton-card" style="height:280px"></div>
+        </div>
+    </div>
+
+    <div id="events-pagination" style="margin-top:var(--space-6)"></div>
+</div>
+
+<Fragment slot="scripts">
+<script is:inline>
+    var _eventsPage = 1;
+    var _eventsPerPage = 12;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        populateFilters();
+        loadEvents();
+
+        document.querySelectorAll('.events-filter').forEach(function(el) {
+            el.addEventListener('change', function() { _eventsPage = 1; loadEvents(); });
+        });
+    });
+
+    function populateFilters() {
+        var catSelect = document.getElementById('filter-event-category');
+        CONFIG.categories.forEach(function(c) {
+            var opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.name;
+            catSelect.appendChild(opt);
+        });
+
+        var countrySelect = document.getElementById('filter-event-country');
+        CONFIG.countries.forEach(function(c) {
+            var opt = document.createElement('option');
+            opt.value = c.code;
+            opt.textContent = c.name;
+            countrySelect.appendChild(opt);
+        });
+    }
+
+    async function loadEvents() {
+        var container = document.getElementById('events-list');
+        container.innerHTML = '<div class="events-grid">' +
+            Array(6).fill('<div class="skeleton skeleton-card" style="height:280px"></div>').join('') +
+            '</div>';
+
+        var params = new URLSearchParams();
+        params.set('action', 'list');
+        params.set('limit', _eventsPerPage);
+        params.set('offset', (_eventsPage - 1) * _eventsPerPage);
+
+        var eventType = document.getElementById('filter-event-type').value;
+        var category = document.getElementById('filter-event-category').value;
+        var country = document.getElementById('filter-event-country').value;
+
+        if (eventType) params.set('event_type', eventType);
+        if (category) params.set('category', category);
+        if (country) params.set('country', country);
+
+        try {
+            var res = await fetch('/api/events?' + params.toString());
+            var json = await res.json();
+
+            if (!json.ok || !json.events || !json.events.length) {
+                container.innerHTML =
+                    '<div class="empty-state" style="padding:var(--space-16) 0;text-align:center">' +
+                    '<div style="font-size:var(--text-5xl);margin-bottom:var(--space-4)">&#128197;</div>' +
+                    '<h3 style="margin-bottom:var(--space-3)">No Events Yet</h3>' +
+                    '<p style="color:var(--text-secondary);max-width:400px;margin:0 auto var(--space-6)">Be the first to create a community event!</p>' +
+                    '<a href="/events/create" class="btn btn-primary">&#10133; Create Event</a>' +
+                    '</div>';
+                return;
+            }
+
+            container.innerHTML = '<div class="events-grid">' +
+                json.events.map(function(e) { return eventCard(e); }).join('') +
+                '</div>';
+
+            // Click handlers for event cards
+            container.querySelectorAll('.event-card').forEach(function(card) {
+                card.addEventListener('click', function() {
+                    var eventId = card.dataset.eventId;
+                    if (eventId) window.location.href = '/events/event?id=' + eventId;
+                });
+            });
+
+        } catch (err) {
+            container.innerHTML =
+                '<div class="error-state" style="text-align:center;padding:var(--space-16) 0">' +
+                '<p style="color:var(--text-secondary)">Failed to load events. Please try again.</p>' +
+                '<button class="btn btn-primary" onclick="loadEvents()">Retry</button>' +
+                '</div>';
+        }
+    }
+
+    function eventCard(event) {
+        var startDate = new Date(event.start_date);
+        var month = startDate.toLocaleString('en', { month: 'short' }).toUpperCase();
+        var day = startDate.getDate();
+        var time = startDate.toLocaleString('en', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+        var typeIcons = { online: '&#128187;', in_person: '&#128205;', hybrid: '&#128256;' };
+        var typeLabels = { online: 'Online', in_person: 'In Person', hybrid: 'Hybrid' };
+
+        var verifiedBadge = event.group_is_verified
+            ? ' <span class="event-verified-badge" title="Verified Group">&#9989;</span>'
+            : '';
+
+        return '<div class="event-card" data-event-id="' + event.id + '">' +
+            '<div class="event-card__date-badge">' +
+            '<div class="event-card__month">' + month + '</div>' +
+            '<div class="event-card__day">' + day + '</div>' +
+            '</div>' +
+            '<div class="event-card__body">' +
+            '<div class="event-card__type">' + (typeIcons[event.event_type] || '') + ' ' + (typeLabels[event.event_type] || 'Event') + '</div>' +
+            '<div class="event-card__title">' + Security.sanitize(event.title || 'Untitled Event') + '</div>' +
+            (event.group_name ? '<div class="event-card__group">' + Security.sanitize(event.group_name) + verifiedBadge + '</div>' : '') +
+            '<div class="event-card__meta">' +
+            '<span>' + time + '</span>' +
+            (event.location ? '<span>&#128205; ' + Security.sanitize(event.location) + '</span>' : '') +
+            '</div>' +
+            '<div class="event-card__stats">' +
+            '<span title="Going">&#128101; ' + (event.rsvp_count || 0) + '</span>' +
+            '<span title="Interested">&#11088; ' + (event.interested_count || 0) + '</span>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+    }
+</script>
+</Fragment>
+</BaseLayout>
