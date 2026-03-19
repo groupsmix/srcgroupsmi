@@ -1,0 +1,211 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Group Invite Link Checker — GroupsMix"
+  description="Paste any group invite link and check if it's still active and valid. Supports WhatsApp, Telegram, Discord, and more."
+  canonical="https://groupsmix.com/tools/invite-link-checker"
+>
+<style is:inline>
+        .checker-container { max-width:var(--container-sm);margin:0 auto;padding:var(--space-8) var(--space-4); }
+        .checker-hero { text-align:center;padding:var(--space-8) var(--space-4);background:linear-gradient(135deg,rgba(16,185,129,0.12),rgba(139,92,246,0.1),transparent);border-radius:var(--radius-xl);margin-bottom:var(--space-6);border:1px solid rgba(16,185,129,0.2); }
+        .checker-hero__icon { font-size:56px;margin-bottom:var(--space-3);display:block; }
+        .checker-hero h1 { background:linear-gradient(135deg,#10b981,#8B5CF6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:var(--space-2); }
+        .checker-form { background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5); }
+        .checker-form input[type="url"] { width:100%;height:52px;background:var(--bg-input);border:2px solid var(--border-primary);border-radius:var(--radius-md);padding:0 var(--space-4);color:var(--text-primary);font-size:var(--text-base);transition:all 0.3s; }
+        .checker-form input:focus { border-color:#10b981;box-shadow:0 0 0 4px rgba(16,185,129,0.15);outline:none; }
+        .checker-form input::placeholder { color:var(--text-muted); }
+        .check-btn { width:100%;height:56px;margin-top:var(--space-4);border:none;border-radius:14px;cursor:pointer;font-size:var(--text-lg);font-weight:700;color:#fff;background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 4px 20px rgba(16,185,129,0.4);transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:var(--space-2); }
+        .check-btn:hover { transform:translateY(-2px);box-shadow:0 8px 30px rgba(16,185,129,0.5); }
+        .check-btn:disabled { opacity:0.6;cursor:not-allowed;transform:none; }
+        .checker-loading { display:none;text-align:center;padding:var(--space-8); }
+        .checker-loading__text { font-size:var(--text-base);font-weight:600;color:#10b981;min-height:24px; }
+        .checker-result { display:none;animation:slideUp 0.6s ease; }
+        @keyframes slideUp { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+        .result-card { background:var(--bg-card);border:2px solid var(--border-primary);border-radius:var(--radius-xl);padding:var(--space-6);text-align:center; }
+        .result-card--active { border-color:#10b981;box-shadow:0 0 30px rgba(16,185,129,0.15); }
+        .result-card--expired { border-color:#ef4444;box-shadow:0 0 30px rgba(239,68,68,0.15); }
+        .result-card--unknown { border-color:#f59e0b;box-shadow:0 0 30px rgba(245,158,11,0.15); }
+        .result-card__icon { font-size:64px;margin-bottom:var(--space-3);display:block; }
+        .result-card__status { font-size:var(--text-xl);font-weight:800;margin-bottom:var(--space-2); }
+        .result-card__status--active { color:#10b981; }
+        .result-card__status--expired { color:#ef4444; }
+        .result-card__status--unknown { color:#f59e0b; }
+        .result-card__detail { color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-4);line-height:1.6; }
+        .result-meta { display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-top:var(--space-4);text-align:left; }
+        @media(max-width:500px) { .result-meta { grid-template-columns:1fr; } }
+        .meta-item { background:var(--bg-tertiary);border-radius:var(--radius-md);padding:var(--space-3); }
+        .meta-item__label { font-size:10px;text-transform:uppercase;color:var(--text-tertiary);font-weight:700;margin-bottom:2px; }
+        .meta-item__value { font-size:var(--text-sm);font-weight:600;color:var(--text-primary); }
+        .checker-actions { display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap;margin-top:var(--space-5); }
+        .supported-platforms { display:flex;gap:var(--space-2);flex-wrap:wrap;justify-content:center;margin-top:var(--space-4); }
+        .platform-tag { padding:4px 12px;background:var(--bg-tertiary);border-radius:var(--radius-full);font-size:var(--text-xs);color:var(--text-secondary);font-weight:600; }
+    </style>
+
+
+        <div class="checker-container">
+            <div class="checker-hero">
+                <span class="checker-hero__icon">&#x1F50D;</span>
+                <h1>Group Invite Link Checker</h1>
+                <p style="color:var(--text-secondary)">Paste any group invite link to check if it's still active and valid</p>
+                <div class="supported-platforms">
+                    <span class="platform-tag">WhatsApp</span>
+                    <span class="platform-tag">Telegram</span>
+                    <span class="platform-tag">Discord</span>
+                    <span class="platform-tag">Facebook</span>
+                    <span class="platform-tag">Signal</span>
+                </div>
+            </div>
+            <div class="checker-form" id="input-section">
+                <label class="form-label" style="color:#10b981">Paste the group invite link</label>
+                <input type="url" id="link-input" placeholder="https://chat.whatsapp.com/... or https://t.me/... or https://discord.gg/...">
+                <button class="check-btn" id="check-btn">&#x1F50D; Check Link Now</button>
+            </div>
+            <div class="checker-loading" id="checker-loading">
+                <div style="width:60px;height:60px;margin:0 auto var(--space-4);border:4px solid rgba(16,185,129,0.2);border-top-color:#10b981;border-radius:50%;animation:spin 1s linear infinite;"></div>
+                <div class="checker-loading__text" id="checker-load-text">Checking link status...</div>
+            </div>
+            <div class="checker-result" id="checker-result">
+                <div class="result-card" id="result-card">
+                    <span class="result-card__icon" id="result-icon"></span>
+                    <div class="result-card__status" id="result-status"></div>
+                    <div class="result-card__detail" id="result-detail"></div>
+                    <div class="result-meta" id="result-meta"></div>
+                </div>
+                <div class="checker-actions">
+                    <button class="check-btn" style="width:auto;padding:0 24px;height:48px;font-size:var(--text-base)" id="check-another">&#x1F504; Check Another Link</button>
+                </div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+    (function() {
+        'use strict';
+
+        var platformPatterns = [
+            { name: 'WhatsApp', regex: /chat\.whatsapp\.com\/([A-Za-z0-9_-]+)/i, icon: '\uD83D\uDCAC' },
+            { name: 'Telegram', regex: /t\.me\/(?:joinchat\/)?([A-Za-z0-9_+-]+)/i, icon: '\u2708\uFE0F' },
+            { name: 'Discord', regex: /discord(?:\.gg|\.com\/invite)\/([A-Za-z0-9_-]+)/i, icon: '\uD83C\uDFAE' },
+            { name: 'Facebook', regex: /facebook\.com\/groups\/([A-Za-z0-9_./-]+)/i, icon: '\uD83D\uDC65' },
+            { name: 'Signal', regex: /signal\.group\//i, icon: '\uD83D\uDD12' }
+        ];
+
+        var loadTexts = ['Checking link status...','Verifying invite code...','Analyzing response...'];
+
+        document.getElementById('check-btn').addEventListener('click', checkLink);
+        document.getElementById('link-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') checkLink();
+        });
+        document.getElementById('check-another').addEventListener('click', function() {
+            document.getElementById('checker-result').style.display = 'none';
+            document.getElementById('input-section').style.display = '';
+            document.getElementById('link-input').value = '';
+            document.getElementById('link-input').focus();
+            document.getElementById('input-section').scrollIntoView({behavior:'smooth', block:'start'});
+        });
+
+        async function checkLink() {
+            var url = document.getElementById('link-input').value.trim();
+            if (!url) { UI.toast('Please paste a group invite link.', 'error'); return; }
+            if (!url.match(/^https?:\/\//i)) url = 'https://' + url;
+
+            // Detect platform
+            var platform = null;
+            var inviteCode = '';
+            for (var i = 0; i < platformPatterns.length; i++) {
+                var match = url.match(platformPatterns[i].regex);
+                if (match) {
+                    platform = platformPatterns[i];
+                    inviteCode = match[1] || '';
+                    break;
+                }
+            }
+
+            var btn = document.getElementById('check-btn');
+            btn.disabled = true;
+            document.getElementById('input-section').style.display = 'none';
+            document.getElementById('checker-loading').style.display = 'block';
+            document.getElementById('checker-result').style.display = 'none';
+            document.getElementById('checker-loading').scrollIntoView({behavior:'smooth', block:'start'});
+
+            var msgIdx = 0;
+            var loadEl = document.getElementById('checker-load-text');
+            var msgInt = setInterval(function() {
+                msgIdx = (msgIdx + 1) % loadTexts.length;
+                loadEl.textContent = loadTexts[msgIdx];
+            }, 1200);
+
+            try {
+                var res = await fetch('/api/check-link', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+                if (!res.ok) throw new Error('API unavailable');
+                var data = await res.json();
+                renderResult(data, platform, inviteCode, url);
+            } catch (err) {
+                // Fallback: client-side check via HEAD request or pattern analysis
+                var status = 'unknown';
+                var detail = 'Could not verify the link. The API is currently unavailable. Try opening the link directly.';
+                if (platform) {
+                    detail = platform.name + ' invite link detected (code: ' + (inviteCode || 'N/A') + '). Open the link to verify manually.';
+                    status = 'unknown';
+                } else {
+                    detail = 'This URL does not match any known group invite link pattern. Make sure you pasted a valid invite link.';
+                    status = 'expired';
+                }
+                renderResult({ status: status, detail: detail }, platform, inviteCode, url);
+            } finally {
+                clearInterval(msgInt);
+                document.getElementById('checker-loading').style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+
+        function renderResult(data, platform, code, url) {
+            var card = document.getElementById('result-card');
+            var icon = document.getElementById('result-icon');
+            var statusEl = document.getElementById('result-status');
+            var detailEl = document.getElementById('result-detail');
+            var metaEl = document.getElementById('result-meta');
+
+            card.className = 'result-card';
+            var status = (data.status || 'unknown').toLowerCase();
+
+            if (status === 'active' || status === 'valid') {
+                card.classList.add('result-card--active');
+                icon.textContent = '\u2705';
+                statusEl.textContent = 'Link is Active';
+                statusEl.className = 'result-card__status result-card__status--active';
+            } else if (status === 'expired' || status === 'invalid' || status === 'revoked') {
+                card.classList.add('result-card--expired');
+                icon.textContent = '\u274C';
+                statusEl.textContent = 'Link is Expired or Invalid';
+                statusEl.className = 'result-card__status result-card__status--expired';
+            } else {
+                card.classList.add('result-card--unknown');
+                icon.textContent = '\u2753';
+                statusEl.textContent = 'Status Unknown';
+                statusEl.className = 'result-card__status result-card__status--unknown';
+            }
+
+            detailEl.textContent = data.detail || data.message || 'Check completed.';
+
+            var metaHtml = '';
+            metaHtml += '<div class="meta-item"><div class="meta-item__label">Platform</div><div class="meta-item__value">' + (platform ? platform.icon + ' ' + platform.name : 'Unknown') + '</div></div>';
+            metaHtml += '<div class="meta-item"><div class="meta-item__label">Invite Code</div><div class="meta-item__value">' + Security.sanitize(code || 'N/A') + '</div></div>';
+            if (data.group_name) metaHtml += '<div class="meta-item"><div class="meta-item__label">Group Name</div><div class="meta-item__value">' + Security.sanitize(data.group_name) + '</div></div>';
+            if (data.member_count) metaHtml += '<div class="meta-item"><div class="meta-item__label">Members</div><div class="meta-item__value">' + data.member_count + '</div></div>';
+            metaEl.innerHTML = metaHtml;
+
+            document.getElementById('checker-result').style.display = 'block';
+            document.getElementById('input-section').style.display = '';
+            document.getElementById('checker-result').scrollIntoView({behavior:'smooth', block:'start'});
+            UI.toast('Link check complete!', 'success');
+        }
+    })();
+    </script>
+</Fragment>
+</BaseLayout>

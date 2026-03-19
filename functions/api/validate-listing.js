@@ -54,41 +54,50 @@ function checkRateLimit(ip) {
     return true;
 }
 
-/* ── Blocked keywords — explicitly prohibited items ──────────────── */
-const BLOCKED_KEYWORDS = [
-    'sell account', 'buy account', 'account for sale', 'selling account',
-    'followers for sale', 'buy followers', 'sell followers',
-    'subscribers for sale', 'buy subscribers', 'sell subscribers',
-    'hacked', 'stolen', 'cracked', 'leaked credentials',
-    'pre-built audience', 'aged account', 'verified account for sale',
-    'facebook account', 'instagram account', 'tiktok account',
-    'youtube account', 'twitter account', 'snapchat account',
-    'sell channel', 'buy channel', 'channel for sale',
-    'sell group', 'buy group', 'group for sale',
-    'sell page', 'buy page', 'page for sale',
-    'حساب للبيع', 'بيع حساب', 'شراء حساب', 'متابعين للبيع',
-    'بيع قناة', 'شراء قناة', 'بيع قروب', 'شراء قروب'
+/* ── Banned keywords — auto-reject listings containing these ────── */
+const BANNED_KEYWORDS = [
+    'account', 'followers', 'subscribers', 'verified badge',
+    'hacked', 'cracked', 'leaked', 'stolen',
+    'login', 'password', 'credentials',
+    'exploit', 'crack', 'nulled', 'warez', 'pirated'
 ];
 
-/* ── Allowed digital product keywords for fast pre-check ─────────── */
-const DIGITAL_PRODUCT_KEYWORDS = [
-    'template', 'bot', 'script', 'tool', 'plugin', 'extension',
-    'guide', 'ebook', 'tutorial', 'course', 'playbook',
-    'automation', 'workflow', 'zapier', 'n8n', 'make',
-    'design', 'banner', 'sticker', 'logo', 'graphic', 'icon',
-    'dashboard', 'analytics', 'report', 'spreadsheet',
-    'welcome pack', 'rules template', 'onboarding', 'content calendar',
-    'source code', 'api', 'integration', 'webhook',
-    'moderation', 'management', 'community tool',
-    'قالب', 'بوت', 'أداة', 'دليل', 'كتاب', 'تصميم', 'سكربت'
-];
-
-function quickBlockedCheck(text) {
-    const lower = text.toLowerCase();
-    return BLOCKED_KEYWORDS.some(kw => lower.includes(kw));
+/**
+ * Check text for banned keywords.
+ * Returns { banned: boolean, keyword: string } if found.
+ */
+function checkBannedKeywords(text) {
+    const lower = (text || '').toLowerCase();
+    for (const kw of BANNED_KEYWORDS) {
+        if (lower.includes(kw)) {
+            return { banned: true, keyword: kw };
+        }
+    }
+    return { banned: false, keyword: '' };
 }
 
-function quickDigitalProductCheck(text) {
+/* ── Valid digital product categories ─────────────────────────────── */
+const VALID_CATEGORIES = ['templates', 'bots', 'scripts', 'design_assets', 'guides', 'tools'];
+
+/* ── Digital product keywords for fast pre-check ──────────────────── */
+const DIGITAL_PRODUCT_KEYWORDS = [
+    'template', 'bot', 'script', 'design', 'asset', 'guide', 'tool',
+    'plugin', 'extension', 'theme', 'widget', 'module', 'component',
+    'automation', 'workflow', 'dashboard', 'api', 'integration',
+    'code', 'software', 'app', 'utility', 'resource', 'kit',
+    'graphic', 'icon', 'font', 'mockup', 'ui', 'ux', 'layout',
+    'tutorial', 'ebook', 'course', 'checklist', 'framework',
+    'library', 'snippet', 'preset', 'filter', 'overlay',
+    'whatsapp', 'telegram', 'discord', 'facebook', 'youtube', 'tiktok',
+    'twitter', 'instagram', 'snapchat', 'reddit', 'linkedin',
+    'twitch', 'kick', 'signal',
+    'channel', 'group', 'page', 'members', 'community', 'social media',
+    'social', 'influencer', 'content creator', 'streamer', 'server', 'guild',
+    'قناة', 'قروب', 'مجموعة', 'حساب', 'متابعين', 'مشتركين',
+    'تواصل اجتماعي', 'سوشيال ميديا'
+];
+
+function quickContentCheck(text) {
     const lower = text.toLowerCase();
     return DIGITAL_PRODUCT_KEYWORDS.some(kw => lower.includes(kw));
 }
@@ -139,26 +148,28 @@ export async function onRequest(context) {
 
     const combined = title + ' ' + description;
 
-    // Quick block check — if listing contains prohibited keywords, reject immediately
-    if (quickBlockedCheck(combined)) {
+    // Feature 5: Banned keywords filter — reject immediately
+    const bannedCheck = checkBannedKeywords(combined);
+    if (bannedCheck.banned) {
         return new Response(
             JSON.stringify({
                 valid: false,
-                message: 'This listing appears to sell accounts, followers, or credentials. Only digital products (templates, tools, guides, etc.) are allowed.'
+                flagged: true,
+                message: 'Listing rejected: contains banned keyword "' + bannedCheck.keyword + '". This type of content is not allowed on our marketplace.'
             }),
             { status: 200, headers: corsHeaders(origin) }
         );
     }
 
-    // Quick keyword check — if clearly a digital product, allow immediately
-    if (quickDigitalProductCheck(combined)) {
+    // Quick keyword check — if clearly a valid digital product, allow immediately
+    if (quickContentCheck(combined)) {
         return new Response(
-            JSON.stringify({ valid: true, message: '' }),
+            JSON.stringify({ valid: true, flagged: false, message: '' }),
             { status: 200, headers: corsHeaders(origin) }
         );
     }
 
-    // Use AI to validate if content is a legitimate digital product
+    // Feature 3: AI auto-scan — validate content with AI before going live
     const apiKey = context.env?.OPENROUTER_API_KEY || '';
     if (!apiKey) {
         // No API key configured — allow submission (graceful degradation)
@@ -170,30 +181,23 @@ export async function onRequest(context) {
     }
 
     try {
-        const prompt = `You are a content filter for a digital products marketplace. Users can ONLY sell digital products such as:
-- Bot templates & source code (Telegram, Discord, WhatsApp, Slack bots)
-- Design templates (banners, sticker packs, welcome images, logos)
-- Community growth guides & ebooks
-- Automation workflows (Zapier templates, n8n flows, Make scenarios)
-- Group management tools & scripts
-- Premium content packs (welcome packs, rules templates, onboarding kits, content calendars)
-- Analytics dashboards & reporting templates
-- API integrations & webhooks
-- Any other digital tool, template, or educational content
+        const prompt = `You are a content filter for a trusted digital products marketplace. We ONLY allow these product types: templates, bots, scripts, design assets, guides, and tools.
 
-EXPLICITLY BLOCKED (must reject):
-- Social media accounts (YouTube, Facebook, Instagram, TikTok, Twitter, Snapchat, etc.)
-- Pre-built audiences or follower/subscriber lists
-- Hacked, stolen, or cracked credentials
-- Any listing that sells access to an existing account, channel, group, or page
+We strictly PROHIBIT:
+- Selling social media accounts, followers, subscribers, or engagement
+- Hacked, cracked, leaked, stolen, or pirated content
+- Login credentials, passwords, or exploits
+- Any form of fraud, scam, or illegal activity
 
-Analyze this listing and determine if it is a legitimate digital product:
+Analyze this listing and determine:
+1. Is it a legitimate digital product (template, bot, script, design asset, guide, or tool)?
+2. Does it contain any suspicious or scam-like content?
 
 Title: ${title}
 Description: ${description}
 
 Respond with ONLY a JSON object (no markdown, no extra text):
-{"is_digital_product": true/false, "reason": "brief explanation"}`;
+{"is_valid_product": true/false, "is_suspicious": true/false, "reason": "brief explanation"}`;
 
         const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
@@ -232,26 +236,39 @@ Respond with ONLY a JSON object (no markdown, no extra text):
         } catch {
             // If parsing fails, check for keywords in raw response
             const lower = content.toLowerCase();
-            if (lower.includes('"is_digital_product": true') || lower.includes('"is_digital_product":true')) {
-                result = { is_digital_product: true };
-            } else if (lower.includes('"is_digital_product": false') || lower.includes('"is_digital_product":false')) {
-                result = { is_digital_product: false };
+            if (lower.includes('"is_valid_product": true') || lower.includes('"is_valid_product":true')) {
+                result = { is_valid_product: true, is_suspicious: false };
+            } else if (lower.includes('"is_valid_product": false') || lower.includes('"is_valid_product":false')) {
+                result = { is_valid_product: false, is_suspicious: true };
             } else {
-                // Cannot parse — allow submission
-                result = { is_digital_product: true };
+                // Cannot parse — allow submission (graceful degradation)
+                result = { is_valid_product: true, is_suspicious: false };
             }
         }
 
-        if (result.is_digital_product) {
+        // Feature 3: Flagged listings go to manual review
+        if (result.is_suspicious) {
             return new Response(
-                JSON.stringify({ valid: true, message: '' }),
+                JSON.stringify({
+                    valid: false,
+                    flagged: true,
+                    message: 'This listing has been flagged for manual review. ' + (result.reason || 'Our AI detected suspicious content.')
+                }),
+                { status: 200, headers: corsHeaders(origin) }
+            );
+        }
+
+        if (result.is_valid_product) {
+            return new Response(
+                JSON.stringify({ valid: true, flagged: false, message: '' }),
                 { status: 200, headers: corsHeaders(origin) }
             );
         } else {
             return new Response(
                 JSON.stringify({
                     valid: false,
-                    message: 'Only digital products are allowed (templates, tools, guides, automation workflows, etc.). Selling accounts, followers, or credentials is not permitted.'
+                    flagged: false,
+                    message: 'We only accept digital products: templates, bots, scripts, design assets, guides, and tools. ' + (result.reason || '')
                 }),
                 { status: 200, headers: corsHeaders(origin) }
             );

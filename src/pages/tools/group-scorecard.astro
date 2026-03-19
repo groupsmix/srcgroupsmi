@@ -2,9 +2,9 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 <BaseLayout
-  title="AI Group DNA Analyzer — GroupsMix"
-  description="Extract your group's DNA with AI. Get a beautiful ID card with personality analysis, radar chart, and actionable tips."
-  canonical="https://groupsmix.com/tools/group-health-analyzer"
+  title="AI Group Score Card — GroupsMix"
+  description="Get your group's personality score card with AI. Radar chart, identity analysis, and actionable tips — all in one card."
+  canonical="https://groupsmix.com/tools/group-scorecard"
 >
 <style is:inline>
         .dna-bg { position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden; }
@@ -59,8 +59,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <div class="dna-container">
             <div class="dna-hero">
                 <span class="dna-hero__icon">&#x1F9EC;</span>
-                <h1>AI Group DNA Analyzer</h1>
-                <p style="color:var(--text-secondary)">Extract the unique DNA of your group and get its identity card</p>
+                <h1>AI Group Score Card</h1>
+                <p style="color:var(--text-secondary)">Get your group's personality score card with radar chart and identity analysis</p>
             </div>
             <div class="glass-input-wrap" id="input-section">
                 <label style="font-weight:600;font-size:var(--text-sm);color:#a78bfa;display:block;margin-bottom:var(--space-2)">Group Name &amp; Description</label>
@@ -101,7 +101,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             <div class="dna-result" id="dna-result">
                 <div class="id-card" id="id-card">
                     <div class="id-card__header">
-                        <div class="id-card__header-title">&#x1F9EC; Group DNA Card</div>
+                        <div class="id-card__header-title">&#x1F9EC; Group Score Card</div>
                         <div class="id-card__header-badge">GroupsMix AI</div>
                     </div>
                     <div class="id-card__body">
@@ -175,12 +175,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             var t = document.getElementById('card-title').textContent;
             var s = document.getElementById('card-subtitle').textContent;
             var tip = document.getElementById('card-tip').textContent;
-            UI.copyToClipboard('Group DNA: ' + t + '\n' + s + '\nTip: ' + tip + '\n\nAnalyzed by GroupsMix AI - groupsmix.com/tools/group-health-analyzer');
+            UI.copyToClipboard('Group Score Card: ' + t + '\n' + s + '\nTip: ' + tip + '\n\nAnalyzed by GroupsMix AI - groupsmix.com/tools/group-scorecard');
         });
         document.getElementById('share-wa').addEventListener('click', function() {
             var t = document.getElementById('card-title').textContent;
             var s = document.getElementById('card-subtitle').textContent;
-            var text = encodeURIComponent('Our group DNA:\n\n' + t + '\n' + s + '\n\nGet yours: https://groupsmix.com/tools/group-health-analyzer');
+            var text = encodeURIComponent('Our Group Score Card:\n\n' + t + '\n' + s + '\n\nGet yours: https://groupsmix.com/tools/group-scorecard');
             window.open('https://wa.me/?text=' + text, '_blank');
         });
 

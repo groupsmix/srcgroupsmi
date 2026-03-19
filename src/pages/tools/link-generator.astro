@@ -2,8 +2,8 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 <BaseLayout
-  title="Link Shortener &amp; QR Generator — GroupsMix"
-  description="Shorten your group links and generate beautiful QR codes. Clean URLs and premium QR codes for your community."
+  title="Link Shortener + QR Code — GroupsMix"
+  description="Shorten invite links, generate QR codes, and view click analytics inline. All-in-one link management for group admins."
   canonical="https://groupsmix.com/tools/link-generator"
 >
 <style is:inline>
@@ -42,6 +42,25 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         .wa-share-btn { height:40px;padding:0 16px;border-radius:10px;font-weight:600;font-size:var(--text-sm);background:#25D366;color:#fff;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;gap:var(--space-1); }
         .wa-share-btn:hover { background:#128C7E; }
         .link-actions { display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap;margin-top:var(--space-5); }
+
+        .analytics-inline { margin-top:var(--space-5);background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-5);display:none;animation:slideUp 0.6s ease; }
+        .analytics-inline__title { font-size:var(--text-sm);font-weight:700;color:var(--text-secondary);margin-bottom:var(--space-3);display:flex;align-items:center;gap:var(--space-2); }
+        .stats-row { display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin-bottom:var(--space-4); }
+        @media(max-width:600px) { .stats-row { grid-template-columns:repeat(2,1fr); } }
+        .mini-stat { background:var(--bg-tertiary);border-radius:var(--radius-md);padding:var(--space-3);text-align:center; }
+        .mini-stat__val { font-size:var(--text-lg);font-weight:800;color:var(--text-primary); }
+        .mini-stat__lbl { font-size:10px;color:var(--text-tertiary);text-transform:uppercase;margin-top:2px; }
+        .breakdown-list { list-style:none;padding:0;margin:0; }
+        .breakdown-item { display:flex;justify-content:space-between;align-items:center;padding:var(--space-2) 0;border-bottom:1px solid var(--border-primary); }
+        .breakdown-item:last-child { border-bottom:none; }
+        .breakdown-item__name { font-size:var(--text-sm); }
+        .breakdown-item__bar { flex:1;margin:0 var(--space-3);height:6px;background:var(--bg-tertiary);border-radius:var(--radius-full);overflow:hidden; }
+        .breakdown-item__fill { height:100%;background:var(--gradient-accent);border-radius:var(--radius-full);transition:width .5s ease; }
+        .breakdown-item__count { font-size:var(--text-sm);font-weight:600;min-width:30px;text-align:right; }
+        .analytics-grid { display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4); }
+        @media(max-width:600px) { .analytics-grid { grid-template-columns:1fr; } }
+        .analytics-block { margin-bottom:var(--space-3); }
+        .analytics-block__title { font-size:var(--text-xs);font-weight:700;color:var(--accent-primary);margin-bottom:var(--space-2); }
     </style>
 
 
@@ -80,6 +99,20 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                         <div class="qr-actions">
                             <button class="qr-dl-btn" id="dl-qr">&#x1F4E5; Download QR</button>
                             <button class="wa-share-btn" id="share-wa">&#x1F4AC; Share</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="analytics-inline" class="analytics-inline">
+                    <div class="analytics-inline__title">&#x1F4CA; Link Analytics</div>
+                    <div class="stats-row" id="inline-stats"></div>
+                    <div class="analytics-grid">
+                        <div class="analytics-block">
+                            <div class="analytics-block__title">&#x1F30D; Top Countries</div>
+                            <ul class="breakdown-list" id="inline-countries"></ul>
+                        </div>
+                        <div class="analytics-block">
+                            <div class="analytics-block__title">&#x1F4F1; Devices</div>
+                            <ul class="breakdown-list" id="inline-devices"></ul>
                         </div>
                     </div>
                 </div>
@@ -161,6 +194,48 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             document.getElementById('link-result').scrollIntoView({behavior:'smooth', block:'start'});
             btn.disabled = false;
             UI.toast('Link & QR generated!', 'success');
+
+            // Auto-load inline analytics
+            loadInlineAnalytics(currentShortUrl);
+        }
+
+        async function loadInlineAnalytics(shortUrl) {
+            var code = '';
+            try {
+                var parts = shortUrl.split('/');
+                code = parts[parts.length - 1] || '';
+            } catch(e) { return; }
+            if (!code) return;
+            try {
+                var res = await fetch('/api/link-analytics?code=' + encodeURIComponent(code) + '&days=30&detail=clicks');
+                var json = await res.json();
+                if (!json.ok || !json.data) return;
+                var data = json.data;
+                var link = data.link || {};
+                // Stats row
+                document.getElementById('inline-stats').innerHTML =
+                    miniStat(link.total_clicks || 0, 'Total Clicks') +
+                    miniStat(data.period_clicks || 0, 'Last 30d') +
+                    miniStat(data.countries ? data.countries.length : 0, 'Countries') +
+                    miniStat(data.devices ? data.devices.length : 0, 'Devices');
+                renderBreakdown('inline-countries', data.countries || []);
+                renderBreakdown('inline-devices', data.devices || []);
+                document.getElementById('analytics-inline').style.display = 'block';
+            } catch(e) { /* analytics optional */ }
+        }
+
+        function miniStat(val, label) {
+            return '<div class="mini-stat"><div class="mini-stat__val">' + val + '</div><div class="mini-stat__lbl">' + label + '</div></div>';
+        }
+
+        function renderBreakdown(id, items) {
+            var el = document.getElementById(id);
+            if (!items.length) { el.innerHTML = '<li style="padding:var(--space-2);color:var(--text-tertiary);font-size:var(--text-xs)">No data yet</li>'; return; }
+            var max = items[0].count;
+            el.innerHTML = items.slice(0, 5).map(function(item) {
+                var pct = max > 0 ? (item.count / max * 100) : 0;
+                return '<li class="breakdown-item"><span class="breakdown-item__name">' + Security.sanitize(item.name) + '</span><span class="breakdown-item__bar"><span class="breakdown-item__fill" style="width:' + pct + '%"></span></span><span class="breakdown-item__count">' + item.count + '</span></li>';
+            }).join('');
         }
 
         function generateClientShort(url, slug) {

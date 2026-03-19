@@ -110,6 +110,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             html += '<div class="profile-header__info">';
             html += '<h1 class="profile-header__name">' + Security.sanitize(g.name || 'Unnamed Group');
             if (tier !== 'none') html += ' ' + UI.trustBadge(tier);
+            if (g.is_verified) html += ' ' + UI.trustBadge('owner_verified');
+            var healthData = (typeof GroupHealth !== 'undefined') ? GroupHealth.getCachedStatus(g.id) : null;
+            if (healthData) html += ' ' + GroupHealth.healthBadge(healthData.status);
             html += '</h1>';
             html += '<div class="profile-header__platform">' + (platform ? platform.emoji + ' ' + Security.sanitize(platform.name) : '') +
                 (category ? ' &middot; ' + category.emoji + ' ' + Security.sanitize(category.name) : '') +
@@ -260,6 +263,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 html += '<div class="profile-section__title">&#128295; Group Owner Tools</div>';
                 html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-3)">';
                 html += '<a href="/tools/embed-widget?group_id=' + encodeURIComponent(group.id) + '" style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);border-radius:var(--radius-lg);border:1px solid var(--border-primary);text-decoration:none;color:var(--text-primary);transition:all .2s"><span style="font-size:var(--text-xl)">&#128296;</span><span style="font-size:var(--text-sm)">Get Embed Widget</span></a>';
+                html += '<a href="/tools/review-widget?group_id=' + encodeURIComponent(group.id) + '" style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);border-radius:var(--radius-lg);border:1px solid var(--border-primary);text-decoration:none;color:var(--text-primary);transition:all .2s"><span style="font-size:var(--text-xl)">&#11088;</span><span style="font-size:var(--text-sm)">Embed Reviews</span></a>';
+                html += '<a href="/compare?ids=' + encodeURIComponent(group.id) + '" style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);border-radius:var(--radius-lg);border:1px solid var(--border-primary);text-decoration:none;color:var(--text-primary);transition:all .2s"><span style="font-size:var(--text-xl)">&#9878;</span><span style="font-size:var(--text-sm)">Compare Groups</span></a>';
                 html += '<a href="/groups/dashboard?group_id=' + encodeURIComponent(group.id) + '" style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);border-radius:var(--radius-lg);border:1px solid var(--border-primary);text-decoration:none;color:var(--text-primary);transition:all .2s"><span style="font-size:var(--text-xl)">&#128200;</span><span style="font-size:var(--text-sm)">Owner Dashboard</span></a>';
                 html += '<a href="/tools/bot-setup?group_id=' + encodeURIComponent(group.id) + '" style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);border-radius:var(--radius-lg);border:1px solid var(--border-primary);text-decoration:none;color:var(--text-primary);transition:all .2s"><span style="font-size:var(--text-xl)">&#129302;</span><span style="font-size:var(--text-sm)">Connect Bot</span></a>';
                 html += '<a href="/referral" style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);border-radius:var(--radius-lg);border:1px solid var(--border-primary);text-decoration:none;color:var(--text-primary);transition:all .2s"><span style="font-size:var(--text-xl)">&#127873;</span><span style="font-size:var(--text-sm)">Referral Program</span></a>';

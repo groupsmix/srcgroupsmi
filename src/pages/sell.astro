@@ -94,48 +94,35 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             width: 32px;
             height: 32px;
         }
-        .platform-selector {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: var(--space-2);
-            margin-bottom: var(--space-4);
+        .sell-verification-banner {
+            padding: var(--space-4);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--space-6);
+            font-size: var(--text-sm);
+            line-height: 1.6;
         }
-        .platform-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: var(--space-1);
-            padding: var(--space-3) var(--space-2);
-            border: 2px solid var(--border-primary);
-            border-radius: var(--radius-md);
+        .sell-verification-banner--ok {
+            background: var(--success-light);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+        .sell-verification-banner--error {
+            background: var(--error-light);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+        .sell-trust-info {
             background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            margin-bottom: var(--space-6);
+            font-size: var(--text-sm);
             color: var(--text-secondary);
-            cursor: pointer;
-            font-size: var(--text-xs);
-            transition: all 0.2s ease;
+            line-height: 1.6;
         }
-        .platform-btn:hover {
-            border-color: var(--accent-primary);
+        .sell-trust-info strong {
             color: var(--text-primary);
-        }
-        .platform-btn--active {
-            border-color: var(--accent-primary);
-            background: var(--accent-primary-light, rgba(99,102,241,0.08));
-            color: var(--accent-primary);
-        }
-        .platform-btn svg {
-            width: 24px;
-            height: 24px;
-        }
-        .custom-platform-input {
-            margin-top: var(--space-2);
-        }
-        .custom-platform-input .form-input {
-            margin-bottom: var(--space-1);
-        }
-        .custom-platform-hint {
-            color: var(--text-tertiary);
-            font-size: var(--text-xs);
         }
         .ai-checking {
             display: flex;
@@ -171,7 +158,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.2em;height:1.2em;vertical-align:-0.125em"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
                 Sell on Marketplace
             </h1>
-            <p style="text-align:center;color:var(--text-secondary);margin-bottom:var(--space-8)">List your digital product — bot templates, design assets, guides, automation workflows, or tools. Earn GMX Coins!</p>
+            <p style="text-align:center;color:var(--text-secondary);margin-bottom:var(--space-8)">List your digital product — templates, bots, scripts, design assets, guides &amp; tools</p>
 
             <div class="sell-steps" id="sell-steps">
                 <div class="sell-step sell-step--active" id="sell-step-1">1. Details</div>
@@ -183,19 +170,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <form id="sell-form" novalidate>
                     <!-- Step 1: Details -->
                     <div id="sell-s1">
+                        <div id="sell-verification-status"></div>
+                        <div class="sell-trust-info">
+                            <strong>Trusted Marketplace</strong><br>
+                            All listings are scanned by AI before going live. Payments use escrow (buyer confirms delivery before seller gets coins). Buyers can dispute within 24h if product doesn't match description.
+                        </div>
                         <div class="form-group">
-                            <label class="form-label">Category *</label>
+                            <label class="form-label">Product Category *</label>
                             <div class="category-selector" id="category-selector"></div>
                             <input type="hidden" id="sell-category" required>
-                        </div>
-                        <div class="form-group" id="platform-group" style="display:none">
-                            <label class="form-label">Platform *</label>
-                            <div class="platform-selector" id="platform-selector"></div>
-                            <div id="custom-platform-wrapper" class="custom-platform-input" style="display:none">
-                                <input type="text" class="form-input" id="sell-custom-platform" placeholder="Enter product type (e.g. Chrome Extension, WordPress Plugin)" maxlength="50">
-                                <div class="custom-platform-hint">Type a digital product type. AI will verify it.</div>
-                            </div>
-                            <input type="hidden" id="sell-platform" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="sell-title">Title *</label>
@@ -239,8 +222,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                             <div style="font-size:var(--text-4xl);margin-bottom:var(--space-4)">
                                 <svg class="svg-icon svg-icon--xl" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:2em;height:2em;color:var(--success)"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                             </div>
-                            <h2>Listing Published!</h2>
-                            <p style="color:var(--text-secondary);margin:var(--space-4) 0">Your listing is now live on the marketplace.</p>
+                            <h2>Listing Submitted!</h2>
+                            <p style="color:var(--text-secondary);margin:var(--space-4) 0">Your listing is being reviewed by our AI trust system. It will go live once approved.</p>
                             <div style="display:flex;gap:var(--space-3);justify-content:center;margin-top:var(--space-6)">
                                 <a href="/sell" class="btn btn-secondary">Create Another</a>
                                 <a href="/marketplace" class="btn btn-primary">View Marketplace</a>
@@ -255,12 +238,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 <script is:inline>
     document.addEventListener('DOMContentLoaded', initSellPage);
 
-    var sellData = { platform: '', category: '', custom_platform: '', title: '', description: '', price: 0, contact_link: '' };
+    var sellData = { platform: '', category: '', title: '', description: '', price: 0, contact_link: '' };
 
     async function initSellPage() {
         // Require authentication
         await Auth.waitForAuth();
         if (!Auth.requireAuth()) return;
+
+        // Feature 1: Check seller verification status
+        await checkAndShowVerification();
 
         renderCategorySelector();
         document.getElementById('sell-description').addEventListener('input', function() {
@@ -269,6 +255,25 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         document.getElementById('sell-next-btn').addEventListener('click', goToPreview);
         document.getElementById('sell-back-btn').addEventListener('click', goBack);
         document.getElementById('sell-form').addEventListener('submit', submitListing);
+    }
+
+    async function checkAndShowVerification() {
+        var statusEl = document.getElementById('sell-verification-status');
+        if (!statusEl) return;
+        var result = await Marketplace.checkSellerVerification();
+        if (result.verified) {
+            statusEl.innerHTML = '<div class="sell-verification-banner sell-verification-banner--ok">' +
+                '<svg style="width:16px;height:16px;vertical-align:-2px;margin-right:4px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
+                '<strong>Verified Seller</strong> &mdash; Your email and phone are verified. You can list products.</div>';
+        } else {
+            statusEl.innerHTML = '<div class="sell-verification-banner sell-verification-banner--error">' +
+                '<svg style="width:16px;height:16px;vertical-align:-2px;margin-right:4px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' +
+                '<strong>Verification Required</strong> &mdash; ' + Security.sanitize(result.reason) +
+                ' <a href="/settings" style="color:inherit;text-decoration:underline;font-weight:600">Go to Settings</a></div>';
+            // Disable the submit button
+            var nextBtn = document.getElementById('sell-next-btn');
+            if (nextBtn) { nextBtn.disabled = true; nextBtn.style.opacity = '0.5'; }
+        }
     }
 
     function renderCategorySelector() {
@@ -288,60 +293,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 var catId = btn.dataset.category;
                 document.getElementById('sell-category').value = catId;
                 sellData.category = catId;
-                sellData.platform = '';
-                sellData.custom_platform = '';
-                document.getElementById('sell-platform').value = '';
-                var customInput = document.getElementById('sell-custom-platform');
-                if (customInput) customInput.value = '';
-                renderPlatformSelector(catId);
-            });
-        });
-    }
-
-    function renderPlatformSelector(categoryId) {
-        var group = document.getElementById('platform-group');
-        var container = document.getElementById('platform-selector');
-        var customWrapper = document.getElementById('custom-platform-wrapper');
-        if (!group || !container) return;
-
-        group.style.display = '';
-
-        if (categoryId === 'other') {
-            // Show only the custom platform text input
-            container.innerHTML = '';
-            if (customWrapper) customWrapper.style.display = '';
-            // Set platform to the custom text value
-            var customInput = document.getElementById('sell-custom-platform');
-            if (customInput) {
-                customInput.addEventListener('input', function() {
-                    var val = this.value.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
-                    document.getElementById('sell-platform').value = val || 'other';
-                    sellData.platform = val || 'other';
-                    sellData.custom_platform = this.value.trim();
-                });
-            }
-            return;
-        }
-
-        if (customWrapper) customWrapper.style.display = 'none';
-        var platforms = Marketplace.getMarketplacePlatforms(categoryId);
-        if (!platforms.length) {
-            container.innerHTML = '<p style="color:var(--text-tertiary);font-size:var(--text-sm)">No platforms in this category.</p>';
-            return;
-        }
-        container.innerHTML = platforms.map(function(p) {
-            return '<button type="button" class="platform-btn" data-platform="' + p.id + '">' +
-                p.icon +
-                '<span>' + p.name + '</span>' +
-                '</button>';
-        }).join('');
-        container.querySelectorAll('.platform-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                container.querySelectorAll('.platform-btn').forEach(function(b) { b.classList.remove('platform-btn--active'); });
-                btn.classList.add('platform-btn--active');
-                document.getElementById('sell-platform').value = btn.dataset.platform;
-                sellData.platform = btn.dataset.platform;
-                sellData.custom_platform = '';
             });
         });
     }
@@ -349,43 +300,38 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     async function goToPreview() {
         // Validate fields
         var category = document.getElementById('sell-category').value;
-        var platform = document.getElementById('sell-platform').value;
-        var customPlatform = (document.getElementById('sell-custom-platform') || {}).value || '';
         var title = document.getElementById('sell-title').value.trim();
         var description = document.getElementById('sell-description').value.trim();
         var price = document.getElementById('sell-price').value;
         var contact = document.getElementById('sell-contact').value.trim();
 
-        if (!category) { UI.toast('Please select a category', 'error'); return; }
-        if (!platform && category !== 'other') { UI.toast('Please select a product type', 'error'); return; }
-        if (category === 'other' && !customPlatform.trim()) { UI.toast('Please enter a product type', 'error'); return; }
+        if (!category) { UI.toast('Please select a product category', 'error'); return; }
+        if (!Marketplace.isValidCategory(category)) { UI.toast('Please select a valid product category', 'error'); return; }
         if (!title || title.length < 5) { UI.toast('Title must be at least 5 characters', 'error'); return; }
         if (!description || description.length < 20) { UI.toast('Description must be at least 20 characters', 'error'); return; }
         if (!contact) { UI.toast('Please provide a contact link', 'error'); return; }
 
-        var aiStatus = document.getElementById('sell-ai-status');
-
-        // For "Other" category: validate custom platform name via AI
-        if (category === 'other' && customPlatform.trim()) {
-            aiStatus.innerHTML = '<div class="ai-checking"><div class="spinner"></div> Verifying platform with AI...</div>';
-            var platformCheck = await Marketplace.validatePlatformWithAI(customPlatform.trim());
-            if (!platformCheck.valid) {
-                aiStatus.innerHTML = '';
-                UI.toast(platformCheck.message || '\u0646\u062D\u0646 \u0646\u0642\u0628\u0644 \u0641\u0642\u0637 \u062E\u062F\u0645\u0627\u062A \u0648\u0645\u0646\u0635\u0627\u062A \u0627\u0644\u062A\u0648\u0627\u0635\u0644 \u0627\u0644\u0627\u062C\u062A\u0645\u0627\u0639\u064A', 'error');
-                return;
-            }
-            // Set platform to custom name
-            sellData.platform = customPlatform.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
-            sellData.custom_platform = customPlatform.trim();
+        // Feature 5: Client-side banned keywords check
+        var titleBanned = Marketplace.checkBannedKeywords(title);
+        if (titleBanned.banned) {
+            UI.toast('Title contains banned keyword "' + titleBanned.keyword + '". Please remove it.', 'error');
+            return;
+        }
+        var descBanned = Marketplace.checkBannedKeywords(description);
+        if (descBanned.banned) {
+            UI.toast('Description contains banned keyword "' + descBanned.keyword + '". Please remove it.', 'error');
+            return;
         }
 
-        // AI content validation
-        aiStatus.innerHTML = '<div class="ai-checking"><div class="spinner"></div> Checking content with AI filter...</div>';
+        var aiStatus = document.getElementById('sell-ai-status');
+
+        // Feature 3: AI auto-scan on listing
+        aiStatus.innerHTML = '<div class="ai-checking"><div class="spinner"></div> Scanning listing with AI trust filter...</div>';
 
         var validation = await Marketplace.validateWithAI(title, description);
         if (!validation.valid) {
             aiStatus.innerHTML = '';
-            UI.toast(validation.message || '\u0646\u062D\u0646 \u0646\u0642\u0628\u0644 \u0641\u0642\u0637 \u062E\u062F\u0645\u0627\u062A \u0648\u0645\u0646\u0635\u0627\u062A \u0627\u0644\u062A\u0648\u0627\u0635\u0644 \u0627\u0644\u0627\u062C\u062A\u0645\u0627\u0639\u064A', 'error');
+            UI.toast(validation.message || 'Listing did not pass AI review. Please revise your content.', 'error');
             return;
         }
         aiStatus.innerHTML = '';
@@ -399,11 +345,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         // Render preview
         var preview = document.getElementById('sell-preview-content');
-        var platformName = sellData.custom_platform || (platform.charAt(0).toUpperCase() + platform.slice(1));
         var categoryName = category.charAt(0).toUpperCase() + category.slice(1).replace('_', ' ');
         preview.innerHTML =
             '<div class="sell-preview__row"><span class="sell-preview__label">Category</span><span class="sell-preview__value">' + Security.sanitize(categoryName) + '</span></div>' +
-            '<div class="sell-preview__row"><span class="sell-preview__label">Platform</span><span class="sell-preview__value">' + Security.sanitize(platformName) + '</span></div>' +
             '<div class="sell-preview__row"><span class="sell-preview__label">Title</span><span class="sell-preview__value">' + Security.sanitize(title) + '</span></div>' +
             '<div class="sell-preview__row"><span class="sell-preview__label">Description</span><span class="sell-preview__value">' + Security.sanitize(description) + '</span></div>' +
             '<div class="sell-preview__row"><span class="sell-preview__label">Price</span><span class="sell-preview__value">' + (sellData.price > 0 ? UI.formatCurrency(sellData.price) : 'Contact for price') + '</span></div>' +
@@ -420,14 +364,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     async function submitListing(e) {
         e.preventDefault();
         var btn = document.getElementById('sell-submit-btn');
-        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Publishing...'; }
+        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Submitting for review...'; }
 
         var result = await Marketplace.submit(sellData);
         if (result) {
             setStep(3);
         } else if (btn) {
             btn.disabled = false;
-            btn.textContent = 'Publish Listing';
+            btn.textContent = 'Submit Listing';
         }
     }
 
