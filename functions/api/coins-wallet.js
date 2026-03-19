@@ -201,6 +201,20 @@ async function handleGet(request, env, user, origin) {
                 });
             }
 
+            case 'escrow-status': {
+                // Get escrow transactions for this user (as buyer or seller)
+                const escrowRole = url.searchParams.get('role') || 'buyer';
+                var escrowField = escrowRole === 'seller' ? 'seller_id' : 'buyer_id';
+                const escrowRes = await fetch(
+                    supabaseUrl + '/rest/v1/escrow_transactions?' + escrowField + '=eq.' + encodeURIComponent(user.userId) + '&order=created_at.desc&limit=50',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                );
+                const escrows = await escrowRes.json();
+                return new Response(JSON.stringify({ ok: true, data: escrows || [] }), {
+                    status: 200, headers: corsHeaders(origin)
+                });
+            }
+
             case 'spending-insights': {
                 // Fetch all transactions for this user to build spending breakdown
                 const insightDays = parseInt(url.searchParams.get('days')) || 30;
@@ -616,6 +630,241 @@ async function handlePost(request, env, user, origin) {
                 }), {
                     status: 200, headers: corsHeaders(origin)
                 });
+            }
+
+            case 'escrow-create': {
+                // Create an escrow transaction — hold coins until buyer confirms delivery
+                const escrowSellerId = (body.seller_id || '').trim();
+                const escrowProductId = (body.product_id || '').trim();
+                const escrowAmount = parseInt(body.amount) || 0;
+                const escrowProductName = (body.product_name || 'Product').substring(0, 200);
+
+                if (!escrowSellerId || !escrowProductId || !escrowAmount) {
+                    return new Response(JSON.stringify({ ok: false, error: 'Missing seller_id, product_id, or amount' }), {
+                        status: 400, headers: corsHeaders(origin)
+                    });
+                }
+
+                if (escrowAmount < 1) {
+                    return new Response(JSON.stringify({ ok: false, error: 'Amount must be at least 1 coin' }), {
+                        status: 400, headers: corsHeaders(origin)
+                    });
+                }
+
+                if (escrowSellerId === user.userId) {
+                    return new Response(JSON.stringify({ ok: false, error: 'Cannot buy from yourself' }), {
+                        status: 400, headers: corsHeaders(origin)
+                    });
+                }
+
+                // Check buyer's balance
+                const buyerWalletRes = await fetch(
+                    supabaseUrl + '/rest/v1/user_wallets?user_id=eq.' + encodeURIComponent(user.userId) + '&select=coins_balance&limit=1',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                );
+                const buyerWallets = await buyerWalletRes.json();
+                if (!buyerWallets || !buyerWallets.length || (buyerWallets[0].coins_balance || 0) < escrowAmount) {
+                    return new Response(JSON.stringify({ ok: false, error: 'Insufficient balance. You need ' + escrowAmount + ' coins.' }), {
+                        status: 400, headers: corsHeaders(origin)
+                    });
+                }
+
+                // Debit coins from buyer (hold in escrow)
+                const debitRes = await fetch(supabaseUrl + '/rest/v1/rpc/debit_coins', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': supabaseKey,
+                        'Authorization': 'Bearer ' + supabaseKey
+                    },
+                    body: JSON.stringify({
+                        p_user_id: user.userId,
+                        p_amount: escrowAmount,
+                        p_type: 'escrow_hold',
+                        p_description: 'Escrow hold for ' + escrowProductName,
+                        p_reference_id: escrowProductId,
+                        p_reference_type: 'escrow'
+                    })
+                });
+
+                if (!debitRes.ok) {
+                    return new Response(JSON.stringify({ ok: false, error: 'Failed to hold coins in escrow' }), {
+                        status: 500, headers: corsHeaders(origin)
+                    });
+                }
+
+                // Create escrow record
+                var autoReleaseAt = new Date(Date.now() + 7 * 86400000).toISOString(); // 7 days auto-release
+                const escrowCreateRes = await fetch(supabaseUrl + '/rest/v1/escrow_transactions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': supabaseKey,
+                        'Authorization': 'Bearer ' + supabaseKey,
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify({
+                        buyer_id: user.userId,
+                        seller_id: escrowSellerId,
+                        product_id: escrowProductId,
+                        product_name: escrowProductName,
+                        amount: escrowAmount,
+                        status: 'held',
+                        auto_release_at: autoReleaseAt
+                    })
+                });
+
+                if (!escrowCreateRes.ok) {
+                    // Refund the debit if escrow record creation fails
+                    await fetch(supabaseUrl + '/rest/v1/rpc/credit_coins', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey },
+                        body: JSON.stringify({ p_user_id: user.userId, p_amount: escrowAmount, p_type: 'escrow_refund', p_description: 'Escrow creation failed — refund', p_reference_type: 'escrow_refund' })
+                    });
+                    return new Response(JSON.stringify({ ok: false, error: 'Failed to create escrow record' }), {
+                        status: 500, headers: corsHeaders(origin)
+                    });
+                }
+
+                const escrowData = await escrowCreateRes.json();
+
+                // Notify seller
+                await fetch(supabaseUrl + '/rest/v1/notifications', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey },
+                    body: JSON.stringify({
+                        uid: escrowSellerId,
+                        type: 'escrow_created',
+                        title: 'New Escrow Purchase!',
+                        message: escrowAmount + ' GMX Coins held in escrow for ' + escrowProductName + '. Deliver the product so the buyer can confirm.',
+                        link: '/pages/user/escrow.html'
+                    })
+                });
+
+                return new Response(JSON.stringify({
+                    ok: true,
+                    data: escrowData[0] || escrowData,
+                    message: escrowAmount + ' coins held in escrow. Seller must deliver within 7 days, then you confirm to release funds.'
+                }), { status: 200, headers: corsHeaders(origin) });
+            }
+
+            case 'escrow-confirm': {
+                // Buyer confirms delivery — release coins to seller
+                const confirmEscrowId = (body.escrow_id || '').trim();
+                if (!confirmEscrowId) {
+                    return new Response(JSON.stringify({ ok: false, error: 'Missing escrow_id' }), {
+                        status: 400, headers: corsHeaders(origin)
+                    });
+                }
+
+                // Get escrow record
+                const getEscrowRes = await fetch(
+                    supabaseUrl + '/rest/v1/escrow_transactions?id=eq.' + encodeURIComponent(confirmEscrowId) + '&status=eq.held&limit=1',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                );
+                const escrowRecords = await getEscrowRes.json();
+                if (!escrowRecords || !escrowRecords.length) {
+                    return new Response(JSON.stringify({ ok: false, error: 'Escrow not found or already resolved' }), {
+                        status: 404, headers: corsHeaders(origin)
+                    });
+                }
+                var escrowRecord = escrowRecords[0];
+
+                // Verify the confirmer is the buyer
+                if (escrowRecord.buyer_id !== user.userId) {
+                    return new Response(JSON.stringify({ ok: false, error: 'Only the buyer can confirm delivery' }), {
+                        status: 403, headers: corsHeaders(origin)
+                    });
+                }
+
+                // Credit coins to seller
+                await fetch(supabaseUrl + '/rest/v1/rpc/credit_coins', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey },
+                    body: JSON.stringify({
+                        p_user_id: escrowRecord.seller_id,
+                        p_amount: escrowRecord.amount,
+                        p_type: 'escrow_release',
+                        p_description: 'Escrow released for ' + (escrowRecord.product_name || 'product'),
+                        p_reference_id: confirmEscrowId,
+                        p_reference_type: 'escrow_release',
+                        p_coin_source: 'earned'
+                    })
+                });
+
+                // Update escrow status
+                await fetch(supabaseUrl + '/rest/v1/escrow_transactions?id=eq.' + encodeURIComponent(confirmEscrowId), {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey },
+                    body: JSON.stringify({ status: 'completed', completed_at: new Date().toISOString() })
+                });
+
+                // Notify seller of payment release
+                await fetch(supabaseUrl + '/rest/v1/notifications', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey },
+                    body: JSON.stringify({
+                        uid: escrowRecord.seller_id,
+                        type: 'escrow_released',
+                        title: 'Payment Released!',
+                        message: escrowRecord.amount + ' GMX Coins from escrow for ' + (escrowRecord.product_name || 'product') + ' have been added to your wallet.',
+                        link: '/pages/user/wallet.html'
+                    })
+                });
+
+                return new Response(JSON.stringify({
+                    ok: true,
+                    message: 'Delivery confirmed. ' + escrowRecord.amount + ' coins released to seller.'
+                }), { status: 200, headers: corsHeaders(origin) });
+            }
+
+            case 'escrow-dispute': {
+                // Buyer disputes the escrow — freeze funds, notify admin
+                const disputeEscrowId = (body.escrow_id || '').trim();
+                const disputeReason = (body.reason || '').substring(0, 500).trim();
+
+                if (!disputeEscrowId || !disputeReason) {
+                    return new Response(JSON.stringify({ ok: false, error: 'Missing escrow_id or reason' }), {
+                        status: 400, headers: corsHeaders(origin)
+                    });
+                }
+
+                // Verify buyer owns this escrow
+                const getDispEscrow = await fetch(
+                    supabaseUrl + '/rest/v1/escrow_transactions?id=eq.' + encodeURIComponent(disputeEscrowId) + '&buyer_id=eq.' + encodeURIComponent(user.userId) + '&status=eq.held&limit=1',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                );
+                const dispEscrows = await getDispEscrow.json();
+                if (!dispEscrows || !dispEscrows.length) {
+                    return new Response(JSON.stringify({ ok: false, error: 'Escrow not found or not eligible for dispute' }), {
+                        status: 404, headers: corsHeaders(origin)
+                    });
+                }
+
+                // Update escrow to disputed
+                await fetch(supabaseUrl + '/rest/v1/escrow_transactions?id=eq.' + encodeURIComponent(disputeEscrowId), {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey },
+                    body: JSON.stringify({ status: 'disputed', dispute_reason: disputeReason, disputed_at: new Date().toISOString() })
+                });
+
+                // Notify seller
+                await fetch(supabaseUrl + '/rest/v1/notifications', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey },
+                    body: JSON.stringify({
+                        uid: dispEscrows[0].seller_id,
+                        type: 'escrow_disputed',
+                        title: 'Escrow Disputed',
+                        message: 'The buyer has disputed the escrow for ' + (dispEscrows[0].product_name || 'product') + '. An admin will mediate.',
+                        link: '/pages/user/escrow.html'
+                    })
+                });
+
+                return new Response(JSON.stringify({
+                    ok: true,
+                    message: 'Escrow disputed. Funds are frozen and an admin will review within 48 hours.'
+                }), { status: 200, headers: corsHeaders(origin) });
             }
 
             default:
