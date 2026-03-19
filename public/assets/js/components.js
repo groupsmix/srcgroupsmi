@@ -41,24 +41,24 @@ const UI = {
             '<div class="group-card__name">' + Security.sanitize(group.name || 'Unnamed') + '</div>' +
             '<div class="group-card__description">' + Security.sanitize(group.description || '') + '</div>' +
             (tags.length ? '<div class="group-card__tags">' + tags.map(t => '<span class="group-card__tag">' + Security.sanitize(t) + '</span>').join('') + '</div>' : '') +
-            '<!-- Live Stats Bar -->' +
+            '<!-- Live Stats Bar (hide zero-value stats) -->' +
             '<div class="group-card__live-stats" data-group-id="' + group.id + '">' +
-            '<span class="live-stat live-stat--views" data-stat="views" title="Views">' +
+            (views > 0 ? '<span class="live-stat live-stat--views" data-stat="views" title="Views">' +
             '<svg class="live-stat__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
             '<span class="live-stat__count" data-count="views">' + UI.formatNumber(views) + '</span>' +
-            '</span>' +
-            '<span class="live-stat live-stat--likes" data-stat="likes" title="Like">' +
+            '</span>' : '') +
+            (likes > 0 ? '<span class="live-stat live-stat--likes" data-stat="likes" title="Like">' +
             '<svg class="live-stat__icon live-stat__heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>' +
             '<span class="live-stat__count" data-count="likes">' + UI.formatNumber(likes) + '</span>' +
-            '</span>' +
-            '<span class="live-stat live-stat--rating" data-stat="rating" title="Rating">' +
-            '<svg class="live-stat__icon live-stat__star" viewBox="0 0 24 24" fill="' + (avgRating > 0 ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
+            '</span>' : '') +
+            (avgRating > 0 ? '<span class="live-stat live-stat--rating" data-stat="rating" title="Rating">' +
+            '<svg class="live-stat__icon live-stat__star" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
             '<span class="live-stat__count" data-count="rating">' + avgRating.toFixed(1) + '</span>' +
-            '</span>' +
-            '<span class="live-stat live-stat--comments" data-stat="comments" title="Comments">' +
+            '</span>' : '') +
+            (commentsCount > 0 ? '<span class="live-stat live-stat--comments" data-stat="comments" title="Comments">' +
             '<svg class="live-stat__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>' +
             '<span class="live-stat__count" data-count="comments">' + UI.formatNumber(commentsCount) + '</span>' +
-            '</span>' +
+            '</span>' : '') +
             '<span class="live-stat live-stat--trust" data-stat="trust" title="Trust Score">' +
             '<svg class="live-stat__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' +
             '<span class="live-stat__count" data-count="trust">' + trustScore + '</span>' +

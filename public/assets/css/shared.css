@@ -731,6 +731,45 @@ h4 { font-size: var(--text-xl); }
   border-radius: 3px 3px 0 0;
 }
 
+/* ── Subnav "More" Dropdown ── */
+.subnav__more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.subnav__more-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-2) 0;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease;
+}
+.subnav__more-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+.subnav__more-item:hover {
+  background: var(--bg-tertiary);
+}
+.subnav__more-item .svg-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
 /* ── Notification Bell ── */
 .header-notification__btn {
   position: relative;
@@ -3114,6 +3153,11 @@ h4 { font-size: var(--text-xl); }
 
 .group-card .ix-toolbar {
   margin-top: auto;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.group-card:hover .ix-toolbar {
+  opacity: 1;
 }
 
 /* Article card wrapper for toolbar */

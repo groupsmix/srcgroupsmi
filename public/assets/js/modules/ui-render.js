@@ -64,16 +64,15 @@ function renderHeader() {
         ) +
         '</div>' +
         '</div></nav>' +
-        // ── Horizontal Sub-Navigation Bar ──
+        // ── Horizontal Sub-Navigation Bar (Simplified) ──
         '<div class="subnav" id="subnav">' +
         '<div class="subnav__inner">' +
-                '<a href="/" class="subnav__item' + (currentPath === '/' ? ' subnav__item--active' : '') + '">All</a>' +
-                '<a href="/jobs" class="subnav__item' + navActive(['/jobs', '/post-job']) + '">Jobs</a>' +
-                '<a href="/marketplace" class="subnav__item' + navActive(['/marketplace', '/sell']) + '">Markets</a>' +
-                '<a href="/store" class="subnav__item' + navActive(['/store']) + '">Store</a>' +
-                '<a href="/tools" class="subnav__item' + navActive(['/tools']) + '">AI Tools</a>' +
-                '<a href="/events" class="subnav__item' + navActive(['/events']) + '">Events</a>' +
+                '<a href="/browse" class="subnav__item' + navActive(['/browse', '/search', '/category', '/country', '/platform']) + '">Browse</a>' +
+                '<a href="/submit" class="subnav__item' + navActive(['/submit']) + '">Submit</a>' +
                 '<a href="/articles" class="subnav__item' + navActive(['/articles']) + '">Articles</a>' +
+                '<div class="subnav__more-wrapper" style="position:relative">' +
+                '<button class="subnav__item subnav__more-btn" id="subnav-more-btn" type="button">More <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-left:2px"><polyline points="6 9 12 15 18 9"/></svg></button>' +
+                '</div>' +
         '</div>' +
         '</div>';
 
@@ -105,6 +104,28 @@ function renderHeader() {
         document.getElementById('auth-btn')?.addEventListener('click', () => UI.authModal('signin'));
     }
     document.getElementById('drawer-toggle')?.addEventListener('click', openDrawer);
+
+    // "More" dropdown in sub-nav
+    var moreBtn = document.getElementById('subnav-more-btn');
+    if (moreBtn) {
+        moreBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var wrapper = moreBtn.closest('.subnav__more-wrapper');
+            var existing = wrapper.querySelector('.subnav__more-dropdown');
+            if (existing) { existing.remove(); return; }
+            closeAllDropdowns();
+            var dd = document.createElement('div');
+            dd.className = 'subnav__more-dropdown';
+            dd.innerHTML =
+                '<a href="/jobs" class="subnav__more-item">' + ICONS.briefcase + ' Jobs</a>' +
+                '<a href="/marketplace" class="subnav__more-item">' + ICONS.store + ' Marketplace</a>' +
+                '<a href="/store" class="subnav__more-item">' + ICONS.shopping_cart + ' Store</a>' +
+                '<a href="/tools" class="subnav__more-item">' + ICONS.tools + ' AI Tools</a>' +
+                '<a href="/scam-wall" class="subnav__more-item">' + ICONS.shield + ' Scam Wall</a>';
+            wrapper.appendChild(dd);
+        });
+    }
+
     renderAnnouncement();
 }
 
@@ -189,11 +210,11 @@ function toggleUserDropdown() {
 }
 
 function closeAllDropdowns() {
-    document.querySelectorAll('.notification-dropdown, .user-dropdown, .magic-plus-dropdown').forEach(d => d.remove());
+    document.querySelectorAll('.notification-dropdown, .user-dropdown, .magic-plus-dropdown, .subnav__more-dropdown').forEach(d => d.remove());
 }
 
 document.addEventListener('click', (e) => {
-    if (!e.target.closest('#notification-wrapper') && !e.target.closest('#user-menu-wrapper') && !e.target.closest('.magic-plus-wrapper')) closeAllDropdowns();
+    if (!e.target.closest('#notification-wrapper') && !e.target.closest('#user-menu-wrapper') && !e.target.closest('.magic-plus-wrapper') && !e.target.closest('.subnav__more-wrapper')) closeAllDropdowns();
 });
 
 function openDrawer() {
@@ -281,52 +302,23 @@ function renderFooter() {
     if (!footer) return;
     footer.innerHTML = '<div class="site-footer">' +
         '<div class="site-footer__grid">' +
-        // Column 1: Explore & Discover
+        // Column 1: Product
         '<div class="site-footer__column">' +
-            '<div class="site-footer__heading">Explore</div>' +
-            '<a href="/search" class="site-footer__link">Search</a>' +
-            '<a href="/browse" class="site-footer__link">Groups</a>' +
-            '<a href="/articles" class="site-footer__link">Articles</a>' +
-            '<a href="/stats" class="site-footer__link">Stats</a>' +
-            (CONFIG.features.scamWall ? '<a href="/scam-wall" class="site-footer__link">Scam Wall</a>' : '') +
-            (CONFIG.features.tools ? '<a href="/tools" class="site-footer__link">Free Tools</a>' : '') +
-        '</div>' +
-        // Column 2: Grow & Promote
-        '<div class="site-footer__column">' +
-            '<div class="site-footer__heading">Grow</div>' +
-            '<a href="/promote" class="site-footer__link">Promote</a>' +
-            '<a href="/advertise" class="site-footer__link">Advertise</a>' +
-            '<a href="/store" class="site-footer__link">Store</a>' +
-            '<a href="/marketplace" class="site-footer__link">Marketplace</a>' +
-            '<a href="/jobs" class="site-footer__link">Jobs</a>' +
-        '</div>' +
-        // Column 3: Fuel the Community (standalone)
-        '<div class="site-footer__column">' +
-            '<div class="site-footer__heading">Community</div>' +
-            (CONFIG.features.donate ? '<a href="/fuel" class="site-footer__link">Fuel the Community</a>' : '') +
-            (CONFIG.features.leaderboard ? '<a href="/leaderboard" class="site-footer__link">Leaderboard</a>' : '') +
+            '<div class="site-footer__heading">Product</div>' +
+            '<a href="/search" class="site-footer__link">Search Groups</a>' +
+            '<a href="/browse" class="site-footer__link">Browse</a>' +
             '<a href="/submit" class="site-footer__link">Submit Group</a>' +
+            '<a href="/articles" class="site-footer__link">Articles</a>' +
         '</div>' +
-        // Column 4: Company & Legal
+        // Column 2: Company
         '<div class="site-footer__column">' +
             '<div class="site-footer__heading">Company</div>' +
             '<a href="/about" class="site-footer__link">About</a>' +
-            '<a href="/contact" class="site-footer__link">Contact Us</a>' +
-            '<a href="/faq" class="site-footer__link">FAQ</a>' +
-            '<a href="/support" class="site-footer__link">Support Center</a>' +
+            '<a href="/contact" class="site-footer__link">Contact</a>' +
             '<a href="/privacy" class="site-footer__link">Privacy</a>' +
             '<a href="/terms" class="site-footer__link">Terms</a>' +
         '</div>' +
         '</div>' +
-        // Fuel the Community mini-card
-        (CONFIG.features.donate ?
-            '<div style="display:flex;justify-content:flex-end;padding:var(--space-4) var(--space-4) 0;max-width:var(--container-xl);margin:0 auto">' +
-            '<a href="/fuel" class="fuel-mini-card">' +
-            '<span class="fuel-mini-card__icon">&#9889;</span>' +
-            '<span>Did GroupsMix help you? Help us keep going &amp; growing</span>' +
-            '</a>' +
-            '</div>'
-        : '') +
         '<div class="site-footer__bottom">&copy; ' + new Date().getFullYear() + ' GroupsMix.com. All rights reserved.</div>' +
         '</div>';
 }
