@@ -2,8 +2,8 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 <BaseLayout
-  title="Sell — GroupsMix Marketplace"
-  description="List your social media account, channel, group, or service for sale on GroupsMix Marketplace."
+  title="Sell — GroupsMix Digital Products Marketplace"
+  description="List your digital product — bot templates, design assets, automation workflows, guides, or community tools — on GroupsMix Marketplace."
 >
 <style is:inline>
         .sell-page {
@@ -171,7 +171,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.2em;height:1.2em;vertical-align:-0.125em"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
                 Sell on Marketplace
             </h1>
-            <p style="text-align:center;color:var(--text-secondary);margin-bottom:var(--space-8)">List your social media account, channel, group, or service — fast and free</p>
+            <p style="text-align:center;color:var(--text-secondary);margin-bottom:var(--space-8)">List your digital product — bot templates, design assets, guides, automation workflows, or tools. Earn GMX Coins!</p>
 
             <div class="sell-steps" id="sell-steps">
                 <div class="sell-step sell-step--active" id="sell-step-1">1. Details</div>
@@ -192,31 +192,31 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                             <label class="form-label">Platform *</label>
                             <div class="platform-selector" id="platform-selector"></div>
                             <div id="custom-platform-wrapper" class="custom-platform-input" style="display:none">
-                                <input type="text" class="form-input" id="sell-custom-platform" placeholder="Enter platform name (e.g. BeReal, Lemon8)" maxlength="50">
-                                <div class="custom-platform-hint">Type a social media platform name. AI will verify it.</div>
+                                <input type="text" class="form-input" id="sell-custom-platform" placeholder="Enter product type (e.g. Chrome Extension, WordPress Plugin)" maxlength="50">
+                                <div class="custom-platform-hint">Type a digital product type. AI will verify it.</div>
                             </div>
                             <input type="hidden" id="sell-platform" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="sell-title">Title *</label>
-                            <input type="text" class="form-input" id="sell-title" placeholder="e.g. Telegram channel 50K subscribers" required minlength="5" maxlength="100">
-                            <div class="form-help">5–100 characters. Describe what you're selling.</div>
+                            <input type="text" class="form-input" id="sell-title" placeholder="e.g. Telegram Bot Template — Auto-Welcome & Moderation" required minlength="5" maxlength="100">
+                            <div class="form-help">5–100 characters. Describe your digital product.</div>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="sell-description">Description *</label>
-                            <textarea class="form-textarea" id="sell-description" placeholder="Describe your listing in detail — niche, stats, audience, etc." required minlength="20" maxlength="1000" rows="4"></textarea>
+                            <textarea class="form-textarea" id="sell-description" placeholder="Describe your product in detail — features, what's included, how to use it, etc." required minlength="20" maxlength="1000" rows="4"></textarea>
                             <div class="form-help"><span id="sell-desc-count">0</span>/1000 characters</div>
                         </div>
                         <div class="form-row">
                             <div class="form-group" style="flex:1">
                                 <label class="form-label" for="sell-price">Price (USD) *</label>
-                                <input type="number" class="form-input" id="sell-price" placeholder="0.00" min="0" step="0.01" required>
-                                <div class="form-help">Set to 0 for "Contact for price"</div>
+                                <input type="number" class="form-input" id="sell-price" placeholder="0" min="0" step="1" required>
+                                <div class="form-help">Price in GMX Coins (100 coins = $1). Set to 0 for "Contact for price"</div>
                             </div>
                             <div class="form-group" style="flex:1">
                                 <label class="form-label" for="sell-contact">Contact Link *</label>
                                 <input type="url" class="form-input" id="sell-contact" placeholder="https://t.me/yourusername" required>
-                                <div class="form-help">How buyers can reach you</div>
+                                <div class="form-help">How buyers can reach you for delivery</div>
                             </div>
                         </div>
                         <div id="sell-ai-status"></div>
@@ -357,8 +357,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         var contact = document.getElementById('sell-contact').value.trim();
 
         if (!category) { UI.toast('Please select a category', 'error'); return; }
-        if (!platform && category !== 'other') { UI.toast('Please select a platform', 'error'); return; }
-        if (category === 'other' && !customPlatform.trim()) { UI.toast('Please enter a platform name', 'error'); return; }
+        if (!platform && category !== 'other') { UI.toast('Please select a product type', 'error'); return; }
+        if (category === 'other' && !customPlatform.trim()) { UI.toast('Please enter a product type', 'error'); return; }
         if (!title || title.length < 5) { UI.toast('Title must be at least 5 characters', 'error'); return; }
         if (!description || description.length < 20) { UI.toast('Description must be at least 20 characters', 'error'); return; }
         if (!contact) { UI.toast('Please provide a contact link', 'error'); return; }

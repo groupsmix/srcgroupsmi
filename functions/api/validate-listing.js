@@ -2,8 +2,8 @@
  * /api/validate-listing — AI Content Filter for Marketplace Listings
  *
  * Cloudflare Pages Function that validates marketplace listing content
- * using OpenRouter AI API to ensure only social media related content
- * is accepted.
+ * using OpenRouter AI API to ensure only digital products are accepted
+ * and prohibited items (accounts, followers, credentials) are blocked.
  *
  * Environment variable required (set in Cloudflare Pages dashboard):
  *   OPENROUTER_API_KEY — your OpenRouter API key
@@ -54,21 +54,43 @@ function checkRateLimit(ip) {
     return true;
 }
 
-/* ── Social media keywords for fast pre-check ───────────────────── */
-const SOCIAL_KEYWORDS = [
-    'whatsapp', 'telegram', 'discord', 'facebook', 'youtube', 'tiktok',
-    'twitter', 'instagram', 'snapchat', 'reddit', 'linkedin', 'pinterest',
-    'twitch', 'kick', 'signal', 'viber', 'wechat', 'line', 'kakaotalk',
-    'channel', 'group', 'page', 'account', 'followers', 'subscribers',
-    'members', 'community', 'social media', 'social', 'influencer',
-    'content creator', 'streamer', 'bot', 'server', 'guild',
-    'قناة', 'قروب', 'مجموعة', 'حساب', 'متابعين', 'مشتركين',
-    'تواصل اجتماعي', 'سوشيال ميديا'
+/* ── Blocked keywords — explicitly prohibited items ──────────────── */
+const BLOCKED_KEYWORDS = [
+    'sell account', 'buy account', 'account for sale', 'selling account',
+    'followers for sale', 'buy followers', 'sell followers',
+    'subscribers for sale', 'buy subscribers', 'sell subscribers',
+    'hacked', 'stolen', 'cracked', 'leaked credentials',
+    'pre-built audience', 'aged account', 'verified account for sale',
+    'facebook account', 'instagram account', 'tiktok account',
+    'youtube account', 'twitter account', 'snapchat account',
+    'sell channel', 'buy channel', 'channel for sale',
+    'sell group', 'buy group', 'group for sale',
+    'sell page', 'buy page', 'page for sale',
+    'حساب للبيع', 'بيع حساب', 'شراء حساب', 'متابعين للبيع',
+    'بيع قناة', 'شراء قناة', 'بيع قروب', 'شراء قروب'
 ];
 
-function quickSocialCheck(text) {
+/* ── Allowed digital product keywords for fast pre-check ─────────── */
+const DIGITAL_PRODUCT_KEYWORDS = [
+    'template', 'bot', 'script', 'tool', 'plugin', 'extension',
+    'guide', 'ebook', 'tutorial', 'course', 'playbook',
+    'automation', 'workflow', 'zapier', 'n8n', 'make',
+    'design', 'banner', 'sticker', 'logo', 'graphic', 'icon',
+    'dashboard', 'analytics', 'report', 'spreadsheet',
+    'welcome pack', 'rules template', 'onboarding', 'content calendar',
+    'source code', 'api', 'integration', 'webhook',
+    'moderation', 'management', 'community tool',
+    'قالب', 'بوت', 'أداة', 'دليل', 'كتاب', 'تصميم', 'سكربت'
+];
+
+function quickBlockedCheck(text) {
     const lower = text.toLowerCase();
-    return SOCIAL_KEYWORDS.some(kw => lower.includes(kw));
+    return BLOCKED_KEYWORDS.some(kw => lower.includes(kw));
+}
+
+function quickDigitalProductCheck(text) {
+    const lower = text.toLowerCase();
+    return DIGITAL_PRODUCT_KEYWORDS.some(kw => lower.includes(kw));
 }
 
 /* ── Main handler ───────────────────────────────────────────────── */
@@ -117,15 +139,26 @@ export async function onRequest(context) {
 
     const combined = title + ' ' + description;
 
-    // Quick keyword check — if clearly social media, allow immediately
-    if (quickSocialCheck(combined)) {
+    // Quick block check — if listing contains prohibited keywords, reject immediately
+    if (quickBlockedCheck(combined)) {
+        return new Response(
+            JSON.stringify({
+                valid: false,
+                message: 'This listing appears to sell accounts, followers, or credentials. Only digital products (templates, tools, guides, etc.) are allowed.'
+            }),
+            { status: 200, headers: corsHeaders(origin) }
+        );
+    }
+
+    // Quick keyword check — if clearly a digital product, allow immediately
+    if (quickDigitalProductCheck(combined)) {
         return new Response(
             JSON.stringify({ valid: true, message: '' }),
             { status: 200, headers: corsHeaders(origin) }
         );
     }
 
-    // Use AI to validate if content is social media related
+    // Use AI to validate if content is a legitimate digital product
     const apiKey = context.env?.OPENROUTER_API_KEY || '';
     if (!apiKey) {
         // No API key configured — allow submission (graceful degradation)
@@ -137,15 +170,30 @@ export async function onRequest(context) {
     }
 
     try {
-        const prompt = `You are a content filter for a social media marketplace. Users can only sell or offer services related to social media platforms (WhatsApp, Telegram, Discord, Facebook, YouTube, TikTok, Twitter, Instagram, Snapchat, etc.) — such as channels, groups, pages, accounts, followers, subscribers, bots, content creation services, social media management, etc.
+        const prompt = `You are a content filter for a digital products marketplace. Users can ONLY sell digital products such as:
+- Bot templates & source code (Telegram, Discord, WhatsApp, Slack bots)
+- Design templates (banners, sticker packs, welcome images, logos)
+- Community growth guides & ebooks
+- Automation workflows (Zapier templates, n8n flows, Make scenarios)
+- Group management tools & scripts
+- Premium content packs (welcome packs, rules templates, onboarding kits, content calendars)
+- Analytics dashboards & reporting templates
+- API integrations & webhooks
+- Any other digital tool, template, or educational content
 
-Analyze this listing and determine if it is related to social media:
+EXPLICITLY BLOCKED (must reject):
+- Social media accounts (YouTube, Facebook, Instagram, TikTok, Twitter, Snapchat, etc.)
+- Pre-built audiences or follower/subscriber lists
+- Hacked, stolen, or cracked credentials
+- Any listing that sells access to an existing account, channel, group, or page
+
+Analyze this listing and determine if it is a legitimate digital product:
 
 Title: ${title}
 Description: ${description}
 
 Respond with ONLY a JSON object (no markdown, no extra text):
-{"is_social_media": true/false, "reason": "brief explanation"}`;
+{"is_digital_product": true/false, "reason": "brief explanation"}`;
 
         const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
@@ -184,17 +232,17 @@ Respond with ONLY a JSON object (no markdown, no extra text):
         } catch {
             // If parsing fails, check for keywords in raw response
             const lower = content.toLowerCase();
-            if (lower.includes('"is_social_media": true') || lower.includes('"is_social_media":true')) {
-                result = { is_social_media: true };
-            } else if (lower.includes('"is_social_media": false') || lower.includes('"is_social_media":false')) {
-                result = { is_social_media: false };
+            if (lower.includes('"is_digital_product": true') || lower.includes('"is_digital_product":true')) {
+                result = { is_digital_product: true };
+            } else if (lower.includes('"is_digital_product": false') || lower.includes('"is_digital_product":false')) {
+                result = { is_digital_product: false };
             } else {
                 // Cannot parse — allow submission
-                result = { is_social_media: true };
+                result = { is_digital_product: true };
             }
         }
 
-        if (result.is_social_media) {
+        if (result.is_digital_product) {
             return new Response(
                 JSON.stringify({ valid: true, message: '' }),
                 { status: 200, headers: corsHeaders(origin) }
@@ -203,7 +251,7 @@ Respond with ONLY a JSON object (no markdown, no extra text):
             return new Response(
                 JSON.stringify({
                     valid: false,
-                    message: '\u0646\u062D\u0646 \u0646\u0642\u0628\u0644 \u0641\u0642\u0637 \u062E\u062F\u0645\u0627\u062A \u0648\u0645\u0646\u0635\u0627\u062A \u0627\u0644\u062A\u0648\u0627\u0635\u0644 \u0627\u0644\u0627\u062C\u062A\u0645\u0627\u0639\u064A'
+                    message: 'Only digital products are allowed (templates, tools, guides, automation workflows, etc.). Selling accounts, followers, or credentials is not permitted.'
                 }),
                 { status: 200, headers: corsHeaders(origin) }
             );
