@@ -140,22 +140,46 @@ const UI = {
         duration = duration || CONFIG.toastDuration;
         const container = document.getElementById('toast-container');
         if (!container) return;
-        const icons = { success: ICONS.check_circle, error: ICONS.x_circle, warning: ICONS.warning, info: ICONS.info };
+        const toastIcons = {
+            success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+            error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+            warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+            info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+        };
         const toast = document.createElement('div');
         toast.className = 'toast toast--' + type;
-        toast.innerHTML = `<span class="toast__icon">${icons[type] || ICONS.info}</span><div class="toast__content"><div class="toast__message">${Security.sanitize(message)}</div></div><button class="toast__close" aria-label="Dismiss">&times;</button>`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = '<span class="toast__icon">' + (toastIcons[type] || toastIcons.info) + '</span>' +
+            '<div class="toast__content"><div class="toast__message">' + Security.sanitize(message) + '</div></div>' +
+            '<button class="toast__close" aria-label="Dismiss">&times;</button>' +
+            '<div class="toast__progress" style="animation-duration:' + duration + 'ms"></div>';
 
+        let dismissTimer;
         const dismiss = () => {
+            clearTimeout(dismissTimer);
             toast.classList.add('toast--exit');
-            setTimeout(() => toast.remove(), 200);
+            setTimeout(() => toast.remove(), 250);
         };
         toast.querySelector('.toast__close').addEventListener('click', dismiss);
+
+        // Pause progress bar on hover
+        toast.addEventListener('mouseenter', () => {
+            clearTimeout(dismissTimer);
+            const bar = toast.querySelector('.toast__progress');
+            if (bar) bar.style.animationPlayState = 'paused';
+        });
+        toast.addEventListener('mouseleave', () => {
+            const bar = toast.querySelector('.toast__progress');
+            if (bar) bar.style.animationPlayState = 'running';
+            dismissTimer = setTimeout(dismiss, 1500);
+        });
+
         container.appendChild(toast);
 
         const toasts = container.querySelectorAll('.toast');
         if (toasts.length > CONFIG.maxToasts) toasts[0].remove();
 
-        setTimeout(dismiss, duration);
+        dismissTimer = setTimeout(dismiss, duration);
     },
 
     // ─── Modal ──────────────────────────────
