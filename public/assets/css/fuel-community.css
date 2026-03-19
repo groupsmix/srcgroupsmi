@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════
    Fuel the Community — Complete Styles
-   Gamification, Wallet, Tips, Badges, Levels, Challenges
+   Gamification, Wallet, Tips, Badges, Levels
    ═══════════════════════════════════════ */
 
 /* ─── CSS Variables ─────────────────── */
@@ -444,75 +444,6 @@
 }
 .fuel-btn svg { width: 16px; height: 16px; }
 
-/* ─── Challenge Card ────────────────── */
-.fuel-challenge-card {
-    background: var(--bg-secondary, #1a1a2e);
-    border-radius: var(--fuel-radius-lg);
-    padding: 20px;
-    border: 1px solid var(--border-color, rgba(255,255,255,0.08));
-    transition: transform var(--fuel-transition);
-}
-.fuel-challenge-card:hover { transform: translateY(-2px); }
-.fuel-challenge-card--active {
-    border-color: var(--fuel-primary);
-    background: color-mix(in srgb, var(--fuel-primary) 5%, var(--bg-secondary, #1a1a2e));
-}
-.fuel-challenge-card__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
-.fuel-challenge-card__title {
-    font-size: var(--text-base, 15px);
-    font-weight: 700;
-    color: var(--text-primary, #fff);
-    margin: 0;
-}
-.fuel-challenge-card__time {
-    font-size: var(--text-xs, 11px);
-    color: var(--fuel-orange);
-    font-weight: 600;
-    background: color-mix(in srgb, var(--fuel-orange) 15%, transparent);
-    padding: 2px 8px;
-    border-radius: var(--fuel-radius-full);
-}
-.fuel-challenge-card__desc {
-    font-size: var(--text-sm, 13px);
-    color: var(--text-secondary, #aaa);
-    margin-bottom: 12px;
-    line-height: 1.5;
-}
-.fuel-challenge-card__rewards {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 8px;
-}
-.fuel-challenge-card__reward {
-    font-size: var(--text-xs, 11px);
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: var(--fuel-radius-full);
-    background: color-mix(in srgb, var(--fuel-coin) 15%, transparent);
-    color: var(--fuel-coin);
-}
-.fuel-challenge-card__meta {
-    display: flex;
-    gap: 12px;
-    font-size: var(--text-xs, 11px);
-    color: var(--text-tertiary, #666);
-    margin-bottom: 12px;
-}
-.fuel-challenge-card__actions { text-align: center; }
-.fuel-challenge-card__status {
-    font-size: var(--text-sm, 13px);
-    color: var(--text-secondary, #aaa);
-}
-.fuel-challenge-card__status--done {
-    color: var(--fuel-green);
-    font-weight: 700;
-}
-
 /* ─── Leaderboard ───────────────────── */
 .fuel-lb-row {
     display: flex;
@@ -799,13 +730,6 @@
 .fuel-dashboard-table tr:last-child td { border-bottom: none; }
 .fuel-dashboard-table tr:hover { background: rgba(255,255,255,0.02); }
 
-/* ─── Challenges Page ───────────────── */
-.fuel-challenges-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 16px;
-}
-
 /* ─── Responsive ────────────────────── */
 @media (max-width: 768px) {
     .fuel-badge-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
@@ -814,7 +738,6 @@
     .fuel-wallet-header { flex-direction: column; text-align: center; }
     .fuel-wallet-actions { justify-content: center; }
     .fuel-dashboard__grid { grid-template-columns: 1fr 1fr; }
-    .fuel-challenges-grid { grid-template-columns: 1fr; }
     .fuel-article-section__tips { gap: 8px; }
     .fuel-article-tip-btn { min-width: 60px; padding: 8px 10px; }
 }

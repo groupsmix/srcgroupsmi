@@ -84,7 +84,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 '<div class="skeleton" style="height:300px;border-radius:var(--radius-lg)"></div>' +
                 '</div>' +
                 '<div id="dash-withdrawals"></div>' +
-                '<div id="dash-challenge-form"></div>' +
                 '</div>';
 
             // Period buttons
@@ -201,61 +200,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                         });
                     });
                 }
-
-                // Create Challenge Form
-                var challengeFormEl = document.getElementById('dash-challenge-form');
-                challengeFormEl.innerHTML =
-                    '<div class="fuel-dashboard-section">' +
-                    '<div class="fuel-dashboard-section__title">Create New Challenge</div>' +
-                    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">' +
-                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Title (English)</label><input type="text" id="ch-title" class="form-input" placeholder="Write a Crypto article this week"></div>' +
-                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Title (Arabic)</label><input type="text" id="ch-title-ar" class="form-input" dir="rtl" placeholder="اكتب مقال عن العملات الرقمية"></div>' +
-                    '<div style="grid-column:1/-1"><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Description</label><textarea id="ch-desc" class="form-input" rows="2" placeholder="Write and publish an article about cryptocurrency topics..."></textarea></div>' +
-                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Type</label><select id="ch-type" class="form-input"><option value="write">Write Articles</option><option value="engage">Engage (Like/Comment)</option><option value="tip">Send Tips</option><option value="refer">Refer Friends</option></select></div>' +
-                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Target Category</label><input type="text" id="ch-category" class="form-input" placeholder="e.g. crypto (optional)"></div>' +
-                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Required Count</label><input type="number" id="ch-count" class="form-input" value="1" min="1"></div>' +
-                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Max Participants (0=unlimited)</label><input type="number" id="ch-max" class="form-input" value="0" min="0"></div>' +
-                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Reward Coins</label><input type="number" id="ch-coins" class="form-input" value="50" min="0"></div>' +
-                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Reward XP</label><input type="number" id="ch-xp" class="form-input" value="20" min="0"></div>' +
-                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Starts At</label><input type="datetime-local" id="ch-starts" class="form-input"></div>' +
-                    '<div><label style="font-size:var(--text-xs);font-weight:600;display:block;margin-bottom:4px">Ends At</label><input type="datetime-local" id="ch-ends" class="form-input"></div>' +
-                    '</div>' +
-                    '<button class="btn btn-primary" id="ch-create-btn" style="margin-top:var(--space-4)">Create Challenge</button>' +
-                    '</div>';
-
-                // Set default dates
-                var now = new Date();
-                var nextWeek = new Date(now.getTime() + 7 * 86400000);
-                var startsInput = document.getElementById('ch-starts');
-                var endsInput = document.getElementById('ch-ends');
-                if (startsInput) startsInput.value = now.toISOString().slice(0, 16);
-                if (endsInput) endsInput.value = nextWeek.toISOString().slice(0, 16);
-
-                document.getElementById('ch-create-btn').addEventListener('click', async function () {
-                    var btn = this;
-                    btn.disabled = true;
-                    btn.textContent = 'Creating...';
-                    var result = await OwnerDashboard.createChallenge({
-                        title: (document.getElementById('ch-title') || {}).value || '',
-                        title_ar: (document.getElementById('ch-title-ar') || {}).value || '',
-                        description: (document.getElementById('ch-desc') || {}).value || '',
-                        challenge_type: (document.getElementById('ch-type') || {}).value || 'write',
-                        target_category: (document.getElementById('ch-category') || {}).value || '',
-                        required_count: parseInt((document.getElementById('ch-count') || {}).value) || 1,
-                        max_participants: parseInt((document.getElementById('ch-max') || {}).value) || 0,
-                        reward_coins: parseInt((document.getElementById('ch-coins') || {}).value) || 50,
-                        reward_xp: parseInt((document.getElementById('ch-xp') || {}).value) || 20,
-                        starts_at: (document.getElementById('ch-starts') || {}).value || new Date().toISOString(),
-                        ends_at: (document.getElementById('ch-ends') || {}).value || new Date(Date.now() + 7 * 86400000).toISOString()
-                    });
-                    btn.disabled = false;
-                    btn.textContent = 'Create Challenge';
-                    if (result) {
-                        document.getElementById('ch-title').value = '';
-                        document.getElementById('ch-title-ar').value = '';
-                        document.getElementById('ch-desc').value = '';
-                    }
-                });
 
             } catch (err) {
                 console.error('Owner dashboard error:', err.message);

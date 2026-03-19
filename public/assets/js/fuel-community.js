@@ -1,6 +1,6 @@
 /**
  * fuel-community.js — Fuel the Community Module
- * Complete gamification system: Wallet, Coins, Tips, Badges, Levels, Challenges
+ * Complete gamification system: Wallet, Coins, Tips, Badges, Levels
  *
  * Dependencies: app.js (CONFIG, Security, Auth, DB, UI, CACHE, Algorithms)
  * Must be loaded AFTER app.js and components.js
@@ -40,8 +40,6 @@ const XP_REWARDS = {
     new_follower: 5,
     send_tip: 1,
     receive_tip: 2,
-    join_challenge: 5,
-    complete_challenge: 15,
     daily_login: 1
 };
 
@@ -435,46 +433,6 @@ const WriterLevels = {
 
 
 // ═══════════════════════════════════════
-// MODULE: Challenges
-// ═══════════════════════════════════════
-const Challenges = {
-    async getAll() {
-        try {
-            var userId = Auth.isLoggedIn() ? Auth.getUserId() : null;
-            var { data, error } = await window.supabaseClient.rpc('get_challenges', { p_user_id: userId });
-            if (error) throw error;
-            return data;
-        } catch (err) {
-            console.error('Challenges.getAll:', err.message);
-            return { active: [], upcoming: [], completed: [] };
-        }
-    },
-
-    async join(challengeId) {
-        try {
-            if (!Auth.requireAuth()) return null;
-            var { data, error } = await window.supabaseClient.rpc('join_challenge', {
-                p_user_id: Auth.getUserId(),
-                p_challenge_id: challengeId
-            });
-            if (error) throw error;
-            if (data && data.error) {
-                UI.toast(data.error, 'error');
-                return null;
-            }
-            UI.toast('Joined challenge! Good luck!', 'success');
-            Analytics.track('challenge_joined', 'engagement', { challenge_id: challengeId });
-            return data;
-        } catch (err) {
-            console.error('Challenges.join:', err.message);
-            UI.toast('Failed to join challenge', 'error');
-            return null;
-        }
-    }
-};
-
-
-// ═══════════════════════════════════════
 // MODULE: OwnerDashboard
 // ═══════════════════════════════════════
 const OwnerDashboard = {
@@ -539,36 +497,6 @@ const OwnerDashboard = {
             console.error('OwnerDashboard.processWithdrawal:', err.message);
             UI.toast('Failed to process withdrawal', 'error');
             return false;
-        }
-    },
-
-    async createChallenge(challengeData) {
-        try {
-            if (!Auth.hasRole('admin')) return null;
-            var { data, error } = await window.supabaseClient.from('weekly_challenges').insert({
-                title: Security.sanitize(challengeData.title),
-                title_ar: Security.sanitize(challengeData.title_ar || ''),
-                description: Security.sanitize(challengeData.description || ''),
-                description_ar: Security.sanitize(challengeData.description_ar || ''),
-                challenge_type: challengeData.challenge_type || 'write',
-                target_category: challengeData.target_category || '',
-                required_count: challengeData.required_count || 1,
-                reward_coins: challengeData.reward_coins || 50,
-                reward_xp: challengeData.reward_xp || 20,
-                reward_badge: challengeData.reward_badge || '',
-                max_participants: challengeData.max_participants || 0,
-                starts_at: challengeData.starts_at,
-                ends_at: challengeData.ends_at,
-                status: new Date(challengeData.starts_at) <= new Date() ? 'active' : 'upcoming',
-                created_by: Auth.getUserId()
-            }).select().single();
-            if (error) throw error;
-            UI.toast('Challenge created!', 'success');
-            return data;
-        } catch (err) {
-            console.error('OwnerDashboard.createChallenge:', err.message);
-            UI.toast('Failed to create challenge', 'error');
-            return null;
         }
     },
 

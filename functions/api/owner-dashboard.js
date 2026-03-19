@@ -1,14 +1,13 @@
 /**
  * /api/owner-dashboard — Owner/Admin Dashboard API
  *
- * Provides platform analytics, withdrawal management, and challenge creation.
+ * Provides platform analytics and withdrawal management.
  * All endpoints require admin role authentication.
  *
  * GET  /api/owner-dashboard?action=stats&days=30          — Platform stats
  * GET  /api/owner-dashboard?action=withdrawals            — Pending withdrawals
  * GET  /api/owner-dashboard?action=leaderboard&type=xp&limit=10  — Leaderboard
  * POST /api/owner-dashboard  { action: 'process_withdrawal', request_id, decision, admin_note }
- * POST /api/owner-dashboard  { action: 'create_challenge', ...challengeData }
  *
  * Environment variables:
  *   SUPABASE_URL         — Supabase project URL
@@ -417,56 +416,6 @@ async function handlePost(request, env, admin, origin) {
                 }
 
                 return new Response(JSON.stringify({ ok: true, decision: decision, request_id: requestId }), {
-                    status: 200, headers: corsHeaders(origin)
-                });
-            }
-
-            case 'create_challenge': {
-                const title = (body.title || '').trim();
-                if (!title) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Challenge title is required' }), {
-                        status: 400, headers: corsHeaders(origin)
-                    });
-                }
-
-                const challengeData = {
-                    title: title,
-                    title_ar: (body.title_ar || '').trim() || null,
-                    description: (body.description || '').trim() || null,
-                    challenge_type: body.challenge_type || 'write',
-                    target_category: (body.target_category || '').trim() || null,
-                    required_count: parseInt(body.required_count) || 1,
-                    max_participants: parseInt(body.max_participants) || 0,
-                    reward_coins: parseInt(body.reward_coins) || 0,
-                    reward_xp: parseInt(body.reward_xp) || 0,
-                    reward_badge_id: body.reward_badge_id || null,
-                    starts_at: body.starts_at || new Date().toISOString(),
-                    ends_at: body.ends_at || new Date(Date.now() + 7 * 86400000).toISOString(),
-                    is_active: true,
-                    created_by: admin.userId
-                };
-
-                const createRes = await fetch(supabaseUrl + '/rest/v1/weekly_challenges', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': supabaseKey,
-                        'Authorization': 'Bearer ' + supabaseKey,
-                        'Prefer': 'return=representation'
-                    },
-                    body: JSON.stringify(challengeData)
-                });
-
-                if (!createRes.ok) {
-                    const errText = await createRes.text();
-                    console.error('Create challenge error:', errText);
-                    return new Response(JSON.stringify({ ok: false, error: 'Failed to create challenge' }), {
-                        status: 500, headers: corsHeaders(origin)
-                    });
-                }
-
-                const challenge = await createRes.json();
-                return new Response(JSON.stringify({ ok: true, data: challenge[0] || challenge }), {
                     status: 200, headers: corsHeaders(origin)
                 });
             }

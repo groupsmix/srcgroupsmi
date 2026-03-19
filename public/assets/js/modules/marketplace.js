@@ -263,9 +263,10 @@ const Marketplace = {
                 product_category: category,
                 title: Security.sanitize(listingData.title || '').slice(0, 100),
                 description: Security.sanitize(listingData.description || '').slice(0, 1000),
-                price: Math.max(0, parseFloat(listingData.price) || 0),
-                currency: listingData.currency || 'USD',
+                price: Math.max(1, parseInt(listingData.price) || 1),
+                currency: 'coins',
                 contact_link: Security.sanitize(listingData.contact_link || ''),
+                delivery_url: Security.sanitize(listingData.delivery_url || ''),
                 status: 'pending',
                 seller_verified: true
             };

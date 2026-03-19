@@ -214,11 +214,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <div class="shorten-hero">
         <h1 class="shorten-hero__title">Group Link Shortener</h1>
         <p class="shorten-hero__subtitle">Shorten your group invite links and track every click. See which countries and devices your members use.</p>
+        <p style="color:var(--text-tertiary);font-size:var(--text-xs);margin-top:var(--space-2)">Supports WhatsApp, Telegram, Discord &amp; Facebook Group links only</p>
     </div>
 
     <div class="shorten-form-card">
         <div class="shorten-input-row">
-            <input type="url" id="shorten-url" class="form-input" placeholder="Paste your group invite link here...">
+            <input type="url" id="shorten-url" class="form-input" placeholder="Paste your group invite link (WhatsApp, Telegram, Discord, Facebook)...">
             <button class="btn btn-primary" id="shorten-btn">Shorten</button>
         </div>
         <div class="shorten-result" id="shorten-result">
@@ -282,6 +283,25 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (!url) { UI.toast('Please enter a URL', 'warning'); return; }
         if (!Security.isValidUrl(url)) { UI.toast('Please enter a valid URL', 'error'); return; }
 
+        // Client-side check: only group invite links allowed
+        var ALLOWED_DOMAINS = ['chat.whatsapp.com', 't.me', 'telegram.me', 'discord.gg', 'discord.com', 'facebook.com', 'www.facebook.com', 'fb.com'];
+        try {
+            var parsed = new URL(url);
+            var host = parsed.hostname.toLowerCase();
+            var path = parsed.pathname.toLowerCase();
+            var isGroupLink = ALLOWED_DOMAINS.some(function(d) { return host === d || host.endsWith('.' + d); });
+            // For facebook/discord, verify it's a group/invite link
+            if (host.includes('facebook.com') || host.includes('fb.com')) { isGroupLink = path.startsWith('/groups'); }
+            if (host === 'discord.com') { isGroupLink = path.startsWith('/invite'); }
+            if (!isGroupLink) {
+                UI.toast('Only group invite links are allowed (WhatsApp, Telegram, Discord, Facebook Groups)', 'error');
+                return;
+            }
+        } catch (e) {
+            UI.toast('Please enter a valid URL', 'error');
+            return;
+        }
+
         var btn = this;
         btn.disabled = true;
         btn.textContent = 'Shortening...';
@@ -303,7 +323,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 UI.toast(data.errors ? data.errors[0] : 'Failed to shorten link', 'error');
             }
         } catch (err) {
-            UI.toast('Failed to shorten link. Try again.', 'error');
+            // Show error instead of generating fake client-side URLs
+            UI.toast('Service temporarily unavailable. Please try again later.', 'error');
         }
         btn.disabled = false;
         btn.textContent = 'Shorten';

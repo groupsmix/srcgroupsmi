@@ -8,7 +8,7 @@
  * Body: { action, user_id?, article_id?, metadata? }
  *
  * Actions: publish_article, receive_like, receive_comment, article_trending,
- *          new_follower, send_tip, receive_tip, join_challenge, complete_challenge, daily_login
+ *          new_follower, send_tip, receive_tip, daily_login
  *
  * Environment variables:
  *   SUPABASE_URL         — Supabase project URL
@@ -24,8 +24,6 @@ const XP_REWARDS = {
     new_follower: 5,
     send_tip: 1,
     receive_tip: 2,
-    join_challenge: 5,
-    complete_challenge: 15,
     daily_login: 1
 };
 
@@ -140,7 +138,7 @@ export async function onRequest(context) {
         const callerRole = callers[0].role;
 
         // Self-actions use the caller's ID
-        const selfActions = ['publish_article', 'send_tip', 'join_challenge', 'daily_login'];
+        const selfActions = ['publish_article', 'send_tip', 'daily_login'];
         if (selfActions.includes(action)) {
             targetUserId = callerInternalId;
         }
@@ -154,7 +152,7 @@ export async function onRequest(context) {
         }
 
         // Prevent users from awarding XP to themselves for "receive" actions
-        const receiveActions = ['receive_like', 'receive_comment', 'new_follower', 'receive_tip', 'article_trending', 'complete_challenge'];
+        const receiveActions = ['receive_like', 'receive_comment', 'new_follower', 'receive_tip', 'article_trending'];
         if (receiveActions.includes(action) && targetUserId === callerInternalId && callerRole !== 'admin') {
             return new Response(JSON.stringify({ ok: false, error: 'Cannot award XP to yourself for this action' }), {
                 status: 403, headers: corsHeaders(origin)
