@@ -270,8 +270,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="go-page">
             <div class="go-card">
                 <div class="go-card__icon" id="go-icon">&#128274;</div>
+                <div id="go-platform-badge" style="display:none;margin-bottom:var(--space-3)"></div>
                 <h1 class="go-card__title" id="go-title">Securing your connection...</h1>
                 <p class="go-card__message" id="go-message">We're verifying the group link for your safety. Please wait.</p>
+                <div id="go-trust-info" style="display:none;background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-lg);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-4);text-align:left">
+                    <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-2)">
+                        <span id="go-trust-icon" style="font-size:var(--text-lg)"></span>
+                        <strong id="go-group-label" style="font-size:var(--text-sm)"></strong>
+                    </div>
+                    <div style="font-size:var(--text-xs);color:var(--text-tertiary)">
+                        <span>Platform: <strong id="go-platform-name"></strong></span>
+                        <span style="margin-left:var(--space-3)">Verified by GroupsMix</span>
+                    </div>
+                </div>
 
                 <div class="countdown-ring" id="countdown-ring">
                     <svg viewBox="0 0 100 100">
@@ -403,6 +414,32 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 return;
             }
 
+            /* Detect platform and show branded landing info */
+            var platformInfo = detectPlatform(targetUrl);
+            if (platformInfo) {
+                var trustInfoEl = document.getElementById('go-trust-info');
+                var platformBadge = document.getElementById('go-platform-badge');
+                document.getElementById('go-trust-icon').textContent = platformInfo.icon;
+                document.getElementById('go-group-label').textContent = 'You\'re about to join a group on ' + platformInfo.name;
+                document.getElementById('go-platform-name').textContent = platformInfo.name;
+                document.getElementById('go-title').textContent = 'Verifying ' + platformInfo.name + ' link...';
+                document.getElementById('go-message').textContent = 'We\'re checking this group link for your safety.';
+                trustInfoEl.style.display = 'block';
+                platformBadge.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;background:' + platformInfo.color + ';color:#fff;padding:4px 12px;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:600">' + platformInfo.icon + ' ' + platformInfo.name + '</span>';
+                platformBadge.style.display = 'block';
+            }
+
+            function detectPlatform(url) {
+                try {
+                    var h = new URL(url).hostname.toLowerCase();
+                    if (h.includes('whatsapp.com') || h.includes('wa.me')) return { name: 'WhatsApp', icon: '\uD83D\uDCAC', color: '#25D366' };
+                    if (h.includes('t.me') || h.includes('telegram')) return { name: 'Telegram', icon: '\u2708\uFE0F', color: '#0088cc' };
+                    if (h.includes('discord')) return { name: 'Discord', icon: '\uD83C\uDFAE', color: '#5865F2' };
+                    if (h.includes('facebook.com') || h.includes('fb.com')) return { name: 'Facebook', icon: '\uD83D\uDC65', color: '#1877F2' };
+                    return null;
+                } catch (e) { return null; }
+            }
+
             /* Render Crypto Donation Wallets */
             renderDonation();
 
@@ -437,8 +474,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
                     /* Reveal the link */
                     document.getElementById('go-icon').innerHTML = '&#9989;';
-                    document.getElementById('go-title').textContent = 'Connection Secured!';
-                    document.getElementById('go-message').textContent = 'Your link is ready. You will be redirected shortly.';
+                    if (platformInfo) {
+                        document.getElementById('go-title').textContent = platformInfo.name + ' Link Verified!';
+                        document.getElementById('go-message').textContent = 'You\'re about to join a group on ' + platformInfo.name + '. Redirecting...';
+                    } else {
+                        document.getElementById('go-title').textContent = 'Connection Secured!';
+                        document.getElementById('go-message').textContent = 'Your link is ready. You will be redirected shortly.';
+                    }
                     document.getElementById('countdown-ring').style.display = 'none';
 
                     var linkEl = document.getElementById('go-link');

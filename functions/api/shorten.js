@@ -51,6 +51,34 @@ function isValidUrl(url) {
     }
 }
 
+/* ── Allowed group invite link domains ──────────────────────── */
+/* Only allow shortening group invite links — not generic URLs */
+const ALLOWED_LINK_DOMAINS = [
+    'chat.whatsapp.com',
+    't.me', 'telegram.me',
+    'discord.gg', 'discord.com/invite',
+    'facebook.com/groups', 'www.facebook.com/groups', 'fb.com/groups'
+];
+
+function isAllowedGroupLink(url) {
+    try {
+        const u = new URL(url);
+        const hostname = u.hostname.toLowerCase();
+        const pathname = u.pathname.toLowerCase();
+        const hostAndPath = hostname + pathname;
+        return ALLOWED_LINK_DOMAINS.some(function(domain) {
+            // For domains with paths (e.g. facebook.com/groups), check host+path
+            if (domain.includes('/')) {
+                return hostAndPath.startsWith(domain) || hostAndPath.startsWith('www.' + domain);
+            }
+            // For plain domains, just check hostname
+            return hostname === domain || hostname.endsWith('.' + domain);
+        });
+    } catch {
+        return false;
+    }
+}
+
 /* ── Main handler ────────────────────────────────────────────── */
 export async function onRequest(context) {
     const { request, env } = context;
@@ -87,6 +115,14 @@ export async function onRequest(context) {
         );
     }
 
+    // Restrict to group invite links only
+    if (!isAllowedGroupLink(url)) {
+        return new Response(
+            JSON.stringify({ ok: false, errors: ['Only group invite links are allowed (WhatsApp, Telegram, Discord, Facebook Groups)'] }),
+            { status: 422, headers: corsHeaders(origin) }
+        );
+    }
+
     // Determine code
     let code = alias ? alias.replace(/[^a-zA-Z0-9_-]/g, '').substring(0, 30) : generateCode();
     if (!code) code = generateCode();
@@ -96,11 +132,10 @@ export async function onRequest(context) {
     const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
 
     if (!supabaseKey) {
-        // Fallback: return a client-side-only short link (no persistence)
+        // No Supabase key — return error instead of fake non-persisted link
         return new Response(
-            /* Fix: include https:// protocol in shortUrl */
-            JSON.stringify({ ok: true, code, shortUrl: 'https://groupsmix.com/go?code=' + code, persisted: false }),
-            { status: 200, headers: corsHeaders(origin) }
+            JSON.stringify({ ok: false, errors: ['Service temporarily unavailable. Please try again later.'] }),
+            { status: 503, headers: corsHeaders(origin) }
         );
     }
 

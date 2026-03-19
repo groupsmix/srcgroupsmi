@@ -201,7 +201,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             try {
                 var data = await Wallet.getWithdrawals();
                 if (!data.length) {
-                    el.innerHTML = '<div class="fuel-wallet-txns"><div style="text-align:center;padding:var(--space-6);color:var(--text-tertiary)">No cashout requests yet. Earn coins through tips, marketplace sales, referrals, and challenges. You can cash out when you reach 5,000+ earned coins.</div></div>';
+                    el.innerHTML = '<div class="fuel-wallet-txns"><div style="text-align:center;padding:var(--space-6);color:var(--text-tertiary)">No cashout requests yet. Earn coins through tips, marketplace sales, and referrals. You can cash out when you reach 5,000+ earned coins.</div></div>';
                     return;
                 }
                 var statusColors = { pending: 'var(--fuel-orange)', approved: 'var(--fuel-green)', rejected: 'var(--fuel-red)', completed: 'var(--fuel-blue)' };

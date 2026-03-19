@@ -1,12 +1,12 @@
 /**
  * fuel-components.js — UI Components for Fuel the Community
- * Badges display, level progress, tip modal, coin purchase, wallet UI, challenges
+ * Badges display, level progress, tip modal, coin purchase, wallet UI
  *
  * Dependencies: components.js (UI), fuel-community.js (Wallet, Tips, WriterBadges, etc.)
  * Must be loaded AFTER components.js and fuel-community.js
  */
 
-/* global UI, Security, Auth, ICONS, CONFIG, Wallet, Tips, TIP_TYPES, WriterBadges, WriterLevels, WRITER_LEVELS, Challenges, FuelCommunity, Analytics */
+/* global UI, Security, Auth, ICONS, CONFIG, Wallet, Tips, TIP_TYPES, WriterBadges, WriterLevels, WRITER_LEVELS, FuelCommunity, Analytics */
 
 // ═══════════════════════════════════════
 // BADGE DISPLAY COMPONENTS
@@ -200,7 +200,6 @@ UI.fuelTransactionRow = function (txn) {
         tip_sent: 'Tip Sent',
         tip_received: 'Tip Received',
         reward: 'Activity Reward',
-        challenge_bonus: 'Challenge Bonus',
         withdrawal: 'Withdrawal',
         refund: 'Refund',
         admin_credit: 'Admin Credit',
@@ -375,77 +374,6 @@ UI.initFuelButtons = function (container) {
             e.preventDefault();
             e.stopPropagation();
             UI.fuelTipModal(btn.dataset.receiverId, btn.dataset.receiverName, btn.dataset.articleId);
-        });
-    });
-};
-
-
-// ═══════════════════════════════════════
-// CHALLENGE COMPONENTS
-// ═══════════════════════════════════════
-
-/**
- * Challenge card
- */
-UI.fuelChallengeCard = function (challenge) {
-    if (!challenge) return '';
-    var isActive = challenge.status === 'active';
-    var myParticipation = challenge.my_participation;
-    var timeLeft = '';
-    if (isActive && challenge.ends_at) {
-        var diff = new Date(challenge.ends_at) - new Date();
-        var days = Math.floor(diff / 86400000);
-        var hours = Math.floor((diff % 86400000) / 3600000);
-        timeLeft = days > 0 ? days + 'd ' + hours + 'h left' : hours + 'h left';
-    }
-
-    return '<div class="fuel-challenge-card' + (isActive ? ' fuel-challenge-card--active' : '') + '">' +
-        '<div class="fuel-challenge-card__header">' +
-        '<h3 class="fuel-challenge-card__title">' + Security.sanitize(challenge.title) + '</h3>' +
-        (timeLeft ? '<span class="fuel-challenge-card__time">' + timeLeft + '</span>' : '') +
-        '</div>' +
-        '<p class="fuel-challenge-card__desc">' + Security.sanitize(challenge.description || '') + '</p>' +
-        '<div class="fuel-challenge-card__rewards">' +
-        '<span class="fuel-challenge-card__reward">' + (challenge.reward_coins || 0) + ' GMX Coins</span>' +
-        '<span class="fuel-challenge-card__reward">' + (challenge.reward_xp || 0) + ' XP</span>' +
-        '</div>' +
-        '<div class="fuel-challenge-card__meta">' +
-        '<span>' + (challenge.participant_count || 0) + ' participants</span>' +
-        (challenge.max_participants > 0 ? '<span>Max: ' + challenge.max_participants + '</span>' : '') +
-        '</div>' +
-        '<div class="fuel-challenge-card__actions">' +
-        (isActive && !myParticipation ?
-            '<button class="btn btn-primary btn-sm fuel-challenge-join-btn" data-challenge-id="' + challenge.id + '">Join Challenge</button>' :
-            myParticipation ?
-                (myParticipation.completed ? '<span class="fuel-challenge-card__status fuel-challenge-card__status--done">Completed!</span>' : '<span class="fuel-challenge-card__status">Joined - Progress: ' + (myParticipation.progress || 0) + '/' + (challenge.required_count || 1) + '</span>') :
-                '<span class="fuel-challenge-card__status">Coming Soon</span>'
-        ) +
-        '</div>' +
-        '</div>';
-};
-
-/**
- * Initialize challenge join buttons
- */
-UI.initChallengeButtons = function (container) {
-    container = container || document;
-    container.querySelectorAll('.fuel-challenge-join-btn').forEach(function(btn) {
-        if (btn._challengeInit) return;
-        btn._challengeInit = true;
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            btn.disabled = true;
-            btn.textContent = 'Joining...';
-            Challenges.join(btn.dataset.challengeId).then(function(result) {
-                if (result) {
-                    btn.textContent = 'Joined!';
-                    btn.classList.remove('btn-primary');
-                    btn.classList.add('btn-secondary');
-                } else {
-                    btn.disabled = false;
-                    btn.textContent = 'Join Challenge';
-                }
-            });
         });
     });
 };
