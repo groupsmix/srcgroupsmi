@@ -10,21 +10,11 @@
  *   { ok: true, code, shortUrl } or { ok: false, errors: [...] }
  */
 
-/* ── Allowed origins for CORS ────────────────────────────────── */
-const ALLOWED_ORIGINS = [
-    'https://groupsmix.com'
-];
+import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
 
-/* ── CORS headers ────────────────────────────────────────────── */
-/* Security: restrict CORS to known origins instead of wildcard */
+/** CORS headers with Content-Type for JSON responses */
 function corsHeaders(origin) {
-    const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-    return {
-        'Access-Control-Allow-Origin': allowed,
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Content-Type': 'application/json'
-    };
+    return _corsHeaders(origin, { 'Content-Type': 'application/json' });
 }
 
 /* ── Generate a random 6-char code ───────────────────────────── */
@@ -85,7 +75,7 @@ export async function onRequest(context) {
     const origin = request.headers.get('Origin') || '';
 
     if (request.method === 'OPTIONS') {
-        return new Response(null, { status: 204, headers: corsHeaders(origin) });
+        return handlePreflight(origin);
     }
 
     if (request.method !== 'POST') {
@@ -128,8 +118,8 @@ export async function onRequest(context) {
     if (!code) code = generateCode();
 
     // Use Supabase REST API to insert the short link
-    const supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';
-    const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
+    const supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';  // fallback for local dev
+    const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';  // prefer service key
 
     if (!supabaseKey) {
         // No Supabase key — return error instead of fake non-persisted link

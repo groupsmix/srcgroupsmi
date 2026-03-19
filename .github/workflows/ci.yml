@@ -24,10 +24,13 @@ jobs:
       - name: Check Astro build
         run: npm run build
 
-      - name: Verify no console.log in Cloudflare Functions (warnings only)
+      - name: Reject console.log in Cloudflare Functions
         run: |
-          echo "::notice::Checking for console.log usage in functions/"
-          count=$(grep -r "console\.log" functions/ --include="*.js" -l | wc -l || true)
-          if [ "$count" -gt 0 ]; then
-            echo "::warning::Found console.log in $count function file(s) — consider using structured logging"
+          echo "Checking for console.log usage in functions/ ..."
+          files=$(grep -r "console\.log" functions/ --include="*.js" -l || true)
+          if [ -n "$files" ]; then
+            echo "::error::console.log found in server functions — use console.error/warn instead:"
+            echo "$files"
+            exit 1
           fi
+          echo "No console.log found in functions/"

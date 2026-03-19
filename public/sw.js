@@ -1,6 +1,6 @@
-// Cache version — bump this string on every deploy to bust old caches.
-// Use a date stamp so each deploy is unique.
-var CACHE_VERSION = '20260310b';
+// Cache version — auto-stamped at build time by scripts/stamp-sw.js.
+// Falls back to a static string during local dev.
+var CACHE_VERSION = '%%SW_VERSION%%';
 var CACHE_NAME = 'groupsmix-v' + CACHE_VERSION;
 
 self.addEventListener('install', function(e) {
