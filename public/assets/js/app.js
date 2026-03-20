@@ -4098,8 +4098,8 @@ function renderHeader() {
     if (moreBtn) {
         moreBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            var wrapper = moreBtn.closest('.subnav__more-wrapper');
-            var existing = wrapper.querySelector('.subnav__more-dropdown');
+            var subnav = document.getElementById('subnav');
+            var existing = subnav.querySelector('.subnav__more-dropdown');
             if (existing) { existing.remove(); return; }
             closeAllDropdowns();
             var dd = document.createElement('div');
@@ -4111,7 +4111,13 @@ function renderHeader() {
                 '<a href="/leaderboard" class="subnav__more-item">' + ICONS.star + ' Leaderboard</a>' +
                 '<a href="/stats" class="subnav__more-item">' + ICONS.zap + ' Stats</a>' +
                 '<a href="/fuel" class="subnav__more-item">' + ICONS.heart + ' Fuel the Community</a>';
-            wrapper.appendChild(dd);
+            // Position dropdown aligned to the More button, appended to subnav to avoid overflow clipping
+            var btnRect = moreBtn.getBoundingClientRect();
+            var subnavRect = subnav.getBoundingClientRect();
+            dd.style.position = 'absolute';
+            dd.style.top = (btnRect.bottom - subnavRect.top + 4) + 'px';
+            dd.style.right = (subnavRect.right - btnRect.right) + 'px';
+            subnav.appendChild(dd);
         });
     }
 
