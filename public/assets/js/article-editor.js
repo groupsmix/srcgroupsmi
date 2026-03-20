@@ -500,6 +500,24 @@ const ArticleEditor = {
                 }
             }
 
+            // Save revision snapshot
+            if (typeof ArticleRevisions !== 'undefined' && this._articleId) {
+                try { await ArticleRevisions.saveRevision(this._articleId, articleData.title, articleData.content); } catch (e) { /* ok */ }
+            }
+
+            // Apply paywall settings if any
+            if (typeof ArticlePaywall !== 'undefined') {
+                const paywallSettings = ArticlePaywall.getSettings();
+                if (paywallSettings && paywallSettings.coin_price > 0) {
+                    try {
+                        await window.supabaseClient.from('articles').update({
+                            coin_price: paywallSettings.coin_price,
+                            free_preview_pct: paywallSettings.free_preview_pct
+                        }).eq('id', this._articleId);
+                    } catch (e) { /* ok */ }
+                }
+            }
+
             // Update series article count
             if (articleData.series_id) {
                 try { await window.supabaseClient.rpc('update_series_article_count', { p_series_id: articleData.series_id }); } catch (e) { /* ok */ }
@@ -804,6 +822,18 @@ const ArticleEditor = {
                 pollWrap.innerHTML = ArticlePolls.renderPollBuilder();
                 editorWrap.parentNode.insertBefore(pollWrap, editorWrap);
                 ArticlePolls.initBuilder();
+            }
+        }
+
+        // Add revision history link for existing articles
+        if (typeof ArticleRevisions !== 'undefined' && this._articleId) {
+            const actions = document.querySelector('.write-article__actions');
+            if (actions) {
+                const revLink = document.createElement('a');
+                revLink.href = '/article-revisions?id=' + this._articleId;
+                revLink.className = 'btn btn-ghost btn-sm';
+                revLink.textContent = 'Revision History';
+                actions.appendChild(revLink);
             }
         }
     },
