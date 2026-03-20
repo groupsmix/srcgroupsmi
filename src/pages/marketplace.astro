@@ -13,8 +13,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
         .mk-hero__badge {
             display: inline-block;
-            /* CHANGED: System gradient */
-            background: var(--gradient-accent);
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary, #6366f1));
             color: #fff;
             padding: var(--space-1) var(--space-3);
             border-radius: var(--radius-full);
@@ -41,15 +40,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         .mk-stat {
             text-align: center;
         }
-        /* CHANGED: Gradient stat value */
         .mk-stat__value {
             font-size: var(--text-2xl);
-            font-weight: 800;
-            background: var(--gradient-accent);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.02em;
+            font-weight: var(--font-bold);
+            color: var(--accent-primary);
         }
         .mk-stat__label {
             font-size: var(--text-xs);
@@ -60,12 +54,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         .mk-section {
             margin-bottom: var(--space-8);
         }
-        /* CHANGED: Tighter tracking on section titles */
         .mk-section__title {
             font-size: var(--text-xl);
-            font-weight: 800;
+            font-weight: var(--font-bold);
             margin-bottom: var(--space-4);
-            letter-spacing: -0.025em;
         }
         /* Marketplace Listings Grid */
         .mk-listings-grid {
@@ -73,28 +65,24 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             grid-template-columns: repeat(3, 1fr);
             gap: var(--space-4);
         }
-        /* CHANGED: Surface shimmer + stronger hover */
         .mk-listing-card {
             background: var(--bg-card);
             border: 1px solid var(--border-primary);
             border-radius: var(--radius-lg);
             overflow: hidden;
-            transition: transform 0.2s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s ease, border-color 0.2s ease;
-            box-shadow: var(--shadow-sm), inset 0 1px 0 var(--surface-highlight);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .mk-listing-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.05);
-            border-color: var(--border-glow);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--accent-primary);
         }
-        /* CHANGED: Tinted header separator */
         .mk-listing-card__header {
             padding: var(--space-3) var(--space-4);
             display: flex;
             align-items: center;
             gap: var(--space-2);
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            background: rgba(255,255,255,0.01);
+            border-bottom: 1px solid var(--border-primary);
         }
         .mk-listing-card__platform {
             display: flex;
@@ -169,11 +157,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             color: var(--accent-gold);
             font-size: var(--text-xs);
         }
-        /* CHANGED: Tinted footer */
         .mk-listing-card__footer {
             padding: var(--space-3) var(--space-4);
-            border-top: 1px solid rgba(255,255,255,0.05);
-            background: rgba(255,255,255,0.015);
+            border-top: 1px solid var(--border-primary);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -226,7 +212,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
         .mk-category-card:hover {
             border-color: var(--accent-primary);
-            transform: translateY(-3px);
+            transform: translateY(-2px);
             box-shadow: var(--shadow-md);
         }
         .mk-category-card--active {

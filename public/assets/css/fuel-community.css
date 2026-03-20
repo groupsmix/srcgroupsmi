@@ -70,8 +70,7 @@
     transition: transform var(--fuel-transition), box-shadow var(--fuel-transition);
     border: 1px solid var(--border-color, rgba(255,255,255,0.08));
 }
-/* CHANGED: Stronger badge card hover */
-.fuel-badge-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05); }
+.fuel-badge-card:hover { transform: translateY(-2px); box-shadow: var(--fuel-shadow); }
 .fuel-badge-card--earned { border-color: color-mix(in srgb, var(--badge-color, var(--fuel-primary)) 50%, transparent); }
 .fuel-badge-card--locked { opacity: 0.45; filter: grayscale(0.7); }
 .fuel-badge-card__icon {
@@ -143,12 +142,10 @@
     border-radius: var(--fuel-radius-full);
     overflow: hidden;
 }
-/* CHANGED: Gradient progress fill */
 .fuel-level-progress__fill {
     height: 100%;
     border-radius: var(--fuel-radius-full);
-    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    background: linear-gradient(90deg, #6366F1, #7C3AED, #8B5CF6) !important;
+    transition: width 0.6s ease;
 }
 .fuel-level-progress__xp {
     font-size: var(--text-xs, 11px);

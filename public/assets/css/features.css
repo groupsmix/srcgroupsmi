@@ -75,35 +75,30 @@
     gap: var(--space-4);
 }
 
-/* CHANGED: Surface shimmer + gradient hover */
 .kpi-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: var(--space-5);
     text-align: center;
-    transition: transform 0.2s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s ease;
-    box-shadow: var(--shadow-sm), inset 0 1px 0 var(--surface-highlight);
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .kpi-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.05);
-    border-color: var(--border-glow);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
-/* CHANGED: Gradient icon container */
 .kpi-card__icon {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     margin: 0 auto var(--space-3);
-    background: var(--gradient-accent);
+    background: var(--primary);
     color: #fff;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 8px rgba(99,102,241,0.25);
 }
 
 .kpi-card__icon .svg-icon {
@@ -111,16 +106,11 @@
     height: 20px;
 }
 
-/* CHANGED: Gradient value text for impact */
 .kpi-card__value {
     font-size: var(--text-2xl);
     font-weight: 800;
-    background: var(--gradient-accent);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--text-primary);
     line-height: 1.2;
-    letter-spacing: -0.02em;
 }
 
 .kpi-card__label {
@@ -140,13 +130,11 @@
 .kpi-card__trend--down { color: #ef4444; }
 
 /* ─── Analytics Charts Container ──────── */
-/* CHANGED: Surface shimmer on chart container */
 .chart-section {
-    background: var(--bg-card);
-    border: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: var(--space-5);
-    box-shadow: var(--shadow-sm), inset 0 1px 0 var(--surface-highlight);
 }
 
 .chart-section__title {
@@ -197,8 +185,7 @@
 
 .chart-bar__fill {
     height: 100%;
-    /* CHANGED: Matches system gradient */
-    background: linear-gradient(90deg, #6366F1, #7C3AED, #8B5CF6);
+    background: linear-gradient(90deg, var(--primary), #818cf8);
     border-radius: var(--radius-full);
     transition: width 0.8s ease;
     min-width: 2px;
@@ -300,11 +287,8 @@
     transition: box-shadow 0.2s;
 }
 
-/* CHANGED: More pronounced hover */
 .purchase-card:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-    border-color: var(--border-glow);
+    box-shadow: var(--shadow-sm);
 }
 
 .purchase-card__icon {
@@ -356,8 +340,7 @@
 
 /* ─── Referral Dashboard ──────────────── */
 .referral-hero {
-    /* CHANGED: Richer 3-stop gradient */
-    background: linear-gradient(135deg, #6366F1 0%, #7C3AED 50%, #9333EA 100%);
+    background: linear-gradient(135deg, var(--primary), #818cf8);
     border-radius: var(--radius-xl);
     padding: var(--space-8);
     color: #fff;
@@ -418,25 +401,18 @@
     gap: var(--space-4);
 }
 
-/* CHANGED: Surface shimmer */
 .referral-stat-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: var(--space-4);
     text-align: center;
-    box-shadow: var(--shadow-sm), inset 0 1px 0 var(--surface-highlight);
 }
 
-/* CHANGED: Gradient stat value */
 .referral-stat-card__value {
     font-size: var(--text-2xl);
     font-weight: 800;
-    background: var(--gradient-accent);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: -0.02em;
+    color: var(--primary);
 }
 
 .referral-stat-card__label {
@@ -513,11 +489,9 @@
     transition: box-shadow 0.2s, transform 0.2s;
 }
 
-/* CHANGED: More pronounced hover */
 .wishlist-card:hover {
-    box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.05);
-    transform: translateY(-2px);
-    border-color: var(--border-glow);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
 }
 
 .wishlist-card__image {
@@ -658,22 +632,19 @@
     color: var(--text-primary);
 }
 
-/* CHANGED: Gradient active tab indicator */
 .feature-tab--active {
-    color: var(--accent-primary);
-    border-bottom-color: var(--accent-primary);
-    font-weight: 700;
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    font-weight: 600;
 }
 
 /* ─── Dashboard Section Cards ─────────── */
-/* CHANGED: Surface shimmer on dashboard sections */
 .dash-section {
-    background: var(--bg-card);
-    border: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: var(--space-5);
     margin-bottom: var(--space-5);
-    box-shadow: var(--shadow-sm), inset 0 1px 0 var(--surface-highlight);
 }
 
 .dash-section__header {

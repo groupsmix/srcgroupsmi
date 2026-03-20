@@ -81,11 +81,10 @@
   background: var(--bg-tertiary);
 }
 
-/* CHANGED: Richer glow on active tab */
 .articles-tab--active {
   background: var(--gradient-accent);
   color: #fff;
-  box-shadow: 0 2px 12px rgba(99,102,241,0.35);
+  box-shadow: 0 2px 8px rgba(99,102,241,0.25);
 }
 
 .articles-tab--active:hover {
@@ -135,12 +134,10 @@
   background: var(--accent-primary-light);
 }
 
-/* CHANGED: Gradient active category chip */
 .category-chip--active {
-  background: var(--gradient-accent);
+  background: var(--accent-primary);
   color: #fff;
-  border-color: transparent;
-  box-shadow: 0 2px 8px rgba(99,102,241,0.25);
+  border-color: var(--accent-primary);
 }
 
 .category-chip--active:hover {
@@ -165,11 +162,10 @@
   position: relative;
 }
 
-/* CHANGED: Stronger card hover */
 .article-card-enhanced:hover {
-  border-color: var(--border-glow);
-  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.05);
-  transform: translateY(-3px);
+  border-color: rgba(99,102,241,0.3);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .article-card-enhanced__link {
