@@ -258,6 +258,53 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             color: var(--text-primary);
         }
 
+        .go-trust-score {
+            display: none;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            margin-bottom: var(--space-4);
+            text-align: center;
+        }
+        .go-trust-score--visible { display: block; }
+        .go-trust-score__group-name {
+            font-size: var(--text-base);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--space-2);
+            color: var(--text-primary);
+        }
+        .go-trust-score__meter {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-3);
+            margin-top: var(--space-2);
+        }
+        .go-trust-score__bar {
+            flex: 1;
+            max-width: 200px;
+            height: 10px;
+            background: var(--bg-secondary);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .go-trust-score__fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.8s ease;
+        }
+        .go-trust-score__value {
+            font-size: var(--text-lg);
+            font-weight: var(--font-bold);
+            min-width: 60px;
+        }
+        .go-trust-score__label {
+            font-size: var(--text-xs);
+            color: var(--text-tertiary);
+            margin-top: var(--space-1);
+        }
+
         @media (max-width: 767px) {
             .go-card { padding: var(--space-6); }
             .go-card__title { font-size: var(--text-lg); }
@@ -282,6 +329,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                         <span>Platform: <strong id="go-platform-name"></strong></span>
                         <span style="margin-left:var(--space-3)">Verified by GroupsMix</span>
                     </div>
+                </div>
+
+                <!-- Trust Score + Group Name Section -->
+                <div class="go-trust-score" id="go-trust-score">
+                    <div class="go-trust-score__group-name" id="go-group-name"></div>
+                    <div class="go-trust-score__meter">
+                        <div class="go-trust-score__bar">
+                            <div class="go-trust-score__fill" id="go-trust-fill" style="width:0%"></div>
+                        </div>
+                        <div class="go-trust-score__value" id="go-trust-value"></div>
+                    </div>
+                    <div class="go-trust-score__label">Trust Score &mdash; verified by GroupsMix</div>
                 </div>
 
                 <div class="countdown-ring" id="countdown-ring">
@@ -393,15 +452,30 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             }
 
             // 3. Check for group ID
+            var groupData = null;
             if (!targetUrl && id) {
                 try {
                     var group = await DB.groups.getOne(id);
                     if (group && group.link && Security.isValidUrl(group.link)) {
                         targetUrl = group.link;
+                        groupData = group;
                         DB.groups.incrementClicks(id);
                         RecentlyViewed.add(group);
                     }
                 } catch (e) { /* fall through */ }
+            }
+
+            // 4. For short links, try to find the matching group by link URL
+            if (!groupData && targetUrl) {
+                try {
+                    var matchRes = await window.supabaseClient
+                        .from('groups').select('*')
+                        .eq('link', targetUrl)
+                        .eq('status', 'approved')
+                        .limit(1)
+                        .single();
+                    if (matchRes.data) groupData = matchRes.data;
+                } catch (e) { /* group lookup is optional */ }
             }
 
             if (!targetUrl) {
@@ -420,13 +494,35 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 var trustInfoEl = document.getElementById('go-trust-info');
                 var platformBadge = document.getElementById('go-platform-badge');
                 document.getElementById('go-trust-icon').textContent = platformInfo.icon;
-                document.getElementById('go-group-label').textContent = 'You\'re about to join a group on ' + platformInfo.name;
+                var groupLabel = groupData && groupData.name
+                    ? 'You\'re about to join ' + groupData.name + ' on ' + platformInfo.name
+                    : 'You\'re about to join a group on ' + platformInfo.name;
+                document.getElementById('go-group-label').textContent = groupLabel;
                 document.getElementById('go-platform-name').textContent = platformInfo.name;
                 document.getElementById('go-title').textContent = 'Verifying ' + platformInfo.name + ' link...';
                 document.getElementById('go-message').textContent = 'We\'re checking this group link for your safety.';
                 trustInfoEl.style.display = 'block';
                 platformBadge.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;background:' + platformInfo.color + ';color:#fff;padding:4px 12px;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:600">' + platformInfo.icon + ' ' + platformInfo.name + '</span>';
                 platformBadge.style.display = 'block';
+            }
+
+            /* Show Trust Score if group data is available */
+            if (groupData && typeof Algorithms !== 'undefined') {
+                var trustScore = Algorithms.calculateTrustScore(groupData);
+                var trustScoreEl = document.getElementById('go-trust-score');
+                var trustFill = document.getElementById('go-trust-fill');
+                var trustValue = document.getElementById('go-trust-value');
+                var groupNameEl = document.getElementById('go-group-name');
+
+                groupNameEl.textContent = groupData.name || 'Unknown Group';
+
+                var trustColor = trustScore >= 70 ? '#10b981' : trustScore >= 40 ? '#f59e0b' : '#ef4444';
+                trustFill.style.width = trustScore + '%';
+                trustFill.style.background = trustColor;
+                trustValue.textContent = trustScore + '/100';
+                trustValue.style.color = trustColor;
+
+                trustScoreEl.classList.add('go-trust-score--visible');
             }
 
             function detectPlatform(url) {
@@ -476,7 +572,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     document.getElementById('go-icon').innerHTML = '&#9989;';
                     if (platformInfo) {
                         document.getElementById('go-title').textContent = platformInfo.name + ' Link Verified!';
-                        document.getElementById('go-message').textContent = 'You\'re about to join a group on ' + platformInfo.name + '. Redirecting...';
+                        var joinMsg = groupData && groupData.name
+                            ? 'You\'re about to join ' + groupData.name + ' on ' + platformInfo.name + '. Redirecting...'
+                            : 'You\'re about to join a group on ' + platformInfo.name + '. Redirecting...';
+                        document.getElementById('go-message').textContent = joinMsg;
                     } else {
                         document.getElementById('go-title').textContent = 'Connection Secured!';
                         document.getElementById('go-message').textContent = 'Your link is ready. You will be redirected shortly.';
@@ -485,6 +584,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
                     var linkEl = document.getElementById('go-link');
                     linkEl.href = targetUrl;
+                    if (groupData && groupData.name) {
+                        linkEl.textContent = 'Join ' + groupData.name + ' \u2192';
+                    }
                     document.getElementById('go-link-section').classList.add('go-link-section--visible');
 
                     /* Auto-redirect after reveal */
