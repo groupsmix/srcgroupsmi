@@ -1193,6 +1193,17 @@ h4 { font-size: var(--text-xl); }
 .mobile-nav__icon {
   font-size: 20px;
   margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mobile-nav__icon svg {
+  width: 22px;
+  height: 22px;
+}
+.mobile-nav__label {
+  font-size: 10px;
+  line-height: 1;
 }
 
 .mobile-nav__item--primary {
