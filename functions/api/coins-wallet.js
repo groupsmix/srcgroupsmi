@@ -289,6 +289,44 @@ async function handleGet(request, env, user, origin) {
                 var totalSpent = Object.values(categories).reduce(function(s, c) { return s + c.total; }, 0);
                 var totalEarned = Object.values(earnings).reduce(function(s, c) { return s + c.total; }, 0);
 
+                // Spending trend analysis: compare first half vs second half of period
+                var halfPoint = Math.floor(chartData.length / 2);
+                var firstHalfSpent = 0, secondHalfSpent = 0;
+                var firstHalfEarned = 0, secondHalfEarned = 0;
+                chartData.forEach(function(day, idx) {
+                    if (idx < halfPoint) {
+                        firstHalfSpent += day.spent;
+                        firstHalfEarned += day.earned;
+                    } else {
+                        secondHalfSpent += day.spent;
+                        secondHalfEarned += day.earned;
+                    }
+                });
+
+                var spendingTrend = 'stable';
+                var spendingChangePercent = 0;
+                if (firstHalfSpent > 0) {
+                    spendingChangePercent = Math.round(((secondHalfSpent - firstHalfSpent) / firstHalfSpent) * 100);
+                    if (spendingChangePercent > 20) spendingTrend = 'increasing';
+                    else if (spendingChangePercent < -20) spendingTrend = 'decreasing';
+                }
+
+                var earningTrend = 'stable';
+                var earningChangePercent = 0;
+                if (firstHalfEarned > 0) {
+                    earningChangePercent = Math.round(((secondHalfEarned - firstHalfEarned) / firstHalfEarned) * 100);
+                    if (earningChangePercent > 20) earningTrend = 'increasing';
+                    else if (earningChangePercent < -20) earningTrend = 'decreasing';
+                }
+
+                // Find top spending category
+                var topCategory = Object.entries(categories)
+                    .sort(function(a, b) { return b[1].total - a[1].total; })[0];
+
+                // Avg daily spending
+                var avgDailySpend = insightDays > 0 ? Math.round(totalSpent / insightDays) : 0;
+                var avgDailyEarn = insightDays > 0 ? Math.round(totalEarned / insightDays) : 0;
+
                 return new Response(JSON.stringify({
                     ok: true,
                     data: {
@@ -299,7 +337,16 @@ async function handleGet(request, env, user, origin) {
                         spending_breakdown: categories,
                         earning_breakdown: earnings,
                         chart_data: chartData,
-                        transaction_count: txnList.length
+                        transaction_count: txnList.length,
+                        trends: {
+                            spending: { direction: spendingTrend, change_percent: spendingChangePercent },
+                            earning: { direction: earningTrend, change_percent: earningChangePercent },
+                            top_spending_category: topCategory ? { key: topCategory[0], label: topCategory[1].label, total: topCategory[1].total } : null,
+                            avg_daily_spend: avgDailySpend,
+                            avg_daily_earn: avgDailyEarn,
+                            projected_monthly_spend: avgDailySpend * 30,
+                            projected_monthly_earn: avgDailyEarn * 30
+                        }
                     }
                 }), { status: 200, headers: corsHeaders(origin) });
             }
@@ -308,7 +355,7 @@ async function handleGet(request, env, user, origin) {
                 // Get user profile data to determine personalized earn suggestions
                 var profileRes2 = await fetch(
                     supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(user.authId) +
-                    '&select=id,display_name,photo_url,bio,article_count,writer_xp,gxp,referral_code&limit=1',
+                    '&select=id,display_name,photo_url,bio,article_count,writer_xp,gxp,referral_code,last_active_at,created_at&limit=1',
                     { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
                 );
                 var profile = (await profileRes2.json())[0] || {};
@@ -319,6 +366,23 @@ async function handleGet(request, env, user, origin) {
                     { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
                 );
                 var wallet = ((await walletRes2.json()) || [])[0] || {};
+
+                // Get recent activity for personalization
+                var recentTxnRes = await fetch(
+                    supabaseUrl + '/rest/v1/wallet_transactions?user_id=eq.' + encodeURIComponent(user.userId) +
+                    '&order=created_at.desc&select=type,amount,created_at&limit=50',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                );
+                var recentTxns = await recentTxnRes.json();
+                recentTxns = Array.isArray(recentTxns) ? recentTxns : [];
+
+                // Analyze activity patterns
+                var hasWritten = recentTxns.some(function(t) { return t.type === 'article_reward'; });
+                var hasReferred = recentTxns.some(function(t) { return t.type === 'referral' || t.type === 'referral_bonus'; });
+                var hasReviewed = recentTxns.some(function(t) { return t.type === 'review_reward'; });
+                var hasTipped = recentTxns.some(function(t) { return t.type === 'tip_received'; });
+                var daysSinceSignup = Math.max(1, (Date.now() - new Date(profile.created_at || Date.now()).getTime()) / 86400000);
+                var isNewUser = daysSinceSignup < 7;
 
                 var suggestions = [];
 
@@ -403,6 +467,63 @@ async function handleGet(request, env, user, origin) {
                     priority: 'low'
                 });
 
+                // Activity-based personalized suggestions
+                if (hasWritten && (profile.article_count || 0) >= 5) {
+                    suggestions.push({
+                        type: 'write_pro',
+                        icon: 'award',
+                        title: 'Write a Premium Article',
+                        title_ar: 'اكتب مقالاً مميزاً',
+                        description: 'With ' + profile.article_count + ' articles, you qualify for premium writer rewards (up to 500 coins). Write an in-depth guide or tutorial!',
+                        description_ar: 'مع ' + profile.article_count + ' مقال، تأهلت لمكافآت الكتّاب المميزين (حتى 500 عملة).',
+                        potential_coins: 500,
+                        action_url: '/pages/user/write-article.html',
+                        priority: 'high'
+                    });
+                }
+
+                if (hasTipped) {
+                    suggestions.push({
+                        type: 'engage',
+                        icon: 'heart',
+                        title: 'Keep Engaging — Tips Come Back!',
+                        title_ar: 'استمر بالتفاعل — الإكراميات ترجع!',
+                        description: 'You\'ve received tips before. Active writers who engage with comments earn 2x more tips on average.',
+                        description_ar: 'لقد تلقيت إكراميات سابقاً. الكتّاب النشطون يكسبون ضعف الإكراميات.',
+                        potential_coins: 50,
+                        action_url: '/pages/user/articles.html',
+                        priority: 'medium'
+                    });
+                }
+
+                if (isNewUser) {
+                    suggestions.push({
+                        type: 'onboarding',
+                        icon: 'gift',
+                        title: 'Complete Your Onboarding',
+                        title_ar: 'أكمل خطوات البداية',
+                        description: 'New users who complete their profile within the first week earn a 50 coin bonus!',
+                        description_ar: 'المستخدمون الجدد الذين يكملون ملفهم خلال الأسبوع الأول يحصلون على 50 عملة إضافية!',
+                        potential_coins: 50,
+                        action_url: '/pages/user/settings.html',
+                        priority: 'high'
+                    });
+                }
+
+                if (!hasReviewed) {
+                    suggestions.push({
+                        type: 'review',
+                        icon: 'star',
+                        title: 'Write Your First Review',
+                        title_ar: 'اكتب أول تقييم لك',
+                        description: 'Earn 15 coins for your first group review. Detailed reviews earn bonus tips from group owners!',
+                        description_ar: 'اربح 15 عملة لأول تقييم. التقييمات المفصّلة تكسب إكراميات إضافية!',
+                        potential_coins: 15,
+                        action_url: '/',
+                        priority: 'medium'
+                    });
+                }
+
                 // Sort by priority
                 var priorityOrder = { high: 0, medium: 1, low: 2 };
                 suggestions.sort(function(a, b) {
@@ -415,7 +536,15 @@ async function handleGet(request, env, user, origin) {
                         suggestions: suggestions,
                         current_balance: wallet.coins_balance || 0,
                         is_low_balance: (wallet.coins_balance || 0) < 100,
-                        total_potential: suggestions.reduce(function(s, sg) { return s + (sg.potential_coins || 0); }, 0)
+                        total_potential: suggestions.reduce(function(s, sg) { return s + (sg.potential_coins || 0); }, 0),
+                        user_activity: {
+                            has_written: hasWritten,
+                            has_referred: hasReferred,
+                            has_reviewed: hasReviewed,
+                            has_received_tips: hasTipped,
+                            is_new_user: isNewUser,
+                            days_since_signup: Math.round(daysSinceSignup)
+                        }
                     }
                 }), { status: 200, headers: corsHeaders(origin) });
             }

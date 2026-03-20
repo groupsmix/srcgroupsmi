@@ -219,6 +219,43 @@ export async function onRequest(context) {
 
             var growthRate = cumulativeReviews > 0 ? (slope / Math.max(1, cumulativeReviews / n) * 100) : 0;
 
+            // Get view trend data from analytics if available
+            var viewTrend = null;
+            try {
+                var viewsRes = await fetch(
+                    supabaseUrl + '/rest/v1/rpc/get_group_view_history',
+                    {
+                        method: 'POST',
+                        headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ p_group_id: groupId, p_days: days })
+                    }
+                );
+                if (viewsRes.ok) {
+                    var viewHistory = await viewsRes.json();
+                    if (Array.isArray(viewHistory) && viewHistory.length > 1) {
+                        // Linear regression on views
+                        var vn = viewHistory.length;
+                        var vsumX = 0, vsumY = 0, vsumXY = 0, vsumXX = 0;
+                        viewHistory.forEach(function(vp, vi) {
+                            vsumX += vi;
+                            vsumY += (vp.views || 0);
+                            vsumXY += vi * (vp.views || 0);
+                            vsumXX += vi * vi;
+                        });
+                        var viewSlope = (vn * vsumXY - vsumX * vsumY) / (vn * vsumXX - vsumX * vsumX) || 0;
+                        var avgDailyViews = vsumY / vn;
+                        viewTrend = {
+                            slope: parseFloat(viewSlope.toFixed(4)),
+                            direction: viewSlope > 1 ? 'growing' : (viewSlope < -1 ? 'declining' : 'stable'),
+                            avg_daily_views: parseFloat(avgDailyViews.toFixed(1)),
+                            projected_views_7d: Math.max(0, Math.round(avgDailyViews * 7 + viewSlope * 7))
+                        };
+                    }
+                }
+            } catch (e) {
+                // view trend data unavailable, continue without it
+            }
+
             return new Response(JSON.stringify({
                 ok: true,
                 data: {
@@ -237,6 +274,7 @@ export async function onRequest(context) {
                         growth_rate_pct: parseFloat(growthRate.toFixed(2)),
                         reviews_per_day_avg: parseFloat((cumulativeReviews / days).toFixed(2))
                     },
+                    view_trend: viewTrend,
                     projections: projections
                 }
             }), { status: 200, headers: corsHeaders(origin) });

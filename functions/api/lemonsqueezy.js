@@ -140,12 +140,23 @@ function extractProductType(name, description) {
 }
 
 /* ── Personalized ranking algorithm ──────────────────────────── */
-function rankPersonalized(products, viewedTypes, viewedIds, groupCategories) {
+function rankPersonalized(products, viewedTypes, viewedIds, groupCategories, pastPurchases) {
     // Build a relevance score for each product based on user signals
     const typeFrequency = {};
     viewedTypes.forEach((t, i) => {
         // More recent views get higher weight (index 0 = most recent)
         typeFrequency[t] = (typeFrequency[t] || 0) + Math.max(1, 10 - i);
+    });
+
+    // Build past purchase type frequency for cross-sell signals
+    const purchasedTypes = {};
+    const purchasedIds = new Set();
+    (pastPurchases || []).forEach(pid => {
+        purchasedIds.add(pid);
+        const purchased = products.find(p => p.id === pid);
+        if (purchased) {
+            purchasedTypes[purchased.product_type] = (purchasedTypes[purchased.product_type] || 0) + 1;
+        }
     });
 
     // Map group categories to product types for cross-signal boosting
@@ -160,6 +171,18 @@ function rankPersonalized(products, viewedTypes, viewedIds, groupCategories) {
         'gaming': ['digital', 'membership'],
         'health': ['course', 'guide'],
         'finance': ['guide', 'tool', 'course']
+    };
+
+    // Cross-sell map: users who bought type X often want type Y
+    const crossSellMap = {
+        'guide': ['course', 'template'],
+        'course': ['guide', 'tool'],
+        'template': ['tool', 'guide'],
+        'tool': ['template', 'course'],
+        'membership': ['course', 'guide'],
+        'service': ['tool', 'guide'],
+        'bundle': ['course', 'template'],
+        'digital': ['tool', 'membership']
     };
 
     const boostedTypes = new Set();
@@ -179,6 +202,23 @@ function rankPersonalized(products, viewedTypes, viewedIds, groupCategories) {
         // Boost by group category alignment
         if (boostedTypes.has(p.product_type)) {
             score += 20;
+        }
+
+        // Past purchases signal: cross-sell complementary product types
+        Object.keys(purchasedTypes).forEach(pType => {
+            const crossSell = crossSellMap[pType] || [];
+            if (crossSell.includes(p.product_type)) {
+                score += 25 * purchasedTypes[pType]; // stronger signal for repeat purchasers
+            }
+            // Same type as previously purchased — slight boost (replenishment/upgrade)
+            if (p.product_type === pType) {
+                score += 10 * purchasedTypes[pType];
+            }
+        });
+
+        // Penalize already-purchased products (user already owns them)
+        if (purchasedIds.has(p.id)) {
+            score -= 50;
         }
 
         // Penalize already-viewed products (push to end so user sees new items)
@@ -292,8 +332,9 @@ export async function onRequest(context) {
             const viewedTypes = (url.searchParams.get('viewed_types') || '').split(',').filter(Boolean);
             const viewedIds = (url.searchParams.get('viewed_ids') || '').split(',').filter(Boolean);
             const groupCategories = (url.searchParams.get('group_categories') || '').split(',').filter(Boolean);
+            const pastPurchases = (url.searchParams.get('past_purchases') || '').split(',').filter(Boolean);
 
-            filtered = rankPersonalized(filtered, viewedTypes, viewedIds, groupCategories);
+            filtered = rankPersonalized(filtered, viewedTypes, viewedIds, groupCategories, pastPurchases);
         } else if (sortParam === 'newest') {
             filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         } else if (sortParam === 'price-low') {

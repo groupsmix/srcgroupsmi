@@ -81,9 +81,9 @@ export async function onRequestPost(context) {
             'article-translate': 'You are a professional translator. Maintain tone and style. Always return valid JSON.',
             'article-to-thread': 'You are a social media expert who converts articles into engaging thread format. Always return valid JSON array.',
             'article-smart-search': 'You are a search intent analyzer. Understand user queries and extract search parameters. Always return valid JSON.',
-            'article-trending-topics': 'You are a content strategist. Analyze engagement data and suggest trending topics that will perform well. Return valid JSON with key "topics" containing an array of objects with: "title" (suggested topic), "title_ar" (Arabic title), "reasoning" (why it is trending), "estimated_engagement" (high/medium/low), "category" (best category slug), "keywords" (array of SEO keywords). Maximum 8 topics.',
+            'article-trending-topics': 'You are a content strategist. Analyze engagement data from groups and articles to suggest trending topics that will perform well. Consider group activity levels, member counts, recent growth, and cross-topic patterns. Return valid JSON with key "topics" containing an array of objects with: "title" (suggested topic), "title_ar" (Arabic title), "reasoning" (why it is trending, reference specific engagement signals), "estimated_engagement" (high/medium/low), "category" (best category slug), "keywords" (array of SEO keywords), "related_groups" (array of group names that indicate demand). Maximum 8 topics.',
             'article-reading-stats': 'You are a content analyst. Analyze the given article text and return valid JSON with: "reading_time_minutes" (integer, estimated reading time based on ~200 words/minute), "word_count" (integer), "difficulty" ("beginner", "intermediate", or "advanced"), "difficulty_score" (1-10 integer), "difficulty_reasons" (array of short reasons for the difficulty rating, e.g. technical jargon, complex sentence structure), "target_audience" (short description of ideal reader).',
-            'article-related': 'You are a content recommendation engine. Given a source article and a list of candidate articles, find the most related ones based on topic similarity, shared concepts, and complementary content. Return valid JSON with key "related" containing an array of objects with: "index" (1-based index from the candidate list), "relevance_score" (0.0-1.0), "connection" (short explanation of why they are related). Maximum 6 results, ordered by relevance.'
+            'article-related': 'You are a content recommendation engine using semantic embedding similarity. Given a source article and a list of candidate articles, find the most related ones using deep topic analysis: identify shared concepts, complementary subtopics, overlapping entities, and semantic similarity beyond surface-level keyword matching. Consider the embedding space of topics — articles about related domains (e.g. "crypto trading" and "DeFi protocols") should score higher even without shared keywords. Return valid JSON with key "related" containing an array of objects with: "index" (1-based index from the candidate list), "relevance_score" (0.0-1.0), "connection" (short explanation of the semantic relationship), "shared_concepts" (array of 2-4 shared or related concepts). Maximum 6 results, ordered by relevance.'
         };
 
         // Select model based on task complexity
@@ -108,6 +108,27 @@ export async function onRequestPost(context) {
             'article-reading-stats': 300,
             'article-related': 600
         };
+
+        // For trending-topics: enrich prompt with group engagement data if available
+        if (task === 'article-trending-topics' && body.group_engagement) {
+            const groupData = body.group_engagement;
+            const enrichedPrompt = prompt + '\n\n--- GROUP ENGAGEMENT DATA ---\n' +
+                'Top growing categories: ' + (groupData.top_categories || []).join(', ') + '\n' +
+                'Trending tags: ' + (groupData.trending_tags || []).join(', ') + '\n' +
+                'Active groups count: ' + (groupData.active_groups || 0) + '\n' +
+                'Recent popular topics: ' + (groupData.popular_topics || []).join(', ') + '\n' +
+                'User interest signals: ' + (groupData.interest_signals || []).join(', ');
+            body.prompt = enrichedPrompt.slice(0, 4000);
+        }
+
+        // For related articles: add embedding hints if available
+        if (task === 'article-related' && body.source_tags) {
+            const embeddingHint = '\n\n--- EMBEDDING CONTEXT ---\n' +
+                'Source article tags: ' + (body.source_tags || []).join(', ') + '\n' +
+                'Source category: ' + (body.source_category || 'unknown') + '\n' +
+                'Prefer articles that share semantic space even without exact keyword overlap.';
+            body.prompt = (body.prompt + embeddingHint).slice(0, 4000);
+        }
 
         // Call Groq API
         // For reading-stats, compute locally without AI for speed
