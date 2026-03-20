@@ -72,14 +72,31 @@ const UI = {
             '</div>';
     },
 
+    // Quality filter: skip groups with spam/placeholder names
+    _isQualityGroup(group) {
+        if (!group || !group.name) return false;
+        var name = (group.name || '').trim();
+        // Reject names shorter than 3 chars
+        if (name.length < 3) return false;
+        // Reject names that are just repeated characters (e.g. "fafafffafafa", "Hhjh", "aaaa")
+        var uniqueChars = new Set(name.toLowerCase().replace(/[^a-z]/g, '')).size;
+        var alphaLen = name.replace(/[^a-zA-Z]/g, '').length;
+        if (alphaLen >= 4 && uniqueChars <= 2) return false;
+        // Reject names that look like keyboard smash (no vowels in 5+ alpha chars)
+        if (alphaLen >= 5 && !/[aeiouAEIOU]/.test(name)) return false;
+        return true;
+    },
+
     groupGrid(groups, containerId) {
         const container = document.getElementById(containerId);
         if (!container) return;
-        if (!Array.isArray(groups) || !groups.length) {
+        // Filter out spam/placeholder groups before rendering
+        var filtered = Array.isArray(groups) ? groups.filter(g => UI._isQualityGroup(g)) : [];
+        if (!filtered.length) {
             UI.emptyState(containerId, ICONS.inbox, 'No Groups Found', 'Try adjusting your filters or search terms.', 'Browse All', '/search');
             return;
         }
-        container.innerHTML = `<div class="grid grid-4">${groups.map(g => UI.groupCard(g)).join('')}</div>`;
+        container.innerHTML = `<div class="grid grid-4">${filtered.map(g => UI.groupCard(g)).join('')}</div>`;
         container.style.animation = 'fadeIn 0.3s ease';
         container.querySelectorAll('.group-card__btn-join').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -130,7 +147,7 @@ const UI = {
     timeoutState(containerId) {
         const container = document.getElementById(containerId);
         if (!container) return;
-        container.innerHTML = `<div class="error-state"><div class="error-state__icon">${ICONS.clock}</div><div class="error-state__title">Taking too long</div><div class="error-state__text">Please refresh the page.</div><button class="btn btn-primary" id="timeout-refresh-btn-${containerId}">${ICONS.refresh} Refresh</button></div>`;
+        container.innerHTML = `<div class="error-state"><div class="error-state__icon">${ICONS.clock}</div><div class="error-state__title">Content is loading slowly</div><div class="error-state__text">This is taking longer than expected. You can try refreshing the page.</div><button class="btn btn-primary" id="timeout-refresh-btn-${containerId}">${ICONS.refresh} Refresh</button></div>`;
         document.getElementById('timeout-refresh-btn-' + containerId)?.addEventListener('click', () => location.reload());
     },
 

@@ -890,6 +890,36 @@ h4 { font-size: var(--text-xl); }
 }
 .header-menu-btn:hover { color: var(--text-primary); }
 
+/* ── Sign Up Button (unauthenticated) ── */
+.header-signup-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 16px;
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  font-family: inherit;
+  margin-right: 8px;
+}
+.header-signup-btn:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.20);
+  transform: translateY(-1px);
+}
+.header-signup-btn:active {
+  transform: translateY(0);
+}
+@media (max-width: 480px) {
+  .header-signup-btn { display: none; }
+}
+
 /* ── Login Button (unauthenticated) ── */
 .header-login-btn {
   display: inline-flex;
