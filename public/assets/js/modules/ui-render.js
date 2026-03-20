@@ -67,8 +67,11 @@ function renderHeader() {
         // ── Horizontal Sub-Navigation Bar (Simplified) ──
         '<div class="subnav" id="subnav">' +
         '<div class="subnav__inner">' +
-                '<a href="/browse" class="subnav__item' + navActive(['/browse', '/search', '/category', '/country', '/platform']) + '">Browse</a>' +
-                '<a href="/submit" class="subnav__item' + navActive(['/submit']) + '">Submit</a>' +
+                '<a href="/" class="subnav__item' + navActive(['/']) + '">All</a>' +
+                '<a href="/jobs" class="subnav__item' + navActive(['/jobs']) + '">Jobs</a>' +
+                '<a href="/marketplace" class="subnav__item' + navActive(['/marketplace']) + '">Markets</a>' +
+                '<a href="/store" class="subnav__item' + navActive(['/store']) + '">Store</a>' +
+                '<a href="/tools" class="subnav__item' + navActive(['/tools']) + '">AI Tools</a>' +
                 '<a href="/articles" class="subnav__item' + navActive(['/articles']) + '">Articles</a>' +
                 '<div class="subnav__more-wrapper" style="position:relative">' +
                 '<button class="subnav__item subnav__more-btn" id="subnav-more-btn" type="button">More <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-left:2px"><polyline points="6 9 12 15 18 9"/></svg></button>' +
@@ -110,19 +113,26 @@ function renderHeader() {
     if (moreBtn) {
         moreBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            var wrapper = moreBtn.closest('.subnav__more-wrapper');
-            var existing = wrapper.querySelector('.subnav__more-dropdown');
+            var subnav = document.getElementById('subnav');
+            var existing = subnav.querySelector('.subnav__more-dropdown');
             if (existing) { existing.remove(); return; }
             closeAllDropdowns();
             var dd = document.createElement('div');
             dd.className = 'subnav__more-dropdown';
             dd.innerHTML =
-                '<a href="/jobs" class="subnav__more-item">' + ICONS.briefcase + ' Jobs</a>' +
-                '<a href="/marketplace" class="subnav__more-item">' + ICONS.store + ' Marketplace</a>' +
-                '<a href="/store" class="subnav__more-item">' + ICONS.shopping_cart + ' Store</a>' +
-                '<a href="/tools" class="subnav__more-item">' + ICONS.tools + ' AI Tools</a>' +
-                '<a href="/scam-wall" class="subnav__more-item">' + ICONS.shield + ' Scam Wall</a>';
-            wrapper.appendChild(dd);
+                '<a href="/browse" class="subnav__more-item">' + ICONS.search + ' Browse Groups</a>' +
+                '<a href="/submit" class="subnav__more-item">' + ICONS.upload + ' Submit Group</a>' +
+                '<a href="/scam-wall" class="subnav__more-item">' + ICONS.shield + ' Scam Wall</a>' +
+                '<a href="/leaderboard" class="subnav__more-item">' + ICONS.star + ' Leaderboard</a>' +
+                '<a href="/stats" class="subnav__more-item">' + ICONS.zap + ' Stats</a>' +
+                '<a href="/fuel" class="subnav__more-item">' + ICONS.heart + ' Fuel the Community</a>';
+            // Position dropdown aligned to the More button, appended to subnav to avoid overflow clipping
+            var btnRect = moreBtn.getBoundingClientRect();
+            var subnavRect = subnav.getBoundingClientRect();
+            dd.style.position = 'absolute';
+            dd.style.top = (btnRect.bottom - subnavRect.top + 4) + 'px';
+            dd.style.right = (subnavRect.right - btnRect.right) + 'px';
+            subnav.appendChild(dd);
         });
     }
 
@@ -214,7 +224,7 @@ function closeAllDropdowns() {
 }
 
 document.addEventListener('click', (e) => {
-    if (!e.target.closest('#notification-wrapper') && !e.target.closest('#user-menu-wrapper') && !e.target.closest('.magic-plus-wrapper') && !e.target.closest('.subnav__more-wrapper')) closeAllDropdowns();
+    if (!e.target.closest('#notification-wrapper') && !e.target.closest('#user-menu-wrapper') && !e.target.closest('.magic-plus-wrapper') && !e.target.closest('.subnav__more-wrapper') && !e.target.closest('.subnav__more-dropdown')) closeAllDropdowns();
 });
 
 function openDrawer() {
@@ -235,10 +245,10 @@ function openDrawer() {
     links += '<div class="drawer__divider"></div>';
     // Main sections
     links += '<a href="/" class="drawer__item">' + ICONS.home + ' Home</a>';
-    links += '<a href="/marketplace" class="drawer__item">' + ICONS.store + ' Marketplace</a>';
-    links += '<a href="/jobs" class="drawer__item">' + ICONS.briefcase + ' Jobs</a>';
     links += '<a href="/browse" class="drawer__item">' + ICONS.users + ' Groups</a>';
-    links += '<a href="/events" class="drawer__item">' + ICONS.clock + ' Events</a>';
+    links += '<a href="/jobs" class="drawer__item">' + ICONS.briefcase + ' Jobs</a>';
+    links += '<a href="/marketplace" class="drawer__item">' + ICONS.store + ' Marketplace</a>';
+    links += '<a href="/store" class="drawer__item">' + ICONS.shopping_cart + ' Store</a>';
     links += '<a href="/tools" class="drawer__item">' + ICONS.tools + ' Tools</a>';
     links += '<div class="drawer__divider"></div>';
     // User profile & settings
@@ -302,22 +312,46 @@ function renderFooter() {
     if (!footer) return;
     footer.innerHTML = '<div class="site-footer">' +
         '<div class="site-footer__grid">' +
-        // Column 1: Product
+        // Column 1: Explore
         '<div class="site-footer__column">' +
-            '<div class="site-footer__heading">Product</div>' +
-            '<a href="/search" class="site-footer__link">Search Groups</a>' +
-            '<a href="/browse" class="site-footer__link">Browse</a>' +
-            '<a href="/submit" class="site-footer__link">Submit Group</a>' +
+            '<div class="site-footer__heading">EXPLORE</div>' +
+            '<a href="/search" class="site-footer__link">Search</a>' +
+            '<a href="/browse" class="site-footer__link">Groups</a>' +
             '<a href="/articles" class="site-footer__link">Articles</a>' +
+            '<a href="/stats" class="site-footer__link">Stats</a>' +
+            '<a href="/scam-wall" class="site-footer__link">Scam Wall</a>' +
+            '<a href="/tools" class="site-footer__link">Free Tools</a>' +
         '</div>' +
-        // Column 2: Company
+        // Column 2: Grow
         '<div class="site-footer__column">' +
-            '<div class="site-footer__heading">Company</div>' +
+            '<div class="site-footer__heading">GROW</div>' +
+            '<a href="/promote" class="site-footer__link">Promote</a>' +
+            '<a href="/advertise" class="site-footer__link">Advertise</a>' +
+            '<a href="/store" class="site-footer__link">Store</a>' +
+            '<a href="/marketplace" class="site-footer__link">Marketplace</a>' +
+            '<a href="/jobs" class="site-footer__link">Jobs</a>' +
+        '</div>' +
+        // Column 3: Community
+        '<div class="site-footer__column">' +
+            '<div class="site-footer__heading">COMMUNITY</div>' +
+            '<a href="/fuel" class="site-footer__link">Fuel the Community</a>' +
+            '<a href="/leaderboard" class="site-footer__link">Leaderboard</a>' +
+            '<a href="/submit" class="site-footer__link">Submit Group</a>' +
+        '</div>' +
+        // Column 4: Company
+        '<div class="site-footer__column">' +
+            '<div class="site-footer__heading">COMPANY</div>' +
             '<a href="/about" class="site-footer__link">About</a>' +
-            '<a href="/contact" class="site-footer__link">Contact</a>' +
+            '<a href="/contact" class="site-footer__link">Contact Us</a>' +
+            '<a href="/faq" class="site-footer__link">FAQ</a>' +
+            '<a href="/support" class="site-footer__link">Support Center</a>' +
             '<a href="/privacy" class="site-footer__link">Privacy</a>' +
             '<a href="/terms" class="site-footer__link">Terms</a>' +
         '</div>' +
+        '</div>' +
+        // Footer CTA
+        '<div class="site-footer__cta">' +
+            '<a href="/fuel">' + ICONS.sparkle + ' Did GroupsMix help you? Help us keep going & growing</a>' +
         '</div>' +
         '<div class="site-footer__bottom">&copy; ' + new Date().getFullYear() + ' GroupsMix.com. All rights reserved.</div>' +
         '</div>';
@@ -334,9 +368,9 @@ function renderMobileNav() {
 
     nav.innerHTML = '<a href="/" class="mobile-nav__item' + (path === '/' ? ' active' : '') + '"><span class="mobile-nav__icon">' + ICONS.home + '</span><span class="mobile-nav__label">Home</span></a>' +
         '<a href="/browse" class="mobile-nav__item' + (path.startsWith('/browse') || path.startsWith('/search') || path.startsWith('/category') || path.startsWith('/country') || path.startsWith('/platform') ? ' active' : '') + '"><span class="mobile-nav__icon">' + ICONS.users + '</span><span class="mobile-nav__label">Groups</span></a>' +
-        '<a href="/marketplace" class="mobile-nav__item' + (path.startsWith('/marketplace') ? ' active' : '') + '"><span class="mobile-nav__icon">' + ICONS.store + '</span><span class="mobile-nav__label">Market</span></a>' +
         '<a href="/submit" class="mobile-nav__item mobile-nav__item--primary"><span class="mobile-nav__icon">' + ICONS.plus + '</span><span class="mobile-nav__label">Submit</span></a>' +
-        '<button class="mobile-nav__item" id="mobile-nav-ai"><span class="mobile-nav__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="2" y="8" width="20" height="12" rx="2"/><path d="M6 12h.01"/><path d="M18 12h.01"/><path d="M9 16s.9 1 3 1 3-1 3-1"/></svg></span><span class="mobile-nav__label">AI Chat</span></button>';
+        '<a href="/tools" class="mobile-nav__item' + (path.startsWith('/tools') ? ' active' : '') + '"><span class="mobile-nav__icon">' + ICONS.tools + '</span><span class="mobile-nav__label">Tools</span></a>' +
+        '<button class="mobile-nav__item" id="mobile-nav-ai"><span class="mobile-nav__icon"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="2" y="8" width="20" height="12" rx="2"/><path d="M6 12h.01"/><path d="M18 12h.01"/><path d="M9 16s.9 1 3 1 3-1 3-1"/></svg></span><span class="mobile-nav__label">AI Chat</span></button>';
     document.body.appendChild(nav);
     // AI Chat button in bottom nav toggles chatbot
     document.getElementById('mobile-nav-ai')?.addEventListener('click', function() {

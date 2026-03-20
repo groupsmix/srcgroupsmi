@@ -4211,7 +4211,7 @@ function closeAllDropdowns() {
 }
 
 document.addEventListener('click', (e) => {
-    if (!e.target.closest('#notification-wrapper') && !e.target.closest('#user-menu-wrapper') && !e.target.closest('.magic-plus-wrapper') && !e.target.closest('.subnav__more-wrapper')) closeAllDropdowns();
+    if (!e.target.closest('#notification-wrapper') && !e.target.closest('#user-menu-wrapper') && !e.target.closest('.magic-plus-wrapper') && !e.target.closest('.subnav__more-wrapper') && !e.target.closest('.subnav__more-dropdown')) closeAllDropdowns();
 });
 
 function openDrawer() {
@@ -4234,6 +4234,8 @@ function openDrawer() {
     links += '<a href="/" class="drawer__item">' + ICONS.home + ' Home</a>';
     links += '<a href="/browse" class="drawer__item">' + ICONS.users + ' Groups</a>';
     links += '<a href="/jobs" class="drawer__item">' + ICONS.briefcase + ' Jobs</a>';
+    links += '<a href="/marketplace" class="drawer__item">' + ICONS.store + ' Marketplace</a>';
+    links += '<a href="/store" class="drawer__item">' + ICONS.shopping_cart + ' Store</a>';
     links += '<a href="/tools" class="drawer__item">' + ICONS.tools + ' Tools</a>';
     links += '<div class="drawer__divider"></div>';
     // User profile & settings
@@ -4353,7 +4355,7 @@ function renderMobileNav() {
         '<a href="/browse" class="mobile-nav__item' + (path.startsWith('/browse') || path.startsWith('/search') || path.startsWith('/category') || path.startsWith('/country') || path.startsWith('/platform') ? ' active' : '') + '"><span class="mobile-nav__icon">' + ICONS.users + '</span><span class="mobile-nav__label">Groups</span></a>' +
         '<a href="/submit" class="mobile-nav__item mobile-nav__item--primary"><span class="mobile-nav__icon">' + ICONS.plus + '</span><span class="mobile-nav__label">Submit</span></a>' +
         '<a href="/tools" class="mobile-nav__item' + (path.startsWith('/tools') ? ' active' : '') + '"><span class="mobile-nav__icon">' + ICONS.tools + '</span><span class="mobile-nav__label">Tools</span></a>' +
-        '<button class="mobile-nav__item" id="mobile-nav-ai"><span class="mobile-nav__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="2" y="8" width="20" height="12" rx="2"/><path d="M6 12h.01"/><path d="M18 12h.01"/><path d="M9 16s.9 1 3 1 3-1 3-1"/></svg></span><span class="mobile-nav__label">AI Chat</span></button>';
+        '<button class="mobile-nav__item" id="mobile-nav-ai"><span class="mobile-nav__icon"><svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="2" y="8" width="20" height="12" rx="2"/><path d="M6 12h.01"/><path d="M18 12h.01"/><path d="M9 16s.9 1 3 1 3-1 3-1"/></svg></span><span class="mobile-nav__label">AI Chat</span></button>';
     document.body.appendChild(nav);
     // AI Chat button in bottom nav toggles chatbot
     document.getElementById('mobile-nav-ai')?.addEventListener('click', function() {
