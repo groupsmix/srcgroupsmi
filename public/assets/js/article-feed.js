@@ -288,6 +288,14 @@ const ArticleFeed = {
     },
 
     async _fetchTrending(offset) {
+        // Use velocity-based trending if available
+        if (typeof TrendingV2 !== 'undefined') {
+            try {
+                return await TrendingV2.fetchTrending(this._perPage, offset);
+            } catch (e) {
+                console.error('TrendingV2 fallback:', e.message);
+            }
+        }
         try {
             const { data, error } = await window.supabaseClient.rpc('get_trending_articles', {
                 p_limit: this._perPage,

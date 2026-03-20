@@ -23,6 +23,43 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 <script is:inline>
         document.addEventListener('DOMContentLoaded', () => {
             ArticleDetail.init();
+            // After article loads, init paywall and social conversion
+            var checkArticle = setInterval(function() {
+                if (ArticleDetail._article) {
+                    clearInterval(checkArticle);
+                    var article = ArticleDetail._article;
+                    // Init paywall
+                    if (typeof ArticlePaywall !== 'undefined') {
+                        ArticlePaywall.initPaywall(article);
+                    }
+                    // Add social conversion button to toolbar
+                    var toolbar = document.getElementById('article-toolbar');
+                    if (toolbar && typeof SocialConversion !== 'undefined') {
+                        toolbar.insertAdjacentHTML('beforeend', SocialConversion.renderButton());
+                        SocialConversion.init(article);
+                    }
+                    // Track analytics view
+                    if (typeof AuthorAnalytics !== 'undefined') {
+                        AuthorAnalytics.trackView(article.id, 0, null);
+                        // Track read completion on scroll
+                        var maxScroll = 0;
+                        window.addEventListener('scroll', function() {
+                            var contentEl = document.querySelector('.article-detail__content');
+                            if (!contentEl) return;
+                            var rect = contentEl.getBoundingClientRect();
+                            var total = contentEl.scrollHeight;
+                            var visible = window.innerHeight - rect.top;
+                            var pct = Math.min(100, Math.max(0, Math.round((visible / total) * 100)));
+                            if (pct > maxScroll) {
+                                maxScroll = pct;
+                                if (maxScroll >= 25 && maxScroll % 25 === 0) {
+                                    AuthorAnalytics.trackView(article.id, maxScroll, null);
+                                }
+                            }
+                        }, { passive: true });
+                    }
+                }
+            }, 300);
         });
     </script>
 </Fragment>

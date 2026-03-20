@@ -1,0 +1,147 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Article Revisions — GroupsMix"
+  description="View and restore previous versions of your article."
+  noIndex={true}
+  cssFiles={["/assets/css/articles.css"]}
+>
+<style is:inline>
+        .revisions-page {
+            max-width: var(--container-lg);
+            margin: 0 auto;
+            padding: var(--space-8) var(--space-4);
+        }
+
+        .revisions-page__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-6);
+            flex-wrap: wrap;
+            gap: var(--space-3);
+        }
+
+        .revisions-page__title {
+            font-size: var(--text-2xl);
+            font-weight: var(--font-bold);
+        }
+
+        .revisions-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+
+        .revision-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4) var(--space-5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.15s ease;
+            cursor: pointer;
+        }
+
+        .revision-item:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .revision-item--active {
+            border-color: var(--accent-primary);
+            background: var(--accent-primary-light);
+        }
+
+        .revision-item__info {
+            flex: 1;
+        }
+
+        .revision-item__number {
+            font-weight: var(--font-semibold);
+            font-size: var(--text-base);
+        }
+
+        .revision-item__meta {
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
+            margin-top: var(--space-1);
+        }
+
+        .revision-item__actions {
+            display: flex;
+            gap: var(--space-2);
+        }
+
+        .revision-preview {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            margin-top: var(--space-5);
+        }
+
+        .revision-preview__title {
+            font-size: var(--text-xl);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--space-4);
+        }
+
+        .revision-preview__content {
+            font-size: var(--text-base);
+            line-height: 1.7;
+            color: var(--text-secondary);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .diff-added {
+            background: rgba(46, 160, 67, 0.15);
+            text-decoration: none;
+        }
+
+        .diff-removed {
+            background: rgba(248, 81, 73, 0.15);
+            text-decoration: line-through;
+        }
+    </style>
+
+        <div class="revisions-page" id="revisions-page">
+            <div class="revisions-page__header">
+                <div style="display:flex;align-items:center;gap:var(--space-3)">
+                    <a href="/articles" class="btn btn-ghost btn-sm" title="Back to Articles">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    </a>
+                    <h1 class="revisions-page__title">Version History</h1>
+                </div>
+                <a id="btn-back-edit" href="/write-article" class="btn btn-secondary btn-sm">Back to Editor</a>
+            </div>
+
+            <div id="revisions-list" class="revisions-list">
+                <div class="skeleton" style="height:80px;border-radius:var(--radius-lg)"></div>
+                <div class="skeleton" style="height:80px;border-radius:var(--radius-lg)"></div>
+                <div class="skeleton" style="height:80px;border-radius:var(--radius-lg)"></div>
+            </div>
+
+            <div id="revision-preview" class="revision-preview" style="display:none">
+                <div class="revision-preview__title" id="revision-preview-title"></div>
+                <div class="revision-preview__content" id="revision-preview-content"></div>
+            </div>
+        </div>
+    
+<Fragment slot="scripts">
+<script is:inline>
+        document.addEventListener('DOMContentLoaded', async () => {
+            await Auth.waitForAuth();
+            if (!Auth.isLoggedIn()) {
+                UI.toast('Please sign in to view revisions.', 'warning');
+                UI.authModal('signin');
+                return;
+            }
+            ArticleRevisions.init();
+        });
+    </script>
+</Fragment>
+</BaseLayout>

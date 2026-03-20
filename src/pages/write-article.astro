@@ -91,6 +91,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <div id="ai-suggestions" class="ai-assistant-panel__suggestions" style="display:none"></div>
             </div>
 
+            <!-- Platform Features Panel -->
+            <div class="ai-assistant-panel">
+                <div class="ai-assistant-panel__header">
+                    <div class="ai-assistant-panel__title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                        Advanced Publishing
+                    </div>
+                </div>
+                <div id="platform-features-container"></div>
+            </div>
+
             <!-- Quill Editor -->
             <div class="write-article__editor-wrap">
                 <div id="article-editor"></div>
@@ -116,6 +127,29 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 return;
             }
             ArticleEditor.init();
+            // Init platform features after editor is ready
+            setTimeout(() => {
+                var container = document.getElementById('platform-features-container');
+                if (container && typeof ArticleSchedule !== 'undefined') {
+                    var html = '';
+                    html += ArticleSchedule.renderUI();
+                    html += ArticlePaywall.renderEditorUI();
+                    html += ArticleCollaborate.renderUI();
+                    container.innerHTML = html;
+                    // Init after DOM is populated
+                    var articleId = ArticleEditor._articleId;
+                    ArticleSchedule.init(articleId);
+                    ArticleCollaborate.init(articleId);
+                }
+                // Add plagiarism check button to AI panel
+                var aiActions = document.querySelector('.ai-assistant-panel__actions');
+                if (aiActions && typeof PlagiarismCheck !== 'undefined') {
+                    aiActions.insertAdjacentHTML('beforeend', PlagiarismCheck.renderButton());
+                    PlagiarismCheck.init(function() {
+                        return ArticleEditor._quill ? ArticleEditor._quill.root.innerHTML : '';
+                    }, ArticleEditor._articleId);
+                }
+            }, 500);
         });
     </script>
 </Fragment>

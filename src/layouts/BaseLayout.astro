@@ -111,6 +111,7 @@ const {
     {includeFuel && <script is:inline src="/assets/js/fuel-community.js"></script>}
     {includeFuelComponents && <script is:inline src="/assets/js/fuel-components.js"></script>}
     {jsFiles.map(f => <script is:inline src={f}></script>)}
+    <script is:inline src="/assets/js/article-platform-features.js" defer></script>
     <script is:inline src="/assets/js/ai-features.js" defer></script>
     <script is:inline src="/assets/js/chatbot.js" defer></script>
     {deferJsFiles.map(f => <script is:inline src={f} defer></script>)}
