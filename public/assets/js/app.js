@@ -4050,12 +4050,15 @@ function renderHeader() {
         ) +
         '</div>' +
         '</div></nav>' +
-        // ── Horizontal Sub-Navigation Bar (Simplified) ──
+        // ── Horizontal Sub-Navigation Bar (Expanded) ──
         '<div class="subnav" id="subnav">' +
         '<div class="subnav__inner">' +
-                '<a href="/browse" class="subnav__item' + navActive(['/browse', '/search', '/category', '/country', '/platform']) + '">Groups</a>' +
-                '<a href="/submit" class="subnav__item' + navActive(['/submit']) + '">Submit</a>' +
-                '<a href="/tools" class="subnav__item' + navActive(['/tools']) + '">Tools</a>' +
+                '<a href="/" class="subnav__item' + (currentPath === '/' ? ' subnav__item--active' : '') + '">All</a>' +
+                '<a href="/jobs" class="subnav__item' + navActive(['/jobs', '/post-job']) + '">Jobs</a>' +
+                '<a href="/marketplace" class="subnav__item' + navActive(['/marketplace']) + '">Markets</a>' +
+                '<a href="/store" class="subnav__item' + navActive(['/store']) + '">Store</a>' +
+                '<a href="/tools" class="subnav__item' + navActive(['/tools']) + '">AI Tools</a>' +
+                '<a href="/articles" class="subnav__item' + navActive(['/articles']) + '">Articles</a>' +
                 '<div class="subnav__more-wrapper" style="position:relative">' +
                 '<button class="subnav__item subnav__more-btn" id="subnav-more-btn" type="button">More <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-left:2px"><polyline points="6 9 12 15 18 9"/></svg></button>' +
                 '</div>' +
@@ -4104,9 +4107,12 @@ function renderHeader() {
             var dd = document.createElement('div');
             dd.className = 'subnav__more-dropdown';
             dd.innerHTML =
-                '<a href="/jobs" class="subnav__more-item">' + ICONS.briefcase + ' Jobs</a>' +
-                '<a href="/articles" class="subnav__more-item">' + ICONS.newspaper + ' Articles</a>' +
-                '<a href="/scam-wall" class="subnav__more-item">' + ICONS.shield + ' Scam Wall</a>';
+                '<a href="/browse" class="subnav__more-item">' + ICONS.search + ' Browse Groups</a>' +
+                '<a href="/submit" class="subnav__more-item">' + ICONS.upload + ' Submit Group</a>' +
+                '<a href="/scam-wall" class="subnav__more-item">' + ICONS.shield + ' Scam Wall</a>' +
+                '<a href="/leaderboard" class="subnav__more-item">' + ICONS.star + ' Leaderboard</a>' +
+                '<a href="/stats" class="subnav__more-item">' + ICONS.zap + ' Stats</a>' +
+                '<a href="/fuel" class="subnav__more-item">' + ICONS.heart + ' Fuel the Community</a>';
             wrapper.appendChild(dd);
         });
     }
@@ -4284,22 +4290,45 @@ function renderFooter() {
     if (!footer) return;
     footer.innerHTML = '<div class="site-footer">' +
         '<div class="site-footer__grid">' +
-        // Column 1: Discover
+        // Column 1: Explore
         '<div class="site-footer__column">' +
-            '<div class="site-footer__heading">Discover</div>' +
-            '<a href="/search" class="site-footer__link">Search Groups</a>' +
-            '<a href="/browse" class="site-footer__link">Browse</a>' +
-            '<a href="/submit" class="site-footer__link">Submit Group</a>' +
+            '<div class="site-footer__heading">EXPLORE</div>' +
+            '<a href="/search" class="site-footer__link">Search</a>' +
+            '<a href="/browse" class="site-footer__link">Groups</a>' +
+            '<a href="/articles" class="site-footer__link">Articles</a>' +
+            '<a href="/stats" class="site-footer__link">Stats</a>' +
+            '<a href="/scam-wall" class="site-footer__link">Scam Wall</a>' +
+            '<a href="/tools" class="site-footer__link">Free Tools</a>' +
+        '</div>' +
+        // Column 2: Grow
+        '<div class="site-footer__column">' +
+            '<div class="site-footer__heading">GROW</div>' +
+            '<a href="/promote" class="site-footer__link">Promote</a>' +
+            '<a href="/advertise" class="site-footer__link">Advertise</a>' +
+            '<a href="/store" class="site-footer__link">Store</a>' +
+            '<a href="/marketplace" class="site-footer__link">Marketplace</a>' +
             '<a href="/jobs" class="site-footer__link">Jobs</a>' +
         '</div>' +
-        // Column 2: Company
+        // Column 3: Community
         '<div class="site-footer__column">' +
-            '<div class="site-footer__heading">Company</div>' +
+            '<div class="site-footer__heading">COMMUNITY</div>' +
+            '<a href="/fuel" class="site-footer__link">Fuel the Community</a>' +
+            '<a href="/leaderboard" class="site-footer__link">Leaderboard</a>' +
+            '<a href="/submit" class="site-footer__link">Submit Group</a>' +
+        '</div>' +
+        // Column 4: Company
+        '<div class="site-footer__column">' +
+            '<div class="site-footer__heading">COMPANY</div>' +
             '<a href="/about" class="site-footer__link">About</a>' +
-            '<a href="/contact" class="site-footer__link">Contact</a>' +
+            '<a href="/contact" class="site-footer__link">Contact Us</a>' +
+            '<a href="/faq" class="site-footer__link">FAQ</a>' +
+            '<a href="/support" class="site-footer__link">Support Center</a>' +
             '<a href="/privacy" class="site-footer__link">Privacy</a>' +
             '<a href="/terms" class="site-footer__link">Terms</a>' +
         '</div>' +
+        '</div>' +
+        '<div class="site-footer__cta">' +
+            '<a href="/fuel" class="site-footer__cta-link">' + ICONS.zap + ' Did GroupsMix help you? Help us keep going &amp; growing</a>' +
         '</div>' +
         '<div class="site-footer__bottom">&copy; ' + new Date().getFullYear() + ' GroupsMix.com. All rights reserved.</div>' +
         '</div>';
