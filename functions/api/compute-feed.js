@@ -2,9 +2,11 @@
  * /api/compute-feed — Feed Algorithm Compute Jobs
  *
  * POST /api/compute-feed
- *   job: "trending"       — Recompute trending/velocity scores
+ *   job: "trending"       — Recompute trending/velocity scores with exponential decay
  *   job: "collaborative"  — Recompute collaborative filtering matrix
  *   job: "decay"          — Decay old interest weights
+ *   job: "embeddings"     — Compute/update user embedding vectors
+ *   job: "re-engagement"  — Score inactive users for re-engagement targeting
  *   job: "cleanup"        — Clean up old impressions & sessions
  *   job: "all"            — Run all jobs sequentially
  *
@@ -14,6 +16,8 @@
  * Recommended schedule:
  *   - trending: every 1-2 hours
  *   - collaborative: nightly (once per day)
+ *   - embeddings: nightly (once per day)
+ *   - re-engagement: daily
  *   - decay: nightly
  *   - cleanup: weekly
  */
@@ -117,6 +121,39 @@ async function runDecay(supabaseUrl, supabaseKey, decayFactor) {
     };
 }
 
+async function runEmbeddings(supabaseUrl, supabaseKey) {
+    var startTime = Date.now();
+
+    // Compute user embedding vectors based on interaction history
+    var userResult = await callRpc(supabaseUrl, supabaseKey, 'compute_user_embeddings', {});
+
+    // Compute group embedding vectors based on metadata
+    var groupResult = await callRpc(supabaseUrl, supabaseKey, 'compute_group_embeddings', {});
+
+    return {
+        job: 'embeddings',
+        duration_ms: Date.now() - startTime,
+        users_computed: typeof userResult === 'number' ? userResult : userResult,
+        groups_computed: typeof groupResult === 'number' ? groupResult : groupResult
+    };
+}
+
+async function runReEngagement(supabaseUrl, supabaseKey, inactiveDays) {
+    var startTime = Date.now();
+
+    // Flag users inactive for N+ days and compute re-engagement scores
+    var result = await callRpc(supabaseUrl, supabaseKey, 'compute_re_engagement_scores', {
+        p_inactive_days: inactiveDays || 7
+    });
+
+    return {
+        job: 're-engagement',
+        duration_ms: Date.now() - startTime,
+        users_scored: typeof result === 'number' ? result : result,
+        inactive_threshold_days: inactiveDays || 7
+    };
+}
+
 async function runCleanup(supabaseUrl, supabaseKey) {
     var startTime = Date.now();
 
@@ -176,6 +213,7 @@ export async function onRequest(context) {
     var hours = parseInt(body.hours) || 6;
     var minCoOccurrence = parseInt(body.min_co_occurrence) || 2;
     var decayFactor = parseFloat(body.decay_factor) || 0.95;
+    var inactiveDays = parseInt(body.inactive_days) || 7;
 
     try {
         var results = [];
@@ -189,6 +227,14 @@ export async function onRequest(context) {
             results.push(await runCollaborative(supabaseUrl, supabaseKey, minCoOccurrence));
         }
 
+        if (job === 'embeddings' || job === 'all') {
+            results.push(await runEmbeddings(supabaseUrl, supabaseKey));
+        }
+
+        if (job === 're-engagement' || job === 'all') {
+            results.push(await runReEngagement(supabaseUrl, supabaseKey, inactiveDays));
+        }
+
         if (job === 'decay' || job === 'all') {
             results.push(await runDecay(supabaseUrl, supabaseKey, decayFactor));
         }
@@ -200,7 +246,7 @@ export async function onRequest(context) {
         if (results.length === 0) {
             return jsonResponse({
                 ok: false,
-                error: 'Invalid job. Use: trending, collaborative, decay, cleanup, all'
+                error: 'Invalid job. Use: trending, collaborative, embeddings, re-engagement, decay, cleanup, all'
             }, 400, origin);
         }
 

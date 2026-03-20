@@ -283,6 +283,49 @@ async function handleGet(request, env, admin, origin) {
                 });
                 var articleSlope = (gn * asumXY - gsumX * asumY) / (gn * gsumXX - gsumX * gsumX) || 0;
 
+                // Revenue trend: fetch coin purchase transactions for the period
+                var revenueTrend = null;
+                try {
+                    var revRes = await fetch(
+                        supabaseUrl + '/rest/v1/wallet_transactions?type=eq.purchase&created_at=gte.' + encodeURIComponent(growthCutoff) + '&select=amount,created_at&order=created_at.asc&limit=5000',
+                        { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                    );
+                    var revTxns = await revRes.json();
+                    if (Array.isArray(revTxns) && revTxns.length > 0) {
+                        // Build daily revenue
+                        var dailyRevenue = {};
+                        revTxns.forEach(function(t) {
+                            var rKey = (t.created_at || '').substring(0, 10);
+                            dailyRevenue[rKey] = (dailyRevenue[rKey] || 0) + Math.abs(t.amount || 0);
+                        });
+
+                        // Linear regression on daily revenue
+                        var revDays = Object.keys(dailyRevenue).sort();
+                        var rsumX = 0, rsumY = 0, rsumXY = 0, rsumXX = 0;
+                        revDays.forEach(function(rd, ri) {
+                            rsumX += ri;
+                            rsumY += dailyRevenue[rd];
+                            rsumXY += ri * dailyRevenue[rd];
+                            rsumXX += ri * ri;
+                        });
+                        var rn = revDays.length;
+                        var revSlope = rn > 1 ? ((rn * rsumXY - rsumX * rsumY) / (rn * rsumXX - rsumX * rsumX) || 0) : 0;
+                        var totalRevenue = rsumY;
+                        var avgDailyRevenue = totalRevenue / growthDays;
+
+                        revenueTrend = {
+                            total_coins: Math.round(totalRevenue),
+                            avg_daily_coins: parseFloat(avgDailyRevenue.toFixed(1)),
+                            slope: parseFloat(revSlope.toFixed(4)),
+                            direction: revSlope > 1 ? 'growing' : (revSlope < -1 ? 'declining' : 'stable'),
+                            projected_next_30d: Math.max(0, Math.round(avgDailyRevenue * 30 + revSlope * 30)),
+                            projected_next_90d: Math.max(0, Math.round(avgDailyRevenue * 90 + revSlope * 90))
+                        };
+                    }
+                } catch (e) {
+                    // revenue data unavailable
+                }
+
                 // Project next 14 days
                 var growthProjections = [];
                 for (var gp = 1; gp <= 14; gp++) {
@@ -313,6 +356,7 @@ async function handleGet(request, env, admin, origin) {
                                 avg_per_day: parseFloat((cumArticles / growthDays).toFixed(2))
                             }
                         },
+                        revenue: revenueTrend,
                         projections: growthProjections
                     }
                 }), { status: 200, headers: corsHeaders(origin) });
@@ -416,6 +460,54 @@ async function handleGet(request, env, admin, origin) {
                     }
                 }
 
+                // Retention metrics: check returning users vs new users
+                var retentionData = null;
+                try {
+                    var activeUsersRes = await fetch(
+                        supabaseUrl + '/rest/v1/users?last_active_at=gte.' + encodeURIComponent(insightCutoff) + '&select=id,created_at,last_active_at&limit=1',
+                        { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
+                    );
+                    var activeCount = parseInt((activeUsersRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
+
+                    var returningRes = await fetch(
+                        supabaseUrl + '/rest/v1/users?last_active_at=gte.' + encodeURIComponent(insightCutoff) + '&created_at=lt.' + encodeURIComponent(insightCutoff) + '&select=id&limit=1',
+                        { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
+                    );
+                    var returningCount = parseInt((returningRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
+
+                    if (activeCount > 0) {
+                        var retentionRate = (returningCount / activeCount * 100);
+                        retentionData = {
+                            active_users: activeCount,
+                            returning_users: returningCount,
+                            new_active_users: activeCount - returningCount,
+                            retention_rate: parseFloat(retentionRate.toFixed(1))
+                        };
+
+                        if (retentionRate < 30) {
+                            platformInsights.push({
+                                type: 'retention',
+                                icon: 'user-minus',
+                                title: 'Low User Retention (' + retentionRate.toFixed(0) + '%)',
+                                description: 'Only ' + retentionRate.toFixed(0) + '% of active users are returning users. Consider re-engagement campaigns, push notifications, or email digests to bring users back.',
+                                impact: 'high',
+                                data: retentionData
+                            });
+                        } else if (retentionRate > 60) {
+                            platformInsights.push({
+                                type: 'retention',
+                                icon: 'user-check',
+                                title: 'Strong Retention (' + retentionRate.toFixed(0) + '%)',
+                                description: retentionRate.toFixed(0) + '% of active users are returning — excellent stickiness! ' + returningCount + ' returning users this period.',
+                                impact: 'low',
+                                data: retentionData
+                            });
+                        }
+                    }
+                } catch (e) {
+                    // retention data unavailable
+                }
+
                 return new Response(JSON.stringify({
                     ok: true,
                     data: {
@@ -426,7 +518,8 @@ async function handleGet(request, env, admin, origin) {
                             users_prev_period: prevUsersCount,
                             articles_this_period: curArticlesCount,
                             articles_prev_period: prevArticlesCount
-                        }
+                        },
+                        retention: retentionData
                     }
                 }), { status: 200, headers: corsHeaders(origin) });
             }

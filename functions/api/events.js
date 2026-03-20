@@ -224,12 +224,36 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
         var allEvents = await eventsRes.json();
         allEvents = Array.isArray(allEvents) ? allEvents : [];
 
+        // Get user's engagement topics from feed interactions if available
+        var engagementTopics = [];
+        if (userId) {
+            try {
+                var interestsRes = await fetch(
+                    supabaseUrl + '/rest/v1/user_interests?user_id=eq.' + encodeURIComponent(userId) + '&select=category,weight&order=weight.desc&limit=10',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                );
+                var interests = await interestsRes.json();
+                if (Array.isArray(interests)) {
+                    engagementTopics = interests.map(function(i) { return { category: i.category, weight: i.weight || 1 }; });
+                }
+            } catch (e) {
+                // silently continue without engagement data
+            }
+        }
+
         // Score events by relevance to user
         var scoredEvents = allEvents.map(function(evt) {
             var score = 0;
 
             // Category match (strongest signal)
             if (evt.category && userCategories.indexOf(evt.category) !== -1) score += 40;
+
+            // Engagement topic signals (from feed interactions / implicit feedback)
+            engagementTopics.forEach(function(topic) {
+                if (evt.category === topic.category) {
+                    score += 25 * Math.min(3, topic.weight); // weighted by engagement strength
+                }
+            });
 
             // Tag overlap with user's group tags
             var evtTags = (evt.tags || []).map(function(t) { return (t || '').toLowerCase(); });
@@ -256,6 +280,9 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
             // Popularity bonus
             if (evt.rsvp_count > 10) score += 10;
             if (evt.rsvp_count > 50) score += 10;
+
+            // Verified group bonus
+            if (evt.group_is_verified) score += 10;
 
             evt._relevance_score = score;
             return evt;
@@ -317,8 +344,31 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
         var eventStart = new Date(predEvent.start_date);
         var daysUntilEvent = Math.max(0, (eventStart - now) / 86400000);
 
-        // Predict total RSVPs by event date
-        var projectedTotal = Math.round(goingCount + (rsvpVelocity * daysUntilEvent));
+        // Get historical event data for same category/group to improve prediction
+        var historicalMultiplier = 1.0;
+        if (predEvent.category || predEvent.group_id) {
+            try {
+                var histQuery = supabaseUrl + '/rest/v1/community_events?start_date=lt.' + encodeURIComponent(new Date().toISOString()) + '&select=id,rsvp_count,max_attendees,category,group_id&limit=50&order=start_date.desc';
+                if (predEvent.category) histQuery += '&category=eq.' + encodeURIComponent(predEvent.category);
+                var histRes = await fetch(histQuery, { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } });
+                var histEvents = await histRes.json();
+                if (Array.isArray(histEvents) && histEvents.length >= 3) {
+                    var avgHistRsvps = histEvents.reduce(function(s, e) { return s + (e.rsvp_count || 0); }, 0) / histEvents.length;
+                    if (avgHistRsvps > 0 && goingCount > 0) {
+                        // If current velocity is above historical average, boost projection
+                        var currentPace = goingCount / daysLive;
+                        var historicalPace = avgHistRsvps / 14; // assume avg 2 week event lifecycle
+                        if (currentPace > historicalPace * 1.5) historicalMultiplier = 1.2;
+                        else if (currentPace < historicalPace * 0.5) historicalMultiplier = 0.8;
+                    }
+                }
+            } catch (e) {
+                // continue with default multiplier
+            }
+        }
+
+        // Predict total RSVPs by event date (enhanced with historical data)
+        var projectedTotal = Math.round((goingCount + (rsvpVelocity * daysUntilEvent)) * historicalMultiplier);
 
         // Determine fill-up likelihood
         var fillPercentage = maxAttendees > 0 ? (goingCount / maxAttendees * 100) : 0;

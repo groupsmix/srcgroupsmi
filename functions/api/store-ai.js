@@ -1059,6 +1059,29 @@ async function handleFrequentlyBought(env, body) {
     const supabaseUrl = env?.SUPABASE_URL;
     const supabaseKey = env?.SUPABASE_SERVICE_KEY;
 
+    // Check KV cache for pre-computed bundle suggestions
+    const kvCacheKey = 'fbt:' + productId;
+    if (env?.STORE_KV) {
+        try {
+            const cached = await env.STORE_KV.get(kvCacheKey, 'json');
+            if (cached && cached.frequently_bought_together && cached.timestamp) {
+                const ageSeconds = (Date.now() - cached.timestamp) / 1000;
+                if (ageSeconds < 3600) { // 1 hour TTL
+                    return {
+                        ok: true,
+                        source: 'kv_cache',
+                        product_id: productId,
+                        frequently_bought_together: cached.frequently_bought_together,
+                        sample_size: cached.sample_size || 0,
+                        cache_age_seconds: Math.round(ageSeconds)
+                    };
+                }
+            }
+        } catch (e) {
+            console.error('KV cache read error:', e);
+        }
+    }
+
     // If we have Supabase access, query actual purchase co-occurrence data
     if (supabaseUrl && supabaseKey) {
         try {
@@ -1102,6 +1125,19 @@ async function handleFrequentlyBought(env, body) {
                     }));
 
                 if (ranked.length > 0) {
+                    // Store in KV cache for fast future lookups
+                    if (env?.STORE_KV) {
+                        try {
+                            await env.STORE_KV.put(kvCacheKey, JSON.stringify({
+                                frequently_bought_together: ranked,
+                                sample_size: buyerIds.length,
+                                timestamp: Date.now()
+                            }), { expirationTtl: 3900 }); // 65 min TTL with buffer
+                        } catch (e) {
+                            console.error('KV cache write error:', e);
+                        }
+                    }
+
                     return {
                         ok: true,
                         source: 'purchase_data',
@@ -1161,13 +1197,99 @@ async function handleWishlistAlerts(env, body) {
     const userId = (body.user_id || '').trim();
     const wishlistItems = body.wishlist || [];
     const products = body.products || [];
+    const batchMode = body.batch === true; // batch mode for processing multiple users
 
-    if (!userId || !wishlistItems.length || !products.length) {
+    if (!batchMode && (!userId || !wishlistItems.length || !products.length)) {
         return { ok: false, error: 'Missing user_id, wishlist, or products' };
     }
 
     const supabaseUrl = env?.SUPABASE_URL;
     const supabaseKey = env?.SUPABASE_SERVICE_KEY;
+
+    // Batch mode: process all users with wishlists at once
+    if (batchMode && supabaseUrl && supabaseKey) {
+        try {
+            // Fetch all wishlist entries with prices
+            const wlRes = await fetch(
+                supabaseUrl + '/rest/v1/wishlists?select=user_id,product_id,price_when_added&limit=2000',
+                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+            );
+            const allWishlists = await wlRes.json();
+            if (!Array.isArray(allWishlists) || !allWishlists.length) {
+                return { ok: true, alerts_sent: 0, message: 'No wishlists found' };
+            }
+
+            // Build product price lookup from provided products
+            const productMap = {};
+            products.forEach(p => { productMap[p.id] = p; });
+
+            // Group by user and find drops
+            const userAlerts = {};
+            allWishlists.forEach(wl => {
+                const product = productMap[wl.product_id];
+                if (!product) return;
+                const savedPrice = wl.price_when_added || 0;
+                const currentPrice = product.price || 0;
+                if (savedPrice > 0 && currentPrice > 0 && currentPrice < savedPrice) {
+                    if (!userAlerts[wl.user_id]) userAlerts[wl.user_id] = [];
+                    userAlerts[wl.user_id].push({
+                        product_id: product.id,
+                        product_name: product.name,
+                        original_price: savedPrice,
+                        current_price: currentPrice,
+                        drop_percent: Math.round((1 - currentPrice / savedPrice) * 100),
+                        savings_formatted: '$' + ((savedPrice - currentPrice) / 100).toFixed(2)
+                    });
+                }
+            });
+
+            // Send batch notifications (up to 5 concurrent)
+            var totalAlertsSent = 0;
+            var userIds = Object.keys(userAlerts);
+            for (var bi = 0; bi < userIds.length; bi += 5) {
+                var batch = userIds.slice(bi, bi + 5);
+                await Promise.all(batch.map(async function(uid) {
+                    var alerts = userAlerts[uid];
+                    var topAlert = alerts.sort(function(a, b) { return b.drop_percent - a.drop_percent; })[0];
+                    var message = alerts.length === 1
+                        ? topAlert.product_name + ' dropped ' + topAlert.drop_percent + '% — save ' + topAlert.savings_formatted + '!'
+                        : alerts.length + ' wishlisted items dropped in price! ' + topAlert.product_name + ' is down ' + topAlert.drop_percent + '%.';
+                    try {
+                        await fetch(supabaseUrl + '/rest/v1/notifications', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'apikey': supabaseKey,
+                                'Authorization': 'Bearer ' + supabaseKey
+                            },
+                            body: JSON.stringify({
+                                uid: uid,
+                                type: 'price_drop',
+                                title: 'Price Drop Alert!',
+                                message: message,
+                                link: '/pages/store.html?product=' + topAlert.product_id,
+                                metadata: JSON.stringify({ alerts: alerts })
+                            })
+                        });
+                        totalAlertsSent++;
+                    } catch (e) {
+                        console.error('Batch notification error for user ' + uid + ':', e);
+                    }
+                }));
+            }
+
+            return {
+                ok: true,
+                batch: true,
+                users_notified: totalAlertsSent,
+                total_users_with_drops: userIds.length,
+                total_product_drops: Object.values(userAlerts).reduce(function(s, a) { return s + a.length; }, 0)
+            };
+        } catch (e) {
+            console.error('Batch wishlist alerts error:', e);
+            return { ok: false, error: 'Batch processing failed: ' + e.message };
+        }
+    }
 
     const alerts = [];
 
@@ -1193,27 +1315,29 @@ async function handleWishlistAlerts(env, body) {
 
     // Store alerts in Supabase notifications if available
     if (alerts.length > 0 && supabaseUrl && supabaseKey) {
-        for (const alert of alerts) {
-            try {
-                await fetch(supabaseUrl + '/rest/v1/notifications', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': supabaseKey,
-                        'Authorization': 'Bearer ' + supabaseKey
-                    },
-                    body: JSON.stringify({
-                        uid: userId,
-                        type: 'price_drop',
-                        title: 'Price Drop Alert! 🔥',
-                        message: alert.product_name + ' dropped ' + alert.drop_percent + '% — save ' + alert.savings_formatted + '!',
-                        link: '/pages/store.html?product=' + alert.product_id,
-                        metadata: JSON.stringify(alert)
-                    })
-                });
-            } catch (e) {
-                console.error('Notification error:', e);
-            }
+        // Batch insert notifications instead of one-by-one
+        try {
+            var notifBodies = alerts.map(function(alert) {
+                return {
+                    uid: userId,
+                    type: 'price_drop',
+                    title: 'Price Drop Alert!',
+                    message: alert.product_name + ' dropped ' + alert.drop_percent + '% — save ' + alert.savings_formatted + '!',
+                    link: '/pages/store.html?product=' + alert.product_id,
+                    metadata: JSON.stringify(alert)
+                };
+            });
+            await fetch(supabaseUrl + '/rest/v1/notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': supabaseKey,
+                    'Authorization': 'Bearer ' + supabaseKey
+                },
+                body: JSON.stringify(notifBodies)
+            });
+        } catch (e) {
+            console.error('Notification batch error:', e);
         }
     }
 
