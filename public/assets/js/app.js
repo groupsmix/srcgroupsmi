@@ -131,7 +131,7 @@ const CONFIG = {
     maxToasts: 3,
     toastDuration: 4000,
     debounceDelay: 300,
-    timeoutDuration: 15000,
+    timeoutDuration: 5000,
     defaultSort: 'ranking',
     defaultTheme: 'dark',
     turnstileSiteKey: '0x4AAAAAACfjfwpiZdD7LJB4',
@@ -4025,7 +4025,7 @@ function renderHeader() {
         '<div class="site-header__center">' +
         '<a href="/" class="site-header__logo"><img src="/assets/img/favicon.svg" alt="GroupsMix" class="site-header__logo-icon"><span class="site-header__logo-text">GroupsMix</span></a>' +
         '<div class="magic-plus-wrapper" style="position:relative">' +
-        '<button id="magic-plus-btn" class="magic-plus-btn" aria-label="Quick add" title="Quick add">' +
+        '<button id="magic-plus-btn" class="magic-plus-btn" aria-label="Submit Group, Post Job, or more" title="Submit Group, Post Job, or more">' +
         '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
         '</button>' +
         '</div>' +
@@ -4045,6 +4045,7 @@ function renderHeader() {
             '</button>' +
             '</div>'
             :
+            '<button id="auth-signup-btn" class="header-signup-btn">Sign Up Free</button>' +
             '<button id="auth-btn" class="header-login-btn">Login</button>'
         ) +
         '</div>' +
@@ -4090,6 +4091,7 @@ function renderHeader() {
         document.getElementById('user-menu-btn')?.addEventListener('click', function(e) { e.preventDefault(); toggleUserDropdown(); });
     } else {
         document.getElementById('auth-btn')?.addEventListener('click', () => UI.authModal('signin'));
+        document.getElementById('auth-signup-btn')?.addEventListener('click', () => UI.authModal('signup'));
     }
     document.getElementById('drawer-toggle')?.addEventListener('click', openDrawer);
 
@@ -4224,9 +4226,8 @@ function openDrawer() {
     links += '<div class="drawer__divider"></div>';
     // Main sections
     links += '<a href="/" class="drawer__item">' + ICONS.home + ' Home</a>';
-    links += '<a href="/marketplace" class="drawer__item">' + ICONS.store + ' Marketplace</a>';
-    links += '<a href="/jobs" class="drawer__item">' + ICONS.briefcase + ' Jobs</a>';
     links += '<a href="/browse" class="drawer__item">' + ICONS.users + ' Groups</a>';
+    links += '<a href="/jobs" class="drawer__item">' + ICONS.briefcase + ' Jobs</a>';
     links += '<a href="/tools" class="drawer__item">' + ICONS.tools + ' Tools</a>';
     links += '<div class="drawer__divider"></div>';
     // User profile & settings
@@ -4241,7 +4242,6 @@ function openDrawer() {
     links += '<a href="/search" class="drawer__item">' + ICONS.search + ' Search</a>';
     links += '<a href="/submit" class="drawer__item">' + ICONS.upload + ' Submit Group</a>';
     if (CONFIG.features.articles) links += '<a href="/articles" class="drawer__item">' + ICONS.newspaper + ' Articles</a>';
-    if (CONFIG.features.store) links += '<a href="/store" class="drawer__item">' + ICONS.shopping_cart + ' Store</a>';
     links += '<div class="drawer__divider"></div>';
     links += '<a href="/about" class="drawer__item">' + ICONS.info + ' About</a>';
     links += '<a href="/contact" class="drawer__item">' + ICONS.phone + ' Contact</a>';
@@ -4345,8 +4345,8 @@ function renderMobileNav() {
 
     nav.innerHTML = '<a href="/" class="mobile-nav__item' + (path === '/' ? ' active' : '') + '"><span class="mobile-nav__icon">' + ICONS.home + '</span><span class="mobile-nav__label">Home</span></a>' +
         '<a href="/browse" class="mobile-nav__item' + (path.startsWith('/browse') || path.startsWith('/search') || path.startsWith('/category') || path.startsWith('/country') || path.startsWith('/platform') ? ' active' : '') + '"><span class="mobile-nav__icon">' + ICONS.users + '</span><span class="mobile-nav__label">Groups</span></a>' +
-        '<a href="/marketplace" class="mobile-nav__item' + (path.startsWith('/marketplace') ? ' active' : '') + '"><span class="mobile-nav__icon">' + ICONS.store + '</span><span class="mobile-nav__label">Market</span></a>' +
         '<a href="/submit" class="mobile-nav__item mobile-nav__item--primary"><span class="mobile-nav__icon">' + ICONS.plus + '</span><span class="mobile-nav__label">Submit</span></a>' +
+        '<a href="/tools" class="mobile-nav__item' + (path.startsWith('/tools') ? ' active' : '') + '"><span class="mobile-nav__icon">' + ICONS.tools + '</span><span class="mobile-nav__label">Tools</span></a>' +
         '<button class="mobile-nav__item" id="mobile-nav-ai"><span class="mobile-nav__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="2" y="8" width="20" height="12" rx="2"/><path d="M6 12h.01"/><path d="M18 12h.01"/><path d="M9 16s.9 1 3 1 3-1 3-1"/></svg></span><span class="mobile-nav__label">AI Chat</span></button>';
     document.body.appendChild(nav);
     // AI Chat button in bottom nav toggles chatbot

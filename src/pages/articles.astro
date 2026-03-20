@@ -98,6 +98,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 <script is:inline>
         document.addEventListener('DOMContentLoaded', () => {
             ArticleFeed.init();
+
+            // Graceful timeout: if skeletons are still showing after 5s, show empty state
+            setTimeout(function() {
+                var grid = document.getElementById('articles-grid');
+                var emptyEl = document.getElementById('articles-empty');
+                if (grid && grid.querySelector('.article-skeleton')) {
+                    grid.innerHTML = '';
+                    if (emptyEl) {
+                        document.getElementById('articles-empty-text').textContent = 'No articles yet \u2014 be the first to write one!';
+                        var writeBtn = document.getElementById('btn-write-empty');
+                        if (writeBtn) writeBtn.style.display = '';
+                        emptyEl.style.display = '';
+                    }
+                }
+            }, 5000);
+
             // Show analytics button for logged-in users
             Auth.waitForAuth().then(function() {
                 if (Auth.isLoggedIn()) {
