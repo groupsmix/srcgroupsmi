@@ -1,6 +1,5 @@
 // ─── Module: marketplace ───
 // Exports: Marketplace
-// Split from app.js for maintainability
 
 // ═══════════════════════════════════════
 // MODULE 5a: DB.marketplace (Marketplace Listings System)
@@ -1441,5 +1440,66 @@ const Marketplace = {
             UI.toast('Failed to submit review.', 'error');
             return null;
         }
-    }
+    },
+
+    /**
+     * Get marketplace platforms config for sell form.
+     * @param {string} categoryId - optional, filter by category
+     * @returns {Array} platform objects with id, name, icon
+     */
+    getMarketplacePlatforms(categoryId) {
+        var allPlatforms = {
+            bot_templates: [
+                { id: 'telegram_bot', name: 'Telegram Bot', icon: ICONS.telegram },
+                { id: 'discord_bot', name: 'Discord Bot', icon: ICONS.discord },
+                { id: 'whatsapp_bot', name: 'WhatsApp Bot', icon: ICONS.whatsapp },
+                { id: 'slack_bot', name: 'Slack Bot', icon: ICONS.smartphone }
+            ],
+            design_templates: [
+                { id: 'banners', name: 'Banners', icon: ICONS.monitor },
+                { id: 'sticker_packs', name: 'Sticker Packs', icon: ICONS.smartphone },
+                { id: 'welcome_images', name: 'Welcome Images', icon: ICONS.camera || ICONS.monitor },
+                { id: 'logos', name: 'Logos', icon: ICONS.globe }
+            ],
+            guides_ebooks: [
+                { id: 'growth_guides', name: 'Growth Guides', icon: ICONS.globe },
+                { id: 'marketing_ebooks', name: 'Marketing Ebooks', icon: ICONS.globe },
+                { id: 'community_playbooks', name: 'Community Playbooks', icon: ICONS.globe },
+                { id: 'monetization_guides', name: 'Monetization Guides', icon: ICONS.globe }
+            ],
+            automation: [
+                { id: 'zapier_templates', name: 'Zapier Templates', icon: ICONS.globe },
+                { id: 'n8n_flows', name: 'n8n Flows', icon: ICONS.globe },
+                { id: 'make_scenarios', name: 'Make Scenarios', icon: ICONS.globe },
+                { id: 'api_scripts', name: 'API Scripts', icon: ICONS.globe }
+            ],
+            management_tools: [
+                { id: 'group_tools', name: 'Group Tools', icon: ICONS.globe },
+                { id: 'moderation_scripts', name: 'Moderation Scripts', icon: ICONS.globe },
+                { id: 'analytics_dashboards', name: 'Analytics Dashboards', icon: ICONS.monitor },
+                { id: 'reporting_templates', name: 'Reporting Templates', icon: ICONS.globe }
+            ],
+            premium_packs: [
+                { id: 'welcome_packs', name: 'Welcome Packs', icon: ICONS.globe },
+                { id: 'rules_templates', name: 'Rules Templates', icon: ICONS.globe },
+                { id: 'onboarding_kits', name: 'Onboarding Kits', icon: ICONS.globe },
+                { id: 'content_calendars', name: 'Content Calendars', icon: ICONS.globe }
+            ],
+            other: []
+        };
+
+        if (categoryId && allPlatforms[categoryId] !== undefined) {
+            return allPlatforms[categoryId];
+        }
+
+        // Return all platforms flattened
+        var all = [];
+        Object.keys(allPlatforms).forEach(function(key) {
+            all = all.concat(allPlatforms[key]);
+        });
+        all.push({ id: 'other', name: 'Other', icon: ICONS.globe });
+        return all;
+    },
+
 };
+

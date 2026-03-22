@@ -1,6 +1,5 @@
 // ─── Module: maintenance ───
 // Exports: MaintenanceMode
-// Split from app.js for maintainability
 
 // ═══════════════════════════════════════
 // MODULE 14b: Maintenance Mode Middleware
@@ -62,3 +61,4 @@ const MaintenanceMode = {
         }
     }
 };
+

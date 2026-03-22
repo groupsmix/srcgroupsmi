@@ -1,6 +1,5 @@
 // ─── Module: pricing ───
 // Exports: getPrice
-// Split from app.js for maintainability
 
 // ═══════════════════════════════════════
 // MODULE 10: getPrice
@@ -26,3 +25,4 @@ function getPrice(service, options = {}) {
     if (typeof p === 'object') return p[options.period || 'monthly'] || p.monthly;
     return p;
 }
+

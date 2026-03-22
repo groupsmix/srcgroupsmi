@@ -1,6 +1,5 @@
 // ─── Module: live-realtime ───
 // Exports: LiveRealtime
-// Split from app.js for maintainability
 
 // ═══════════════════════════════════════
 // MODULE 14b: Realtime Live Stats
@@ -84,3 +83,4 @@ const LiveRealtime = {
         }
     }
 };
+

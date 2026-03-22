@@ -1,6 +1,5 @@
 // ─── Module: cookie-consent ───
 // Exports: CookieConsent
-// Split from app.js for maintainability
 
 // ═══════════════════════════════════════
 // MODULE 14: Cookie Consent
@@ -69,3 +68,4 @@ const CookieConsent = {
         document.getElementById('cookie-reject')?.addEventListener('click', function() { CookieConsent.reject(); });
     }
 };
+

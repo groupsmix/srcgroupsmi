@@ -1,6 +1,5 @@
 // ─── Module: init ───
-// Exports: Global init, service worker, error handlers
-// Split from app.js for maintainability
+// Global initialization, service worker registration, error handlers
 
 // ═══════════════════════════════════════
 // MODULE 15: Global Init
@@ -93,3 +92,4 @@ window.onerror = function (msg, src, line, col, err) {
 window.onunhandledrejection = function (e) {
     if (e && e.reason) console.warn('UnhandledRejection:', e.reason.message || e.reason);
 };
+
