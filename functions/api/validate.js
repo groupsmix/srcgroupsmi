@@ -97,6 +97,7 @@ async function verifyTurnstile(token, ip, secretKey) {
     if (!secretKey) {
         // If no secret key configured, skip server-side verification
         // (Turnstile is still checked client-side)
+        console.warn('verifyTurnstile: TURNSTILE_SECRET_KEY is not configured — server-side CAPTCHA verification is disabled');
         return { success: true };
     }
     if (!token) {

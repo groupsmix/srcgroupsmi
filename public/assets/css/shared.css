@@ -189,8 +189,17 @@ input, button, textarea, select {
   font-size: inherit;
   color: inherit;
   border: none;
-  outline: none;
   background: none;
+}
+
+/* a11y: visible focus ring for keyboard users, hidden for mouse users */
+:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
 }
 
 button {

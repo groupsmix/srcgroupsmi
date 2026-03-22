@@ -196,23 +196,23 @@ const Security = {
             });
             // If the server itself errored (5xx), fall back to client-side only
             if (res.status >= 500) {
-                console.warn('Security.serverValidate: server error ' + res.status + ', using client-side only');
-                return { ok: true, errors: [] };
+                console.warn('Security.serverValidate: server error ' + res.status + ', using client-side only — server-side validation bypassed');
+                return { ok: true, errors: [], serverBypassed: true };
             }
             var data;
             try {
                 data = await res.json();
             } catch (jsonErr) {
                 // Response was not valid JSON (e.g. HTML error page)
-                console.warn('Security.serverValidate: non-JSON response, using client-side only');
-                return { ok: true, errors: [] };
+                console.warn('Security.serverValidate: non-JSON response, using client-side only — server-side validation bypassed');
+                return { ok: true, errors: [], serverBypassed: true };
             }
             return data;
         } catch (err) {
             // If the endpoint is unreachable (e.g. local dev, not on Cloudflare),
             // fall back to client-side checks only — don't block the user.
-            console.warn('Security.serverValidate: endpoint unavailable, using client-side only');
-            return { ok: true, errors: [] };
+            console.warn('Security.serverValidate: endpoint unavailable, using client-side only — server-side validation bypassed');
+            return { ok: true, errors: [], serverBypassed: true };
         }
     }
 };

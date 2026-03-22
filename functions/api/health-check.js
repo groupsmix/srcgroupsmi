@@ -160,6 +160,16 @@ export async function onRequest(context) {
     }
 
     const platform = detectPlatform(url);
+
+    // Security: reject URLs that don't match known group invite domains
+    // to prevent SSRF abuse (probing internal services or scanning networks)
+    if (platform === 'unknown') {
+        return new Response(
+            JSON.stringify({ ok: false, error: 'Only known group invite links are allowed (WhatsApp, Telegram, Discord, Facebook, Signal, Reddit, Viber, Line)' }),
+            { status: 422, headers: corsHeaders(origin) }
+        );
+    }
+
     const checkedAt = new Date().toISOString();
 
     try {
