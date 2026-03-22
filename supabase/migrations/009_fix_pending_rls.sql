@@ -11,9 +11,14 @@ ALTER TABLE IF EXISTS pending ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Auth users insert pending" ON pending;
 DROP POLICY IF EXISTS "Authenticated users can submit groups" ON pending;
 
--- Allow any authenticated user to INSERT into pending
+-- Allow authenticated users to INSERT into pending (only their own submissions)
 CREATE POLICY "Authenticated users can submit groups" ON pending
-    FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+    FOR INSERT WITH CHECK (
+        auth.uid() IS NOT NULL
+        AND submitter_uid::text IN (
+            SELECT id::text FROM users WHERE auth_id = auth.uid()
+        )
+    );
 
 -- Allow users to read their own pending submissions
 DROP POLICY IF EXISTS "Users read own pending" ON pending;
@@ -69,6 +74,11 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM users WHERE id = p_user_id AND auth_id = caller_auth_id) THEN
         RAISE EXCEPTION 'Unauthorized: you can only modify your own GXP';
+    END IF;
+
+    -- Cap amount to prevent abuse (1-100 GXP per call)
+    IF p_amount < 1 OR p_amount > 100 THEN
+        RAISE EXCEPTION 'Invalid GXP amount: must be between 1 and 100';
     END IF;
 
     UPDATE users

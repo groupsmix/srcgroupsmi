@@ -159,7 +159,8 @@ const Auth = {
         // localStorage directly. If a session token still exists
         // in storage, this is likely a false SIGNED_OUT event.
         try {
-            var storedRaw = localStorage.getItem('sb-hmlqppacanpxmrfdlkec-auth-token');
+            var projectRef = (window.SUPABASE_URL || '').replace('https://', '').split('.')[0] || 'sb';
+            var storedRaw = localStorage.getItem('sb-' + projectRef + '-auth-token');
             if (storedRaw) {
                 var storedData = JSON.parse(storedRaw);
                 if (storedData && (storedData.access_token || (storedData.currentSession && storedData.currentSession.access_token))) {
