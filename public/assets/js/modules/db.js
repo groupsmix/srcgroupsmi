@@ -148,9 +148,9 @@ const DB = {
         }
     },
     pending: {
-        // Audit fix #12: NOTE — group submissions currently rely on client-side sanitization only.
-        // For full protection, add a Supabase Edge Function or DB trigger to re-validate
-        // name, link, description, tags, and category server-side before inserting into pending.
+        // Audit fix: Server-side validation is now enforced via the
+        // sanitize_pending_submission() trigger (migration 026) which strips HTML,
+        // validates name length, link format, category, and platform on INSERT.
         async submit(data) {
             try {
                 // Issue 13 fix: guard against offline mutations to prevent silent failures
@@ -222,28 +222,9 @@ const DB = {
             try {
                 if (!Auth.requireAdmin()) return 'Permission denied. You must be an admin.';
 
-                // Fetch the full pending row first
-                const { data: p, error: fetchErr } = await window.supabaseClient
-                    .from('pending').select('*').eq('id', id).single();
-                if (fetchErr) {
-                    console.error('DB.pending.approve fetch error:', fetchErr.message);
-                    return 'Could not fetch pending group: ' + fetchErr.message;
-                }
-                if (!p) return 'Pending group not found.';
-
-                // Ensure description is valid to avoid groups_description_check constraint (min ~20 chars)
-                const rawDesc = (p.description && p.description.trim().length > 0)
-                    ? p.description.trim()
-                    : '';
-                const safeDesc = rawDesc.length >= 20
-                    ? rawDesc
-                    : (rawDesc.length > 0 ? rawDesc + ' — Community group on GroupsMix.' : 'Community group on GroupsMix.');
-
-                // If the description in the pending row is too short, update it before RPC
-                if (!p.description || p.description.trim().length < 20) {
-                    await window.supabaseClient.from('pending')
-                        .update({ description: safeDesc }).eq('id', id);
-                }
+                // Description padding is now handled atomically inside the
+                // approve_group RPC (migration 026) to avoid the race condition
+                // where a separate UPDATE + RPC could leave data inconsistent.
 
                 // Try the RPC first
                 const { error: rpcErr } = await window.supabaseClient.rpc('approve_group', { p_pending_id: id });
@@ -256,7 +237,22 @@ const DB = {
                 // RPC failed — log and try manual fallback
                 console.warn('DB.pending.approve RPC failed, attempting manual fallback:', rpcErr.code, rpcErr.message);
 
-                // Manual fallback: insert into groups + update pending status
+                // Manual fallback: fetch pending row and insert into groups
+                const { data: p, error: fetchErr } = await window.supabaseClient
+                    .from('pending').select('*').eq('id', id).single();
+                if (fetchErr || !p) {
+                    return 'RPC failed: ' + rpcErr.message + ' | Could not fetch pending row';
+                }
+
+                // Pad description if needed (mirrors logic in approve_group RPC)
+                var rawDesc = (p.description && p.description.trim().length > 0) ? p.description.trim() : '';
+                var safeDesc = rawDesc;
+                if (rawDesc.length < 20) {
+                    safeDesc = rawDesc.length > 0
+                        ? rawDesc + ' — Community group on GroupsMix.'
+                        : 'Community group on GroupsMix.';
+                }
+
                 const now = new Date().toISOString();
                 const groupRow = {
                     name: p.name,
@@ -291,7 +287,7 @@ const DB = {
 
                 // Mark the pending row as approved
                 await window.supabaseClient.from('pending')
-                    .update({ status: 'approved' }).eq('id', id);
+                    .update({ status: 'approved', description: safeDesc }).eq('id', id);
 
                 CACHE.clear();
                 DB.admin.log('approve_group', { pending_id: id, method: 'manual_fallback' });
