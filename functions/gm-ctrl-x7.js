@@ -127,6 +127,7 @@ export async function onRequest(context) {
         // No auth cookie found — Supabase JS v2 uses localStorage by default,
         // so cookies may not be present. Pass through to client-side gate
         // which checks localStorage-based session + verifies role via RLS.
+        console.warn('gm-ctrl-x7: no auth cookie found — relying on client-side admin gate');
         return next();
     }
 
@@ -138,6 +139,7 @@ export async function onRequest(context) {
         }
     } catch (err) {
         // Verification error → pass through to client-side gate (don't lock out admins)
+        console.warn('gm-ctrl-x7: server-side admin verification failed (' + (err.message || 'unknown error') + ') — falling back to client-side gate');
         return next();
     }
 
