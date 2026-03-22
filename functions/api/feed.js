@@ -18,17 +18,14 @@
  * 8. Re-engagement scoring (boost returning user's preferred categories)
  */
 
-var ALLOWED_ORIGINS = ['https://groupsmix.com', 'https://www.groupsmix.com'];
+import { corsHeaders as _sharedCorsHeaders, handlePreflight } from './_shared/cors.js';
+import { requireAuth } from './_shared/auth.js';
 
 function corsHeaders(origin, method) {
-    var allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-    return {
-        'Access-Control-Allow-Origin': allowed,
-        'Access-Control-Allow-Methods': method || 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    return _sharedCorsHeaders(origin, {
         'Content-Type': 'application/json',
         'Cache-Control': 'private, max-age=60'
-    };
+    });
 }
 
 function jsonResponse(data, status, origin) {
@@ -371,11 +368,11 @@ export async function onRequest(context) {
         return jsonResponse({ ok: false, error: 'Method not allowed' }, 405, origin);
     }
 
-    var supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';
-    var supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
+    var supabaseUrl = env?.SUPABASE_URL;
+    var supabaseKey = env?.SUPABASE_SERVICE_KEY;
 
-    if (!supabaseKey) {
-        return jsonResponse({ ok: false, error: 'Server not configured' }, 500, origin);
+    if (!supabaseUrl || !supabaseKey) {
+        return jsonResponse({ ok: false, error: 'Service not configured' }, 503, origin);
     }
 
     var url = new URL(request.url);
@@ -393,6 +390,19 @@ export async function onRequest(context) {
             try { postBody = await request.json(); } catch (e) { postBody = {}; }
 
             if (postBody.action === 'implicit_feedback') {
+                // Verify authentication and ownership for implicit feedback
+                if (postBody.user_id) {
+                    var fbAuth = await requireAuth(request, env, corsHeaders(origin));
+                    if (fbAuth instanceof Response) return fbAuth;
+                    var fbProfileRes = await fetch(
+                        supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(fbAuth.user.id) + '&select=id&limit=1',
+                        { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                    );
+                    var fbProfiles = await fbProfileRes.json();
+                    if (!fbProfiles || !fbProfiles.length || fbProfiles[0].id !== postBody.user_id) {
+                        return jsonResponse({ ok: false, error: 'Forbidden: user_id mismatch' }, 403, origin);
+                    }
+                }
                 var fbResult = await recordImplicitFeedback(supabaseUrl, supabaseKey, postBody);
                 return jsonResponse(fbResult, fbResult.ok ? 200 : 400, origin);
             }
@@ -407,6 +417,18 @@ export async function onRequest(context) {
 
         if (!userId) {
             return jsonResponse({ ok: false, error: 'user_id required for personalized feed' }, 400, origin);
+        }
+
+        // Verify authentication and ownership for personalized feed
+        var feedAuth = await requireAuth(request, env, corsHeaders(origin));
+        if (feedAuth instanceof Response) return feedAuth;
+        var feedProfileRes = await fetch(
+            supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(feedAuth.user.id) + '&select=id&limit=1',
+            { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+        );
+        var feedProfiles = await feedProfileRes.json();
+        if (!feedProfiles || !feedProfiles.length || feedProfiles[0].id !== userId) {
+            return jsonResponse({ ok: false, error: 'Forbidden: user_id mismatch' }, 403, origin);
         }
 
         if (feedType === 'groups') {

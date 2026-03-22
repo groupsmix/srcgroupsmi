@@ -172,10 +172,10 @@ export async function onRequest(context) {
     // Feature 3: AI auto-scan — validate content with AI before going live
     const apiKey = context.env?.OPENROUTER_API_KEY || '';
     if (!apiKey) {
-        // No API key configured — allow submission (graceful degradation)
-        console.warn('OPENROUTER_API_KEY not configured, allowing submission');
+        // No API key configured — flag for manual review instead of auto-approving
+        console.warn('OPENROUTER_API_KEY not configured, flagging for manual review');
         return new Response(
-            JSON.stringify({ valid: true, message: '' }),
+            JSON.stringify({ valid: false, flagged: true, message: 'AI validation unavailable. Listing queued for manual review.' }),
             { status: 200, headers: corsHeaders(origin) }
         );
     }
@@ -217,9 +217,9 @@ Respond with ONLY a JSON object (no markdown, no extra text):
 
         if (!res.ok) {
             console.warn('OpenRouter API returned', res.status);
-            // On API error, allow submission (graceful degradation)
+            // On API error, flag for manual review instead of auto-approving
             return new Response(
-                JSON.stringify({ valid: true, message: '' }),
+                JSON.stringify({ valid: false, flagged: true, message: 'AI validation service error. Listing queued for manual review.' }),
                 { status: 200, headers: corsHeaders(origin) }
             );
         }
@@ -241,8 +241,8 @@ Respond with ONLY a JSON object (no markdown, no extra text):
             } else if (lower.includes('"is_valid_product": false') || lower.includes('"is_valid_product":false')) {
                 result = { is_valid_product: false, is_suspicious: true };
             } else {
-                // Cannot parse — allow submission (graceful degradation)
-                result = { is_valid_product: true, is_suspicious: false };
+                // Cannot parse AI response — flag for manual review
+                result = { is_valid_product: false, is_suspicious: true, reason: 'AI response could not be parsed. Queued for manual review.' };
             }
         }
 
@@ -275,9 +275,9 @@ Respond with ONLY a JSON object (no markdown, no extra text):
         }
     } catch (err) {
         console.error('AI validation error:', err.message);
-        // On error, allow submission (graceful degradation)
+        // On error, flag for manual review instead of auto-approving
         return new Response(
-            JSON.stringify({ valid: true, message: '' }),
+            JSON.stringify({ valid: false, flagged: true, message: 'Validation error. Listing queued for manual review.' }),
             { status: 200, headers: corsHeaders(origin) }
         );
     }

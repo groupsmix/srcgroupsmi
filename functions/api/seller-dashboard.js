@@ -14,14 +14,10 @@
  *   SUPABASE_SERVICE_KEY — Supabase service role key
  */
 
-/* ── CORS headers ──────────────────────────────────────────── */
+import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+
 function corsHeaders(origin) {
-    return {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': origin || 'https://groupsmix.com',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-    };
+    return _corsHeaders(origin, { 'Content-Type': 'application/json' });
 }
 
 /* ── Verify auth and get internal user ID ──────────────────── */
@@ -56,7 +52,7 @@ export async function onRequest(context) {
     const origin = request.headers.get('Origin') || 'https://groupsmix.com';
 
     if (request.method === 'OPTIONS') {
-        return new Response(null, { status: 204, headers: corsHeaders(origin) });
+        return handlePreflight(origin);
     }
 
     if (request.method !== 'GET') {
@@ -191,19 +187,22 @@ export async function onRequest(context) {
 
                 // Get sale counts per listing
                 var listingSales = {};
-                for (var i = 0; i < allListings.length; i++) {
-                    var lid = allListings[i].id;
-                    var sRes = await fetch(
-                        supabaseUrl + '/rest/v1/wallet_transactions?type=in.(purchase,store_purchase)&description=like.*' + encodeURIComponent(lid) + '*&select=amount&limit=100',
+                // Parallelize per-listing sales lookups (fix N+1 query)
+                var salesPromises = allListings.map(function(listing) {
+                    return fetch(
+                        supabaseUrl + '/rest/v1/wallet_transactions?type=in.(purchase,store_purchase)&description=like.*' + encodeURIComponent(listing.id) + '*&select=amount&limit=100',
                         { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-                    );
-                    var sTxns = await sRes.json();
-                    sTxns = Array.isArray(sTxns) ? sTxns : [];
-                    listingSales[lid] = {
-                        count: sTxns.length,
-                        revenue: sTxns.reduce(function(s, t) { return s + Math.abs(t.amount || 0); }, 0)
-                    };
-                }
+                    ).then(function(r) { return r.json(); }).then(function(txns) {
+                        txns = Array.isArray(txns) ? txns : [];
+                        return {
+                            id: listing.id,
+                            count: txns.length,
+                            revenue: txns.reduce(function(s, t) { return s + Math.abs(t.amount || 0); }, 0)
+                        };
+                    });
+                });
+                var salesResults = await Promise.all(salesPromises);
+                salesResults.forEach(function(r) { listingSales[r.id] = { count: r.count, revenue: r.revenue }; });
 
                 var enriched = allListings.map(function(l) {
                     var sales = listingSales[l.id] || { count: 0, revenue: 0 };
@@ -291,31 +290,30 @@ export async function onRequest(context) {
                 topListings = Array.isArray(topListings) ? topListings : [];
 
                 // Get revenue for each
-                var topEnriched = [];
-                for (var j = 0; j < topListings.length; j++) {
-                    var tl = topListings[j];
-                    var tSalesRes = await fetch(
+                // Parallelize per-listing sales lookups (fix N+1 query)
+                var topSalesPromises = topListings.map(function(tl, j) {
+                    return fetch(
                         supabaseUrl + '/rest/v1/wallet_transactions?type=in.(purchase,store_purchase)&description=like.*' + encodeURIComponent(tl.id) + '*&select=amount&limit=100',
                         { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-                    );
-                    var tSales = await tSalesRes.json();
-                    tSales = Array.isArray(tSales) ? tSales : [];
-                    var tRev = tSales.reduce(function(s, t) { return s + Math.abs(t.amount || 0); }, 0);
-                    var tCtr = (tl.views || 0) > 0 ? ((tl.clicks || 0) / tl.views * 100) : 0;
-
-                    topEnriched.push({
-                        rank: j + 1,
-                        id: tl.id,
-                        title: tl.title,
-                        views: tl.views || 0,
-                        clicks: tl.clicks || 0,
-                        ctr: parseFloat(tCtr.toFixed(1)),
-                        sales: tSales.length,
-                        revenue: tRev,
-                        price: tl.price,
-                        product_type: tl.product_type
+                    ).then(function(r) { return r.json(); }).then(function(tSales) {
+                        tSales = Array.isArray(tSales) ? tSales : [];
+                        var tRev = tSales.reduce(function(s, t) { return s + Math.abs(t.amount || 0); }, 0);
+                        var tCtr = (tl.views || 0) > 0 ? ((tl.clicks || 0) / tl.views * 100) : 0;
+                        return {
+                            rank: j + 1,
+                            id: tl.id,
+                            title: tl.title,
+                            views: tl.views || 0,
+                            clicks: tl.clicks || 0,
+                            ctr: parseFloat(tCtr.toFixed(1)),
+                            sales: tSales.length,
+                            revenue: tRev,
+                            price: tl.price,
+                            product_type: tl.product_type
+                        };
                     });
-                }
+                });
+                var topEnriched = await Promise.all(topSalesPromises);
 
                 return new Response(JSON.stringify({ ok: true, data: topEnriched }), {
                     status: 200, headers: corsHeaders(origin)

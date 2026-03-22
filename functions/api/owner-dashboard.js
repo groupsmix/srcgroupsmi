@@ -125,75 +125,29 @@ async function handleGet(request, env, admin, origin) {
                 // Fallback: manual aggregation
                 const cutoff = new Date(Date.now() - days * 86400000).toISOString();
 
-                // Total users
-                const usersRes = await fetch(
-                    supabaseUrl + '/rest/v1/users?select=id&limit=1',
-                    {
-                        headers: {
-                            'apikey': supabaseKey,
-                            'Authorization': 'Bearer ' + supabaseKey,
-                            'Prefer': 'count=estimated'
-                        }
-                    }
-                );
+                // Parallelize all 6 independent REST calls
+                const countHeaders = { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' };
+                const defaultHeaders = { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey };
+
+                const [usersRes, newUsersRes, articlesRes, newArticlesRes, coinsRes, tipsRes] = await Promise.all([
+                    fetch(supabaseUrl + '/rest/v1/users?select=id&limit=1', { headers: countHeaders }),
+                    fetch(supabaseUrl + '/rest/v1/users?created_at=gte.' + cutoff + '&select=id&limit=1', { headers: countHeaders }),
+                    fetch(supabaseUrl + '/rest/v1/articles?select=id&limit=1', { headers: countHeaders }),
+                    fetch(supabaseUrl + '/rest/v1/articles?created_at=gte.' + cutoff + '&select=id&limit=1', { headers: countHeaders }),
+                    fetch(supabaseUrl + '/rest/v1/wallet_transactions?type=eq.purchase&select=amount', { headers: defaultHeaders }),
+                    fetch(supabaseUrl + '/rest/v1/wallet_transactions?type=eq.tip_sent&select=amount', { headers: defaultHeaders })
+                ]);
+
                 const totalUsersRange = usersRes.headers.get('content-range') || '0/0';
                 const totalUsers = parseInt(totalUsersRange.split('/')[1]) || 0;
-
-                // New users in period
-                const newUsersRes = await fetch(
-                    supabaseUrl + '/rest/v1/users?created_at=gte.' + cutoff + '&select=id&limit=1',
-                    {
-                        headers: {
-                            'apikey': supabaseKey,
-                            'Authorization': 'Bearer ' + supabaseKey,
-                            'Prefer': 'count=estimated'
-                        }
-                    }
-                );
                 const newUsersRange = newUsersRes.headers.get('content-range') || '0/0';
                 const newUsers = parseInt(newUsersRange.split('/')[1]) || 0;
-
-                // Total articles
-                const articlesRes = await fetch(
-                    supabaseUrl + '/rest/v1/articles?select=id&limit=1',
-                    {
-                        headers: {
-                            'apikey': supabaseKey,
-                            'Authorization': 'Bearer ' + supabaseKey,
-                            'Prefer': 'count=estimated'
-                        }
-                    }
-                );
                 const totalArticlesRange = articlesRes.headers.get('content-range') || '0/0';
                 const totalArticles = parseInt(totalArticlesRange.split('/')[1]) || 0;
-
-                // New articles in period
-                const newArticlesRes = await fetch(
-                    supabaseUrl + '/rest/v1/articles?created_at=gte.' + cutoff + '&select=id&limit=1',
-                    {
-                        headers: {
-                            'apikey': supabaseKey,
-                            'Authorization': 'Bearer ' + supabaseKey,
-                            'Prefer': 'count=estimated'
-                        }
-                    }
-                );
                 const newArticlesRange = newArticlesRes.headers.get('content-range') || '0/0';
                 const newArticles = parseInt(newArticlesRange.split('/')[1]) || 0;
-
-                // Total coins purchased
-                const coinsRes = await fetch(
-                    supabaseUrl + '/rest/v1/wallet_transactions?type=eq.purchase&select=amount',
-                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-                );
                 const coinsTxns = await coinsRes.json();
                 const totalCoinsPurchased = (coinsTxns || []).reduce(function (sum, t) { return sum + (t.amount || 0); }, 0);
-
-                // Total tips
-                const tipsRes = await fetch(
-                    supabaseUrl + '/rest/v1/wallet_transactions?type=eq.tip_sent&select=amount',
-                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-                );
                 const tipsTxns = await tipsRes.json();
                 const totalTips = (tipsTxns || []).reduce(function (sum, t) { return sum + Math.abs(t.amount || 0); }, 0);
 

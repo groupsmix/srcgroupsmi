@@ -207,12 +207,12 @@ export async function onRequest(context) {
         });
     }
 
-    const supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';
-    const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
+    const supabaseUrl = env?.SUPABASE_URL;
+    const supabaseKey = env?.SUPABASE_SERVICE_KEY;
 
-    if (!supabaseKey) {
-        return new Response(JSON.stringify({ ok: false, error: 'Server not configured' }), {
-            status: 500, headers: cachedCorsHeaders(origin)
+    if (!supabaseUrl || !supabaseKey) {
+        return new Response(JSON.stringify({ ok: false, error: 'Service not configured' }), {
+            status: 503, headers: cachedCorsHeaders(origin)
         });
     }
 

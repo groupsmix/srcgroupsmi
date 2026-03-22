@@ -10,16 +10,11 @@
  * GET /api/bot-webhook?action=bot-instructions&platform=whatsapp — Get setup instructions
  */
 
-const ALLOWED_ORIGINS = ['https://groupsmix.com', 'https://www.groupsmix.com'];
+import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { requireAuth } from './_shared/auth.js';
 
 function corsHeaders(origin) {
-    const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-    return {
-        'Access-Control-Allow-Origin': allowed,
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Bot-Token',
-        'Content-Type': 'application/json'
-    };
+    return _corsHeaders(origin, { 'Content-Type': 'application/json' });
 }
 
 function generateVerificationCode() {
@@ -44,15 +39,15 @@ export async function onRequest(context) {
     const origin = request.headers.get('Origin') || '';
 
     if (request.method === 'OPTIONS') {
-        return new Response(null, { status: 204, headers: corsHeaders(origin) });
+        return handlePreflight(origin);
     }
 
-    const supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';
-    const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
+    const supabaseUrl = env?.SUPABASE_URL;
+    const supabaseKey = env?.SUPABASE_SERVICE_KEY;
 
-    if (!supabaseKey) {
-        return new Response(JSON.stringify({ ok: false, error: 'Server not configured' }), {
-            status: 500, headers: corsHeaders(origin)
+    if (!supabaseUrl || !supabaseKey) {
+        return new Response(JSON.stringify({ ok: false, error: 'Service not configured' }), {
+            status: 503, headers: corsHeaders(origin)
         });
     }
 
@@ -171,6 +166,22 @@ export async function onRequest(context) {
         const action = body.action;
 
         if (action === 'register') {
+            // Verify authentication and ownership for register action
+            if (body.admin_uid) {
+                const regAuth = await requireAuth(request, env, corsHeaders(origin));
+                if (regAuth instanceof Response) return regAuth;
+                const regProfileRes = await fetch(
+                    supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(regAuth.user.id) + '&select=id&limit=1',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                );
+                const regProfiles = await regProfileRes.json();
+                if (!regProfiles || !regProfiles.length || regProfiles[0].id !== body.admin_uid) {
+                    return new Response(JSON.stringify({ ok: false, error: 'Forbidden: user_id mismatch' }), {
+                        status: 403, headers: corsHeaders(origin)
+                    });
+                }
+            }
+
             // Register a new bot integration
             var verificationCode = generateVerificationCode();
             var botToken = generateBotToken();
@@ -208,8 +219,8 @@ export async function onRequest(context) {
             return new Response(JSON.stringify({
                 ok: true,
                 verification_code: verificationCode,
-                bot_token: botToken,
-                message: 'Send this verification code in your group to complete setup'
+                bot_token_hint: botToken.substring(0, 8) + '...',
+                message: 'Bot registered. Token has been saved. Use the verification code in your group.'
             }), { status: 200, headers: corsHeaders(origin) });
         }
 

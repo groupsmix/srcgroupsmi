@@ -6,16 +6,11 @@
  * POST /api/referral { action: 'apply', referral_code, new_user_id } — Apply referral code
  */
 
-const ALLOWED_ORIGINS = ['https://groupsmix.com', 'https://www.groupsmix.com'];
+import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { requireAuth } from './_shared/auth.js';
 
 function corsHeaders(origin) {
-    const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-    return {
-        'Access-Control-Allow-Origin': allowed,
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Content-Type': 'application/json'
-    };
+    return _corsHeaders(origin, { 'Content-Type': 'application/json' });
 }
 
 export async function onRequest(context) {
@@ -23,15 +18,15 @@ export async function onRequest(context) {
     const origin = request.headers.get('Origin') || '';
 
     if (request.method === 'OPTIONS') {
-        return new Response(null, { status: 204, headers: corsHeaders(origin) });
+        return handlePreflight(origin);
     }
 
-    const supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';
-    const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
+    const supabaseUrl = env?.SUPABASE_URL;
+    const supabaseKey = env?.SUPABASE_SERVICE_KEY;
 
-    if (!supabaseKey) {
-        return new Response(JSON.stringify({ ok: false, error: 'Server not configured' }), {
-            status: 500, headers: corsHeaders(origin)
+    if (!supabaseUrl || !supabaseKey) {
+        return new Response(JSON.stringify({ ok: false, error: 'Service not configured' }), {
+            status: 503, headers: corsHeaders(origin)
         });
     }
 
@@ -44,6 +39,20 @@ export async function onRequest(context) {
             if (!uid) {
                 return new Response(JSON.stringify({ ok: false, error: 'User ID required' }), {
                     status: 400, headers: corsHeaders(origin)
+                });
+            }
+
+            // Verify authentication and ownership
+            const authResult = await requireAuth(request, env, corsHeaders(origin));
+            if (authResult instanceof Response) return authResult;
+            const profileRes = await fetch(
+                supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authResult.user.id) + '&select=id&limit=1',
+                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+            );
+            const codeProfiles = await profileRes.json();
+            if (!codeProfiles || !codeProfiles.length || codeProfiles[0].id !== uid) {
+                return new Response(JSON.stringify({ ok: false, error: 'Forbidden: user_id mismatch' }), {
+                    status: 403, headers: corsHeaders(origin)
                 });
             }
 
@@ -79,6 +88,20 @@ export async function onRequest(context) {
             if (!uid) {
                 return new Response(JSON.stringify({ ok: false, error: 'User ID required' }), {
                     status: 400, headers: corsHeaders(origin)
+                });
+            }
+
+            // Verify authentication and ownership
+            const statsAuth = await requireAuth(request, env, corsHeaders(origin));
+            if (statsAuth instanceof Response) return statsAuth;
+            const statsProfileRes = await fetch(
+                supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(statsAuth.user.id) + '&select=id&limit=1',
+                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+            );
+            const statsProfiles = await statsProfileRes.json();
+            if (!statsProfiles || !statsProfiles.length || statsProfiles[0].id !== uid) {
+                return new Response(JSON.stringify({ ok: false, error: 'Forbidden: user_id mismatch' }), {
+                    status: 403, headers: corsHeaders(origin)
                 });
             }
 
@@ -133,6 +156,20 @@ export async function onRequest(context) {
             if (!body.referral_code || !body.new_user_id) {
                 return new Response(JSON.stringify({ ok: false, error: 'referral_code and new_user_id required' }), {
                     status: 400, headers: corsHeaders(origin)
+                });
+            }
+
+            // Verify authentication and ownership of new_user_id
+            const applyAuth = await requireAuth(request, env, corsHeaders(origin));
+            if (applyAuth instanceof Response) return applyAuth;
+            const applyProfileRes = await fetch(
+                supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(applyAuth.user.id) + '&select=id&limit=1',
+                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+            );
+            const applyProfiles = await applyProfileRes.json();
+            if (!applyProfiles || !applyProfiles.length || applyProfiles[0].id !== body.new_user_id) {
+                return new Response(JSON.stringify({ ok: false, error: 'Forbidden: user_id mismatch' }), {
+                    status: 403, headers: corsHeaders(origin)
                 });
             }
 

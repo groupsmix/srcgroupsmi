@@ -194,25 +194,27 @@ const Security = {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(params)
             });
-            // If the server itself errored (5xx), fall back to client-side only
+
             if (res.status >= 500) {
-                console.warn('Security.serverValidate: server error ' + res.status + ', using client-side only — server-side validation bypassed');
-                return { ok: true, errors: [], serverBypassed: true };
+                console.error('Security.serverValidate: server error ' + res.status);
+                return { ok: false, errors: ['Server validation unavailable. Please try again.'], serverBypassed: true };
             }
+
             var data;
             try {
                 data = await res.json();
             } catch (jsonErr) {
-                // Response was not valid JSON (e.g. HTML error page)
-                console.warn('Security.serverValidate: non-JSON response, using client-side only — server-side validation bypassed');
-                return { ok: true, errors: [], serverBypassed: true };
+                console.error('Security.serverValidate: non-JSON response');
+                return { ok: false, errors: ['Validation service returned invalid response.'], serverBypassed: true };
             }
             return data;
         } catch (err) {
-            // If the endpoint is unreachable (e.g. local dev, not on Cloudflare),
-            // fall back to client-side checks only — don't block the user.
-            console.warn('Security.serverValidate: endpoint unavailable, using client-side only — server-side validation bypassed');
-            return { ok: true, errors: [], serverBypassed: true };
+            console.error('Security.serverValidate: endpoint unreachable', err);
+            // In local dev, allow graceful fallback. In production, block.
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return { ok: true, errors: [], serverBypassed: true };
+            }
+            return { ok: false, errors: ['Could not reach validation server. Please check your connection.'], serverBypassed: true };
         }
     }
 };

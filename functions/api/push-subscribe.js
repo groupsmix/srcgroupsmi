@@ -9,20 +9,11 @@
  *   SUPABASE_SERVICE_KEY — Supabase service role key
  */
 
-/* ── Allowed origins for CORS ───────────────────────────────────── */
-const ALLOWED_ORIGINS = [
-    'https://groupsmix.com',
-    'https://www.groupsmix.com'
-];
+import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { requireAuth } from './_shared/auth.js';
 
 function corsHeaders(origin) {
-    const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-    return {
-        'Access-Control-Allow-Origin': allowed,
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-Type': 'application/json'
-    };
+    return _corsHeaders(origin, { 'Content-Type': 'application/json' });
 }
 
 /* ── Main handler ────────────────────────────────────────────────── */
@@ -32,7 +23,7 @@ export async function onRequest(context) {
 
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
-        return new Response(null, { status: 204, headers: corsHeaders(origin) });
+        return handlePreflight(origin);
     }
 
     if (request.method !== 'POST') {
@@ -64,7 +55,24 @@ export async function onRequest(context) {
 
     const action = body.action || 'subscribe';
     const subscription = body.subscription;
-    const uid = body.uid || null;
+    let uid = body.uid || null;
+
+    // Verify authentication and ownership when uid is provided
+    if (uid) {
+        const authResult = await requireAuth(request, env, corsHeaders(origin));
+        if (authResult instanceof Response) return authResult;
+        const profileRes = await fetch(
+            supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authResult.user.id) + '&select=id&limit=1',
+            { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+        );
+        const profiles = await profileRes.json();
+        if (!profiles || !profiles.length || profiles[0].id !== uid) {
+            return new Response(
+                JSON.stringify({ ok: false, error: 'Forbidden: user_id mismatch' }),
+                { status: 403, headers: corsHeaders(origin) }
+            );
+        }
+    }
 
     if (!subscription || !subscription.endpoint) {
         return new Response(

@@ -22,16 +22,10 @@
  *   - cleanup: weekly
  */
 
-var ALLOWED_ORIGINS = ['https://groupsmix.com', 'https://www.groupsmix.com'];
+import { corsHeaders as _sharedCorsHeaders, handlePreflight } from './_shared/cors.js';
 
 function corsHeaders(origin) {
-    var allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-    return {
-        'Access-Control-Allow-Origin': allowed,
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Cron-Secret',
-        'Content-Type': 'application/json'
-    };
+    return _sharedCorsHeaders(origin, { 'Content-Type': 'application/json' });
 }
 
 function jsonResponse(data, status, origin) {
@@ -186,11 +180,11 @@ export async function onRequest(context) {
         return jsonResponse({ ok: false, error: 'Method not allowed' }, 405, origin);
     }
 
-    var supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';
-    var supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
+    var supabaseUrl = env?.SUPABASE_URL;
+    var supabaseKey = env?.SUPABASE_SERVICE_KEY;
 
-    if (!supabaseKey) {
-        return jsonResponse({ ok: false, error: 'Server not configured' }, 500, origin);
+    if (!supabaseUrl || !supabaseKey) {
+        return jsonResponse({ ok: false, error: 'Service not configured' }, 503, origin);
     }
 
     // Optional: verify cron secret for security

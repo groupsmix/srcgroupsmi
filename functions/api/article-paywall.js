@@ -9,6 +9,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { requireAuth } from './_shared/auth.js';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -47,6 +48,23 @@ export async function onRequest(context) {
                 return new Response(
                     JSON.stringify({ ok: false, error: 'Missing article_id or user_id' }),
                     { status: 400, headers: corsHeaders(origin) }
+                );
+            }
+
+            // Verify the caller's JWT and ensure ownership
+            const authResult = await requireAuth(request, env, corsHeaders(origin));
+            if (authResult instanceof Response) return authResult;
+
+            // Match authenticated user to the user_id in the request
+            const profileRes = await fetch(
+                supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authResult.user.id) + '&select=id&limit=1',
+                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+            );
+            const profiles = await profileRes.json();
+            if (!profiles || !profiles.length || profiles[0].id !== user_id) {
+                return new Response(
+                    JSON.stringify({ ok: false, error: 'Forbidden: user_id mismatch' }),
+                    { status: 403, headers: corsHeaders(origin) }
                 );
             }
 
