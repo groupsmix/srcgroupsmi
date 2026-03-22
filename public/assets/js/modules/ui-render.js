@@ -1,6 +1,5 @@
 // ─── Module: ui-render ───
 // Exports: renderHeader, renderFooter, renderMobileNav, and related functions
-// Split from app.js for maintainability
 
 // ═══════════════════════════════════════
 // MODULE 11: renderHeader
@@ -40,7 +39,7 @@ function renderHeader() {
         '<div class="site-header__center">' +
         '<a href="/" class="site-header__logo"><img src="/assets/img/favicon.svg" alt="GroupsMix" class="site-header__logo-icon"><span class="site-header__logo-text">GroupsMix</span></a>' +
         '<div class="magic-plus-wrapper" style="position:relative">' +
-        '<button id="magic-plus-btn" class="magic-plus-btn" aria-label="Quick add" title="Quick add">' +
+        '<button id="magic-plus-btn" class="magic-plus-btn" aria-label="Submit Group, Post Job, or more" title="Submit Group, Post Job, or more">' +
         '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
         '</button>' +
         '</div>' +
@@ -60,15 +59,16 @@ function renderHeader() {
             '</button>' +
             '</div>'
             :
+            '<button id="auth-signup-btn" class="header-signup-btn">Sign Up Free</button>' +
             '<button id="auth-btn" class="header-login-btn">Login</button>'
         ) +
         '</div>' +
         '</div></nav>' +
-        // ── Horizontal Sub-Navigation Bar (Simplified) ──
+        // ── Horizontal Sub-Navigation Bar (Expanded) ──
         '<div class="subnav" id="subnav">' +
         '<div class="subnav__inner">' +
-                '<a href="/" class="subnav__item' + navActive(['/']) + '">All</a>' +
-                '<a href="/jobs" class="subnav__item' + navActive(['/jobs']) + '">Jobs</a>' +
+                '<a href="/" class="subnav__item' + (currentPath === '/' ? ' subnav__item--active' : '') + '">All</a>' +
+                '<a href="/jobs" class="subnav__item' + navActive(['/jobs', '/post-job']) + '">Jobs</a>' +
                 '<a href="/marketplace" class="subnav__item' + navActive(['/marketplace']) + '">Markets</a>' +
                 '<a href="/store" class="subnav__item' + navActive(['/store']) + '">Store</a>' +
                 '<a href="/tools" class="subnav__item' + navActive(['/tools']) + '">AI Tools</a>' +
@@ -105,6 +105,7 @@ function renderHeader() {
         document.getElementById('user-menu-btn')?.addEventListener('click', function(e) { e.preventDefault(); toggleUserDropdown(); });
     } else {
         document.getElementById('auth-btn')?.addEventListener('click', () => UI.authModal('signin'));
+        document.getElementById('auth-signup-btn')?.addEventListener('click', () => UI.authModal('signup'));
     }
     document.getElementById('drawer-toggle')?.addEventListener('click', openDrawer);
 
@@ -209,7 +210,7 @@ function toggleUserDropdown() {
         '<a href="/saved" class="user-dropdown__item"><span class="user-dropdown__icon">' + ICONS.heart + '</span> Saved</a>' +
         '<div class="user-dropdown__divider"></div>' +
         '<a href="/dashboard" class="user-dropdown__item"><span class="user-dropdown__icon">' + ICONS.bell + '</span> Notifications' + (userObj?.unread_notifications > 0 ? ' <span style="background:var(--error);color:#fff;font-size:10px;padding:1px 6px;border-radius:var(--radius-full)">' + userObj.unread_notifications + '</span>' : '') + '</a>' +
-        '<button id="dropdown-theme-toggle" class="user-dropdown__item" style="width:100%;border:none;background:none;cursor:pointer;text-align:left"><span class="user-dropdown__icon">' + (Theme.get() === 'dark' ? ICONS.sun : ICONS.moon) + '</span> ' + (Theme.get() === 'dark' ? 'Light Mode' : 'Dark Mode') + '</button>';
+        '<button id="dropdown-theme-toggle" class="user-dropdown__item" style="width:100%;border:none;background:none;cursor:pointer;text-align:left"><span class="user-dropdown__icon theme-toggle-icon">' + (Theme.get() === 'dark' ? ICONS.sun : ICONS.moon) + '</span> ' + (Theme.get() === 'dark' ? 'Light Mode' : 'Dark Mode') + '</button>';
     if (Auth.isAdmin() || Auth.isModerator() || Auth.isEditor()) items += '<a href="/admin" class="user-dropdown__item"><span class="user-dropdown__icon">' + ICONS.zap + '</span> Admin Panel</a>';
     items += '<div class="user-dropdown__divider"></div>' +
         '<button id="signout-btn" class="user-dropdown__item user-dropdown__item--danger" style="width:100%;border:none;background:none;cursor:pointer;text-align:left"><span class="user-dropdown__icon">' + ICONS.log_out + '</span> Sign Out</button>';
@@ -241,7 +242,7 @@ function openDrawer() {
         links += '<div class="drawer__item" style="font-weight:var(--font-semibold);color:var(--text-primary)">' + ICONS.user + ' ' + Security.sanitize(Auth.getUser()?.display_name || 'User') + '</div>';
         links += '<a href="/dashboard" class="drawer__item">' + ICONS.bell + ' Notifications' + (Auth.getUser()?.unread_notifications > 0 ? ' <span style="background:var(--error);color:#fff;font-size:10px;padding:1px 6px;border-radius:var(--radius-full);margin-left:4px">' + Auth.getUser().unread_notifications + '</span>' : '') + '</a>';
     }
-    links += '<button id="drawer-theme-toggle" class="drawer__item" style="width:100%;border:none;background:none;cursor:pointer;text-align:left">' + (Theme.get() === 'dark' ? ICONS.sun + ' Light Mode' : ICONS.moon + ' Dark Mode') + '</button>';
+    links += '<button id="drawer-theme-toggle" class="drawer__item" style="width:100%;border:none;background:none;cursor:pointer;text-align:left"><span class="theme-toggle-icon">' + (Theme.get() === 'dark' ? ICONS.sun : ICONS.moon) + '</span> ' + (Theme.get() === 'dark' ? 'Light Mode' : 'Dark Mode') + '</button>';
     links += '<div class="drawer__divider"></div>';
     // Main sections
     links += '<a href="/" class="drawer__item">' + ICONS.home + ' Home</a>';
@@ -263,7 +264,6 @@ function openDrawer() {
     links += '<a href="/search" class="drawer__item">' + ICONS.search + ' Search</a>';
     links += '<a href="/submit" class="drawer__item">' + ICONS.upload + ' Submit Group</a>';
     if (CONFIG.features.articles) links += '<a href="/articles" class="drawer__item">' + ICONS.newspaper + ' Articles</a>';
-    if (CONFIG.features.store) links += '<a href="/store" class="drawer__item">' + ICONS.shopping_cart + ' Store</a>';
     links += '<div class="drawer__divider"></div>';
     links += '<a href="/about" class="drawer__item">' + ICONS.info + ' About</a>';
     links += '<a href="/contact" class="drawer__item">' + ICONS.phone + ' Contact</a>';
@@ -349,9 +349,8 @@ function renderFooter() {
             '<a href="/terms" class="site-footer__link">Terms</a>' +
         '</div>' +
         '</div>' +
-        // Footer CTA
         '<div class="site-footer__cta">' +
-            '<a href="/fuel">' + ICONS.sparkle + ' Did GroupsMix help you? Help us keep going & growing</a>' +
+            '<a href="/fuel" class="site-footer__cta-link">' + ICONS.zap + ' Did GroupsMix help you? Help us keep going &amp; growing</a>' +
         '</div>' +
         '<div class="site-footer__bottom">&copy; ' + new Date().getFullYear() + ' GroupsMix.com. All rights reserved.</div>' +
         '</div>';
@@ -379,3 +378,4 @@ function renderMobileNav() {
         }
     });
 }
+

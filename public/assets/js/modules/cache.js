@@ -1,6 +1,5 @@
 // ─── Module: cache ───
 // Exports: CACHE
-// Split from app.js for maintainability
 
 // All Supabase client calls use window.supabaseClient directly
 // (initialised by supabase-config.js). window.supabase is left
@@ -49,3 +48,4 @@ const CACHE = {
         } catch (err) { console.error('CACHE.clear:', err.message); }
     }
 };
+

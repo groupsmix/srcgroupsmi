@@ -1,6 +1,5 @@
 // ─── Module: comments ───
 // Exports: Comments
-// Split from app.js for maintainability
 
 // ═══════════════════════════════════════
 // MODULE 5c: Comments (On-Demand Comments System)
@@ -88,3 +87,4 @@ const Comments = {
         } catch (err) { console.error('Comments.report:', err.message); }
     }
 };
+

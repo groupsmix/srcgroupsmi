@@ -1,6 +1,5 @@
 // ─── Module: recently-viewed ───
 // Exports: RecentlyViewed
-// Split from app.js for maintainability
 
 // ═══════════════════════════════════════
 // MODULE 8: RecentlyViewed
@@ -19,3 +18,4 @@ const RecentlyViewed = {
     },
     clear() { localStorage.removeItem(this._key); }
 };
+

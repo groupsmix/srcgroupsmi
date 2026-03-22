@@ -1,6 +1,5 @@
 // ─── Module: security ───
 // Exports: Security
-// Split from app.js for maintainability
 
 // ═══════════════════════════════════════
 // MODULE 3: Security
@@ -217,3 +216,4 @@ const Security = {
         }
     }
 };
+

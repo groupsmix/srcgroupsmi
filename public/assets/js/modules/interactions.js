@@ -1,6 +1,5 @@
 // ─── Module: interactions ───
 // Exports: Interactions
-// Split from app.js for maintainability
 
 // ═══════════════════════════════════════
 // MODULE 5b: DB.interactions (Universal Interaction System)
@@ -90,3 +89,4 @@ const Interactions = {
         return this._cache[key] ? this._cache[key].includes(actionType) : false;
     }
 };
+

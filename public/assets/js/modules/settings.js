@@ -1,6 +1,5 @@
 // ─── Module: settings ───
 // Exports: loadSettings
-// Split from app.js for maintainability
 
 // ═══════════════════════════════════════
 // MODULE 13: loadSettings
@@ -18,3 +17,4 @@ async function loadSettings() {
         renderFooter();
     } catch (err) { console.error('loadSettings:', err.message); }
 }
+

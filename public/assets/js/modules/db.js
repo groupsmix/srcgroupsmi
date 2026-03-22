@@ -1,6 +1,5 @@
 // ─── Module: db ───
 // Exports: DB
-// Split from app.js for maintainability
 
 // CONTINUE IN NEXT MESSAGE
 // ═══════════════════════════════════════
@@ -938,3 +937,4 @@ const DB = {
         }
     }
 };
+

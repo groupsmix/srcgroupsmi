@@ -1,6 +1,5 @@
 // ─── Module: config ───
 // Exports: CONFIG
-// Split from app.js for maintainability
 
 // ═══════════════════════════════════════
 // MODULE 1: CONFIG
@@ -18,7 +17,7 @@ const CONFIG = {
     maxToasts: 3,
     toastDuration: 4000,
     debounceDelay: 300,
-    timeoutDuration: 15000,
+    timeoutDuration: 5000,
     defaultSort: 'ranking',
     defaultTheme: 'dark',
     turnstileSiteKey: '0x4AAAAAACfjfwpiZdD7LJB4',
@@ -129,7 +128,6 @@ const CONFIG = {
         review_received: { icon: ICONS.message_circle, title: 'New Review' },
         report_resolved: { icon: ICONS.shield, title: 'Report Resolved' },
         gxp_awarded: { icon: ICONS.sparkles, title: 'GXP Awarded' },
-        group_verified: { icon: ICONS.check_circle, title: 'Group Verified' },
         system: { icon: ICONS.info, title: 'System Notice' },
         info: { icon: ICONS.info, title: 'Info' }
     },
@@ -155,3 +153,4 @@ const CONFIG = {
     },
     defaultSettings: {}
 };
+

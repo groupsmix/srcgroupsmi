@@ -79,7 +79,10 @@ const {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://hmlqppacanpxmrfdlkec.supabase.co">
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js" as="script" crossorigin="anonymous">
-    <link rel="preload" href="/assets/js/app.js" as="script">
+    <link rel="preload" href="/assets/js/modules/icons.js" as="script">
+    <link rel="preload" href="/assets/js/modules/config.js" as="script">
+    <link rel="preload" href="/assets/js/modules/auth.js" as="script">
+    <link rel="preload" href="/assets/js/modules/db.js" as="script">
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" as="style">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" media="print" onload="this.media='all'">
     <noscript>
@@ -102,8 +105,35 @@ const {
     <div id="modal-container"></div>
     <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
     <script is:inline src="/assets/js/supabase-config.js"></script>
-    <script is:inline src="/assets/js/app.js"></script>
+    <!-- Core modules (no dependencies) -->
+    <script is:inline src="/assets/js/modules/icons.js"></script>
+    <script is:inline src="/assets/js/modules/config.js"></script>
+    <script is:inline src="/assets/js/modules/cache.js"></script>
+    <!-- Security & Auth (depend on core) -->
+    <script is:inline src="/assets/js/modules/security.js"></script>
+    <script is:inline src="/assets/js/modules/auth.js"></script>
+    <script is:inline src="/assets/js/modules/db.js"></script>
+    <!-- Feature modules -->
+    <script is:inline src="/assets/js/modules/theme.js"></script>
+    <script is:inline src="/assets/js/modules/saved.js"></script>
+    <script is:inline src="/assets/js/modules/recently-viewed.js"></script>
+    <script is:inline src="/assets/js/modules/algorithms.js"></script>
+    <script is:inline src="/assets/js/modules/pricing.js"></script>
+    <script is:inline src="/assets/js/modules/group-health.js"></script>
+    <!-- UI components (depends on core + feature modules) -->
     <script is:inline src="/assets/js/components.js"></script>
+    <!-- Modules that reference UI -->
+    <script is:inline src="/assets/js/modules/marketplace.js"></script>
+    <script is:inline src="/assets/js/modules/interactions.js"></script>
+    <script is:inline src="/assets/js/modules/comments.js"></script>
+    <script is:inline src="/assets/js/modules/ui-render.js"></script>
+    <script is:inline src="/assets/js/modules/settings.js"></script>
+    <script is:inline src="/assets/js/modules/cookie-consent.js"></script>
+    <script is:inline src="/assets/js/modules/maintenance.js"></script>
+    <script is:inline src="/assets/js/modules/live-realtime.js"></script>
+    <!-- Effects & global init (must be last) -->
+    <script is:inline src="/assets/js/modules/ui-effects.js"></script>
+    <script is:inline src="/assets/js/modules/init.js"></script>
     {includeFeatures && <script is:inline src="/assets/js/features.js"></script>}
     {includeSmartFilter && <script is:inline src="/assets/js/smart-filter.js"></script>}
     {includeJobs && <script is:inline src="/assets/js/jobs.js"></script>}

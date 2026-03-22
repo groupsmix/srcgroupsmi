@@ -1,6 +1,5 @@
 // ─── Module: auth ───
 // Exports: Auth
-// Split from app.js for maintainability
 
 // ═══════════════════════════════════════
 // MODULE 4: Auth
@@ -421,3 +420,4 @@ const Auth = {
         } catch (err) { UI.toast('Something went wrong. Please try again.', 'error'); return false; }
     }
 };
+

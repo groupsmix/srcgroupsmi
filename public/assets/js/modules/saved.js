@@ -1,6 +1,5 @@
 // ─── Module: saved ───
 // Exports: Saved
-// Split from app.js for maintainability
 
 // ═══════════════════════════════════════
 // MODULE 7: Saved
@@ -25,3 +24,4 @@ const Saved = {
     count() { return this.getAll().length; },
     clear() { localStorage.removeItem(this._key); }
 };
+
