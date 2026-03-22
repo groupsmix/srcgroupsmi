@@ -15,20 +15,10 @@
  *   { valid: true/false, message: string }
  */
 
-/* ── Allowed origins for CORS ───────────────────────────────────── */
-const ALLOWED_ORIGINS = [
-    'https://groupsmix.com',
-    'https://www.groupsmix.com'
-];
+import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
 
 function corsHeaders(origin) {
-    const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-    return {
-        'Access-Control-Allow-Origin': allowed,
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-Type': 'application/json'
-    };
+    return _corsHeaders(origin, { 'Content-Type': 'application/json' });
 }
 
 /* ── In-memory rate limiter ─────────────────────────────────────── */
@@ -108,7 +98,7 @@ export async function onRequest(context) {
     const origin = request.headers.get('Origin') || '';
 
     if (request.method === 'OPTIONS') {
-        return new Response(null, { status: 204, headers: corsHeaders(origin) });
+        return handlePreflight(origin);
     }
 
     if (request.method !== 'POST') {

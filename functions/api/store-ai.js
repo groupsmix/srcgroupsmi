@@ -24,19 +24,10 @@
  *   SUPABASE_SERVICE_KEY — Supabase service role key
  */
 
-/* ── Allowed origins for CORS ────────────────────────────────── */
-const ALLOWED_ORIGINS = [
-    'https://groupsmix.com',
-    'https://www.groupsmix.com'
-];
+import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
 
 function corsHeaders(origin) {
-    const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-    return {
-        'Access-Control-Allow-Origin': allowed,
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-    };
+    return _corsHeaders(origin);
 }
 
 /* ── AI Provider helpers ─────────────────────────────────────── */
@@ -104,7 +95,10 @@ async function callOpenRouter(apiKey, messages, maxTokens, temperature) {
 async function callAI(env, messages, maxTokens, temperature) {
     const groqKey = env?.GROQ_API_KEY;
     const orKey = env?.OPENROUTER_API_KEY;
-    const useGroqFirst = (Math.floor(Date.now() / 1000) % 2 === 0);
+    // Use a simple counter for deterministic round-robin instead of
+    // even/odd seconds which creates non-deterministic behavior (MISC-4).
+    if (typeof callAI._counter !== 'number') callAI._counter = 0;
+    const useGroqFirst = (callAI._counter++ % 2 === 0);
 
     if (groqKey && orKey) {
         if (useGroqFirst) {
@@ -1354,7 +1348,7 @@ export async function onRequest(context) {
     const origin = request.headers.get('Origin') || '';
 
     if (request.method === 'OPTIONS') {
-        return new Response(null, { status: 204, headers: corsHeaders(origin) });
+        return handlePreflight(origin);
     }
 
     if (request.method !== 'POST') {
