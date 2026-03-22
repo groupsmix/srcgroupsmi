@@ -4,7 +4,7 @@
  * Cloudflare Pages Function that provides:
  *   1. Turnstile CAPTCHA server-side verification
  *   2. Email format + disposable domain blocking
- *   3. IP-based rate limiting (in-memory, per isolate)
+ *   3. IP-based rate limiting (persistent via KV, in-memory fallback)
  *
  * Environment variable required (set in Cloudflare Pages dashboard):
  *   TURNSTILE_SECRET_KEY — your Cloudflare Turnstile secret key
@@ -15,6 +15,8 @@
  * Response (JSON):
  *   { ok: true/false, errors: [...] }
  */
+
+import { checkRateLimit } from './_shared/rate-limit.js';
 
 /* ── Disposable email domains (server-side mirror of client list) ── */
 const DISPOSABLE_DOMAINS = new Set([
@@ -30,9 +32,7 @@ const DISPOSABLE_DOMAINS = new Set([
     'mailexpire.com', 'emailfake.com', 'throwawaymail.com', 'spamgourmet.com', 'jetable.org'
 ]);
 
-/* ── In-memory rate limiter (per Cloudflare isolate) ────────────── */
-const ipBuckets = new Map();
-
+/* ── Rate limit configs ─────────────────────────────────────────── */
 const RATE_LIMITS = {
     signup:  { window: 900000,  max: 5  },  // 5 per 15 min
     signin:  { window: 900000,  max: 10 },  // 10 per 15 min
@@ -46,39 +46,6 @@ const RATE_LIMITS = {
     review:  { window: 3600000, max: 10 },  // 10 per hour
     default: { window: 900000,  max: 15 }   // 15 per 15 min
 };
-
-function checkRateLimit(ip, action) {
-    const limit = RATE_LIMITS[action] || RATE_LIMITS.default;
-    const key = ip + ':' + action;
-    const now = Date.now();
-
-    let bucket = ipBuckets.get(key);
-    if (!bucket) {
-        bucket = [];
-        ipBuckets.set(key, bucket);
-    }
-
-    // Prune old timestamps
-    const recent = bucket.filter(t => now - t < limit.window);
-    if (recent.length >= limit.max) {
-        ipBuckets.set(key, recent);
-        return false;
-    }
-
-    recent.push(now);
-    ipBuckets.set(key, recent);
-
-    // Periodic cleanup: if map gets large, prune stale entries
-    if (ipBuckets.size > 5000) {
-        for (const [k, v] of ipBuckets) {
-            const filtered = v.filter(t => now - t < 3600000);
-            if (filtered.length === 0) ipBuckets.delete(k);
-            else ipBuckets.set(k, filtered);
-        }
-    }
-
-    return true;
-}
 
 /* ── Email validation ───────────────────────────────────────────── */
 function validateEmail(email) {
@@ -163,8 +130,11 @@ export async function onRequest(context) {
     const action = body.action || 'default';
     const errors = [];
 
-    // 1. Rate limit check (IP-based)
-    if (!checkRateLimit(ip, action)) {
+    // 1. Rate limit check (persistent via KV when available, in-memory fallback)
+    const kvStore = context.env?.RATE_LIMIT_KV || null;
+    const limit = RATE_LIMITS[action] || RATE_LIMITS.default;
+    const allowed = await checkRateLimit(ip, action, limit, kvStore);
+    if (!allowed) {
         return new Response(
             JSON.stringify({ ok: false, errors: ['Too many requests. Please try again later.'], code: 'RATE_LIMITED' }),
             { status: 429, headers: corsHeaders(origin) }

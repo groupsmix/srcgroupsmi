@@ -12,38 +12,14 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { checkRateLimit } from './_shared/rate-limit.js';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
 }
 
-/* ── In-memory rate limiter ── */
-const ipBuckets = new Map();
-
-function checkRateLimit(ip) {
-    const now = Date.now();
-    const window = 60000; // 1 minute
-    const max = 10;       // 10 checks per minute
-    const key = ip + ':health';
-
-    let bucket = ipBuckets.get(key);
-    if (!bucket) { bucket = []; ipBuckets.set(key, bucket); }
-
-    const recent = bucket.filter(t => now - t < window);
-    if (recent.length >= max) { ipBuckets.set(key, recent); return false; }
-
-    recent.push(now);
-    ipBuckets.set(key, recent);
-
-    if (ipBuckets.size > 2000) {
-        for (const [k, v] of ipBuckets) {
-            const f = v.filter(t => now - t < 300000);
-            if (f.length === 0) ipBuckets.delete(k);
-            else ipBuckets.set(k, f);
-        }
-    }
-    return true;
-}
+/* ── Rate limit config ── */
+const HEALTH_CHECK_LIMIT = { window: 60000, max: 10 }; // 10 checks per minute
 
 /* ── Known invite link patterns ── */
 const INVITE_PATTERNS = [
@@ -122,7 +98,9 @@ export async function onRequest(context) {
 
     const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
 
-    if (!checkRateLimit(ip)) {
+    const kvStore = context.env?.RATE_LIMIT_KV || null;
+    const allowed = await checkRateLimit(ip, 'health', HEALTH_CHECK_LIMIT, kvStore);
+    if (!allowed) {
         return new Response(
             JSON.stringify({ ok: false, error: 'Too many requests. Try again later.' }),
             { status: 429, headers: corsHeaders(origin) }
