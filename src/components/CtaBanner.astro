@@ -1,0 +1,25 @@
+---
+/**
+ * CtaBanner — call-to-action banner with title, text & button.
+ * Re-usable across any page that needs a submission CTA.
+ */
+interface Props {
+  title?: string;
+  text?: string;
+  buttonText?: string;
+  buttonHref?: string;
+}
+
+const {
+  title = 'Have a great group? Share it with the world!',
+  text = 'Submit your group for free and reach thousands of potential members looking for communities like yours.',
+  buttonText = 'Submit Your Group',
+  buttonHref = '/submit',
+} = Astro.props;
+---
+
+<div class="cta-section animate-on-scroll">
+    <h2 class="cta-section__title">{title}</h2>
+    <p class="cta-section__text">{text}</p>
+    <a href={buttonHref} class="btn btn-lg"><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> {buttonText} &rarr;</a>
+</div>

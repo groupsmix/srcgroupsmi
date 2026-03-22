@@ -1,5 +1,14 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import HowItWorks from '../components/HowItWorks.astro';
+import TrustFeatures from '../components/TrustFeatures.astro';
+import GroupSection from '../components/GroupSection.astro';
+import BrowseTabs from '../components/BrowseTabs.astro';
+import CtaBanner from '../components/CtaBanner.astro';
+
+const trendingIcon = '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>';
+const recentIcon = '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>';
 ---
 <BaseLayout
   title="GroupsMix — Discover Trusted Social Media Groups"
@@ -19,199 +28,31 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="container">
 
             <!-- ─── Hero ──────────────────────────── -->
-            <section class="hero">
-                <h1 class="hero__title">Your #1 Directory for <span class="hero__title-highlight">Trusted Groups</span></h1>
-                <p class="hero__subtitle">Discover, join &amp; promote verified communities in a smart, safe ecosystem.</p>
-                <form class="hero__search" id="hero-search-form" action="/search" method="get">
-                    <input type="search" name="q" class="hero__search-input" placeholder="Search groups by name, category, or platform..."
-                        aria-label="Search groups">
-                    <button type="submit" class="hero__search-btn" aria-label="Search"><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
-                </form>
-                <div class="scroll-container hero-platforms-scroll">
-                    <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
-                    <div class="hero__platforms" id="hero-platforms"></div>
-                    <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
-                </div>
-
-                <!-- Inline CTAs -->
-                <div class="hero__inline-cta">
-                    <a href="/submit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Submit Your Group</a>
-                    <span style="color:var(--text-tertiary)">·</span>
-                    <a href="/browse">Browse All Groups &rarr;</a>
-                </div>
-            </section>
+            <Hero />
 
             <!-- ─── How It Works & Why GroupsMix (Combined) ────────── -->
-            <section class="home-section home-section--alt home-section--howit">
-                <div class="home-section__header">
-                    <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg></span> How It Works</h2>
-                </div>
-                <div class="how-it-works">
-                    <div class="how-it-works__step">
-                        <div class="how-it-works__number">1</div>
-                        <div class="how-it-works__info">
-                            <div class="how-it-works__title">Search or Browse</div>
-                            <div class="how-it-works__text">Find groups by platform, category, or country.</div>
-                        </div>
-                    </div>
-                    <div class="how-it-works__step">
-                        <div class="how-it-works__number">2</div>
-                        <div class="how-it-works__info">
-                            <div class="how-it-works__title trust-explainer" tabindex="0">Check Trust Score
-                                <div class="trust-explainer__tip">
-                                    <strong>How Trust Score Works</strong>
-                                    Each group gets a score based on multiple factors:
-                                    <ul class="trust-explainer__list">
-                                        <li><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 4 12 14.01 9 11.01"/></svg> Admin verification status</li>
-                                        <li><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Community ratings &amp; reviews</li>
-                                        <li><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Member count &amp; activity</li>
-                                        <li><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> AI moderation checks</li>
-                                        <li><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Report history</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="how-it-works__text">See verification, ratings, and feedback.</div>
-                        </div>
-                    </div>
-                    <div class="how-it-works__step">
-                        <div class="how-it-works__number">3</div>
-                        <div class="how-it-works__info">
-                            <div class="how-it-works__title">Join with Confidence</div>
-                            <div class="how-it-works__text">Reviewed and rated by real members.</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            <HowItWorks />
 
             <!-- Why GroupsMix — trust badges -->
-            <section class="home-section home-section--why">
-                <div class="trust-features">
-                    <div class="trust-feature">
-                        <div class="trust-feature__icon"><svg class="svg-icon svg-icon--lg" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-                        <div class="trust-feature__info">
-                            <div class="trust-feature__title">Verified Groups</div>
-                            <div class="trust-feature__text">Reviewed and scored for safety.</div>
-                        </div>
-                    </div>
-                    <div class="trust-feature">
-                        <div class="trust-feature__icon"><svg class="svg-icon svg-icon--lg" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-                        <div class="trust-feature__info">
-                            <div class="trust-feature__title">Community Rated</div>
-                            <div class="trust-feature__text">Real reviews from real users.</div>
-                        </div>
-                    </div>
-                    <div class="trust-feature">
-                        <div class="trust-feature__icon"><svg class="svg-icon svg-icon--lg" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="8" y1="11" x2="16" y2="11"/></svg></div>
-                        <div class="trust-feature__info">
-                            <div class="trust-feature__title">Scam Protected</div>
-                            <div class="trust-feature__text">Report suspicious groups to our <a href="/scam-wall" style="color:var(--accent-primary);text-decoration:underline">Scam Wall</a>.</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            <TrustFeatures />
 
             <!-- ─── Trending Groups ───────────────── -->
-            <section class="home-section home-section--trending">
-                <div class="home-section__header">
-                    <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg></span> Trending Now</h2>
-                    <a href="/search?sort=ranking" class="home-section__link">See More <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></a>
-                </div>
-                <div id="trending-groups">
-                    <div class="grid grid-4">
-                        <div class="skeleton skeleton-card"></div>
-                        <div class="skeleton skeleton-card"></div>
-                        <div class="skeleton skeleton-card"></div>
-                        <div class="skeleton skeleton-card"></div>
-                        <div class="skeleton skeleton-card"></div>
-                        <div class="skeleton skeleton-card"></div>
-                        <div class="skeleton skeleton-card"></div>
-                        <div class="skeleton skeleton-card"></div>
-                    </div>
-                </div>
-            </section>
+            <GroupSection id="trending-groups" title="Trending Now" icon={trendingIcon} linkHref="/search?sort=ranking" modifier="home-section--trending" />
 
             <div class="section-divider"></div>
 
             <!-- ─── Recently Added Groups ─────────── -->
-            <section class="home-section home-section--alt home-section--recent">
-                <div class="home-section__header">
-                    <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span> Recently Added</h2>
-                    <a href="/search?sort=newest" class="home-section__link">See More <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></a>
-                </div>
-                <div id="new-groups">
-                    <div class="grid grid-4">
-                        <div class="skeleton skeleton-card"></div>
-                        <div class="skeleton skeleton-card"></div>
-                        <div class="skeleton skeleton-card"></div>
-                        <div class="skeleton skeleton-card"></div>
-                        <div class="skeleton skeleton-card"></div>
-                        <div class="skeleton skeleton-card"></div>
-                        <div class="skeleton skeleton-card"></div>
-                        <div class="skeleton skeleton-card"></div>
-                    </div>
-                </div>
-            </section>
+            <GroupSection id="new-groups" title="Recently Added" icon={recentIcon} linkHref="/search?sort=newest" alt={true} modifier="home-section--recent" />
 
             <!-- ─── Browse Sections (Tabbed Progressive Disclosure) ────── -->
-            <div class="browse-group home-section--alt">
-                <section class="home-section home-section--browse">
-                    <div class="home-section__header">
-                        <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span> Browse Groups</h2>
-                    </div>
-
-                    <!-- Tab Buttons -->
-                    <div class="browse-tabs" id="browse-tabs" role="tablist">
-                        <button class="browse-tabs__btn browse-tabs__btn--active" role="tab" aria-selected="true" aria-controls="panel-platform" data-tab="platform">
-                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                            Platform
-                        </button>
-                        <button class="browse-tabs__btn" role="tab" aria-selected="false" aria-controls="panel-country" data-tab="country">
-                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-                            Country
-                        </button>
-                        <button class="browse-tabs__btn" role="tab" aria-selected="false" aria-controls="panel-category" data-tab="category">
-                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
-                            Category
-                        </button>
-                    </div>
-
-                    <!-- Tab Panels -->
-                    <div class="browse-tab-panel browse-tab-panel--active" id="panel-platform" role="tabpanel">
-                        <div class="scroll-container">
-                            <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
-                            <div class="browse-ribbon" id="platform-ribbon"></div>
-                            <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
-                        </div>
-                    </div>
-
-                    <div class="browse-tab-panel" id="panel-country" role="tabpanel">
-                        <div class="scroll-container">
-                            <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
-                            <div class="browse-ribbon" id="country-ribbon"></div>
-                            <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
-                        </div>
-                    </div>
-
-                    <div class="browse-tab-panel" id="panel-category" role="tabpanel">
-                        <div class="scroll-container">
-                            <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
-                            <div class="category-ribbon browse-ribbon" id="category-ribbon"></div>
-                            <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
-                        </div>
-                    </div>
-                </section>
-            </div>
+            <BrowseTabs />
 
             <!-- ─── AI Group Recommendations (Feature 8) ──── -->
             <div id="ai-recommendations"></div>
 
 
             <!-- ─── CTA Banner ────────────────────── -->
-            <div class="cta-section animate-on-scroll">
-                <h2 class="cta-section__title">Have a great group? Share it with the world!</h2>
-                <p class="cta-section__text">Submit your group for free and reach thousands of potential members looking for communities like yours.</p>
-                <a href="/submit" class="btn btn-lg"><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Submit Your Group &rarr;</a>
-            </div>
+            <CtaBanner />
 
         </div>
     

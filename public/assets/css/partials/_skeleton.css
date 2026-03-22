@@ -1,0 +1,24 @@
+/* SKELETON                                */
+/* ═══════════════════════════════════════ */
+.skeleton {
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-text { height: 16px; margin-bottom: 8px; border-radius: var(--radius-sm); }
+.skeleton-title { height: 24px; width: 60%; margin-bottom: 12px; }
+.skeleton-card { height: 280px; border-radius: var(--radius-lg); border: 1px solid var(--border-primary); }
+.skeleton-avatar { width: 40px; height: 40px; border-radius: var(--radius-full); }
+.skeleton-btn { height: 44px; width: 120px; border-radius: var(--radius-md); }
+
+/* ═══════════════════════════════════════ */

@@ -1,0 +1,53 @@
+/* COOKIE CONSENT BANNER                   */
+/* ═══════════════════════════════════════ */
+.cookie-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 99999;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-primary);
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  animation: slideUp 0.3s ease;
+}
+
+.cookie-banner__text {
+  flex: 1;
+  min-width: 240px;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+.cookie-banner__text a {
+  color: var(--accent-primary);
+  text-decoration: underline;
+}
+
+.cookie-banner__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .cookie-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: var(--space-4);
+    bottom: 60px; /* above mobile nav */
+  }
+  .cookie-banner__actions {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ═══════════════════════════════════════ */

@@ -1,0 +1,56 @@
+/* RESPONSIVE                              */
+/* ═══════════════════════════════════════ */
+@media (max-width: 767px) {
+  h1 { font-size: var(--text-2xl); }
+  h2 { font-size: var(--text-xl); }
+  .site-header { height: 48px; }
+  .subnav { top: 48px; height: 38px; }
+  body { padding-top: 86px; } /* 48px header + 38px subnav */
+  .site-header__logo-text { display: none; }
+  .site-header__logo { gap: var(--space-1); }
+  .site-header__logo-icon { width: 30px; height: 30px; border-radius: 8px; }
+  .magic-plus-btn { width: 32px; height: 32px; }
+  .subnav__item { padding: 0 var(--space-3); font-size: var(--text-xs); }
+  /* Quick access bar: compact row on mobile */
+  .quick-access-bar { justify-content: flex-start; gap: 0; padding: var(--space-1) 0; }
+  .quick-access__card { padding: var(--space-1) var(--space-2); min-width: 56px; font-size: 10px; }
+  .quick-access__icon { width: 36px; height: 36px; }
+  .quick-access__icon svg { width: 18px; height: 18px; }
+  /* Preview grid: single column on mobile */
+  .preview-grid { grid-template-columns: 1fr; }
+  /* Hide user name on mobile, keep avatar + bell */
+  .header-user-link__name { display: none !important; }
+  .header-user-link { gap: var(--space-1); padding: 2px 4px; }
+  .header-avatar { width: 28px; height: 28px; }
+  .header-notification__btn { width: 32px; height: 32px; }
+  .site-header__hamburger { width: 34px; height: 34px; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .form-row { flex-direction: column; }
+  .toast-container { bottom: 16px; left: 16px; right: 16px; }
+  .toast { min-width: auto; animation: slideUp 0.25s ease; }
+  .toast--exit { animation: fadeOut 0.2s ease forwards; }
+  .hscroll > * { width: 260px; }
+  .filter-bar { flex-direction: column; }
+  .filter-bar .form-group { min-width: 100%; }
+}
+
+@media (min-width: 640px) {
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 768px) {
+  body { padding-top: 94px; } /* 52px header + 42px subnav */
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .site-footer__grid { grid-template-columns: repeat(4, 1fr); }
+  .feature-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 992px) {
+  .feature-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 1024px) {
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ═══════════════════════════════════════ */
