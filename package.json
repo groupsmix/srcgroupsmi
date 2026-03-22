@@ -7,12 +7,18 @@
     "build": "astro build && node scripts/stamp-sw.js",
     "preview": "astro preview",
     "astro": "astro",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "check": "astro check"
   },
   "dependencies": {
     "astro": "^5.7.10"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@biomejs/biome": "^2.4.8",
+    "typescript": "^5.8.3",
     "vitest": "^4.1.0"
   }
 }

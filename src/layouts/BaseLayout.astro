@@ -25,6 +25,7 @@ interface Props {
   includeFuel?: boolean;
   includeFuelComponents?: boolean;
   structuredData?: string;
+  lang?: string;
 }
 
 const {
@@ -53,10 +54,11 @@ const {
   includeFuel = false,
   includeFuelComponents = false,
   structuredData = '',
+  lang = 'en',
 } = Astro.props;
 ---
 <!DOCTYPE html>
-<html lang="en">
+<html lang={lang}>
 <head>
     <script is:inline src="/assets/js/head-scripts.js" defer></script>
     <meta charset="UTF-8">

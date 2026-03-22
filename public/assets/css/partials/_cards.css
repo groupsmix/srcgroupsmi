@@ -1,0 +1,41 @@
+/* ═══════════════════════════════════════ */
+/* CARDS                                   */
+/* ═══════════════════════════════════════ */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-accent);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.card:hover {
+  background: var(--bg-card-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: rgba(99,102,241,0.2);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+.card__header { padding: var(--space-4); border-bottom: 1px solid var(--border-primary); }
+.card__body { padding: var(--space-4); }
+.card__footer { padding: var(--space-4); border-top: 1px solid var(--border-primary); }
+.card--clickable { cursor: pointer; }
+

@@ -1,0 +1,55 @@
+---
+/**
+ * BrowseTabs — tabbed browse section with platform/country/category ribbons.
+ * Re-usable on browse pages or any page needing platform/country/category navigation.
+ */
+---
+
+<div class="browse-group home-section--alt">
+    <section class="home-section home-section--browse">
+        <div class="home-section__header">
+            <h2 class="home-section__title"><span><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span> Browse Groups</h2>
+        </div>
+
+        <!-- Tab Buttons -->
+        <div class="browse-tabs" id="browse-tabs" role="tablist">
+            <button class="browse-tabs__btn browse-tabs__btn--active" role="tab" aria-selected="true" aria-controls="panel-platform" data-tab="platform">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                Platform
+            </button>
+            <button class="browse-tabs__btn" role="tab" aria-selected="false" aria-controls="panel-country" data-tab="country">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                Country
+            </button>
+            <button class="browse-tabs__btn" role="tab" aria-selected="false" aria-controls="panel-category" data-tab="category">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                Category
+            </button>
+        </div>
+
+        <!-- Tab Panels -->
+        <div class="browse-tab-panel browse-tab-panel--active" id="panel-platform" role="tabpanel">
+            <div class="scroll-container">
+                <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
+                <div class="browse-ribbon" id="platform-ribbon"></div>
+                <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
+            </div>
+        </div>
+
+        <div class="browse-tab-panel" id="panel-country" role="tabpanel">
+            <div class="scroll-container">
+                <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
+                <div class="browse-ribbon" id="country-ribbon"></div>
+                <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
+            </div>
+        </div>
+
+        <div class="browse-tab-panel" id="panel-category" role="tabpanel">
+            <div class="scroll-container">
+                <button class="scroll-arrow scroll-arrow--left" aria-label="Scroll left">&lsaquo;</button>
+                <div class="category-ribbon browse-ribbon" id="category-ribbon"></div>
+                <button class="scroll-arrow scroll-arrow--right" aria-label="Scroll right">&rsaquo;</button>
+            </div>
+        </div>
+    </section>
+</div>

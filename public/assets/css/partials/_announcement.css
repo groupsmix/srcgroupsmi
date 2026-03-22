@@ -1,0 +1,33 @@
+/* ANNOUNCEMENT BAR                        */
+/* ═══════════════════════════════════════ */
+.announcement-bar {
+  z-index: 1001;
+  min-height: 36px;
+  padding: 8px 16px;
+  text-align: center;
+  font-size: var(--text-sm);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.announcement-bar--info { background: var(--info); }
+.announcement-bar--success { background: var(--success); }
+.announcement-bar--warning { background: var(--warning); }
+.announcement-bar--error { background: var(--error); }
+
+.announcement-bar__close {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: var(--text-lg);
+  opacity: 0.8;
+  padding: 0 var(--space-2);
+}
+
+.announcement-bar__close:hover { opacity: 1; }
+
+/* ═══════════════════════════════════════ */

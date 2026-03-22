@@ -1,0 +1,48 @@
+---
+/**
+ * GroupSection — a titled group-grid section with skeleton placeholders.
+ * Re-used for "Trending Now", "Recently Added", and similar listings.
+ */
+interface Props {
+  id: string;
+  title: string;
+  icon: string;
+  linkHref?: string;
+  linkText?: string;
+  alt?: boolean;
+  modifier?: string;
+}
+
+const {
+  id,
+  title,
+  icon,
+  linkHref,
+  linkText = 'See More',
+  alt = false,
+  modifier = '',
+} = Astro.props;
+
+const sectionClasses = ['home-section', alt && 'home-section--alt', modifier].filter(Boolean).join(' ');
+---
+
+<section class={sectionClasses}>
+    <div class="home-section__header">
+        <h2 class="home-section__title"><span set:html={icon} /> {title}</h2>
+        {linkHref && (
+            <a href={linkHref} class="home-section__link">{linkText} <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></a>
+        )}
+    </div>
+    <div id={id}>
+        <div class="grid grid-4">
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>
+        </div>
+    </div>
+</section>

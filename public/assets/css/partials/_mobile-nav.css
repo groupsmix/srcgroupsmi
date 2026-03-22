@@ -1,0 +1,93 @@
+/* BOTTOM MOBILE NAV                       */
+/* ═══════════════════════════════════════ */
+.mobile-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(13, 13, 20, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 60px;
+  z-index: 1000;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+[data-theme="light"] .mobile-nav {
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+.mobile-nav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 10px;
+  width: 20%;
+  height: 100%;
+  transition: color 0.2s ease;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.mobile-nav__item:hover, .mobile-nav__item.active {
+  color: var(--accent-primary);
+}
+
+.mobile-nav__icon {
+  font-size: 20px;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mobile-nav__icon svg {
+  width: 22px;
+  height: 22px;
+}
+.mobile-nav__label {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.mobile-nav__item--primary {
+  color: var(--accent-primary);
+}
+
+.mobile-nav__item--primary .mobile-nav__icon {
+  background: linear-gradient(135deg, var(--accent-primary), #818cf8);
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  border-radius: 50%;
+  text-align: center;
+  margin-bottom: 2px;
+  margin-top: -8px;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mobile-nav__item--primary:hover .mobile-nav__icon,
+.mobile-nav__item--primary:active .mobile-nav__icon {
+  transform: scale(1.08);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
+}
+
+@media (min-width: 768px) {
+  .mobile-nav {
+    display: none;
+  }
+}
+
+
+/* ═══════════════════════════════════════ */
