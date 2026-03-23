@@ -82,7 +82,7 @@ const Auth = {
                 if (!Auth._currentUserData && !Auth._isCreatingProfile) {
                     Auth._isCreatingProfile = true;
                     try {
-                        var savedName = Auth._pendingDisplayName || '';
+                        let savedName = Auth._pendingDisplayName || '';
                         if (!savedName) {
                             try { savedName = localStorage.getItem('gm_pending_display_name') || ''; } catch (e) { /* private browsing */ }
                         }
@@ -159,13 +159,13 @@ const Auth = {
         // localStorage directly. If a session token still exists
         // in storage, this is likely a false SIGNED_OUT event.
         try {
-            var projectRef = (window.SUPABASE_URL || '').replace('https://', '').split('.')[0] || 'sb';
-            var storedRaw = localStorage.getItem('sb-' + projectRef + '-auth-token');
+            const projectRef = (window.SUPABASE_URL || '').replace('https://', '').split('.')[0] || 'sb';
+            const storedRaw = localStorage.getItem('sb-' + projectRef + '-auth-token');
             if (storedRaw) {
-                var storedData = JSON.parse(storedRaw);
+                const storedData = JSON.parse(storedRaw);
                 if (storedData && (storedData.access_token || (storedData.currentSession && storedData.currentSession.access_token))) {
                     try {
-                        var { data: recoveryData } = await window.supabaseClient.auth.getSession();
+                        const { data: recoveryData } = await window.supabaseClient.auth.getSession();
                         if (recoveryData?.session) {
                             Auth._session = recoveryData.session;
                             Auth._currentUserData = await DB.user.getProfile(recoveryData.session.user.id);
@@ -190,7 +190,7 @@ const Auth = {
 
         // Use a short delay before redirecting to allow any pending
         // INITIAL_SESSION or TOKEN_REFRESHED events to arrive first.
-        var _dashPaths = ['/dashboard', '/pages/user/dashboard'];
+        const _dashPaths = ['/dashboard', '/pages/user/dashboard'];
         // NOTE: admin page (/gm-ctrl-x7) removed — its own gate handles sign-out redirect
         if (_dashPaths.indexOf(window.location.pathname) !== -1) {
             Auth._signOutRedirectTimer = setTimeout(function() {

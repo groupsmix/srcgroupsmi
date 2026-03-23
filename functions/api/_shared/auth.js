@@ -160,10 +160,10 @@ export async function requireAuthWithProfile(request, env, selectFields) {
     const serviceKey = env?.SUPABASE_SERVICE_KEY;
     if (!url || !serviceKey) throw new Error('Server not configured');
 
-    const authHeader = request.headers.get('Authorization') || '';
-    if (!authHeader.startsWith('Bearer ')) throw new Error('Unauthorized');
+    // Reuse extractToken() instead of duplicating token extraction logic
+    const token = extractToken(request);
+    if (!token) throw new Error('Unauthorized');
 
-    const token = authHeader.replace('Bearer ', '');
     const userRes = await fetch(url + '/auth/v1/user', {
         headers: { 'Authorization': 'Bearer ' + token, 'apikey': serviceKey }
     });

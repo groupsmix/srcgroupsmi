@@ -7,6 +7,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { errorResponse, successResponse } from './_shared/response.js';
 import { requireAuthWithOwnership } from './_shared/auth.js';
 
 function corsHeaders(origin) {
@@ -25,9 +26,7 @@ export async function onRequest(context) {
     const supabaseKey = env?.SUPABASE_SERVICE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-        return new Response(JSON.stringify({ ok: false, error: 'Service not configured' }), {
-            status: 503, headers: corsHeaders(origin)
-        });
+        return errorResponse('Service not configured', 503, origin);
     }
 
     if (request.method === 'GET') {
@@ -37,9 +36,7 @@ export async function onRequest(context) {
         if (action === 'code') {
             const uid = url.searchParams.get('uid');
             if (!uid) {
-                return new Response(JSON.stringify({ ok: false, error: 'User ID required' }), {
-                    status: 400, headers: corsHeaders(origin)
-                });
+                return errorResponse('User ID required', 400, origin);
             }
 
             // Verify authentication and ownership
@@ -76,9 +73,7 @@ export async function onRequest(context) {
         if (action === 'stats') {
             const uid = url.searchParams.get('uid');
             if (!uid) {
-                return new Response(JSON.stringify({ ok: false, error: 'User ID required' }), {
-                    status: 400, headers: corsHeaders(origin)
-                });
+                return errorResponse('User ID required', 400, origin);
             }
 
             // Verify authentication and ownership
@@ -117,9 +112,7 @@ export async function onRequest(context) {
             }), { status: 200, headers: corsHeaders(origin) });
         }
 
-        return new Response(JSON.stringify({ ok: false, error: 'Unknown action' }), {
-            status: 400, headers: corsHeaders(origin)
-        });
+        return errorResponse('Unknown action', 400, origin);
     }
 
     if (request.method === 'POST') {
@@ -127,16 +120,12 @@ export async function onRequest(context) {
         try {
             body = await request.json();
         } catch(e) {
-            return new Response(JSON.stringify({ ok: false, error: 'Invalid JSON' }), {
-                status: 400, headers: corsHeaders(origin)
-            });
+            return errorResponse('Invalid JSON', 400, origin);
         }
 
         if (body.action === 'apply') {
             if (!body.referral_code || !body.new_user_id) {
-                return new Response(JSON.stringify({ ok: false, error: 'referral_code and new_user_id required' }), {
-                    status: 400, headers: corsHeaders(origin)
-                });
+                return errorResponse('referral_code and new_user_id required', 400, origin);
             }
 
             // Verify authentication and ownership of new_user_id
@@ -169,18 +158,11 @@ export async function onRequest(context) {
                 }), { status: 200, headers: corsHeaders(origin) });
             }
 
-            return new Response(JSON.stringify({
-                ok: false,
-                error: (result && result.error) || 'Failed to apply referral'
-            }), { status: 400, headers: corsHeaders(origin) });
+            return errorResponse((result && result.error) || 'Failed to apply referral', 400, origin);
         }
 
-        return new Response(JSON.stringify({ ok: false, error: 'Unknown action' }), {
-            status: 400, headers: corsHeaders(origin)
-        });
+        return errorResponse('Unknown action', 400, origin);
     }
 
-    return new Response(JSON.stringify({ ok: false, error: 'Method not allowed' }), {
-        status: 405, headers: corsHeaders(origin)
-    });
+    return errorResponse('Method not allowed', 405, origin);
 }
