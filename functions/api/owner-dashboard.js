@@ -15,6 +15,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { errorResponse, successResponse } from './_shared/response.js';
 import { requireAdmin } from './_shared/auth.js';
 
 function corsHeaders(origin) {
@@ -34,9 +35,7 @@ export async function onRequest(context) {
     const supabaseKey = env?.SUPABASE_SERVICE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-        return new Response(JSON.stringify({ ok: false, error: 'Server configuration error' }), {
-            status: 500, headers: corsHeaders(origin)
-        });
+        return errorResponse('Server configuration error', 500, origin);
     }
 
     // Verify admin
@@ -44,10 +43,7 @@ export async function onRequest(context) {
     try {
         admin = await requireAdmin(request, env);
     } catch (err) {
-        return new Response(JSON.stringify({ ok: false, error: err.message }), {
-            status: err.message === 'Admin access required' ? 403 : 401,
-            headers: corsHeaders(origin)
-        });
+        return errorResponse(err.message, err.message === 'Admin access required' ? 403 : 401, origin);
     }
 
     if (request.method === 'GET') {
@@ -56,9 +52,7 @@ export async function onRequest(context) {
         return handlePost(request, env, admin, origin);
     }
 
-    return new Response(JSON.stringify({ ok: false, error: 'Method not allowed' }), {
-        status: 405, headers: corsHeaders(origin)
-    });
+    return errorResponse('Method not allowed', 405, origin);
 }
 
 /* ── GET handler ───────────────────────────────────────────── */
@@ -86,9 +80,7 @@ async function handleGet(request, env, admin, origin) {
                     });
                     if (rpcRes.ok) {
                         const stats = await rpcRes.json();
-                        return new Response(JSON.stringify({ ok: true, data: stats }), {
-                            status: 200, headers: corsHeaders(origin)
-                        });
+                        return successResponse({ data: stats }, origin);
                     }
                 } catch (e) { /* fallback */ }
 
@@ -121,8 +113,7 @@ async function handleGet(request, env, admin, origin) {
                 const tipsTxns = await tipsRes.json();
                 const totalTips = (tipsTxns || []).reduce((sum, t) => { return sum + Math.abs(t.amount || 0); }, 0);
 
-                return new Response(JSON.stringify({
-                    ok: true,
+                return successResponse({
                     data: {
                         total_users: totalUsers,
                         new_users: newUsers,
@@ -132,7 +123,7 @@ async function handleGet(request, env, admin, origin) {
                         total_tips: totalTips,
                         days: days
                     }
-                }), { status: 200, headers: corsHeaders(origin) });
+                }, origin);
             }
 
             case 'withdrawals': {
@@ -141,9 +132,7 @@ async function handleGet(request, env, admin, origin) {
                     { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
                 );
                 const withdrawals = await wRes.json();
-                return new Response(JSON.stringify({ ok: true, data: withdrawals || [] }), {
-                    status: 200, headers: corsHeaders(origin)
-                });
+                return successResponse({ data: withdrawals || [] }, origin);
             }
 
             case 'predictive-growth': {
@@ -275,8 +264,7 @@ async function handleGet(request, env, admin, origin) {
                     });
                 }
 
-                return new Response(JSON.stringify({
-                    ok: true,
+                return successResponse({
                     data: {
                         period_days: growthDays,
                         daily_data: dailyGrowth,
@@ -295,7 +283,7 @@ async function handleGet(request, env, admin, origin) {
                         revenue: revenueTrend,
                         projections: growthProjections
                     }
-                }), { status: 200, headers: corsHeaders(origin) });
+                }, origin);
             }
 
             case 'insights': {
@@ -441,8 +429,7 @@ async function handleGet(request, env, admin, origin) {
                     // retention data unavailable
                 }
 
-                return new Response(JSON.stringify({
-                    ok: true,
+                return successResponse({
                     data: {
                         insights: platformInsights,
                         period_days: insightDays,
@@ -454,7 +441,7 @@ async function handleGet(request, env, admin, origin) {
                         },
                         retention: retentionData
                     }
-                }), { status: 200, headers: corsHeaders(origin) });
+                }, origin);
             }
 
             case 'leaderboard': {
@@ -473,9 +460,7 @@ async function handleGet(request, env, admin, origin) {
                     });
                     if (lbRes.ok) {
                         const lb = await lbRes.json();
-                        return new Response(JSON.stringify({ ok: true, data: lb || [] }), {
-                            status: 200, headers: corsHeaders(origin)
-                        });
+                        return successResponse({ data: lb || [] }, origin);
                     }
                 } catch (e) { /* fallback */ }
 
@@ -489,21 +474,15 @@ async function handleGet(request, env, admin, origin) {
                     { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
                 );
                 const users = await fbRes.json();
-                return new Response(JSON.stringify({ ok: true, data: users || [] }), {
-                    status: 200, headers: corsHeaders(origin)
-                });
+                return successResponse({ data: users || [] }, origin);
             }
 
             default:
-                return new Response(JSON.stringify({ ok: false, error: 'Unknown action: ' + action }), {
-                    status: 400, headers: corsHeaders(origin)
-                });
+                return errorResponse('Unknown action: ' + action, 400, origin);
         }
     } catch (err) {
         console.error('owner-dashboard GET error:', err);
-        return new Response(JSON.stringify({ ok: false, error: 'Internal server error' }), {
-            status: 500, headers: corsHeaders(origin)
-        });
+        return errorResponse('Internal server error', 500, origin);
     }
 }
 
@@ -516,9 +495,7 @@ async function handlePost(request, env, admin, origin) {
     try {
         body = await request.json();
     } catch (e) {
-        return new Response(JSON.stringify({ ok: false, error: 'Invalid JSON' }), {
-            status: 400, headers: corsHeaders(origin)
-        });
+        return errorResponse('Invalid JSON', 400, origin);
     }
 
     const action = body.action;
@@ -531,15 +508,11 @@ async function handlePost(request, env, admin, origin) {
                 const adminNote = body.admin_note || '';
 
                 if (!requestId) {
-                    return new Response(JSON.stringify({ ok: false, error: 'request_id is required' }), {
-                        status: 400, headers: corsHeaders(origin)
-                    });
+                    return errorResponse('request_id is required', 400, origin);
                 }
 
                 if (decision !== 'approve' && decision !== 'reject') {
-                    return new Response(JSON.stringify({ ok: false, error: 'decision must be "approve" or "reject"' }), {
-                        status: 400, headers: corsHeaders(origin)
-                    });
+                    return errorResponse('decision must be "approve" or "reject"', 400, origin);
                 }
 
                 // Get the withdrawal request
@@ -549,9 +522,7 @@ async function handlePost(request, env, admin, origin) {
                 );
                 const reqs = await reqRes.json();
                 if (!reqs || !reqs.length) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Withdrawal request not found or already processed' }), {
-                        status: 404, headers: corsHeaders(origin)
-                    });
+                    return errorResponse('Withdrawal request not found or already processed', 404, origin);
                 }
 
                 const withdrawal = reqs[0];
@@ -650,20 +621,14 @@ async function handlePost(request, env, admin, origin) {
                     });
                 }
 
-                return new Response(JSON.stringify({ ok: true, decision: decision, request_id: requestId }), {
-                    status: 200, headers: corsHeaders(origin)
-                });
+                return successResponse({ decision: decision, request_id: requestId }, origin);
             }
 
             default:
-                return new Response(JSON.stringify({ ok: false, error: 'Unknown action: ' + action }), {
-                    status: 400, headers: corsHeaders(origin)
-                });
+                return errorResponse('Unknown action: ' + action, 400, origin);
         }
     } catch (err) {
         console.error('owner-dashboard POST error:', err);
-        return new Response(JSON.stringify({ ok: false, error: 'Internal server error' }), {
-            status: 500, headers: corsHeaders(origin)
-        });
+        return errorResponse('Internal server error', 500, origin);
     }
 }

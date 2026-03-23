@@ -11,6 +11,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { errorResponse, successResponse } from './_shared/response.js';
 import { requireAuthWithOwnership } from './_shared/auth.js';
 
 function corsHeaders(origin) {
@@ -46,9 +47,7 @@ export async function onRequest(context) {
     const supabaseKey = env?.SUPABASE_SERVICE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-        return new Response(JSON.stringify({ ok: false, error: 'Service not configured' }), {
-            status: 503, headers: corsHeaders(origin)
-        });
+        return errorResponse('Service not configured', 503, origin);
     }
 
     if (request.method === 'GET') {
@@ -112,9 +111,7 @@ export async function onRequest(context) {
         if (action === 'bot-config') {
             const groupId = url.searchParams.get('group_id');
             if (!groupId) {
-                return new Response(JSON.stringify({ ok: false, error: 'group_id required' }), {
-                    status: 400, headers: corsHeaders(origin)
-                });
+                return errorResponse('group_id required', 400, origin);
             }
 
             // Get bot integration record
@@ -148,9 +145,7 @@ export async function onRequest(context) {
             }), { status: 200, headers: corsHeaders(origin) });
         }
 
-        return new Response(JSON.stringify({ ok: false, error: 'Unknown action' }), {
-            status: 400, headers: corsHeaders(origin)
-        });
+        return errorResponse('Unknown action', 400, origin);
     }
 
     if (request.method === 'POST') {
@@ -158,9 +153,7 @@ export async function onRequest(context) {
         try {
             body = await request.json();
         } catch(e) {
-            return new Response(JSON.stringify({ ok: false, error: 'Invalid JSON' }), {
-                status: 400, headers: corsHeaders(origin)
-            });
+            return errorResponse('Invalid JSON', 400, origin);
         }
 
         const action = body.action;
@@ -200,9 +193,7 @@ export async function onRequest(context) {
             });
 
             if (!res.ok) {
-                return new Response(JSON.stringify({ ok: false, error: 'Failed to register bot' }), {
-                    status: 500, headers: corsHeaders(origin)
-                });
+                return errorResponse('Failed to register bot', 500, origin);
             }
 
             const result = await res.json();
@@ -218,9 +209,7 @@ export async function onRequest(context) {
             // Sync member count and status
             const botToken = request.headers.get('X-Bot-Token') || body.bot_token;
             if (!botToken) {
-                return new Response(JSON.stringify({ ok: false, error: 'Bot token required' }), {
-                    status: 401, headers: corsHeaders(origin)
-                });
+                return errorResponse('Bot token required', 401, origin);
             }
 
             const updates = {
@@ -244,22 +233,16 @@ export async function onRequest(context) {
             );
 
             if (!res.ok) {
-                return new Response(JSON.stringify({ ok: false, error: 'Sync failed' }), {
-                    status: 500, headers: corsHeaders(origin)
-                });
+                return errorResponse('Sync failed', 500, origin);
             }
 
-            return new Response(JSON.stringify({ ok: true, message: 'Sync successful' }), {
-                status: 200, headers: corsHeaders(origin)
-            });
+            return successResponse({ message: 'Sync successful' }, origin);
         }
 
         if (action === 'verify') {
             let code = body.verification_code || body.code;
             if (!code) {
-                return new Response(JSON.stringify({ ok: false, error: 'Verification code required' }), {
-                    status: 400, headers: corsHeaders(origin)
-                });
+                return errorResponse('Verification code required', 400, origin);
             }
 
             // Find pending integration with this code
@@ -270,9 +253,7 @@ export async function onRequest(context) {
             const records = await res.json();
 
             if (!records || !records.length) {
-                return new Response(JSON.stringify({ ok: false, error: 'Invalid or expired verification code' }), {
-                    status: 404, headers: corsHeaders(origin)
-                });
+                return errorResponse('Invalid or expired verification code', 404, origin);
             }
 
             // Mark as verified
@@ -292,18 +273,11 @@ export async function onRequest(context) {
                 }
             );
 
-            return new Response(JSON.stringify({
-                ok: true,
-                message: 'Bot verified successfully! Your group is now connected to GroupsMix.'
-            }), { status: 200, headers: corsHeaders(origin) });
+            return successResponse({ message: 'Bot verified successfully! Your group is now connected to GroupsMix.' }, origin);
         }
 
-        return new Response(JSON.stringify({ ok: false, error: 'Unknown action' }), {
-            status: 400, headers: corsHeaders(origin)
-        });
+        return errorResponse('Unknown action', 400, origin);
     }
 
-    return new Response(JSON.stringify({ ok: false, error: 'Method not allowed' }), {
-        status: 405, headers: corsHeaders(origin)
-    });
+    return errorResponse('Method not allowed', 405, origin);
 }

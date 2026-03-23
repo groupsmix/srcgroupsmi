@@ -10,6 +10,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { errorResponse, successResponse } from './_shared/response.js';
 import { requireAuthWithOwnership } from './_shared/auth.js';
 
 function corsHeaders(origin) {
@@ -27,30 +28,21 @@ export async function onRequest(context) {
     }
 
     if (request.method !== 'POST') {
-        return new Response(
-            JSON.stringify({ ok: false, error: 'Method not allowed' }),
-            { status: 405, headers: corsHeaders(origin) }
-        );
+        return errorResponse('Method not allowed', 405, origin);
     }
 
     const supabaseUrl = env?.SUPABASE_URL;
     const supabaseKey = env?.SUPABASE_SERVICE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-        return new Response(
-            JSON.stringify({ ok: false, error: 'Service not configured' }),
-            { status: 503, headers: corsHeaders(origin) }
-        );
+        return errorResponse('Service not configured', 503, origin);
     }
 
     let body;
     try {
         body = await request.json();
     } catch {
-        return new Response(
-            JSON.stringify({ ok: false, error: 'Invalid JSON body' }),
-            { status: 400, headers: corsHeaders(origin) }
-        );
+        return errorResponse('Invalid JSON body', 400, origin);
     }
 
     const action = body.action || 'subscribe';
@@ -64,10 +56,7 @@ export async function onRequest(context) {
     }
 
     if (!subscription || !subscription.endpoint) {
-        return new Response(
-            JSON.stringify({ ok: false, error: 'Push subscription data is required' }),
-            { status: 422, headers: corsHeaders(origin) }
-        );
+        return errorResponse('Push subscription data is required', 422, origin);
     }
 
     try {
@@ -88,10 +77,7 @@ export async function onRequest(context) {
                 console.error('Push unsubscribe error:', res.status);
             }
 
-            return new Response(
-                JSON.stringify({ ok: true, message: 'Unsubscribed from push notifications' }),
-                { status: 200, headers: corsHeaders(origin) }
-            );
+            return successResponse({ message: 'Unsubscribed from push notifications' }, origin);
         }
 
         // Subscribe — upsert by endpoint
@@ -118,22 +104,13 @@ export async function onRequest(context) {
         if (!res.ok) {
             const errText = await res.text();
             console.error('Push subscribe error:', res.status, errText);
-            return new Response(
-                JSON.stringify({ ok: false, error: 'Failed to save subscription' }),
-                { status: 500, headers: corsHeaders(origin) }
-            );
+            return errorResponse('Failed to save subscription', 500, origin);
         }
 
-        return new Response(
-            JSON.stringify({ ok: true, message: 'Subscribed to push notifications' }),
-            { status: 200, headers: corsHeaders(origin) }
-        );
+        return successResponse({ message: 'Subscribed to push notifications' }, origin);
 
     } catch (err) {
         console.error('push-subscribe error:', err);
-        return new Response(
-            JSON.stringify({ ok: false, error: 'Internal server error' }),
-            { status: 500, headers: corsHeaders(origin) }
-        );
+        return errorResponse('Internal server error', 500, origin);
     }
 }

@@ -15,6 +15,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { errorResponse, successResponse } from './_shared/response.js';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -56,18 +57,14 @@ export async function onRequest(context) {
     }
 
     if (request.method !== 'GET') {
-        return new Response(JSON.stringify({ ok: false, error: 'Method not allowed' }), {
-            status: 405, headers: corsHeaders(origin)
-        });
+        return errorResponse('Method not allowed', 405, origin);
     }
 
     const supabaseUrl = env?.SUPABASE_URL;
     const supabaseKey = env?.SUPABASE_SERVICE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-        return new Response(JSON.stringify({ ok: false, error: 'Server configuration error' }), {
-            status: 500, headers: corsHeaders(origin)
-        });
+        return errorResponse('Server configuration error', 500, origin);
     }
 
     // Verify authentication
@@ -75,9 +72,7 @@ export async function onRequest(context) {
     try {
         user = await verifyAndGetUser(request, env);
     } catch (err) {
-        return new Response(JSON.stringify({ ok: false, error: err.message }), {
-            status: 401, headers: corsHeaders(origin)
-        });
+        return errorResponse(err.message, 401, origin);
     }
 
     const url = new URL(request.url);
@@ -142,8 +137,7 @@ export async function onRequest(context) {
                 let pendingOffers = await offersRes.json();
                 pendingOffers = Array.isArray(pendingOffers) ? pendingOffers : [];
 
-                return new Response(JSON.stringify({
-                    ok: true,
+                return successResponse({
                     data: {
                         overview: {
                             total_revenue: totalRevenue,
@@ -173,7 +167,7 @@ export async function onRequest(context) {
                         },
                         period_days: days
                     }
-                }), { status: 200, headers: corsHeaders(origin) });
+                }, origin);
             }
 
             case 'listings': {
@@ -224,9 +218,7 @@ export async function onRequest(context) {
                     };
                 });
 
-                return new Response(JSON.stringify({ ok: true, data: enriched }), {
-                    status: 200, headers: corsHeaders(origin)
-                });
+                return successResponse({ data: enriched }, origin);
             }
 
             case 'revenue': {
@@ -265,8 +257,7 @@ export async function onRequest(context) {
                 const totalPeriodRevenue = revTxns.reduce((s, t) => { return s + Math.abs(t.amount || 0); }, 0);
                 const avgDailyRevenue = totalPeriodRevenue / days;
 
-                return new Response(JSON.stringify({
-                    ok: true,
+                return successResponse({
                     data: {
                         chart_data: chartData,
                         summary: {
@@ -277,7 +268,7 @@ export async function onRequest(context) {
                             period_days: days
                         }
                     }
-                }), { status: 200, headers: corsHeaders(origin) });
+                }, origin);
             }
 
             case 'top': {
@@ -315,20 +306,14 @@ export async function onRequest(context) {
                 });
                 const topEnriched = await Promise.all(topSalesPromises);
 
-                return new Response(JSON.stringify({ ok: true, data: topEnriched }), {
-                    status: 200, headers: corsHeaders(origin)
-                });
+                return successResponse({ data: topEnriched }, origin);
             }
 
             default:
-                return new Response(JSON.stringify({ ok: false, error: 'Unknown action: ' + action }), {
-                    status: 400, headers: corsHeaders(origin)
-                });
+                return errorResponse('Unknown action: ' + action, 400, origin);
         }
     } catch (err) {
         console.error('seller-dashboard error:', err);
-        return new Response(JSON.stringify({ ok: false, error: 'Internal server error' }), {
-            status: 500, headers: corsHeaders(origin)
-        });
+        return errorResponse('Internal server error', 500, origin);
     }
 }

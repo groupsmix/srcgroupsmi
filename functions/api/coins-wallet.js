@@ -16,6 +16,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { errorResponse, successResponse } from './_shared/response.js';
 import { requireAuthWithProfile } from './_shared/auth.js';
 
 function corsHeaders(origin) {
@@ -35,9 +36,7 @@ export async function onRequest(context) {
     const supabaseKey = env?.SUPABASE_SERVICE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-        return new Response(JSON.stringify({ ok: false, error: 'Server configuration error' }), {
-            status: 500, headers: corsHeaders(origin)
-        });
+        return errorResponse('Server configuration error', 500, origin);
     }
 
     // Verify authentication using shared auth helper
@@ -54,9 +53,7 @@ export async function onRequest(context) {
             identity_verified: authResult.profile.identity_verified || false
         };
     } catch (err) {
-        return new Response(JSON.stringify({ ok: false, error: err.message }), {
-            status: 401, headers: corsHeaders(origin)
-        });
+        return errorResponse(err.message, 401, origin);
     }
 
     // Route based on method
@@ -66,9 +63,7 @@ export async function onRequest(context) {
         return handlePost(request, env, user, origin);
     }
 
-    return new Response(JSON.stringify({ ok: false, error: 'Method not allowed' }), {
-        status: 405, headers: corsHeaders(origin)
-    });
+    return errorResponse('Method not allowed', 405, origin);
 }
 
 /* ── GET handler ───────────────────────────────────────────── */
@@ -106,17 +101,14 @@ async function handleGet(request, env, user, origin) {
                     walletData.earned_balance = walletData.earned_balance || 0;
                 }
 
-                return new Response(JSON.stringify({
-                    ok: true,
+                return successResponse({
                     data: walletData,
                     identity: {
                         email_verified: !!(user.email),
                         phone_verified: user.phone_verified,
                         identity_verified: user.identity_verified
                     }
-                }), {
-                    status: 200, headers: corsHeaders(origin)
-                });
+                }, origin);
             }
 
             case 'transactions': {
@@ -141,13 +133,10 @@ async function handleGet(request, env, user, origin) {
                 const txns = await txnRes.json();
                 const count = txnRes.headers.get('content-range');
 
-                return new Response(JSON.stringify({
-                    ok: true,
+                return successResponse({
                     data: txns || [],
                     count: count ? parseInt(count.split('/')[1]) || 0 : (txns || []).length
-                }), {
-                    status: 200, headers: corsHeaders(origin)
-                });
+                }, origin);
             }
 
             case 'packages': {
@@ -156,9 +145,7 @@ async function handleGet(request, env, user, origin) {
                     { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
                 );
                 const packages = await pkgRes.json();
-                return new Response(JSON.stringify({ ok: true, data: packages || [] }), {
-                    status: 200, headers: corsHeaders(origin)
-                });
+                return successResponse({ data: packages || [] }, origin);
             }
 
             case 'withdrawals': {
@@ -167,9 +154,7 @@ async function handleGet(request, env, user, origin) {
                     { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
                 );
                 const withdrawals = await wRes.json();
-                return new Response(JSON.stringify({ ok: true, data: withdrawals || [] }), {
-                    status: 200, headers: corsHeaders(origin)
-                });
+                return successResponse({ data: withdrawals || [] }, origin);
             }
 
             case 'escrow-status': {
@@ -181,145 +166,35 @@ async function handleGet(request, env, user, origin) {
                     { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
                 );
                 const escrows = await escrowRes.json();
-                return new Response(JSON.stringify({ ok: true, data: escrows || [] }), {
-                    status: 200, headers: corsHeaders(origin)
-                });
+                return successResponse({ data: escrows || [] }, origin);
             }
 
             case 'spending-insights': {
-                // Fetch all transactions for this user to build spending breakdown
+                // Server-side aggregation via RPC (replaces client-side 500-txn fetch)
                 const insightDays = parseInt(url.searchParams.get('days')) || 30;
-                const insightCutoff = new Date(Date.now() - insightDays * 86400000).toISOString();
 
-                const allTxnRes = await fetch(
-                    supabaseUrl + '/rest/v1/wallet_transactions?user_id=eq.' + encodeURIComponent(user.userId) +
-                    '&created_at=gte.' + encodeURIComponent(insightCutoff) + '&select=type,amount,created_at,coin_source&order=created_at.desc&limit=500',
-                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-                );
-                const allTxns = await allTxnRes.json();
-                const txnList = Array.isArray(allTxns) ? allTxns : [];
-
-                // Categorize spending
-                const categories = {
-                    tips: { total: 0, count: 0, label: 'Tips Sent' },
-                    purchases: { total: 0, count: 0, label: 'Store Purchases' },
-                    boosts: { total: 0, count: 0, label: 'Boosts & Promotions' },
-                    withdrawals_cat: { total: 0, count: 0, label: 'Withdrawals' },
-                    other_spending: { total: 0, count: 0, label: 'Other' }
-                };
-                const earnings = {
-                    purchases_received: { total: 0, count: 0, label: 'Coins Purchased' },
-                    tips_received: { total: 0, count: 0, label: 'Tips Received' },
-                    rewards: { total: 0, count: 0, label: 'Rewards & Bonuses' },
-                    referrals: { total: 0, count: 0, label: 'Referral Bonuses' },
-                    other_earning: { total: 0, count: 0, label: 'Other Earnings' }
-                };
-
-                // Daily spending for chart data
-                const dailySpending = {};
-                const dailyEarning = {};
-
-                txnList.forEach((t) => {
-                    const amt = Math.abs(t.amount || 0);
-                    const day = (t.created_at || '').substring(0, 10);
-                    const txType = t.type || '';
-
-                    if (t.amount < 0) {
-                        // Spending
-                        if (txType === 'tip_sent' || txType === 'tip') categories.tips.total += amt, categories.tips.count++;
-                        else if (txType === 'purchase' || txType === 'store_purchase') categories.purchases.total += amt, categories.purchases.count++;
-                        else if (txType === 'boost' || txType === 'promote') categories.boosts.total += amt, categories.boosts.count++;
-                        else if (txType === 'withdrawal') categories.withdrawals_cat.total += amt, categories.withdrawals_cat.count++;
-                        else categories.other_spending.total += amt, categories.other_spending.count++;
-
-                        dailySpending[day] = (dailySpending[day] || 0) + amt;
-                    } else if (t.amount > 0) {
-                        // Earnings
-                        if (txType === 'purchase' || txType === 'coin_purchase') earnings.purchases_received.total += amt, earnings.purchases_received.count++;
-                        else if (txType === 'tip_received') earnings.tips_received.total += amt, earnings.tips_received.count++;
-                        else if (txType === 'reward' || txType === 'bonus' || txType === 'signup_bonus') earnings.rewards.total += amt, earnings.rewards.count++;
-                        else if (txType === 'referral' || txType === 'referral_bonus') earnings.referrals.total += amt, earnings.referrals.count++;
-                        else earnings.other_earning.total += amt, earnings.other_earning.count++;
-
-                        dailyEarning[day] = (dailyEarning[day] || 0) + amt;
-                    }
+                const insightRes = await fetch(supabaseUrl + '/rest/v1/rpc/get_spending_insights', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': supabaseKey,
+                        'Authorization': 'Bearer ' + supabaseKey
+                    },
+                    body: JSON.stringify({
+                        p_user_id: user.userId,
+                        p_days: insightDays
+                    })
                 });
 
-                // Build chart-friendly daily data (last N days)
-                const chartData = [];
-                for (let d = 0; d < insightDays; d++) {
-                    const date = new Date(Date.now() - d * 86400000);
-                    const dayKey = date.toISOString().substring(0, 10);
-                    chartData.unshift({
-                        date: dayKey,
-                        spent: dailySpending[dayKey] || 0,
-                        earned: dailyEarning[dayKey] || 0
-                    });
+                if (!insightRes.ok) {
+                    console.error('Spending insights RPC error:', await insightRes.text());
+                    return errorResponse('Failed to fetch spending insights', 500, origin);
                 }
 
-                const totalSpent = Object.values(categories).reduce((s, c) => { return s + c.total; }, 0);
-                const totalEarned = Object.values(earnings).reduce((s, c) => { return s + c.total; }, 0);
-
-                // Spending trend analysis: compare first half vs second half of period
-                const halfPoint = Math.floor(chartData.length / 2);
-                let firstHalfSpent = 0, secondHalfSpent = 0;
-                let firstHalfEarned = 0, secondHalfEarned = 0;
-                chartData.forEach((day, idx) => {
-                    if (idx < halfPoint) {
-                        firstHalfSpent += day.spent;
-                        firstHalfEarned += day.earned;
-                    } else {
-                        secondHalfSpent += day.spent;
-                        secondHalfEarned += day.earned;
-                    }
+                const insightResult = await insightRes.json();
+                return new Response(JSON.stringify(insightResult), {
+                    status: 200, headers: corsHeaders(origin)
                 });
-
-                let spendingTrend = 'stable';
-                let spendingChangePercent = 0;
-                if (firstHalfSpent > 0) {
-                    spendingChangePercent = Math.round(((secondHalfSpent - firstHalfSpent) / firstHalfSpent) * 100);
-                    if (spendingChangePercent > 20) spendingTrend = 'increasing';
-                    else if (spendingChangePercent < -20) spendingTrend = 'decreasing';
-                }
-
-                let earningTrend = 'stable';
-                let earningChangePercent = 0;
-                if (firstHalfEarned > 0) {
-                    earningChangePercent = Math.round(((secondHalfEarned - firstHalfEarned) / firstHalfEarned) * 100);
-                    if (earningChangePercent > 20) earningTrend = 'increasing';
-                    else if (earningChangePercent < -20) earningTrend = 'decreasing';
-                }
-
-                // Find top spending category
-                const topCategory = Object.entries(categories)
-                    .sort((a, b) => { return b[1].total - a[1].total; })[0];
-
-                // Avg daily spending
-                const avgDailySpend = insightDays > 0 ? Math.round(totalSpent / insightDays) : 0;
-                const avgDailyEarn = insightDays > 0 ? Math.round(totalEarned / insightDays) : 0;
-
-                return new Response(JSON.stringify({
-                    ok: true,
-                    data: {
-                        period_days: insightDays,
-                        total_spent: totalSpent,
-                        total_earned: totalEarned,
-                        net_flow: totalEarned - totalSpent,
-                        spending_breakdown: categories,
-                        earning_breakdown: earnings,
-                        chart_data: chartData,
-                        transaction_count: txnList.length,
-                        trends: {
-                            spending: { direction: spendingTrend, change_percent: spendingChangePercent },
-                            earning: { direction: earningTrend, change_percent: earningChangePercent },
-                            top_spending_category: topCategory ? { key: topCategory[0], label: topCategory[1].label, total: topCategory[1].total } : null,
-                            avg_daily_spend: avgDailySpend,
-                            avg_daily_earn: avgDailyEarn,
-                            projected_monthly_spend: avgDailySpend * 30,
-                            projected_monthly_earn: avgDailyEarn * 30
-                        }
-                    }
-                }), { status: 200, headers: corsHeaders(origin) });
             }
 
             case 'earn-more': {
@@ -499,8 +374,7 @@ async function handleGet(request, env, user, origin) {
                     return (priorityOrder[a.priority] || 2) - (priorityOrder[b.priority] || 2);
                 });
 
-                return new Response(JSON.stringify({
-                    ok: true,
+                return successResponse({
                     data: {
                         suggestions: suggestions,
                         current_balance: wallet.coins_balance || 0,
@@ -515,19 +389,15 @@ async function handleGet(request, env, user, origin) {
                             days_since_signup: Math.round(daysSinceSignup)
                         }
                     }
-                }), { status: 200, headers: corsHeaders(origin) });
+                }, origin);
             }
 
             default:
-                return new Response(JSON.stringify({ ok: false, error: 'Unknown action: ' + action }), {
-                    status: 400, headers: corsHeaders(origin)
-                });
+                return errorResponse('Unknown action: ' + action, 400, origin);
         }
     } catch (err) {
         console.error('coins-wallet GET error:', err);
-        return new Response(JSON.stringify({ ok: false, error: 'Internal server error' }), {
-            status: 500, headers: corsHeaders(origin)
-        });
+        return errorResponse('Internal server error', 500, origin);
     }
 }
 
@@ -540,9 +410,7 @@ async function handlePost(request, env, user, origin) {
     try {
         body = await request.json();
     } catch (e) {
-        return new Response(JSON.stringify({ ok: false, error: 'Invalid JSON' }), {
-            status: 400, headers: corsHeaders(origin)
-        });
+        return errorResponse('Invalid JSON', 400, origin);
     }
 
     const action = body.action;
@@ -556,29 +424,21 @@ async function handlePost(request, env, user, origin) {
 
                 // Validate minimum (5,000 coins = $50)
                 if (coinsAmount < 5000) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Minimum cashout is 5,000 earned coins ($50)' }), {
-                        status: 400, headers: corsHeaders(origin)
-                    });
+                    return errorResponse('Minimum cashout is 5,000 earned coins ($50)', 400, origin);
                 }
 
                 if (!paymentMethod) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Payment method is required' }), {
-                        status: 400, headers: corsHeaders(origin)
-                    });
+                    return errorResponse('Payment method is required', 400, origin);
                 }
 
                 const allowedMethods = ['paypal', 'wise', 'bank', 'crypto'];
                 if (!allowedMethods.includes(paymentMethod)) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Invalid payment method. Allowed: ' + allowedMethods.join(', ') }), {
-                        status: 400, headers: corsHeaders(origin)
-                    });
+                    return errorResponse('Invalid payment method. Allowed: ' + allowedMethods.join(', '), 400, origin);
                 }
 
                 // Identity verification: email required
                 if (!user.email) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Email verification is required before you can cash out.' }), {
-                        status: 400, headers: corsHeaders(origin)
-                    });
+                    return errorResponse('Email verification is required before you can cash out.', 400, origin);
                 }
 
                 // Get cashout fee from config
@@ -614,9 +474,7 @@ async function handlePost(request, env, user, origin) {
                 if (!wRes.ok) {
                     const errText = await wRes.text();
                     console.error('Withdrawal RPC error:', errText);
-                    return new Response(JSON.stringify({ ok: false, error: 'Failed to create withdrawal request' }), {
-                        status: 500, headers: corsHeaders(origin)
-                    });
+                    return errorResponse('Failed to create withdrawal request', 500, origin);
                 }
 
                 const result = await wRes.json();
@@ -632,44 +490,18 @@ async function handlePost(request, env, user, origin) {
             }
 
             case 'escrow-create': {
-                // Create an escrow transaction — hold coins until buyer confirms delivery
+                // Create an escrow transaction — atomic RPC prevents race conditions
                 const escrowSellerId = (body.seller_id || '').trim();
                 const escrowProductId = (body.product_id || '').trim();
                 const escrowAmount = parseInt(body.amount) || 0;
                 const escrowProductName = (body.product_name || 'Product').substring(0, 200);
 
                 if (!escrowSellerId || !escrowProductId || !escrowAmount) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Missing seller_id, product_id, or amount' }), {
-                        status: 400, headers: corsHeaders(origin)
-                    });
+                    return errorResponse('Missing seller_id, product_id, or amount', 400, origin);
                 }
 
-                if (escrowAmount < 1) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Amount must be at least 1 coin' }), {
-                        status: 400, headers: corsHeaders(origin)
-                    });
-                }
-
-                if (escrowSellerId === user.userId) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Cannot buy from yourself' }), {
-                        status: 400, headers: corsHeaders(origin)
-                    });
-                }
-
-                // Check buyer's balance
-                const buyerWalletRes = await fetch(
-                    supabaseUrl + '/rest/v1/user_wallets?user_id=eq.' + encodeURIComponent(user.userId) + '&select=coins_balance&limit=1',
-                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-                );
-                const buyerWallets = await buyerWalletRes.json();
-                if (!buyerWallets || !buyerWallets.length || (buyerWallets[0].coins_balance || 0) < escrowAmount) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Insufficient balance. You need ' + escrowAmount + ' coins.' }), {
-                        status: 400, headers: corsHeaders(origin)
-                    });
-                }
-
-                // Debit coins from buyer (hold in escrow)
-                const debitRes = await fetch(supabaseUrl + '/rest/v1/rpc/debit_coins', {
+                // Atomic escrow via RPC (prevents race conditions with FOR UPDATE lock)
+                const escrowRes2 = await fetch(supabaseUrl + '/rest/v1/rpc/create_escrow', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -677,57 +509,28 @@ async function handlePost(request, env, user, origin) {
                         'Authorization': 'Bearer ' + supabaseKey
                     },
                     body: JSON.stringify({
-                        p_user_id: user.userId,
+                        p_buyer_id: user.userId,
+                        p_seller_id: escrowSellerId,
+                        p_product_id: escrowProductId,
                         p_amount: escrowAmount,
-                        p_type: 'escrow_hold',
-                        p_description: 'Escrow hold for ' + escrowProductName,
-                        p_reference_id: escrowProductId,
-                        p_reference_type: 'escrow'
+                        p_product_name: escrowProductName
                     })
                 });
 
-                if (!debitRes.ok) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Failed to hold coins in escrow' }), {
-                        status: 500, headers: corsHeaders(origin)
+                if (!escrowRes2.ok) {
+                    const errText = await escrowRes2.text();
+                    console.error('Escrow RPC error:', errText);
+                    return errorResponse('Failed to create escrow', 500, origin);
+                }
+
+                const escrowResult = await escrowRes2.json();
+                if (escrowResult.ok === false) {
+                    return new Response(JSON.stringify(escrowResult), {
+                        status: 400, headers: corsHeaders(origin)
                     });
                 }
 
-                // Create escrow record
-                const autoReleaseAt = new Date(Date.now() + 7 * 86400000).toISOString(); // 7 days auto-release
-                const escrowCreateRes = await fetch(supabaseUrl + '/rest/v1/escrow_transactions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': supabaseKey,
-                        'Authorization': 'Bearer ' + supabaseKey,
-                        'Prefer': 'return=representation'
-                    },
-                    body: JSON.stringify({
-                        buyer_id: user.userId,
-                        seller_id: escrowSellerId,
-                        product_id: escrowProductId,
-                        product_name: escrowProductName,
-                        amount: escrowAmount,
-                        status: 'held',
-                        auto_release_at: autoReleaseAt
-                    })
-                });
-
-                if (!escrowCreateRes.ok) {
-                    // Refund the debit if escrow record creation fails
-                    await fetch(supabaseUrl + '/rest/v1/rpc/credit_coins', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey },
-                        body: JSON.stringify({ p_user_id: user.userId, p_amount: escrowAmount, p_type: 'escrow_refund', p_description: 'Escrow creation failed — refund', p_reference_type: 'escrow_refund' })
-                    });
-                    return new Response(JSON.stringify({ ok: false, error: 'Failed to create escrow record' }), {
-                        status: 500, headers: corsHeaders(origin)
-                    });
-                }
-
-                const escrowData = await escrowCreateRes.json();
-
-                // Notify seller
+                // Notify seller (non-critical, fire-and-forget)
                 await fetch(supabaseUrl + '/rest/v1/notifications', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey },
@@ -740,20 +543,16 @@ async function handlePost(request, env, user, origin) {
                     })
                 });
 
-                return new Response(JSON.stringify({
-                    ok: true,
-                    data: escrowData[0] || escrowData,
-                    message: escrowAmount + ' coins held in escrow. Seller must deliver within 7 days, then you confirm to release funds.'
-                }), { status: 200, headers: corsHeaders(origin) });
+                return new Response(JSON.stringify(escrowResult), {
+                    status: 200, headers: corsHeaders(origin)
+                });
             }
 
             case 'escrow-confirm': {
                 // Buyer confirms delivery — release coins to seller
                 const confirmEscrowId = (body.escrow_id || '').trim();
                 if (!confirmEscrowId) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Missing escrow_id' }), {
-                        status: 400, headers: corsHeaders(origin)
-                    });
+                    return errorResponse('Missing escrow_id', 400, origin);
                 }
 
                 // Get escrow record
@@ -763,17 +562,13 @@ async function handlePost(request, env, user, origin) {
                 );
                 const escrowRecords = await getEscrowRes.json();
                 if (!escrowRecords || !escrowRecords.length) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Escrow not found or already resolved' }), {
-                        status: 404, headers: corsHeaders(origin)
-                    });
+                    return errorResponse('Escrow not found or already resolved', 404, origin);
                 }
                 const escrowRecord = escrowRecords[0];
 
                 // Verify the confirmer is the buyer
                 if (escrowRecord.buyer_id !== user.userId) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Only the buyer can confirm delivery' }), {
-                        status: 403, headers: corsHeaders(origin)
-                    });
+                    return errorResponse('Only the buyer can confirm delivery', 403, origin);
                 }
 
                 // Credit coins to seller
@@ -811,10 +606,9 @@ async function handlePost(request, env, user, origin) {
                     })
                 });
 
-                return new Response(JSON.stringify({
-                    ok: true,
+                return successResponse({
                     message: 'Delivery confirmed. ' + escrowRecord.amount + ' coins released to seller.'
-                }), { status: 200, headers: corsHeaders(origin) });
+                }, origin);
             }
 
             case 'escrow-dispute': {
@@ -823,9 +617,7 @@ async function handlePost(request, env, user, origin) {
                 const disputeReason = (body.reason || '').substring(0, 500).trim();
 
                 if (!disputeEscrowId || !disputeReason) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Missing escrow_id or reason' }), {
-                        status: 400, headers: corsHeaders(origin)
-                    });
+                    return errorResponse('Missing escrow_id or reason', 400, origin);
                 }
 
                 // Verify buyer owns this escrow
@@ -835,9 +627,7 @@ async function handlePost(request, env, user, origin) {
                 );
                 const dispEscrows = await getDispEscrow.json();
                 if (!dispEscrows || !dispEscrows.length) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Escrow not found or not eligible for dispute' }), {
-                        status: 404, headers: corsHeaders(origin)
-                    });
+                    return errorResponse('Escrow not found or not eligible for dispute', 404, origin);
                 }
 
                 // Update escrow to disputed
@@ -860,21 +650,16 @@ async function handlePost(request, env, user, origin) {
                     })
                 });
 
-                return new Response(JSON.stringify({
-                    ok: true,
+                return successResponse({
                     message: 'Escrow disputed. Funds are frozen and an admin will review within 48 hours.'
-                }), { status: 200, headers: corsHeaders(origin) });
+                }, origin);
             }
 
             default:
-                return new Response(JSON.stringify({ ok: false, error: 'Unknown action: ' + action }), {
-                    status: 400, headers: corsHeaders(origin)
-                });
+                return errorResponse('Unknown action: ' + action, 400, origin);
         }
     } catch (err) {
         console.error('coins-wallet POST error:', err);
-        return new Response(JSON.stringify({ ok: false, error: 'Internal server error' }), {
-            status: 500, headers: corsHeaders(origin)
-        });
+        return errorResponse('Internal server error', 500, origin);
     }
 }
