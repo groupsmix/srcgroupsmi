@@ -11,7 +11,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
-import { requireAuth } from './_shared/auth.js';
+import { requireAuthWithOwnership } from './_shared/auth.js';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -168,18 +168,8 @@ export async function onRequest(context) {
         if (action === 'register') {
             // Verify authentication and ownership for register action
             if (body.admin_uid) {
-                const regAuth = await requireAuth(request, env, corsHeaders(origin));
+                const regAuth = await requireAuthWithOwnership(request, env, corsHeaders(origin), body.admin_uid);
                 if (regAuth instanceof Response) return regAuth;
-                const regProfileRes = await fetch(
-                    supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(regAuth.user.id) + '&select=id&limit=1',
-                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-                );
-                const regProfiles = await regProfileRes.json();
-                if (!regProfiles || !regProfiles.length || regProfiles[0].id !== body.admin_uid) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Forbidden: user_id mismatch' }), {
-                        status: 403, headers: corsHeaders(origin)
-                    });
-                }
             }
 
             // Register a new bot integration

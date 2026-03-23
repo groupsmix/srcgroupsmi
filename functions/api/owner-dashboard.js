@@ -14,41 +14,11 @@
  *   SUPABASE_SERVICE_KEY — Supabase service role key
  */
 
-/* ── CORS headers ──────────────────────────────────────────── */
+import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { requireAdmin } from './_shared/auth.js';
+
 function corsHeaders(origin) {
-    return {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': origin || 'https://groupsmix.com',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-    };
-}
-
-/* ── Verify admin auth ─────────────────────────────────────── */
-async function verifyAdmin(request, env) {
-    const supabaseUrl = env?.SUPABASE_URL;
-    const supabaseKey = env?.SUPABASE_SERVICE_KEY;
-    if (!supabaseUrl || !supabaseKey) throw new Error('Server not configured');
-
-    const authHeader = request.headers.get('Authorization') || '';
-    if (!authHeader.startsWith('Bearer ')) throw new Error('Unauthorized');
-
-    const token = authHeader.replace('Bearer ', '');
-    const userRes = await fetch(supabaseUrl + '/auth/v1/user', {
-        headers: { 'Authorization': 'Bearer ' + token, 'apikey': supabaseKey }
-    });
-    if (!userRes.ok) throw new Error('Invalid token');
-    const authUser = await userRes.json();
-
-    const profileRes = await fetch(
-        supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authUser.id) + '&select=id,role&limit=1',
-        { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-    );
-    const profiles = await profileRes.json();
-    if (!profiles || !profiles.length) throw new Error('User not found');
-    if (profiles[0].role !== 'admin') throw new Error('Admin access required');
-
-    return { authId: authUser.id, userId: profiles[0].id, role: profiles[0].role };
+    return _corsHeaders(origin, { 'Content-Type': 'application/json' });
 }
 
 /* ── Main handler ──────────────────────────────────────────── */
@@ -57,7 +27,7 @@ export async function onRequest(context) {
     const origin = request.headers.get('Origin') || 'https://groupsmix.com';
 
     if (request.method === 'OPTIONS') {
-        return new Response(null, { status: 204, headers: corsHeaders(origin) });
+        return handlePreflight(origin);
     }
 
     const supabaseUrl = env?.SUPABASE_URL;
@@ -72,7 +42,7 @@ export async function onRequest(context) {
     // Verify admin
     let admin;
     try {
-        admin = await verifyAdmin(request, env);
+        admin = await requireAdmin(request, env);
     } catch (err) {
         return new Response(JSON.stringify({ ok: false, error: err.message }), {
             status: err.message === 'Admin access required' ? 403 : 401,
@@ -195,6 +165,18 @@ async function handleGet(request, env, admin, origin) {
                 );
                 const articleGrowth = await articleGrowthRes.json();
 
+                // Build frequency maps to avoid O(n*m) filtering (NEW-CON-4)
+                const signupsByDay = {};
+                (signups || []).forEach((u) => {
+                    const key = (u.created_at || '').substring(0, 10);
+                    signupsByDay[key] = (signupsByDay[key] || 0) + 1;
+                });
+                const articlesByDay = {};
+                (articleGrowth || []).forEach((a) => {
+                    const key = (a.created_at || '').substring(0, 10);
+                    articlesByDay[key] = (articlesByDay[key] || 0) + 1;
+                });
+
                 // Build daily data
                 const dailyGrowth = [];
                 let cumUsers = 0, cumArticles = 0;
@@ -202,8 +184,8 @@ async function handleGet(request, env, admin, origin) {
                     const gdDate = new Date(Date.now() - (growthDays - 1 - gd) * 86400000);
                     const gdKey = gdDate.toISOString().substring(0, 10);
 
-                    const dayUsers = (signups || []).filter((u) => { return (u.created_at || '').substring(0, 10) === gdKey; }).length;
-                    const dayArticles = (articleGrowth || []).filter((a) => { return (a.created_at || '').substring(0, 10) === gdKey; }).length;
+                    const dayUsers = signupsByDay[gdKey] || 0;
+                    const dayArticles = articlesByDay[gdKey] || 0;
                     cumUsers += dayUsers;
                     cumArticles += dayArticles;
 
@@ -322,31 +304,28 @@ async function handleGet(request, env, admin, origin) {
                 const insightCutoff = new Date(Date.now() - insightDays * 86400000).toISOString();
                 const prevCutoff = new Date(Date.now() - insightDays * 2 * 86400000).toISOString();
 
-                // Current period users
-                const curUsersRes = await fetch(
-                    supabaseUrl + '/rest/v1/users?created_at=gte.' + encodeURIComponent(insightCutoff) + '&select=created_at&limit=1',
-                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
-                );
+                // Parallelize all 4 independent count fetches (NEW-PERF-3)
+                const [curUsersRes, prevUsersRes, curArticlesRes, prevArticlesRes] = await Promise.all([
+                    fetch(
+                        supabaseUrl + '/rest/v1/users?created_at=gte.' + encodeURIComponent(insightCutoff) + '&select=created_at&limit=1',
+                        { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
+                    ),
+                    fetch(
+                        supabaseUrl + '/rest/v1/users?created_at=gte.' + encodeURIComponent(prevCutoff) + '&created_at=lt.' + encodeURIComponent(insightCutoff) + '&select=created_at&limit=1',
+                        { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
+                    ),
+                    fetch(
+                        supabaseUrl + '/rest/v1/articles?created_at=gte.' + encodeURIComponent(insightCutoff) + '&select=created_at&limit=1',
+                        { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
+                    ),
+                    fetch(
+                        supabaseUrl + '/rest/v1/articles?created_at=gte.' + encodeURIComponent(prevCutoff) + '&created_at=lt.' + encodeURIComponent(insightCutoff) + '&select=created_at&limit=1',
+                        { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
+                    )
+                ]);
                 const curUsersCount = parseInt((curUsersRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
-
-                // Previous period users
-                const prevUsersRes = await fetch(
-                    supabaseUrl + '/rest/v1/users?created_at=gte.' + encodeURIComponent(prevCutoff) + '&created_at=lt.' + encodeURIComponent(insightCutoff) + '&select=created_at&limit=1',
-                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
-                );
                 const prevUsersCount = parseInt((prevUsersRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
-
-                // Current period articles
-                const curArticlesRes = await fetch(
-                    supabaseUrl + '/rest/v1/articles?created_at=gte.' + encodeURIComponent(insightCutoff) + '&select=created_at&limit=1',
-                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
-                );
                 const curArticlesCount = parseInt((curArticlesRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
-
-                const prevArticlesRes = await fetch(
-                    supabaseUrl + '/rest/v1/articles?created_at=gte.' + encodeURIComponent(prevCutoff) + '&created_at=lt.' + encodeURIComponent(insightCutoff) + '&select=created_at&limit=1',
-                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
-                );
                 const prevArticlesCount = parseInt((prevArticlesRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
 
                 const platformInsights = [];

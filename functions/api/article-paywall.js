@@ -9,7 +9,8 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
-import { requireAuth } from './_shared/auth.js';
+import { requireAuthWithOwnership } from './_shared/auth.js';
+import { errorResponse, successResponse } from './_shared/response.js';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -27,10 +28,7 @@ export async function onRequest(context) {
     const supabaseKey = env?.SUPABASE_SERVICE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-        return new Response(
-            JSON.stringify({ ok: false, error: 'Service not configured' }),
-            { status: 503, headers: corsHeaders(origin) }
-        );
+        return errorResponse('Service not configured', 503, origin);
     }
 
     const headers = {
@@ -45,28 +43,12 @@ export async function onRequest(context) {
             const { action, article_id, user_id } = body;
 
             if (!article_id || !user_id) {
-                return new Response(
-                    JSON.stringify({ ok: false, error: 'Missing article_id or user_id' }),
-                    { status: 400, headers: corsHeaders(origin) }
-                );
+                return errorResponse('Missing article_id or user_id', 400, origin);
             }
 
             // Verify the caller's JWT and ensure ownership
-            const authResult = await requireAuth(request, env, corsHeaders(origin));
-            if (authResult instanceof Response) return authResult;
-
-            // Match authenticated user to the user_id in the request
-            const profileRes = await fetch(
-                supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authResult.user.id) + '&select=id&limit=1',
-                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-            );
-            const profiles = await profileRes.json();
-            if (!profiles || !profiles.length || profiles[0].id !== user_id) {
-                return new Response(
-                    JSON.stringify({ ok: false, error: 'Forbidden: user_id mismatch' }),
-                    { status: 403, headers: corsHeaders(origin) }
-                );
-            }
+            const auth = await requireAuthWithOwnership(request, env, corsHeaders(origin), user_id);
+            if (auth instanceof Response) return auth;
 
             if (action === 'check_access') {
                 const res = await fetch(supabaseUrl + '/rest/v1/rpc/check_article_access', {
@@ -76,17 +58,11 @@ export async function onRequest(context) {
                 });
 
                 if (!res.ok) {
-                    return new Response(
-                        JSON.stringify({ ok: false, error: 'Failed to check access' }),
-                        { status: 500, headers: corsHeaders(origin) }
-                    );
+                    return errorResponse('Failed to check access', 500, origin);
                 }
 
                 const hasAccess = await res.json();
-                return new Response(
-                    JSON.stringify({ ok: true, has_access: hasAccess }),
-                    { status: 200, headers: corsHeaders(origin) }
-                );
+                return successResponse({ has_access: hasAccess }, origin);
             }
 
             if (action === 'purchase') {
@@ -99,24 +75,15 @@ export async function onRequest(context) {
                 if (!res.ok) {
                     const errText = await res.text();
                     console.error('purchase_article error:', res.status, errText);
-                    return new Response(
-                        JSON.stringify({ ok: false, error: 'Purchase failed' }),
-                        { status: 500, headers: corsHeaders(origin) }
-                    );
+                    return errorResponse('Purchase failed', 500, origin);
                 }
 
                 const result = await res.json();
                 if (result.error) {
-                    return new Response(
-                        JSON.stringify({ ok: false, error: result.error, details: result }),
-                        { status: 400, headers: corsHeaders(origin) }
-                    );
+                    return errorResponse(result.error, 400, origin);
                 }
 
-                return new Response(
-                    JSON.stringify({ ok: true, result }),
-                    { status: 200, headers: corsHeaders(origin) }
-                );
+                return successResponse({ result }, origin);
             }
 
             if (action === 'earnings') {
@@ -127,35 +94,20 @@ export async function onRequest(context) {
                 });
 
                 if (!res.ok) {
-                    return new Response(
-                        JSON.stringify({ ok: false, error: 'Failed to fetch earnings' }),
-                        { status: 500, headers: corsHeaders(origin) }
-                    );
+                    return errorResponse('Failed to fetch earnings', 500, origin);
                 }
 
                 const data = await res.json();
-                return new Response(
-                    JSON.stringify({ ok: true, data }),
-                    { status: 200, headers: corsHeaders(origin) }
-                );
+                return successResponse({ data }, origin);
             }
 
-            return new Response(
-                JSON.stringify({ ok: false, error: 'Invalid action. Use "check_access", "purchase", or "earnings"' }),
-                { status: 400, headers: corsHeaders(origin) }
-            );
+            return errorResponse('Invalid action. Use "check_access", "purchase", or "earnings"', 400, origin);
         }
 
-        return new Response(
-            JSON.stringify({ ok: false, error: 'Method not allowed' }),
-            { status: 405, headers: corsHeaders(origin) }
-        );
+        return errorResponse('Method not allowed', 405, origin);
 
     } catch (err) {
         console.error('article-paywall error:', err);
-        return new Response(
-            JSON.stringify({ ok: false, error: 'Internal server error' }),
-            { status: 500, headers: corsHeaders(origin) }
-        );
+        return errorResponse('Internal server error', 500, origin);
     }
 }

@@ -15,49 +15,11 @@
  *   SUPABASE_SERVICE_KEY — Supabase service role key
  */
 
-/* ── CORS headers ──────────────────────────────────────────── */
+import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { requireAuthWithProfile } from './_shared/auth.js';
+
 function corsHeaders(origin) {
-    return {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': origin || 'https://groupsmix.com',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-    };
-}
-
-/* ── Verify auth and get internal user ID ──────────────────── */
-async function verifyAndGetUser(request, env) {
-    const supabaseUrl = env?.SUPABASE_URL;
-    const supabaseKey = env?.SUPABASE_SERVICE_KEY;
-    if (!supabaseUrl || !supabaseKey) throw new Error('Server not configured');
-
-    const authHeader = request.headers.get('Authorization') || '';
-    if (!authHeader.startsWith('Bearer ')) throw new Error('Unauthorized');
-
-    const token = authHeader.replace('Bearer ', '');
-    const userRes = await fetch(supabaseUrl + '/auth/v1/user', {
-        headers: { 'Authorization': 'Bearer ' + token, 'apikey': supabaseKey }
-    });
-    if (!userRes.ok) throw new Error('Invalid token');
-    const authUser = await userRes.json();
-
-    // Get internal user with identity verification fields
-    const profileRes = await fetch(
-        supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authUser.id) + '&select=id,role,email,phone_verified,phone_number,identity_verified&limit=1',
-        { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-    );
-    const profiles = await profileRes.json();
-    if (!profiles || !profiles.length) throw new Error('User not found');
-
-    return {
-        authId: authUser.id,
-        userId: profiles[0].id,
-        role: profiles[0].role,
-        email: profiles[0].email,
-        phone_verified: profiles[0].phone_verified || false,
-        phone_number: profiles[0].phone_number || '',
-        identity_verified: profiles[0].identity_verified || false
-    };
+    return _corsHeaders(origin, { 'Content-Type': 'application/json' });
 }
 
 /* ── Main handler ──────────────────────────────────────────── */
@@ -66,7 +28,7 @@ export async function onRequest(context) {
     const origin = request.headers.get('Origin') || 'https://groupsmix.com';
 
     if (request.method === 'OPTIONS') {
-        return new Response(null, { status: 204, headers: corsHeaders(origin) });
+        return handlePreflight(origin);
     }
 
     const supabaseUrl = env?.SUPABASE_URL;
@@ -78,10 +40,19 @@ export async function onRequest(context) {
         });
     }
 
-    // Verify authentication
+    // Verify authentication using shared auth helper
     let user;
     try {
-        user = await verifyAndGetUser(request, env);
+        const authResult = await requireAuthWithProfile(request, env, 'id,role,email,phone_verified,phone_number,identity_verified');
+        user = {
+            authId: authResult.authId,
+            userId: authResult.userId,
+            role: authResult.profile.role,
+            email: authResult.profile.email,
+            phone_verified: authResult.profile.phone_verified || false,
+            phone_number: authResult.profile.phone_number || '',
+            identity_verified: authResult.profile.identity_verified || false
+        };
     } catch (err) {
         return new Response(JSON.stringify({ ok: false, error: err.message }), {
             status: 401, headers: corsHeaders(origin)
@@ -352,27 +323,25 @@ async function handleGet(request, env, user, origin) {
             }
 
             case 'earn-more': {
-                // Get user profile data to determine personalized earn suggestions
-                const profileRes2 = await fetch(
-                    supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(user.authId) +
-                    '&select=id,display_name,photo_url,bio,article_count,writer_xp,gxp,referral_code,last_active_at,created_at&limit=1',
-                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-                );
+                // Parallelize all 3 independent data fetches (NEW-PERF-2)
+                const [profileRes2, walletRes2, recentTxnRes] = await Promise.all([
+                    fetch(
+                        supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(user.authId) +
+                        '&select=id,display_name,photo_url,bio,article_count,writer_xp,gxp,referral_code,last_active_at,created_at&limit=1',
+                        { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                    ),
+                    fetch(
+                        supabaseUrl + '/rest/v1/user_wallets?user_id=eq.' + encodeURIComponent(user.userId) + '&limit=1',
+                        { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                    ),
+                    fetch(
+                        supabaseUrl + '/rest/v1/wallet_transactions?user_id=eq.' + encodeURIComponent(user.userId) +
+                        '&order=created_at.desc&select=type,amount,created_at&limit=50',
+                        { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                    )
+                ]);
                 const profile = (await profileRes2.json())[0] || {};
-
-                // Get wallet balance
-                const walletRes2 = await fetch(
-                    supabaseUrl + '/rest/v1/user_wallets?user_id=eq.' + encodeURIComponent(user.userId) + '&limit=1',
-                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-                );
                 const wallet = ((await walletRes2.json()) || [])[0] || {};
-
-                // Get recent activity for personalization
-                const recentTxnRes = await fetch(
-                    supabaseUrl + '/rest/v1/wallet_transactions?user_id=eq.' + encodeURIComponent(user.userId) +
-                    '&order=created_at.desc&select=type,amount,created_at&limit=50',
-                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-                );
                 let recentTxns = await recentTxnRes.json();
                 recentTxns = Array.isArray(recentTxns) ? recentTxns : [];
 
@@ -612,42 +581,6 @@ async function handlePost(request, env, user, origin) {
                     });
                 }
 
-                // Check EARNED balance (only earned coins can be cashed out)
-                const walletRes = await fetch(
-                    supabaseUrl + '/rest/v1/user_wallets?user_id=eq.' + encodeURIComponent(user.userId) + '&select=coins_balance,purchased_balance,earned_balance&limit=1',
-                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-                );
-                const wallets = await walletRes.json();
-                if (!wallets || !wallets.length) {
-                    return new Response(JSON.stringify({ ok: false, error: 'Wallet not found' }), {
-                        status: 400, headers: corsHeaders(origin)
-                    });
-                }
-
-                const earnedBalance = wallets[0].earned_balance || 0;
-                if (earnedBalance < coinsAmount) {
-                    return new Response(JSON.stringify({
-                        ok: false,
-                        error: 'Insufficient earned coin balance. You have ' + earnedBalance + ' earned coins available for cashout. Bought coins cannot be cashed out.',
-                        earned_balance: earnedBalance
-                    }), {
-                        status: 400, headers: corsHeaders(origin)
-                    });
-                }
-
-                // Check for existing pending withdrawals
-                const pendingRes = await fetch(
-                    supabaseUrl + '/rest/v1/withdrawal_requests?user_id=eq.' + encodeURIComponent(user.userId) +
-                    '&status=eq.pending&limit=1',
-                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-                );
-                const pending = await pendingRes.json();
-                if (pending && pending.length > 0) {
-                    return new Response(JSON.stringify({ ok: false, error: 'You already have a pending withdrawal request. Please wait for it to be processed.' }), {
-                        status: 400, headers: corsHeaders(origin)
-                    });
-                }
-
                 // Get cashout fee from config
                 let feePercent = 10;
                 try {
@@ -661,102 +594,39 @@ async function handlePost(request, env, user, origin) {
                     }
                 } catch (e) { /* use default */ }
 
-                // Calculate fee and payout
-                const feeCoins = Math.floor(coinsAmount * feePercent / 100);
-                const payoutCoins = coinsAmount - feeCoins;
-                const usdAmount = payoutCoins * 0.01; // $1 = 100 coins → $0.01 per coin
-
-                // Create withdrawal request with fee details
-                const wRes = await fetch(supabaseUrl + '/rest/v1/withdrawal_requests', {
+                // Atomic withdrawal via RPC (prevents race conditions with FOR UPDATE lock)
+                const wRes = await fetch(supabaseUrl + '/rest/v1/rpc/create_withdrawal', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'apikey': supabaseKey,
-                        'Authorization': 'Bearer ' + supabaseKey,
-                        'Prefer': 'return=representation'
+                        'Authorization': 'Bearer ' + supabaseKey
                     },
                     body: JSON.stringify({
-                        user_id: user.userId,
-                        coins_amount: coinsAmount,
-                        usd_amount: usdAmount,
-                        payment_method: paymentMethod,
-                        payment_details: paymentDetails,
-                        status: 'pending',
-                        fee_percent: feePercent,
-                        fee_amount: feeCoins * 0.01,
-                        payout_amount: usdAmount
+                        p_user_id: user.userId,
+                        p_coins_amount: coinsAmount,
+                        p_payment_method: paymentMethod,
+                        p_payment_details: paymentDetails,
+                        p_fee_percent: feePercent
                     })
                 });
 
                 if (!wRes.ok) {
                     const errText = await wRes.text();
-                    console.error('Withdrawal request error:', errText);
+                    console.error('Withdrawal RPC error:', errText);
                     return new Response(JSON.stringify({ ok: false, error: 'Failed to create withdrawal request' }), {
                         status: 500, headers: corsHeaders(origin)
                     });
                 }
 
-                // Debit earned coins from wallet (withdrawal only touches earned balance)
-                // We directly update earned_balance to prevent debit_coins from spending purchased first
-                await fetch(supabaseUrl + '/rest/v1/user_wallets?user_id=eq.' + encodeURIComponent(user.userId), {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': supabaseKey,
-                        'Authorization': 'Bearer ' + supabaseKey
-                    },
-                    body: JSON.stringify({
-                        coins_balance: wallets[0].coins_balance - coinsAmount,
-                        earned_balance: earnedBalance - coinsAmount,
-                        total_withdrawn: (wallets[0].total_withdrawn || 0) + coinsAmount,
-                        pending_withdrawal: (wallets[0].pending_withdrawal || 0) + coinsAmount,
-                        updated_at: new Date().toISOString()
-                    })
-                });
-
-                // Log the withdrawal transaction
-                await fetch(supabaseUrl + '/rest/v1/wallet_transactions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': supabaseKey,
-                        'Authorization': 'Bearer ' + supabaseKey
-                    },
-                    body: JSON.stringify({
-                        user_id: user.userId,
-                        type: 'withdrawal',
-                        amount: -coinsAmount,
-                        balance_after: wallets[0].coins_balance - coinsAmount,
-                        description: 'Cashout request: ' + coinsAmount + ' earned coins (fee: ' + feePercent + '%, payout: $' + usdAmount.toFixed(2) + ') via ' + paymentMethod,
-                        coin_source: 'earned',
-                        metadata: JSON.stringify({ fee_percent: feePercent, fee_coins: feeCoins, payout_usd: usdAmount, payment_method: paymentMethod })
-                    })
-                });
-
-                // Log platform revenue from cashout fee
-                if (feeCoins > 0) {
-                    await fetch(supabaseUrl + '/rest/v1/platform_revenue', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'apikey': supabaseKey,
-                            'Authorization': 'Bearer ' + supabaseKey
-                        },
-                        body: JSON.stringify({
-                            source: 'cashout_fee',
-                            amount: feeCoins,
-                            reference_type: 'withdrawal',
-                            metadata: JSON.stringify({ user_id: user.userId, coins_amount: coinsAmount, fee_percent: feePercent, payout_usd: usdAmount })
-                        })
+                const result = await wRes.json();
+                if (result.ok === false) {
+                    return new Response(JSON.stringify(result), {
+                        status: 400, headers: corsHeaders(origin)
                     });
                 }
 
-                const withdrawal = await wRes.json();
-                return new Response(JSON.stringify({
-                    ok: true,
-                    data: withdrawal[0] || withdrawal,
-                    fee: { percent: feePercent, coins: feeCoins, payout_usd: usdAmount }
-                }), {
+                return new Response(JSON.stringify(result), {
                     status: 200, headers: corsHeaders(origin)
                 });
             }

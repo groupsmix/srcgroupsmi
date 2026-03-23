@@ -19,7 +19,7 @@
  */
 
 import { corsHeaders as _sharedCorsHeaders, handlePreflight } from './_shared/cors.js';
-import { requireAuth } from './_shared/auth.js';
+import { requireAuthWithOwnership } from './_shared/auth.js';
 
 function corsHeaders(origin, method) {
     return _sharedCorsHeaders(origin, {
@@ -392,16 +392,8 @@ export async function onRequest(context) {
             if (postBody.action === 'implicit_feedback') {
                 // Verify authentication and ownership for implicit feedback
                 if (postBody.user_id) {
-                    const fbAuth = await requireAuth(request, env, corsHeaders(origin));
+                    const fbAuth = await requireAuthWithOwnership(request, env, corsHeaders(origin), postBody.user_id);
                     if (fbAuth instanceof Response) return fbAuth;
-                    const fbProfileRes = await fetch(
-                        supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(fbAuth.user.id) + '&select=id&limit=1',
-                        { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-                    );
-                    const fbProfiles = await fbProfileRes.json();
-                    if (!fbProfiles || !fbProfiles.length || fbProfiles[0].id !== postBody.user_id) {
-                        return jsonResponse({ ok: false, error: 'Forbidden: user_id mismatch' }, 403, origin);
-                    }
                 }
                 const fbResult = await recordImplicitFeedback(supabaseUrl, supabaseKey, postBody);
                 return jsonResponse(fbResult, fbResult.ok ? 200 : 400, origin);
@@ -420,16 +412,8 @@ export async function onRequest(context) {
         }
 
         // Verify authentication and ownership for personalized feed
-        const feedAuth = await requireAuth(request, env, corsHeaders(origin));
+        const feedAuth = await requireAuthWithOwnership(request, env, corsHeaders(origin), userId);
         if (feedAuth instanceof Response) return feedAuth;
-        const feedProfileRes = await fetch(
-            supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(feedAuth.user.id) + '&select=id&limit=1',
-            { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-        );
-        const feedProfiles = await feedProfileRes.json();
-        if (!feedProfiles || !feedProfiles.length || feedProfiles[0].id !== userId) {
-            return jsonResponse({ ok: false, error: 'Forbidden: user_id mismatch' }, 403, origin);
-        }
 
         if (feedType === 'groups') {
             const result = await getGroupFeed(supabaseUrl, supabaseKey, userId, limit, offset, explorationRatio);

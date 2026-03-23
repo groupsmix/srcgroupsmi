@@ -23,11 +23,11 @@ const Security = {
     // sanitize() replaces / with &#x2F; which breaks valid URLs in src attributes
     sanitizeUrl(url) {
         if (typeof url !== 'string') return '';
-        var trimmed = url.trim();
+        const trimmed = url.trim();
         // Only allow https:// URLs
         if (!/^https:\/\//i.test(trimmed)) return '';
         // Block dangerous schemes that could be embedded
-        var lower = trimmed.toLowerCase();
+        const lower = trimmed.toLowerCase();
         if (lower.includes('javascript:') || lower.includes('data:') ||
             lower.includes('file:') || lower.includes('vbscript:')) return '';
         // Encode only HTML-dangerous characters, NOT forward slashes
@@ -50,7 +50,7 @@ const Security = {
      * Requirements: min 8 chars, uppercase, lowercase, digit, special char.
      */
     validatePassword(password) {
-        var errors = [];
+        const errors = [];
         if (typeof password !== 'string' || password.length < 8) errors.push('Password must be at least 8 characters');
         if (password && !/[A-Z]/.test(password)) errors.push('Must contain an uppercase letter');
         if (password && !/[a-z]/.test(password)) errors.push('Must contain a lowercase letter');
@@ -65,7 +65,7 @@ const Security = {
      */
     getPasswordStrength(password) {
         if (typeof password !== 'string' || !password) return { score: 0, label: 'Too short', color: 'var(--error)' };
-        var score = 0;
+        let score = 0;
         if (password.length >= 8) score++;
         if (password.length >= 12) score++;
         if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
@@ -73,7 +73,7 @@ const Security = {
         if (/[^A-Za-z0-9]/.test(password)) score++;
         // Cap at 4
         score = Math.min(4, score);
-        var labels = [
+        const labels = [
             { label: 'Very weak', color: 'var(--error)' },
             { label: 'Weak', color: 'var(--error)' },
             { label: 'Fair', color: 'var(--warning)' },
@@ -89,11 +89,11 @@ const Security = {
      */
     isSafeNavigationUrl(url) {
         if (typeof url !== 'string' || !url.trim()) return false;
-        var trimmed = url.trim().toLowerCase();
+        const trimmed = url.trim().toLowerCase();
         // Only allow http(s) and relative paths
         if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
             // Block dangerous schemes that might be embedded
-            var dangerous = ['javascript:', 'data:', 'file:', 'vbscript:', 'blob:'];
+            const dangerous = ['javascript:', 'data:', 'file:', 'vbscript:', 'blob:'];
             if (dangerous.some(function(d) { return trimmed.includes(d); })) return false;
             return true;
         }
@@ -200,7 +200,7 @@ const Security = {
                 return { ok: false, errors: ['Server validation unavailable. Please try again.'], serverBypassed: true };
             }
 
-            var data;
+            let data;
             try {
                 data = await res.json();
             } catch (jsonErr) {

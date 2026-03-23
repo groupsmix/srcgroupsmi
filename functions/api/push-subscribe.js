@@ -10,7 +10,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
-import { requireAuth } from './_shared/auth.js';
+import { requireAuthWithOwnership } from './_shared/auth.js';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -59,19 +59,8 @@ export async function onRequest(context) {
 
     // Verify authentication and ownership when uid is provided
     if (uid) {
-        const authResult = await requireAuth(request, env, corsHeaders(origin));
+        const authResult = await requireAuthWithOwnership(request, env, corsHeaders(origin), uid);
         if (authResult instanceof Response) return authResult;
-        const profileRes = await fetch(
-            supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authResult.user.id) + '&select=id&limit=1',
-            { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-        );
-        const profiles = await profileRes.json();
-        if (!profiles || !profiles.length || profiles[0].id !== uid) {
-            return new Response(
-                JSON.stringify({ ok: false, error: 'Forbidden: user_id mismatch' }),
-                { status: 403, headers: corsHeaders(origin) }
-            );
-        }
     }
 
     if (!subscription || !subscription.endpoint) {

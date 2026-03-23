@@ -7,7 +7,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
-import { requireAuth } from './_shared/auth.js';
+import { requireAuthWithOwnership } from './_shared/auth.js';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -43,18 +43,8 @@ export async function onRequest(context) {
             }
 
             // Verify authentication and ownership
-            const authResult = await requireAuth(request, env, corsHeaders(origin));
-            if (authResult instanceof Response) return authResult;
-            const profileRes = await fetch(
-                supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authResult.user.id) + '&select=id&limit=1',
-                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-            );
-            const codeProfiles = await profileRes.json();
-            if (!codeProfiles || !codeProfiles.length || codeProfiles[0].id !== uid) {
-                return new Response(JSON.stringify({ ok: false, error: 'Forbidden: user_id mismatch' }), {
-                    status: 403, headers: corsHeaders(origin)
-                });
-            }
+            const codeAuth = await requireAuthWithOwnership(request, env, corsHeaders(origin), uid);
+            if (codeAuth instanceof Response) return codeAuth;
 
             // Get or generate referral code
             const res = await fetch(
@@ -92,18 +82,8 @@ export async function onRequest(context) {
             }
 
             // Verify authentication and ownership
-            const statsAuth = await requireAuth(request, env, corsHeaders(origin));
+            const statsAuth = await requireAuthWithOwnership(request, env, corsHeaders(origin), uid);
             if (statsAuth instanceof Response) return statsAuth;
-            const statsProfileRes = await fetch(
-                supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(statsAuth.user.id) + '&select=id&limit=1',
-                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-            );
-            const statsProfiles = await statsProfileRes.json();
-            if (!statsProfiles || !statsProfiles.length || statsProfiles[0].id !== uid) {
-                return new Response(JSON.stringify({ ok: false, error: 'Forbidden: user_id mismatch' }), {
-                    status: 403, headers: corsHeaders(origin)
-                });
-            }
 
             // Get referral stats
             const [userRes, referralsRes] = await Promise.all([
@@ -160,18 +140,8 @@ export async function onRequest(context) {
             }
 
             // Verify authentication and ownership of new_user_id
-            const applyAuth = await requireAuth(request, env, corsHeaders(origin));
+            const applyAuth = await requireAuthWithOwnership(request, env, corsHeaders(origin), body.new_user_id);
             if (applyAuth instanceof Response) return applyAuth;
-            const applyProfileRes = await fetch(
-                supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(applyAuth.user.id) + '&select=id&limit=1',
-                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-            );
-            const applyProfiles = await applyProfileRes.json();
-            if (!applyProfiles || !applyProfiles.length || applyProfiles[0].id !== body.new_user_id) {
-                return new Response(JSON.stringify({ ok: false, error: 'Forbidden: user_id mismatch' }), {
-                    status: 403, headers: corsHeaders(origin)
-                });
-            }
 
             // Process the referral
             const res = await fetch(

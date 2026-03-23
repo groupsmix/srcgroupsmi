@@ -16,6 +16,7 @@
  */
 
 import { corsHeaders, handlePreflight } from './_shared/cors.js';
+import { requireAuthWithOwnership } from './_shared/auth.js';
 
 /** CORS headers with caching for GET responses */
 function cachedCorsHeaders(origin) {
@@ -226,17 +227,37 @@ export async function onRequest(context) {
     try {
         /* ── User-based hybrid recommendations ─────────────────── */
         if (userId) {
-            const userInteractionsRes = await fetch(
-                supabaseUrl + '/rest/v1/user_interests?user_id=eq.' + encodeURIComponent(userId) + '&select=category,tags,weight&order=weight.desc&limit=50',
-                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-            );
+            // Verify the caller owns this user_id (NEW-SEC-2)
+            const authCheck = await requireAuthWithOwnership(request, env, cachedCorsHeaders(origin), userId);
+            if (authCheck instanceof Response) return authCheck;
+
+            // Parallelize all 5 independent data fetches (NEW-PERF-1)
+            const [userInteractionsRes, implicitRes, sessionRes, collabRes, candidatesRes] = await Promise.all([
+                fetch(
+                    supabaseUrl + '/rest/v1/user_interests?user_id=eq.' + encodeURIComponent(userId) + '&select=category,tags,weight&order=weight.desc&limit=50',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                ),
+                fetch(
+                    supabaseUrl + '/rest/v1/feed_impressions?user_id=eq.' + encodeURIComponent(userId) + '&select=content_id,dwell_seconds,clicked,content_type&content_type=eq.group&order=created_at.desc&limit=100',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                ),
+                fetch(
+                    supabaseUrl + '/rest/v1/user_sessions?user_id=eq.' + encodeURIComponent(userId) + '&select=created_at&order=created_at.desc&limit=2',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                ),
+                fetch(
+                    supabaseUrl + '/rest/v1/collaborative_pairs?content_type=eq.group&select=content_id_a,content_id_b,co_occurrence_count,similarity_score&order=similarity_score.desc&limit=200',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                ),
+                fetch(
+                    supabaseUrl + '/rest/v1/groups?status=eq.approved&select=id,name,platform,category,country,description,trust_score,views,click_count,avg_rating,review_count,tags,link,likes_count,created_at&order=trust_score.desc&limit=200',
+                    { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+                )
+            ]);
+
             let userInteractions = await userInteractionsRes.json();
             userInteractions = Array.isArray(userInteractions) ? userInteractions : [];
 
-            const implicitRes = await fetch(
-                supabaseUrl + '/rest/v1/feed_impressions?user_id=eq.' + encodeURIComponent(userId) + '&select=content_id,dwell_seconds,clicked,content_type&content_type=eq.group&order=created_at.desc&limit=100',
-                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-            );
             let implicitFeedback = await implicitRes.json();
             implicitFeedback = Array.isArray(implicitFeedback) ? implicitFeedback : [];
 
@@ -249,10 +270,6 @@ export async function onRequest(context) {
                 implicitSignals[fb.content_id] = (implicitSignals[fb.content_id] || 0) + signal;
             });
 
-            const sessionRes = await fetch(
-                supabaseUrl + '/rest/v1/user_sessions?user_id=eq.' + encodeURIComponent(userId) + '&select=created_at&order=created_at.desc&limit=2',
-                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-            );
             let sessions = await sessionRes.json();
             sessions = Array.isArray(sessions) ? sessions : [];
             let daysSinceLastVisit = 0;
@@ -263,10 +280,6 @@ export async function onRequest(context) {
             const previousCategories = userInteractions.map((ui) => { return ui.category; }).filter(Boolean);
             const userEmbedding = buildUserEmbedding(userInteractions);
 
-            const collabRes = await fetch(
-                supabaseUrl + '/rest/v1/collaborative_pairs?content_type=eq.group&select=content_id_a,content_id_b,co_occurrence_count,similarity_score&order=similarity_score.desc&limit=200',
-                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-            );
             let collabPairs = await collabRes.json();
             collabPairs = Array.isArray(collabPairs) ? collabPairs : [];
 
@@ -281,10 +294,6 @@ export async function onRequest(context) {
                 }
             });
 
-            const candidatesRes = await fetch(
-                supabaseUrl + '/rest/v1/groups?status=eq.approved&select=id,name,platform,category,country,description,trust_score,views,click_count,avg_rating,review_count,tags,link,likes_count,created_at&order=trust_score.desc&limit=200',
-                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-            );
             let allCandidates = await candidatesRes.json();
             allCandidates = Array.isArray(allCandidates) ? allCandidates : [];
 
