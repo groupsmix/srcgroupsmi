@@ -66,11 +66,11 @@ export async function onRequest(context) {
             });
         }
 
-        var group = groups[0];
+        const group = groups[0];
 
         if (action === 'tips') {
             // Generate growth tips based on group data
-            var tips = [];
+            const tips = [];
 
             if (!group.description || group.description.length < 50) {
                 tips.push({
@@ -156,27 +156,27 @@ export async function onRequest(context) {
 
         if (action === 'predictive-growth') {
             // Predictive growth analytics using linear regression on the last 30 days
-            var days = parseInt(url.searchParams.get('days')) || 30;
+            const days = parseInt(url.searchParams.get('days')) || 30;
 
             // Get daily view snapshots (using analytics events if available)
-            var cutoff = new Date(Date.now() - days * 86400000).toISOString();
+            const cutoff = new Date(Date.now() - days * 86400000).toISOString();
 
             // Get reviews over time for growth tracking
-            var growthReviewsRes = await fetch(
+            const growthReviewsRes = await fetch(
                 supabaseUrl + '/rest/v1/reviews?group_id=eq.' + encodeURIComponent(groupId) + '&created_at=gte.' + encodeURIComponent(cutoff) + '&select=rating,created_at&order=created_at.asc',
                 { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
             );
-            var growthReviews = await growthReviewsRes.json();
+            let growthReviews = await growthReviewsRes.json();
             growthReviews = Array.isArray(growthReviews) ? growthReviews : [];
 
             // Build daily data points
-            var dailyData = [];
-            var cumulativeReviews = 0;
-            for (var d = 0; d < days; d++) {
-                var dayDate = new Date(Date.now() - (days - 1 - d) * 86400000);
-                var dayKey = dayDate.toISOString().substring(0, 10);
+            const dailyData = [];
+            let cumulativeReviews = 0;
+            for (let d = 0; d < days; d++) {
+                const dayDate = new Date(Date.now() - (days - 1 - d) * 86400000);
+                const dayKey = dayDate.toISOString().substring(0, 10);
 
-                var dayReviews = growthReviews.filter(function(r) {
+                const dayReviews = growthReviews.filter((r) => {
                     return (r.created_at || '').substring(0, 10) === dayKey;
                 });
                 cumulativeReviews += dayReviews.length;
@@ -187,29 +187,29 @@ export async function onRequest(context) {
                     new_reviews: dayReviews.length,
                     cumulative_reviews: cumulativeReviews,
                     avg_rating: dayReviews.length > 0
-                        ? dayReviews.reduce(function(s, r) { return s + (r.rating || 0); }, 0) / dayReviews.length
+                        ? dayReviews.reduce((s, r) => { return s + (r.rating || 0); }, 0) / dayReviews.length
                         : null
                 });
             }
 
             // Simple linear regression on cumulative reviews
-            var n = dailyData.length;
-            var sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
-            dailyData.forEach(function(dp) {
+            const n = dailyData.length;
+            let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+            dailyData.forEach((dp) => {
                 sumX += dp.day_index;
                 sumY += dp.cumulative_reviews;
                 sumXY += dp.day_index * dp.cumulative_reviews;
                 sumXX += dp.day_index * dp.day_index;
             });
 
-            var slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX) || 0;
-            var intercept = (sumY - slope * sumX) / n || 0;
+            const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX) || 0;
+            const intercept = (sumY - slope * sumX) / n || 0;
 
             // Project next 14 days
-            var projections = [];
-            for (var p = 1; p <= 14; p++) {
-                var projDay = n + p - 1;
-                var projDate = new Date(Date.now() + p * 86400000);
+            const projections = [];
+            for (let p = 1; p <= 14; p++) {
+                const projDay = n + p - 1;
+                const projDate = new Date(Date.now() + p * 86400000);
                 projections.push({
                     date: projDate.toISOString().substring(0, 10),
                     projected_cumulative_reviews: Math.max(cumulativeReviews, Math.round(slope * projDay + intercept)),
@@ -217,12 +217,12 @@ export async function onRequest(context) {
                 });
             }
 
-            var growthRate = cumulativeReviews > 0 ? (slope / Math.max(1, cumulativeReviews / n) * 100) : 0;
+            const growthRate = cumulativeReviews > 0 ? (slope / Math.max(1, cumulativeReviews / n) * 100) : 0;
 
             // Get view trend data from analytics if available
-            var viewTrend = null;
+            let viewTrend = null;
             try {
-                var viewsRes = await fetch(
+                const viewsRes = await fetch(
                     supabaseUrl + '/rest/v1/rpc/get_group_view_history',
                     {
                         method: 'POST',
@@ -231,19 +231,19 @@ export async function onRequest(context) {
                     }
                 );
                 if (viewsRes.ok) {
-                    var viewHistory = await viewsRes.json();
+                    const viewHistory = await viewsRes.json();
                     if (Array.isArray(viewHistory) && viewHistory.length > 1) {
                         // Linear regression on views
-                        var vn = viewHistory.length;
-                        var vsumX = 0, vsumY = 0, vsumXY = 0, vsumXX = 0;
-                        viewHistory.forEach(function(vp, vi) {
+                        const vn = viewHistory.length;
+                        let vsumX = 0, vsumY = 0, vsumXY = 0, vsumXX = 0;
+                        viewHistory.forEach((vp, vi) => {
                             vsumX += vi;
                             vsumY += (vp.views || 0);
                             vsumXY += vi * (vp.views || 0);
                             vsumXX += vi * vi;
                         });
-                        var viewSlope = (vn * vsumXY - vsumX * vsumY) / (vn * vsumXX - vsumX * vsumX) || 0;
-                        var avgDailyViews = vsumY / vn;
+                        const viewSlope = (vn * vsumXY - vsumX * vsumY) / (vn * vsumXX - vsumX * vsumX) || 0;
+                        const avgDailyViews = vsumY / vn;
                         viewTrend = {
                             slope: parseFloat(viewSlope.toFixed(4)),
                             direction: viewSlope > 1 ? 'growing' : (viewSlope < -1 ? 'declining' : 'stable'),
@@ -282,30 +282,30 @@ export async function onRequest(context) {
 
         if (action === 'insights') {
             // Actionable insights — derive patterns from group data
-            var insightsDays = parseInt(url.searchParams.get('days')) || 30;
-            var insightsCutoff = new Date(Date.now() - insightsDays * 86400000).toISOString();
+            const insightsDays = parseInt(url.searchParams.get('days')) || 30;
+            const insightsCutoff = new Date(Date.now() - insightsDays * 86400000).toISOString();
 
             // Get reviews with timestamps for pattern analysis
-            var insightReviewsRes = await fetch(
+            const insightReviewsRes = await fetch(
                 supabaseUrl + '/rest/v1/reviews?group_id=eq.' + encodeURIComponent(groupId) + '&created_at=gte.' + encodeURIComponent(insightsCutoff) + '&select=rating,created_at&order=created_at.asc',
                 { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
             );
-            var insightReviews = await insightReviewsRes.json();
+            let insightReviews = await insightReviewsRes.json();
             insightReviews = Array.isArray(insightReviews) ? insightReviews : [];
 
-            var insights = [];
+            const insights = [];
 
             // Pattern 1: Best day of week for engagement
-            var dayOfWeekCounts = [0, 0, 0, 0, 0, 0, 0]; // Sun-Sat
-            var dayNames = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'];
-            insightReviews.forEach(function(r) {
-                var dow = new Date(r.created_at).getDay();
+            const dayOfWeekCounts = [0, 0, 0, 0, 0, 0, 0]; // Sun-Sat
+            const dayNames = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'];
+            insightReviews.forEach((r) => {
+                const dow = new Date(r.created_at).getDay();
                 dayOfWeekCounts[dow]++;
             });
-            var bestDay = dayOfWeekCounts.indexOf(Math.max.apply(null, dayOfWeekCounts));
-            var worstDay = dayOfWeekCounts.indexOf(Math.min.apply(null, dayOfWeekCounts));
+            const bestDay = dayOfWeekCounts.indexOf(Math.max.apply(null, dayOfWeekCounts));
+            const worstDay = dayOfWeekCounts.indexOf(Math.min.apply(null, dayOfWeekCounts));
             if (insightReviews.length >= 5 && dayOfWeekCounts[bestDay] > dayOfWeekCounts[worstDay] * 1.5) {
-                var boost = dayOfWeekCounts[worstDay] > 0
+                const boost = dayOfWeekCounts[worstDay] > 0
                     ? Math.round((dayOfWeekCounts[bestDay] / dayOfWeekCounts[worstDay] - 1) * 100)
                     : 100;
                 insights.push({
@@ -320,10 +320,10 @@ export async function onRequest(context) {
 
             // Pattern 2: Rating trend
             if (insightReviews.length >= 3) {
-                var firstHalf = insightReviews.slice(0, Math.floor(insightReviews.length / 2));
-                var secondHalf = insightReviews.slice(Math.floor(insightReviews.length / 2));
-                var avgFirst = firstHalf.reduce(function(s, r) { return s + (r.rating || 0); }, 0) / firstHalf.length;
-                var avgSecond = secondHalf.reduce(function(s, r) { return s + (r.rating || 0); }, 0) / secondHalf.length;
+                const firstHalf = insightReviews.slice(0, Math.floor(insightReviews.length / 2));
+                const secondHalf = insightReviews.slice(Math.floor(insightReviews.length / 2));
+                const avgFirst = firstHalf.reduce((s, r) => { return s + (r.rating || 0); }, 0) / firstHalf.length;
+                const avgSecond = secondHalf.reduce((s, r) => { return s + (r.rating || 0); }, 0) / secondHalf.length;
 
                 if (avgSecond > avgFirst + 0.3) {
                     insights.push({
@@ -347,7 +347,7 @@ export async function onRequest(context) {
             }
 
             // Pattern 3: Conversion rate insight
-            var conversionRate = (group.views || 0) > 0 ? ((group.click_count || 0) / group.views * 100) : 0;
+            const conversionRate = (group.views || 0) > 0 ? ((group.click_count || 0) / group.views * 100) : 0;
             if (conversionRate < 5 && (group.views || 0) > 50) {
                 insights.push({
                     type: 'conversion',
@@ -381,8 +381,8 @@ export async function onRequest(context) {
             }
 
             // Pattern 5: Review velocity
-            var recentReviewCount = insightReviews.length;
-            var reviewsPerWeek = recentReviewCount / (insightsDays / 7);
+            const recentReviewCount = insightReviews.length;
+            const reviewsPerWeek = recentReviewCount / (insightsDays / 7);
             if (reviewsPerWeek > 2) {
                 insights.push({
                     type: 'momentum',
@@ -414,7 +414,7 @@ export async function onRequest(context) {
         const reviews = await reviewsRes.json();
 
         // Get recent click analytics if there's a short link
-        var linkAnalytics = null;
+        let linkAnalytics = null;
         const linkRes = await fetch(
             supabaseUrl + '/rest/v1/short_links?long_url=like.*' + encodeURIComponent(groupId) + '*&select=id,code,clicks,created_at&limit=1',
             { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
@@ -428,7 +428,7 @@ export async function onRequest(context) {
             };
         }
 
-        var stats = {
+        const stats = {
             group: {
                 id: group.id,
                 name: group.name,
@@ -447,9 +447,9 @@ export async function onRequest(context) {
             review_stats: {
                 total: (reviews || []).length,
                 avg_rating: (reviews || []).length > 0
-                    ? ((reviews || []).reduce(function(s, r) { return s + (r.rating || 0); }, 0) / reviews.length).toFixed(1)
+                    ? ((reviews || []).reduce((s, r) => { return s + (r.rating || 0); }, 0) / reviews.length).toFixed(1)
                     : '0.0',
-                recent: (reviews || []).slice(0, 5).map(function(r) {
+                recent: (reviews || []).slice(0, 5).map((r) => {
                     return { rating: r.rating, date: r.created_at };
                 })
             },

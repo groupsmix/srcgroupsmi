@@ -19,7 +19,7 @@ function corsHeaders(origin) {
  * Build HTML digest content from articles.
  */
 function buildDigestHtml(articles, subscriberEmail) {
-    var articleCards = articles.map(function (a) {
+    const articleCards = articles.map((a) => {
         return '<tr><td style="padding:16px 0;border-bottom:1px solid #eee">' +
             (a.cover_image ? '<img src="' + a.cover_image + '" alt="" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:12px">' : '') +
             '<h3 style="margin:0 0 8px;font-size:18px"><a href="https://groupsmix.com/article?slug=' + (a.slug || '') + '" style="color:#1a1a1a;text-decoration:none">' + (a.title || 'Untitled') + '</a></h3>' +
@@ -129,7 +129,7 @@ export async function onRequest(context) {
                 headers: { ...headers, 'Prefer': 'return=minimal' },
                 body: JSON.stringify({
                     subscriber_email: sub.email,
-                    articles: topArticles.map(function (a) { return { id: a.id, title: a.title, slug: a.slug }; }),
+                    articles: topArticles.map((a) => { return { id: a.id, title: a.title, slug: a.slug }; }),
                     subject: subject,
                     html_content: html,
                     status: 'pending'

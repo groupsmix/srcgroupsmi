@@ -75,7 +75,7 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
     }
 
     if (action === 'status') {
-        var res = await fetch(
+        const res = await fetch(
             supabaseUrl + '/rest/v1/rpc/get_verification_status',
             {
                 method: 'POST',
@@ -87,13 +87,13 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
                 body: JSON.stringify({ p_group_id: groupId })
             }
         );
-        var data = await res.json();
+        const data = await res.json();
         if (!res.ok) {
             return new Response(JSON.stringify({ ok: false, error: data.message || 'Failed to get status' }), {
                 status: 400, headers: corsHeaders(origin)
             });
         }
-        var status = Array.isArray(data) ? data[0] : data;
+        const status = Array.isArray(data) ? data[0] : data;
         return new Response(JSON.stringify({ ok: true, data: status || { is_verified: false } }), {
             status: 200, headers: corsHeaders(origin)
         });
@@ -105,7 +105,7 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
 }
 
 async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
-    var body;
+    let body;
     try {
         body = await request.json();
     } catch (e) {
@@ -114,8 +114,8 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
         });
     }
 
-    var action = body.action;
-    var groupId = body.group_id;
+    let action = body.action;
+    const groupId = body.group_id;
 
     if (!groupId) {
         return new Response(JSON.stringify({ ok: false, error: 'group_id required' }), {
@@ -125,7 +125,7 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
 
     if (action === 'generate') {
         // Generate a verification code via RPC
-        var res = await fetch(
+        const res = await fetch(
             supabaseUrl + '/rest/v1/rpc/generate_verification_code',
             {
                 method: 'POST',
@@ -137,9 +137,9 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
                 body: JSON.stringify({ p_group_id: groupId, p_uid: user.id })
             }
         );
-        var data = await res.json();
+        const data = await res.json();
         if (!res.ok) {
-            var errMsg = (data && data.message) ? data.message : 'Failed to generate code';
+            let errMsg = (data && data.message) ? data.message : 'Failed to generate code';
             // Clean up common DB errors for user-friendly messages
             if (errMsg.includes('already verified')) errMsg = 'This group is already verified.';
             if (errMsg.includes('Not the group owner')) errMsg = 'You can only verify groups you submitted.';
@@ -147,21 +147,21 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
                 status: 400, headers: corsHeaders(origin)
             });
         }
-        var result = Array.isArray(data) ? data[0] : data;
+        const result = Array.isArray(data) ? data[0] : data;
         return new Response(JSON.stringify({ ok: true, data: result }), {
             status: 200, headers: corsHeaders(origin)
         });
     }
 
     if (action === 'confirm') {
-        var code = body.code;
+        const code = body.code;
         if (!code) {
             return new Response(JSON.stringify({ ok: false, error: 'Verification code required' }), {
                 status: 400, headers: corsHeaders(origin)
             });
         }
 
-        var res = await fetch(
+        const res = await fetch(
             supabaseUrl + '/rest/v1/rpc/confirm_group_verification',
             {
                 method: 'POST',
@@ -173,7 +173,7 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
                 body: JSON.stringify({ p_group_id: groupId, p_uid: user.id, p_code: code })
             }
         );
-        var data = await res.json();
+        const data = await res.json();
         if (!res.ok) {
             return new Response(JSON.stringify({ ok: false, error: (data && data.message) || 'Verification failed' }), {
                 status: 400, headers: corsHeaders(origin)

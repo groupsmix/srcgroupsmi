@@ -23,8 +23,8 @@ function corsHeaders(origin) {
 
 // Simple deterministic hash for daily rotation
 function dayHash(dateStr) {
-    var hash = 0;
-    for (var i = 0; i < dateStr.length; i++) {
+    let hash = 0;
+    for (let i = 0; i < dateStr.length; i++) {
         hash = ((hash << 5) - hash) + dateStr.charCodeAt(i);
         hash = hash & hash;
     }
@@ -67,17 +67,17 @@ export async function onRequest(context) {
             const groups = await res.json();
 
             // Calculate trending score (recency + engagement)
-            var now = Date.now();
-            var trending = (groups || []).map(function(g) {
-                var ageHours = (now - new Date(g.created_at).getTime()) / 3600000;
-                var recencyBoost = Math.max(0, 100 - ageHours * 0.1);
-                var engagementScore = (g.views || 0) * 0.3 + (g.click_count || 0) * 2 + (g.avg_rating || 0) * 10 + (g.review_count || 0) * 5;
+            const now = Date.now();
+            const trending = (groups || []).map((g) => {
+                const ageHours = (now - new Date(g.created_at).getTime()) / 3600000;
+                const recencyBoost = Math.max(0, 100 - ageHours * 0.1);
+                const engagementScore = (g.views || 0) * 0.3 + (g.click_count || 0) * 2 + (g.avg_rating || 0) * 10 + (g.review_count || 0) * 5;
                 g._trendingScore = engagementScore + recencyBoost;
                 return g;
-            }).sort(function(a, b) { return b._trendingScore - a._trendingScore; }).slice(0, 10);
+            }).sort((a, b) => { return b._trendingScore - a._trendingScore; }).slice(0, 10);
 
             // Remove internal score
-            trending.forEach(function(g) { delete g._trendingScore; });
+            trending.forEach((g) => { delete g._trendingScore; });
 
             return new Response(JSON.stringify({ ok: true, trending: trending }), {
                 status: 200, headers: corsHeaders(origin)
@@ -99,9 +99,9 @@ export async function onRequest(context) {
         }
 
         // Pick today's group deterministically
-        var today = new Date().toISOString().split('T')[0];
-        var index = dayHash(today) % candidates.length;
-        var groupOfDay = candidates[index];
+        const today = new Date().toISOString().split('T')[0];
+        const index = dayHash(today) % candidates.length;
+        const groupOfDay = candidates[index];
 
         return new Response(JSON.stringify({
             ok: true,

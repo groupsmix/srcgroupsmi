@@ -37,7 +37,7 @@ function jsonResponse(data, status, origin) {
 
 // Call a Supabase RPC function
 async function callRpc(supabaseUrl, supabaseKey, fnName, params) {
-    var res = await fetch(supabaseUrl + '/rest/v1/rpc/' + fnName, {
+    const res = await fetch(supabaseUrl + '/rest/v1/rpc/' + fnName, {
         method: 'POST',
         headers: {
             'apikey': supabaseKey,
@@ -49,7 +49,7 @@ async function callRpc(supabaseUrl, supabaseKey, fnName, params) {
     });
 
     if (!res.ok) {
-        var errText = await res.text();
+        const errText = await res.text();
         console.error('RPC ' + fnName + ' error:', res.status, errText);
         return null;
     }
@@ -59,7 +59,7 @@ async function callRpc(supabaseUrl, supabaseKey, fnName, params) {
 
 // Query Supabase REST API
 async function queryTable(supabaseUrl, supabaseKey, table, queryParams) {
-    var res = await fetch(
+    const res = await fetch(
         supabaseUrl + '/rest/v1/' + table + '?' + queryParams,
         {
             headers: {
@@ -80,7 +80,7 @@ async function queryTable(supabaseUrl, supabaseKey, table, queryParams) {
 // Get personalized group feed
 async function getGroupFeed(supabaseUrl, supabaseKey, userId, limit, offset, explorationRatio) {
     // Try personalized feed via RPC
-    var feed = await callRpc(supabaseUrl, supabaseKey, 'get_personalized_group_feed', {
+    const feed = await callRpc(supabaseUrl, supabaseKey, 'get_personalized_group_feed', {
         p_user_id: userId,
         p_limit: limit,
         p_offset: offset,
@@ -92,7 +92,7 @@ async function getGroupFeed(supabaseUrl, supabaseKey, userId, limit, offset, exp
             ok: true,
             feed_type: 'personalized',
             content_type: 'groups',
-            items: feed.map(function(item) {
+            items: feed.map((item) => {
                 return {
                     id: item.group_id,
                     name: item.group_name,
@@ -123,7 +123,7 @@ async function getGroupFeed(supabaseUrl, supabaseKey, userId, limit, offset, exp
     }
 
     // Fallback: return trending groups if no personalized results
-    var groups = await queryTable(supabaseUrl, supabaseKey, 'groups',
+    const groups = await queryTable(supabaseUrl, supabaseKey, 'groups',
         'status=eq.approved&select=id,name,platform,category,country,description,trust_score,views,clicks,avg_rating,review_count,tags,link,likes_count&order=views.desc&limit=' + limit + '&offset=' + offset
     );
 
@@ -139,7 +139,7 @@ async function getGroupFeed(supabaseUrl, supabaseKey, userId, limit, offset, exp
 
 // Get personalized article feed
 async function getArticleFeed(supabaseUrl, supabaseKey, userId, limit, offset, explorationRatio) {
-    var feed = await callRpc(supabaseUrl, supabaseKey, 'get_personalized_article_feed', {
+    const feed = await callRpc(supabaseUrl, supabaseKey, 'get_personalized_article_feed', {
         p_user_id: userId,
         p_limit: limit,
         p_offset: offset,
@@ -151,7 +151,7 @@ async function getArticleFeed(supabaseUrl, supabaseKey, userId, limit, offset, e
             ok: true,
             feed_type: 'personalized',
             content_type: 'articles',
-            items: feed.map(function(item) {
+            items: feed.map((item) => {
                 return {
                     id: item.article_id,
                     title: item.article_title,
@@ -184,7 +184,7 @@ async function getArticleFeed(supabaseUrl, supabaseKey, userId, limit, offset, e
     }
 
     // Fallback: trending articles
-    var articles = await queryTable(supabaseUrl, supabaseKey, 'articles',
+    const articles = await queryTable(supabaseUrl, supabaseKey, 'articles',
         'status=eq.published&moderation_status=eq.approved&select=id,title,slug,excerpt,category,tags,image,views,like_count,comment_count,reading_time,published_at,author_name,author_avatar,user_id&order=published_at.desc&limit=' + limit + '&offset=' + offset
     );
 
@@ -200,26 +200,26 @@ async function getArticleFeed(supabaseUrl, supabaseKey, userId, limit, offset, e
 
 // Get "What you missed" digest
 async function getDigest(supabaseUrl, supabaseKey, userId, days, limit) {
-    var sessionGap = await callRpc(supabaseUrl, supabaseKey, 'get_session_gap_hours', {
+    const sessionGap = await callRpc(supabaseUrl, supabaseKey, 'get_session_gap_hours', {
         p_user_id: userId
     });
 
-    var gapHours = (typeof sessionGap === 'number') ? sessionGap : 999;
-    var digestDays = Math.max(Math.ceil(gapHours / 24), days);
+    const gapHours = (typeof sessionGap === 'number') ? sessionGap : 999;
+    const digestDays = Math.max(Math.ceil(gapHours / 24), days);
 
-    var groupsPromise = callRpc(supabaseUrl, supabaseKey, 'get_missed_digest_groups', {
+    const groupsPromise = callRpc(supabaseUrl, supabaseKey, 'get_missed_digest_groups', {
         p_user_id: userId,
         p_days: digestDays,
         p_limit: limit
     });
 
-    var articlesPromise = callRpc(supabaseUrl, supabaseKey, 'get_missed_digest_articles', {
+    const articlesPromise = callRpc(supabaseUrl, supabaseKey, 'get_missed_digest_articles', {
         p_user_id: userId,
         p_days: digestDays,
         p_limit: limit
     });
 
-    var results = await Promise.all([groupsPromise, articlesPromise]);
+    const results = await Promise.all([groupsPromise, articlesPromise]);
 
     return {
         ok: true,
@@ -239,18 +239,18 @@ async function getDigest(supabaseUrl, supabaseKey, userId, days, limit) {
 
 /* ── Record implicit feedback signals (dwell time, bounce rate, scroll depth) ── */
 async function recordImplicitFeedback(supabaseUrl, supabaseKey, body) {
-    var userId = body.user_id;
-    var contentId = body.content_id;
-    var contentType = body.content_type || 'group';
+    const userId = body.user_id;
+    const contentId = body.content_id;
+    const contentType = body.content_type || 'group';
     if (!userId || !contentId) return { ok: false, error: 'user_id and content_id required' };
 
-    var dwellSeconds = Math.max(0, Math.min(3600, parseInt(body.dwell_seconds) || 0));
-    var scrollDepth = Math.max(0, Math.min(100, parseFloat(body.scroll_depth) || 0));
-    var clicked = body.clicked === true || body.clicked === 'true';
-    var bounced = dwellSeconds < 3 && !clicked;
+    const dwellSeconds = Math.max(0, Math.min(3600, parseInt(body.dwell_seconds) || 0));
+    const scrollDepth = Math.max(0, Math.min(100, parseFloat(body.scroll_depth) || 0));
+    const clicked = body.clicked === true || body.clicked === 'true';
+    const bounced = dwellSeconds < 3 && !clicked;
 
     // Upsert implicit feedback into feed_impressions
-    var res = await fetch(supabaseUrl + '/rest/v1/feed_impressions', {
+    const res = await fetch(supabaseUrl + '/rest/v1/feed_impressions', {
         method: 'POST',
         headers: {
             'apikey': supabaseKey,
@@ -271,7 +271,7 @@ async function recordImplicitFeedback(supabaseUrl, supabaseKey, body) {
     });
 
     // Derive implicit interest signal from feedback
-    var interestDelta = 0;
+    let interestDelta = 0;
     if (clicked) interestDelta += 1;
     if (dwellSeconds > 30) interestDelta += 0.5;
     if (dwellSeconds > 120) interestDelta += 0.5;
@@ -311,7 +311,7 @@ async function recordImplicitFeedback(supabaseUrl, supabaseKey, body) {
 
 // Get trending content (no auth needed) with decay-aware scoring
 async function getTrending(supabaseUrl, supabaseKey, contentType, limit) {
-    var items = await queryTable(supabaseUrl, supabaseKey, 'trending_scores',
+    let items = await queryTable(supabaseUrl, supabaseKey, 'trending_scores',
         'content_type=eq.' + encodeURIComponent(contentType) +
         '&order=velocity_score.desc&limit=' + limit +
         '&select=content_id,content_type,velocity_score,hourly_views,hourly_clicks,hourly_likes,hourly_joins,hourly_comments,hourly_tips,total_engagement,computed_at'
@@ -319,30 +319,30 @@ async function getTrending(supabaseUrl, supabaseKey, contentType, limit) {
 
     // Enrich with content details
     if (items && items.length > 0) {
-        var ids = items.map(function(i) { return i.content_id; });
+        const ids = items.map((i) => { return i.content_id; });
 
         if (contentType === 'group') {
-            var groups = await queryTable(supabaseUrl, supabaseKey, 'groups',
+            const groups = await queryTable(supabaseUrl, supabaseKey, 'groups',
                 'id=in.(' + ids.join(',') + ')&status=eq.approved&select=id,name,platform,category,country,description,trust_score,views,clicks,avg_rating,review_count,tags,link,likes_count'
             );
-            var groupMap = {};
-            (groups || []).forEach(function(g) { groupMap[g.id] = g; });
+            const groupMap = {};
+            (groups || []).forEach((g) => { groupMap[g.id] = g; });
 
-            items = items.map(function(item) {
-                var group = groupMap[item.content_id] || {};
+            items = items.map((item) => {
+                const group = groupMap[item.content_id] || {};
                 return Object.assign({}, item, { details: group });
-            }).filter(function(item) { return item.details && item.details.id; });
+            }).filter((item) => { return item.details && item.details.id; });
         } else {
-            var articles = await queryTable(supabaseUrl, supabaseKey, 'articles',
+            const articles = await queryTable(supabaseUrl, supabaseKey, 'articles',
                 'id=in.(' + ids.join(',') + ')&status=eq.published&moderation_status=eq.approved&select=id,title,slug,excerpt,category,tags,image,views,like_count,comment_count,reading_time,published_at,author_name,author_avatar'
             );
-            var articleMap = {};
-            (articles || []).forEach(function(a) { articleMap[a.id] = a; });
+            const articleMap = {};
+            (articles || []).forEach((a) => { articleMap[a.id] = a; });
 
-            items = items.map(function(item) {
-                var article = articleMap[item.content_id] || {};
+            items = items.map((item) => {
+                const article = articleMap[item.content_id] || {};
                 return Object.assign({}, item, { details: article });
-            }).filter(function(item) { return item.details && item.details.id; });
+            }).filter((item) => { return item.details && item.details.id; });
         }
     }
 
@@ -356,9 +356,9 @@ async function getTrending(supabaseUrl, supabaseKey, contentType, limit) {
 }
 
 export async function onRequest(context) {
-    var request = context.request;
-    var env = context.env;
-    var origin = request.headers.get('Origin') || '';
+    const request = context.request;
+    const env = context.env;
+    const origin = request.headers.get('Origin') || '';
 
     if (request.method === 'OPTIONS') {
         return new Response(null, { status: 204, headers: corsHeaders(origin) });
@@ -368,42 +368,42 @@ export async function onRequest(context) {
         return jsonResponse({ ok: false, error: 'Method not allowed' }, 405, origin);
     }
 
-    var supabaseUrl = env?.SUPABASE_URL;
-    var supabaseKey = env?.SUPABASE_SERVICE_KEY;
+    const supabaseUrl = env?.SUPABASE_URL;
+    const supabaseKey = env?.SUPABASE_SERVICE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
         return jsonResponse({ ok: false, error: 'Service not configured' }, 503, origin);
     }
 
-    var url = new URL(request.url);
-    var feedType = url.searchParams.get('type') || 'groups';
-    var userId = url.searchParams.get('user_id');
-    var limit = Math.min(parseInt(url.searchParams.get('limit')) || 20, 50);
-    var offset = parseInt(url.searchParams.get('offset')) || 0;
-    var explorationRatio = parseFloat(url.searchParams.get('exploration')) || 0.12;
-    var contentType = url.searchParams.get('content_type') || 'group';
+    const url = new URL(request.url);
+    const feedType = url.searchParams.get('type') || 'groups';
+    const userId = url.searchParams.get('user_id');
+    let limit = Math.min(parseInt(url.searchParams.get('limit')) || 20, 50);
+    let offset = parseInt(url.searchParams.get('offset')) || 0;
+    const explorationRatio = parseFloat(url.searchParams.get('exploration')) || 0.12;
+    const contentType = url.searchParams.get('content_type') || 'group';
 
     try {
         // Handle implicit feedback recording (POST)
         if (request.method === 'POST') {
-            var postBody;
+            let postBody;
             try { postBody = await request.json(); } catch (e) { postBody = {}; }
 
             if (postBody.action === 'implicit_feedback') {
                 // Verify authentication and ownership for implicit feedback
                 if (postBody.user_id) {
-                    var fbAuth = await requireAuth(request, env, corsHeaders(origin));
+                    const fbAuth = await requireAuth(request, env, corsHeaders(origin));
                     if (fbAuth instanceof Response) return fbAuth;
-                    var fbProfileRes = await fetch(
+                    const fbProfileRes = await fetch(
                         supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(fbAuth.user.id) + '&select=id&limit=1',
                         { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
                     );
-                    var fbProfiles = await fbProfileRes.json();
+                    const fbProfiles = await fbProfileRes.json();
                     if (!fbProfiles || !fbProfiles.length || fbProfiles[0].id !== postBody.user_id) {
                         return jsonResponse({ ok: false, error: 'Forbidden: user_id mismatch' }, 403, origin);
                     }
                 }
-                var fbResult = await recordImplicitFeedback(supabaseUrl, supabaseKey, postBody);
+                const fbResult = await recordImplicitFeedback(supabaseUrl, supabaseKey, postBody);
                 return jsonResponse(fbResult, fbResult.ok ? 200 : 400, origin);
             }
 
@@ -411,7 +411,7 @@ export async function onRequest(context) {
         }
 
         if (feedType === 'trending') {
-            var result = await getTrending(supabaseUrl, supabaseKey, contentType, limit);
+            const result = await getTrending(supabaseUrl, supabaseKey, contentType, limit);
             return jsonResponse(result, 200, origin);
         }
 
@@ -420,30 +420,30 @@ export async function onRequest(context) {
         }
 
         // Verify authentication and ownership for personalized feed
-        var feedAuth = await requireAuth(request, env, corsHeaders(origin));
+        const feedAuth = await requireAuth(request, env, corsHeaders(origin));
         if (feedAuth instanceof Response) return feedAuth;
-        var feedProfileRes = await fetch(
+        const feedProfileRes = await fetch(
             supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(feedAuth.user.id) + '&select=id&limit=1',
             { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
         );
-        var feedProfiles = await feedProfileRes.json();
+        const feedProfiles = await feedProfileRes.json();
         if (!feedProfiles || !feedProfiles.length || feedProfiles[0].id !== userId) {
             return jsonResponse({ ok: false, error: 'Forbidden: user_id mismatch' }, 403, origin);
         }
 
         if (feedType === 'groups') {
-            var result = await getGroupFeed(supabaseUrl, supabaseKey, userId, limit, offset, explorationRatio);
+            const result = await getGroupFeed(supabaseUrl, supabaseKey, userId, limit, offset, explorationRatio);
             return jsonResponse(result, 200, origin);
         }
 
         if (feedType === 'articles') {
-            var result = await getArticleFeed(supabaseUrl, supabaseKey, userId, limit, offset, explorationRatio);
+            const result = await getArticleFeed(supabaseUrl, supabaseKey, userId, limit, offset, explorationRatio);
             return jsonResponse(result, 200, origin);
         }
 
         if (feedType === 'digest') {
-            var days = parseInt(url.searchParams.get('days')) || 7;
-            var result = await getDigest(supabaseUrl, supabaseKey, userId, days, limit);
+            const days = parseInt(url.searchParams.get('days')) || 7;
+            const result = await getDigest(supabaseUrl, supabaseKey, userId, days, limit);
             return jsonResponse(result, 200, origin);
         }
 

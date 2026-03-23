@@ -376,7 +376,7 @@ async function syncSubscriptionEvent(env, eventName, payload) {
     try {
         const attrs = payload.data?.attributes || {};
         const orderId = String(payload.data?.id || '');
-        var status = 'active';
+        let status = 'active';
 
         if (eventName === 'subscription_cancelled' || eventName === 'subscription_expired') {
             status = 'cancelled';

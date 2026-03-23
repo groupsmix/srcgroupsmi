@@ -13,10 +13,10 @@
  * and session-aware rotation features.
  */
 
-var ALLOWED_ORIGINS = ['https://groupsmix.com', 'https://www.groupsmix.com'];
+const ALLOWED_ORIGINS = ['https://groupsmix.com', 'https://www.groupsmix.com'];
 
 function corsHeaders(origin) {
-    var allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+    const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
     return {
         'Access-Control-Allow-Origin': allowed,
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -33,7 +33,7 @@ function jsonResponse(data, status, origin) {
 }
 
 async function callRpc(supabaseUrl, supabaseKey, fnName, params) {
-    var res = await fetch(supabaseUrl + '/rest/v1/rpc/' + fnName, {
+    const res = await fetch(supabaseUrl + '/rest/v1/rpc/' + fnName, {
         method: 'POST',
         headers: {
             'apikey': supabaseKey,
@@ -45,12 +45,12 @@ async function callRpc(supabaseUrl, supabaseKey, fnName, params) {
     });
 
     if (!res.ok) {
-        var errText = await res.text();
+        const errText = await res.text();
         console.error('RPC ' + fnName + ' error:', res.status, errText);
         return { error: errText, status: res.status };
     }
 
-    var text = await res.text();
+    const text = await res.text();
     if (!text || text === 'null') return { ok: true };
 
     try {
@@ -61,9 +61,9 @@ async function callRpc(supabaseUrl, supabaseKey, fnName, params) {
 }
 
 export async function onRequest(context) {
-    var request = context.request;
-    var env = context.env;
-    var origin = request.headers.get('Origin') || '';
+    const request = context.request;
+    const env = context.env;
+    const origin = request.headers.get('Origin') || '';
 
     if (request.method === 'OPTIONS') {
         return new Response(null, { status: 204, headers: corsHeaders(origin) });
@@ -73,22 +73,22 @@ export async function onRequest(context) {
         return jsonResponse({ ok: false, error: 'Method not allowed' }, 405, origin);
     }
 
-    var supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';
-    var supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
+    const supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';
+    const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
 
     if (!supabaseKey) {
         return jsonResponse({ ok: false, error: 'Server not configured' }, 500, origin);
     }
 
-    var body;
+    let body;
     try {
         body = await request.json();
     } catch (e) {
         return jsonResponse({ ok: false, error: 'Invalid JSON body' }, 400, origin);
     }
 
-    var action = body.action;
-    var userId = body.user_id;
+    const action = body.action;
+    const userId = body.user_id;
 
     if (!action) {
         return jsonResponse({ ok: false, error: 'action required' }, 400, origin);
@@ -105,7 +105,7 @@ export async function onRequest(context) {
                 return jsonResponse({ ok: false, error: 'content_id and content_type required' }, 400, origin);
             }
 
-            var result = await callRpc(supabaseUrl, supabaseKey, 'record_content_impression', {
+            const result = await callRpc(supabaseUrl, supabaseKey, 'record_content_impression', {
                 p_user_id: userId,
                 p_content_id: body.content_id,
                 p_content_type: body.content_type
@@ -121,7 +121,7 @@ export async function onRequest(context) {
             }
 
             // Record click on impression
-            var clickResult = await callRpc(supabaseUrl, supabaseKey, 'record_impression_click', {
+            const clickResult = await callRpc(supabaseUrl, supabaseKey, 'record_impression_click', {
                 p_user_id: userId,
                 p_content_id: body.content_id,
                 p_content_type: body.content_type
@@ -146,7 +146,7 @@ export async function onRequest(context) {
                 return jsonResponse({ ok: false, error: 'content_type and category required' }, 400, origin);
             }
 
-            var result = await callRpc(supabaseUrl, supabaseKey, 'track_user_interest', {
+            const result = await callRpc(supabaseUrl, supabaseKey, 'track_user_interest', {
                 p_user_id: userId,
                 p_content_type: body.content_type,
                 p_category: body.category,
@@ -162,13 +162,13 @@ export async function onRequest(context) {
                 return jsonResponse({ ok: false, error: 'session_token required' }, 400, origin);
             }
 
-            var session = await callRpc(supabaseUrl, supabaseKey, 'start_feed_session', {
+            const session = await callRpc(supabaseUrl, supabaseKey, 'start_feed_session', {
                 p_user_id: userId,
                 p_session_token: body.session_token
             });
 
             // Also get session gap for client-side logic
-            var gapHours = await callRpc(supabaseUrl, supabaseKey, 'get_session_gap_hours', {
+            const gapHours = await callRpc(supabaseUrl, supabaseKey, 'get_session_gap_hours', {
                 p_user_id: userId
             });
 
@@ -187,7 +187,7 @@ export async function onRequest(context) {
                 return jsonResponse({ ok: false, error: 'session_id and content_ids[] required' }, 400, origin);
             }
 
-            var result = await callRpc(supabaseUrl, supabaseKey, 'update_feed_session', {
+            const result = await callRpc(supabaseUrl, supabaseKey, 'update_feed_session', {
                 p_session_id: body.session_id,
                 p_content_ids: body.content_ids
             });
@@ -201,7 +201,7 @@ export async function onRequest(context) {
                 return jsonResponse({ ok: false, error: 'user_id, content_ids[], and content_type required' }, 400, origin);
             }
 
-            var result = await callRpc(supabaseUrl, supabaseKey, 'record_batch_impressions', {
+            const result = await callRpc(supabaseUrl, supabaseKey, 'record_batch_impressions', {
                 p_user_id: userId,
                 p_content_ids: body.content_ids,
                 p_content_type: body.content_type

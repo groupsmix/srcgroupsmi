@@ -147,9 +147,9 @@ async function handleGet(request, env, admin, origin) {
                 const newArticlesRange = newArticlesRes.headers.get('content-range') || '0/0';
                 const newArticles = parseInt(newArticlesRange.split('/')[1]) || 0;
                 const coinsTxns = await coinsRes.json();
-                const totalCoinsPurchased = (coinsTxns || []).reduce(function (sum, t) { return sum + (t.amount || 0); }, 0);
+                const totalCoinsPurchased = (coinsTxns || []).reduce((sum, t) => { return sum + (t.amount || 0); }, 0);
                 const tipsTxns = await tipsRes.json();
-                const totalTips = (tipsTxns || []).reduce(function (sum, t) { return sum + Math.abs(t.amount || 0); }, 0);
+                const totalTips = (tipsTxns || []).reduce((sum, t) => { return sum + Math.abs(t.amount || 0); }, 0);
 
                 return new Response(JSON.stringify({
                     ok: true,
@@ -196,14 +196,14 @@ async function handleGet(request, env, admin, origin) {
                 const articleGrowth = await articleGrowthRes.json();
 
                 // Build daily data
-                var dailyGrowth = [];
-                var cumUsers = 0, cumArticles = 0;
-                for (var gd = 0; gd < growthDays; gd++) {
-                    var gdDate = new Date(Date.now() - (growthDays - 1 - gd) * 86400000);
-                    var gdKey = gdDate.toISOString().substring(0, 10);
+                const dailyGrowth = [];
+                let cumUsers = 0, cumArticles = 0;
+                for (let gd = 0; gd < growthDays; gd++) {
+                    const gdDate = new Date(Date.now() - (growthDays - 1 - gd) * 86400000);
+                    const gdKey = gdDate.toISOString().substring(0, 10);
 
-                    var dayUsers = (signups || []).filter(function(u) { return (u.created_at || '').substring(0, 10) === gdKey; }).length;
-                    var dayArticles = (articleGrowth || []).filter(function(a) { return (a.created_at || '').substring(0, 10) === gdKey; }).length;
+                    const dayUsers = (signups || []).filter((u) => { return (u.created_at || '').substring(0, 10) === gdKey; }).length;
+                    const dayArticles = (articleGrowth || []).filter((a) => { return (a.created_at || '').substring(0, 10) === gdKey; }).length;
                     cumUsers += dayUsers;
                     cumArticles += dayArticles;
 
@@ -218,54 +218,54 @@ async function handleGet(request, env, admin, origin) {
                 }
 
                 // Linear regression on cumulative users
-                var gn = dailyGrowth.length;
-                var gsumX = 0, gsumY = 0, gsumXY = 0, gsumXX = 0;
-                dailyGrowth.forEach(function(dp) {
+                const gn = dailyGrowth.length;
+                let gsumX = 0, gsumY = 0, gsumXY = 0, gsumXX = 0;
+                dailyGrowth.forEach((dp) => {
                     gsumX += dp.day_index;
                     gsumY += dp.cumulative_users;
                     gsumXY += dp.day_index * dp.cumulative_users;
                     gsumXX += dp.day_index * dp.day_index;
                 });
-                var userSlope = (gn * gsumXY - gsumX * gsumY) / (gn * gsumXX - gsumX * gsumX) || 0;
-                var userIntercept = (gsumY - userSlope * gsumX) / gn || 0;
+                const userSlope = (gn * gsumXY - gsumX * gsumY) / (gn * gsumXX - gsumX * gsumX) || 0;
+                const userIntercept = (gsumY - userSlope * gsumX) / gn || 0;
 
                 // Linear regression on cumulative articles
-                var asumY = 0, asumXY = 0;
-                dailyGrowth.forEach(function(dp) {
+                let asumY = 0, asumXY = 0;
+                dailyGrowth.forEach((dp) => {
                     asumY += dp.cumulative_articles;
                     asumXY += dp.day_index * dp.cumulative_articles;
                 });
-                var articleSlope = (gn * asumXY - gsumX * asumY) / (gn * gsumXX - gsumX * gsumX) || 0;
+                const articleSlope = (gn * asumXY - gsumX * asumY) / (gn * gsumXX - gsumX * gsumX) || 0;
 
                 // Revenue trend: fetch coin purchase transactions for the period
-                var revenueTrend = null;
+                let revenueTrend = null;
                 try {
-                    var revRes = await fetch(
+                    const revRes = await fetch(
                         supabaseUrl + '/rest/v1/wallet_transactions?type=eq.purchase&created_at=gte.' + encodeURIComponent(growthCutoff) + '&select=amount,created_at&order=created_at.asc&limit=5000',
                         { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
                     );
-                    var revTxns = await revRes.json();
+                    const revTxns = await revRes.json();
                     if (Array.isArray(revTxns) && revTxns.length > 0) {
                         // Build daily revenue
-                        var dailyRevenue = {};
-                        revTxns.forEach(function(t) {
-                            var rKey = (t.created_at || '').substring(0, 10);
+                        const dailyRevenue = {};
+                        revTxns.forEach((t) => {
+                            const rKey = (t.created_at || '').substring(0, 10);
                             dailyRevenue[rKey] = (dailyRevenue[rKey] || 0) + Math.abs(t.amount || 0);
                         });
 
                         // Linear regression on daily revenue
-                        var revDays = Object.keys(dailyRevenue).sort();
-                        var rsumX = 0, rsumY = 0, rsumXY = 0, rsumXX = 0;
-                        revDays.forEach(function(rd, ri) {
+                        const revDays = Object.keys(dailyRevenue).sort();
+                        let rsumX = 0, rsumY = 0, rsumXY = 0, rsumXX = 0;
+                        revDays.forEach((rd, ri) => {
                             rsumX += ri;
                             rsumY += dailyRevenue[rd];
                             rsumXY += ri * dailyRevenue[rd];
                             rsumXX += ri * ri;
                         });
-                        var rn = revDays.length;
-                        var revSlope = rn > 1 ? ((rn * rsumXY - rsumX * rsumY) / (rn * rsumXX - rsumX * rsumX) || 0) : 0;
-                        var totalRevenue = rsumY;
-                        var avgDailyRevenue = totalRevenue / growthDays;
+                        const rn = revDays.length;
+                        const revSlope = rn > 1 ? ((rn * rsumXY - rsumX * rsumY) / (rn * rsumXX - rsumX * rsumX) || 0) : 0;
+                        const totalRevenue = rsumY;
+                        const avgDailyRevenue = totalRevenue / growthDays;
 
                         revenueTrend = {
                             total_coins: Math.round(totalRevenue),
@@ -281,10 +281,10 @@ async function handleGet(request, env, admin, origin) {
                 }
 
                 // Project next 14 days
-                var growthProjections = [];
-                for (var gp = 1; gp <= 14; gp++) {
-                    var gpDay = gn + gp - 1;
-                    var gpDate = new Date(Date.now() + gp * 86400000);
+                const growthProjections = [];
+                for (let gp = 1; gp <= 14; gp++) {
+                    const gpDay = gn + gp - 1;
+                    const gpDate = new Date(Date.now() + gp * 86400000);
                     growthProjections.push({
                         date: gpDate.toISOString().substring(0, 10),
                         projected_cumulative_users: Math.max(cumUsers, Math.round(userSlope * gpDay + userIntercept)),
@@ -349,11 +349,11 @@ async function handleGet(request, env, admin, origin) {
                 );
                 const prevArticlesCount = parseInt((prevArticlesRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
 
-                var platformInsights = [];
+                const platformInsights = [];
 
                 // User growth comparison
                 if (prevUsersCount > 0) {
-                    var userGrowthPct = ((curUsersCount - prevUsersCount) / prevUsersCount * 100);
+                    const userGrowthPct = ((curUsersCount - prevUsersCount) / prevUsersCount * 100);
                     if (userGrowthPct > 20) {
                         platformInsights.push({
                             type: 'growth',
@@ -377,7 +377,7 @@ async function handleGet(request, env, admin, origin) {
 
                 // Article growth comparison
                 if (prevArticlesCount > 0) {
-                    var articleGrowthPct = ((curArticlesCount - prevArticlesCount) / prevArticlesCount * 100);
+                    const articleGrowthPct = ((curArticlesCount - prevArticlesCount) / prevArticlesCount * 100);
                     if (articleGrowthPct > 30) {
                         platformInsights.push({
                             type: 'content',
@@ -401,7 +401,7 @@ async function handleGet(request, env, admin, origin) {
 
                 // Users per article ratio
                 if (curArticlesCount > 0 && curUsersCount > 0) {
-                    var usersPerArticle = curUsersCount / curArticlesCount;
+                    const usersPerArticle = curUsersCount / curArticlesCount;
                     if (usersPerArticle > 50) {
                         platformInsights.push({
                             type: 'content_gap',
@@ -415,22 +415,22 @@ async function handleGet(request, env, admin, origin) {
                 }
 
                 // Retention metrics: check returning users vs new users
-                var retentionData = null;
+                let retentionData = null;
                 try {
-                    var activeUsersRes = await fetch(
+                    const activeUsersRes = await fetch(
                         supabaseUrl + '/rest/v1/users?last_active_at=gte.' + encodeURIComponent(insightCutoff) + '&select=id,created_at,last_active_at&limit=1',
                         { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
                     );
-                    var activeCount = parseInt((activeUsersRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
+                    const activeCount = parseInt((activeUsersRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
 
-                    var returningRes = await fetch(
+                    const returningRes = await fetch(
                         supabaseUrl + '/rest/v1/users?last_active_at=gte.' + encodeURIComponent(insightCutoff) + '&created_at=lt.' + encodeURIComponent(insightCutoff) + '&select=id&limit=1',
                         { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
                     );
-                    var returningCount = parseInt((returningRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
+                    const returningCount = parseInt((returningRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
 
                     if (activeCount > 0) {
-                        var retentionRate = (returningCount / activeCount * 100);
+                        const retentionRate = (returningCount / activeCount * 100);
                         retentionData = {
                             active_users: activeCount,
                             returning_users: returningCount,

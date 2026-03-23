@@ -20,7 +20,7 @@ const ALLOWED_ORIGINS = [
 ];
 
 function corsHeaders(origin) {
-    var allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+    const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
     return {
         'Access-Control-Allow-Origin': allowed,
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -30,21 +30,21 @@ function corsHeaders(origin) {
 }
 
 /* ── Rate limiter ─────────────────────────────────────────────── */
-var ipBuckets = new Map();
+const ipBuckets = new Map();
 function checkRateLimit(ip, action) {
-    var now = Date.now();
-    var window = 60000;
-    var max = 15;
-    var key = ip + ':jobs-board:' + action;
-    var bucket = ipBuckets.get(key);
+    const now = Date.now();
+    const window = 60000;
+    const max = 15;
+    const key = ip + ':jobs-board:' + action;
+    let bucket = ipBuckets.get(key);
     if (!bucket) { bucket = []; ipBuckets.set(key, bucket); }
-    var recent = bucket.filter(function(t) { return now - t < window; });
+    const recent = bucket.filter((t) => { return now - t < window; });
     if (recent.length >= max) { ipBuckets.set(key, recent); return false; }
     recent.push(now);
     ipBuckets.set(key, recent);
     if (ipBuckets.size > 2000) {
-        for (var [k, v] of ipBuckets) {
-            var f = v.filter(function(t) { return now - t < 120000; });
+        for (let [k, v] of ipBuckets) {
+            const f = v.filter((t) => { return now - t < 120000; });
             if (f.length === 0) ipBuckets.delete(k);
             else ipBuckets.set(k, f);
         }
@@ -54,8 +54,8 @@ function checkRateLimit(ip, action) {
 
 /* ── Supabase helper ──────────────────────────────────────────── */
 function supaFetch(supabaseUrl, supabaseKey, path, options) {
-    var url = supabaseUrl + '/rest/v1/' + path;
-    var headers = {
+    const url = supabaseUrl + '/rest/v1/' + path;
+    const headers = {
         'apikey': supabaseKey,
         'Authorization': 'Bearer ' + supabaseKey,
         'Content-Type': 'application/json',
@@ -71,7 +71,7 @@ function supaFetch(supabaseUrl, supabaseKey, path, options) {
 /* ── AI helper ────────────────────────────────────────────────── */
 async function callAI(apiKey, prompt, maxTokens) {
     maxTokens = maxTokens || 500;
-    var res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
             'Authorization': 'Bearer ' + apiKey,
@@ -87,8 +87,8 @@ async function callAI(apiKey, prompt, maxTokens) {
         })
     });
     if (!res.ok) return null;
-    var data = await res.json();
-    var content = data.choices && data.choices[0] && data.choices[0].message
+    const data = await res.json();
+    const content = data.choices && data.choices[0] && data.choices[0].message
         ? data.choices[0].message.content : '';
     return content.trim();
 }
@@ -96,11 +96,11 @@ async function callAI(apiKey, prompt, maxTokens) {
 function parseAIJSON(content) {
     if (!content) return null;
     try {
-        var jsonStr = content.replace(/```json?\s*/g, '').replace(/```/g, '').trim();
+        const jsonStr = content.replace(/```json?\s*/g, '').replace(/```/g, '').trim();
         return JSON.parse(jsonStr);
     } catch (e) {
         try {
-            var match = content.match(/\{[\s\S]*\}/);
+            const match = content.match(/\{[\s\S]*\}/);
             if (match) return JSON.parse(match[0]);
         } catch (e2) { /* ignore */ }
         return null;
@@ -111,34 +111,34 @@ function parseAIJSON(content) {
 /* 1. JOB ALERTS                                                  */
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleJobAlerts(env, body) {
-    var supabaseUrl = env.SUPABASE_URL;
-    var supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
-    var sub = body.sub_action || 'list';
-    var userId = body.user_id;
+    const supabaseUrl = env.SUPABASE_URL;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const sub = body.sub_action || 'list';
+    const userId = body.user_id;
     if (!userId) return { ok: false, error: 'Missing user_id' };
 
     if (sub === 'create') {
-        var filters = body.filters || {};
-        var name = body.name || 'My Alert';
-        var frequency = body.frequency || 'daily';
-        var res = await supaFetch(supabaseUrl, supabaseKey, 'job_alerts', {
+        let filters = body.filters || {};
+        let name = body.name || 'My Alert';
+        let frequency = body.frequency || 'daily';
+        const res = await supaFetch(supabaseUrl, supabaseKey, 'job_alerts', {
             method: 'POST',
             body: { user_id: userId, name: name, filters: filters, frequency: frequency }
         });
-        var data = await res.json();
+        const data = await res.json();
         return { ok: true, alert: Array.isArray(data) ? data[0] : data };
     }
 
     if (sub === 'update') {
-        var alertId = body.alert_id;
+        const alertId = body.alert_id;
         if (!alertId) return { ok: false, error: 'Missing alert_id' };
-        var updates = {};
+        const updates = {};
         if (body.name !== undefined) updates.name = body.name;
         if (body.filters !== undefined) updates.filters = body.filters;
         if (body.frequency !== undefined) updates.frequency = body.frequency;
         if (body.is_active !== undefined) updates.is_active = body.is_active;
         updates.updated_at = new Date().toISOString();
-        var res = await supaFetch(supabaseUrl, supabaseKey, 'job_alerts?id=eq.' + alertId + '&user_id=eq.' + userId, {
+        const res = await supaFetch(supabaseUrl, supabaseKey, 'job_alerts?id=eq.' + alertId + '&user_id=eq.' + userId, {
             method: 'PATCH',
             body: updates
         });
@@ -146,7 +146,7 @@ async function handleJobAlerts(env, body) {
     }
 
     if (sub === 'delete') {
-        var alertId = body.alert_id;
+        const alertId = body.alert_id;
         if (!alertId) return { ok: false, error: 'Missing alert_id' };
         await supaFetch(supabaseUrl, supabaseKey, 'job_alerts?id=eq.' + alertId + '&user_id=eq.' + userId, {
             method: 'DELETE',
@@ -156,8 +156,8 @@ async function handleJobAlerts(env, body) {
     }
 
     // Default: list
-    var res = await supaFetch(supabaseUrl, supabaseKey, 'job_alerts?user_id=eq.' + encodeURIComponent(userId) + '&order=created_at.desc');
-    var alerts = await res.json();
+    const res = await supaFetch(supabaseUrl, supabaseKey, 'job_alerts?user_id=eq.' + encodeURIComponent(userId) + '&order=created_at.desc');
+    const alerts = await res.json();
     return { ok: true, alerts: alerts || [] };
 }
 
@@ -165,16 +165,16 @@ async function handleJobAlerts(env, body) {
 /* 2. APPLICATION TRACKING                                        */
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleApplications(env, body) {
-    var supabaseUrl = env.SUPABASE_URL;
-    var supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
-    var sub = body.sub_action || 'list';
-    var userId = body.user_id;
+    const supabaseUrl = env.SUPABASE_URL;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const sub = body.sub_action || 'list';
+    const userId = body.user_id;
     if (!userId) return { ok: false, error: 'Missing user_id' };
 
     if (sub === 'apply') {
-        var jobId = body.job_id;
+        const jobId = body.job_id;
         if (!jobId) return { ok: false, error: 'Missing job_id' };
-        var appData = {
+        const appData = {
             job_id: jobId,
             user_id: userId,
             applicant_name: body.applicant_name || '',
@@ -184,12 +184,12 @@ async function handleApplications(env, body) {
             resume_url: body.resume_url || '',
             status: 'pending'
         };
-        var res = await supaFetch(supabaseUrl, supabaseKey, 'job_applications', {
+        const res = await supaFetch(supabaseUrl, supabaseKey, 'job_applications', {
             method: 'POST',
             body: appData,
             prefer: 'return=representation,resolution=merge-duplicates'
         });
-        var data = await res.json();
+        const data = await res.json();
         // Increment applications_count on jobs
         await supaFetch(supabaseUrl, supabaseKey, 'rpc/increment_applications', {
             method: 'POST',
@@ -200,9 +200,9 @@ async function handleApplications(env, body) {
 
     if (sub === 'update-status') {
         // Employer updating applicant status
-        var appId = body.application_id;
+        const appId = body.application_id;
         if (!appId) return { ok: false, error: 'Missing application_id' };
-        var updates = { updated_at: new Date().toISOString() };
+        const updates = { updated_at: new Date().toISOString() };
         if (body.status) updates.status = body.status;
         if (body.employer_notes !== undefined) updates.employer_notes = body.employer_notes;
         if (body.status === 'reviewed' || body.status === 'shortlisted' || body.status === 'rejected') {
@@ -224,19 +224,19 @@ async function handleApplications(env, body) {
 
     if (sub === 'employer-list') {
         // Employer views applicants for a specific job
-        var jobId = body.job_id;
+        const jobId = body.job_id;
         if (!jobId) return { ok: false, error: 'Missing job_id' };
-        var res = await supaFetch(supabaseUrl, supabaseKey,
+        const res = await supaFetch(supabaseUrl, supabaseKey,
             'job_applications?job_id=eq.' + jobId + '&order=created_at.desc');
-        var apps = await res.json();
+        const apps = await res.json();
         return { ok: true, applications: apps || [] };
     }
 
     if (sub === 'my-applications') {
         // Candidate views their applications
-        var res = await supaFetch(supabaseUrl, supabaseKey,
+        const res = await supaFetch(supabaseUrl, supabaseKey,
             'job_applications?user_id=eq.' + encodeURIComponent(userId) + '&order=created_at.desc');
-        var apps = await res.json();
+        const apps = await res.json();
         return { ok: true, applications: apps || [] };
     }
 
@@ -247,24 +247,24 @@ async function handleApplications(env, body) {
 /* 3. EMPLOYER PROFILES                                           */
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleEmployerProfile(env, body) {
-    var supabaseUrl = env.SUPABASE_URL;
-    var supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
-    var sub = body.sub_action || 'get';
-    var userId = body.user_id;
+    const supabaseUrl = env.SUPABASE_URL;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const sub = body.sub_action || 'get';
+    const userId = body.user_id;
 
     if (sub === 'get') {
-        var targetId = body.employer_id || userId;
+        const targetId = body.employer_id || userId;
         if (!targetId) return { ok: false, error: 'Missing employer_id' };
-        var res = await supaFetch(supabaseUrl, supabaseKey,
+        const res = await supaFetch(supabaseUrl, supabaseKey,
             'employer_profiles?user_id=eq.' + encodeURIComponent(targetId) + '&limit=1');
-        var data = await res.json();
-        var profile = Array.isArray(data) && data.length > 0 ? data[0] : null;
+        const data = await res.json();
+        const profile = Array.isArray(data) && data.length > 0 ? data[0] : null;
         return { ok: true, profile: profile };
     }
 
     if (sub === 'upsert') {
         if (!userId) return { ok: false, error: 'Missing user_id' };
-        var profileData = {
+        const profileData = {
             user_id: userId,
             company_name: body.company_name || '',
             company_description: body.company_description || '',
@@ -275,12 +275,12 @@ async function handleEmployerProfile(env, body) {
             location: body.location || '',
             updated_at: new Date().toISOString()
         };
-        var res = await supaFetch(supabaseUrl, supabaseKey, 'employer_profiles', {
+        const res = await supaFetch(supabaseUrl, supabaseKey, 'employer_profiles', {
             method: 'POST',
             body: profileData,
             prefer: 'return=representation,resolution=merge-duplicates'
         });
-        var data = await res.json();
+        const data = await res.json();
         return { ok: true, profile: Array.isArray(data) ? data[0] : data };
     }
 
@@ -291,14 +291,14 @@ async function handleEmployerProfile(env, body) {
 /* 4. AI RESUME/SKILLS PARSER                                     */
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleResumeParser(env, body) {
-    var supabaseUrl = env.SUPABASE_URL;
-    var supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
-    var apiKey = env.OPENROUTER_API_KEY || '';
-    var userId = body.user_id;
+    const supabaseUrl = env.SUPABASE_URL;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const apiKey = env.OPENROUTER_API_KEY || '';
+    const userId = body.user_id;
     if (!userId) return { ok: false, error: 'Missing user_id' };
 
-    var resumeText = body.resume_text || '';
-    var linkedinUrl = body.linkedin_url || '';
+    const resumeText = body.resume_text || '';
+    const linkedinUrl = body.linkedin_url || '';
 
     if (!resumeText && !linkedinUrl) {
         return { ok: false, error: 'Provide resume_text or linkedin_url' };
@@ -308,9 +308,9 @@ async function handleResumeParser(env, body) {
         return { ok: false, error: 'AI parsing temporarily unavailable' };
     }
 
-    var inputText = resumeText || ('LinkedIn Profile: ' + linkedinUrl);
+    const inputText = resumeText || ('LinkedIn Profile: ' + linkedinUrl);
 
-    var prompt = 'You are a resume parser. Extract structured information from this resume/profile text.\n\n' +
+    const prompt = 'You are a resume parser. Extract structured information from this resume/profile text.\n\n' +
         'Text:\n' + inputText.substring(0, 3000) + '\n\n' +
         'Respond with ONLY a JSON object (no markdown):\n' +
         '{\n' +
@@ -320,15 +320,15 @@ async function handleResumeParser(env, body) {
         '  "summary": "1-2 sentence professional summary"\n' +
         '}';
 
-    var aiContent = await callAI(apiKey, prompt, 800);
-    var parsed = parseAIJSON(aiContent);
+    const aiContent = await callAI(apiKey, prompt, 800);
+    const parsed = parseAIJSON(aiContent);
 
     if (!parsed) {
         return { ok: false, error: 'Failed to parse resume. Please try again.' };
     }
 
     // Save to user_resumes
-    var resumeData = {
+    const resumeData = {
         user_id: userId,
         resume_url: body.resume_url || '',
         linkedin_url: linkedinUrl,
@@ -376,49 +376,49 @@ async function handleResumeParser(env, body) {
 /* 5. SALARY INSIGHTS                                             */
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleSalaryInsights(env, body) {
-    var supabaseUrl = env.SUPABASE_URL;
-    var supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
-    var sub = body.sub_action || 'get';
+    const supabaseUrl = env.SUPABASE_URL;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const sub = body.sub_action || 'get';
 
     if (sub === 'get') {
-        var category = body.category || '';
-        var roleTitle = body.role_title || '';
-        var query = 'salary_insights?';
+        let category = body.category || '';
+        const roleTitle = body.role_title || '';
+        let query = 'salary_insights?';
         if (category) query += 'category=eq.' + encodeURIComponent(category) + '&';
         if (roleTitle) query += 'role_title=ilike.*' + encodeURIComponent(roleTitle) + '*&';
         query += 'order=sample_count.desc&limit=20';
 
-        var res = await supaFetch(supabaseUrl, supabaseKey, query);
-        var data = await res.json();
+        const res = await supaFetch(supabaseUrl, supabaseKey, query);
+        const data = await res.json();
         return { ok: true, insights: data || [] };
     }
 
     if (sub === 'compute') {
         // Compute salary insights from active jobs
-        var res = await supaFetch(supabaseUrl, supabaseKey,
+        const res = await supaFetch(supabaseUrl, supabaseKey,
             'jobs?status=eq.active&salary_min=not.is.null&select=ai_category,title,salary_min,salary_max,salary_currency,region');
-        var jobs = await res.json();
+        const jobs = await res.json();
         if (!jobs || !Array.isArray(jobs) || jobs.length === 0) {
             return { ok: true, message: 'No salary data available yet' };
         }
 
         // Group by category
-        var groups = {};
-        jobs.forEach(function(j) {
-            var cat = j.ai_category || 'other';
-            var title = (j.title || '').toLowerCase().split(/\s+/).slice(0, 3).join(' ');
-            var key = cat + '::' + title;
+        const groups = {};
+        jobs.forEach((j) => {
+            const cat = j.ai_category || 'other';
+            const title = (j.title || '').toLowerCase().split(/\s+/).slice(0, 3).join(' ');
+            const key = cat + '::' + title;
             if (!groups[key]) groups[key] = { category: cat, role_title: title, salaries: [] };
             if (j.salary_min) groups[key].salaries.push(j.salary_min);
             if (j.salary_max) groups[key].salaries.push(j.salary_max);
         });
 
-        var insights = [];
-        for (var key in groups) {
-            var g = groups[key];
+        const insights = [];
+        for (let key in groups) {
+            const g = groups[key];
             if (g.salaries.length < 2) continue;
-            g.salaries.sort(function(a, b) { return a - b; });
-            var sum = g.salaries.reduce(function(a, b) { return a + b; }, 0);
+            g.salaries.sort((a, b) => { return a - b; });
+            const sum = g.salaries.reduce((a, b) => { return a + b; }, 0);
             insights.push({
                 category: g.category,
                 role_title: g.role_title,
@@ -442,15 +442,15 @@ async function handleSalaryInsights(env, body) {
 /* 6. JOB EXPIRATION & RENEWAL                                    */
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleJobExpiration(env, body) {
-    var supabaseUrl = env.SUPABASE_URL;
-    var supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
-    var sub = body.sub_action || 'check';
-    var userId = body.user_id;
+    const supabaseUrl = env.SUPABASE_URL;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const sub = body.sub_action || 'check';
+    const userId = body.user_id;
 
     if (sub === 'renew') {
-        var jobId = body.job_id;
+        const jobId = body.job_id;
         if (!jobId || !userId) return { ok: false, error: 'Missing job_id or user_id' };
-        var newExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        const newExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
         await supaFetch(supabaseUrl, supabaseKey, 'jobs?id=eq.' + jobId + '&poster_id=eq.' + userId, {
             method: 'PATCH',
             body: {
@@ -466,12 +466,12 @@ async function handleJobExpiration(env, body) {
 
     if (sub === 'my-expiring') {
         if (!userId) return { ok: false, error: 'Missing user_id' };
-        var sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-        var res = await supaFetch(supabaseUrl, supabaseKey,
+        const sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        const res = await supaFetch(supabaseUrl, supabaseKey,
             'jobs?poster_id=eq.' + encodeURIComponent(userId) +
             '&status=eq.active&expires_at=lt.' + sevenDaysFromNow +
             '&is_expired=eq.false&order=expires_at.asc');
-        var jobs = await res.json();
+        const jobs = await res.json();
         return { ok: true, expiring_jobs: jobs || [] };
     }
 
@@ -482,31 +482,31 @@ async function handleJobExpiration(env, body) {
 /* 7. FEATURED / BOOSTED JOBS                                     */
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleJobBoost(env, body) {
-    var supabaseUrl = env.SUPABASE_URL;
-    var supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
-    var sub = body.sub_action || 'boost';
-    var userId = body.user_id;
+    const supabaseUrl = env.SUPABASE_URL;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const sub = body.sub_action || 'boost';
+    const userId = body.user_id;
 
     if (sub === 'boost') {
-        var jobId = body.job_id;
+        const jobId = body.job_id;
         if (!jobId || !userId) return { ok: false, error: 'Missing job_id or user_id' };
 
-        var boostType = body.boost_type || 'featured';
-        var durationDays = body.duration_days || 7;
-        var coinsCost = { featured: 100, highlighted: 50, pinned: 150 };
-        var cost = coinsCost[boostType] || 100;
+        const boostType = body.boost_type || 'featured';
+        const durationDays = body.duration_days || 7;
+        const coinsCost = { featured: 100, highlighted: 50, pinned: 150 };
+        const cost = coinsCost[boostType] || 100;
 
         // Check user balance
-        var balRes = await supaFetch(supabaseUrl, supabaseKey,
+        const balRes = await supaFetch(supabaseUrl, supabaseKey,
             'coins_wallets?user_id=eq.' + encodeURIComponent(userId) + '&limit=1');
-        var balData = await balRes.json();
-        var balance = Array.isArray(balData) && balData[0] ? (balData[0].balance || 0) : 0;
+        const balData = await balRes.json();
+        const balance = Array.isArray(balData) && balData[0] ? (balData[0].balance || 0) : 0;
 
         if (balance < cost) {
             return { ok: false, error: 'Insufficient GMX Coins. Need ' + cost + ' coins, you have ' + balance };
         }
 
-        var endsAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString();
+        const endsAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString();
 
         // Create boost record
         await supaFetch(supabaseUrl, supabaseKey, 'job_boosts', {
@@ -553,22 +553,22 @@ async function handleJobBoost(env, body) {
 /* 8. SKILL GAP ANALYSIS (AI)                                     */
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleSkillGap(env, body) {
-    var apiKey = env.OPENROUTER_API_KEY || '';
-    var userSkills = body.user_skills || [];
-    var jobSkills = body.job_skills || [];
-    var jobTitle = body.job_title || '';
+    const apiKey = env.OPENROUTER_API_KEY || '';
+    const userSkills = body.user_skills || [];
+    const jobSkills = body.job_skills || [];
+    const jobTitle = body.job_title || '';
 
     if (!userSkills.length || !jobSkills.length) {
         return { ok: false, error: 'Missing user_skills or job_skills' };
     }
 
     // Compute basic match
-    var matched = [];
-    var missing = [];
-    jobSkills.forEach(function(reqSkill) {
-        var found = false;
-        var reqLower = reqSkill.toLowerCase();
-        for (var i = 0; i < userSkills.length; i++) {
+    const matched = [];
+    const missing = [];
+    jobSkills.forEach((reqSkill) => {
+        let found = false;
+        const reqLower = reqSkill.toLowerCase();
+        for (let i = 0; i < userSkills.length; i++) {
             if (userSkills[i].toLowerCase().indexOf(reqLower) !== -1 ||
                 reqLower.indexOf(userSkills[i].toLowerCase()) !== -1) {
                 found = true;
@@ -579,9 +579,9 @@ async function handleSkillGap(env, body) {
         else missing.push(reqSkill);
     });
 
-    var matchPercent = Math.round((matched.length / jobSkills.length) * 100);
+    const matchPercent = Math.round((matched.length / jobSkills.length) * 100);
 
-    var result = {
+    let result = {
         ok: true,
         match_percent: matchPercent,
         matched_skills: matched,
@@ -591,15 +591,15 @@ async function handleSkillGap(env, body) {
 
     // Use AI for learning suggestions if we have missing skills
     if (apiKey && missing.length > 0) {
-        var prompt = 'A job seeker wants to learn these missing skills for a "' + jobTitle + '" role: ' +
+        const prompt = 'A job seeker wants to learn these missing skills for a "' + jobTitle + '" role: ' +
             missing.join(', ') + '\n\n' +
             'They already know: ' + userSkills.join(', ') + '\n\n' +
             'Suggest 2-3 specific, actionable learning resources or steps for each missing skill. ' +
             'Respond with ONLY a JSON array:\n' +
             '[{"skill": "...", "suggestions": ["suggestion 1", "suggestion 2"]}]';
 
-        var aiContent = await callAI(apiKey, prompt, 400);
-        var parsed = parseAIJSON(aiContent);
+        const aiContent = await callAI(apiKey, prompt, 400);
+        const parsed = parseAIJSON(aiContent);
         if (parsed && Array.isArray(parsed)) {
             result.suggestions = parsed;
         } else if (parsed && parsed.suggestions) {
@@ -614,17 +614,17 @@ async function handleSkillGap(env, body) {
 /* 9. REFERRAL BOUNTIES                                           */
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleReferrals(env, body) {
-    var supabaseUrl = env.SUPABASE_URL;
-    var supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
-    var sub = body.sub_action || 'get-bounty';
-    var userId = body.user_id;
+    const supabaseUrl = env.SUPABASE_URL;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const sub = body.sub_action || 'get-bounty';
+    const userId = body.user_id;
 
     if (sub === 'set-bounty') {
         if (!userId) return { ok: false, error: 'Missing user_id' };
-        var jobId = body.job_id;
+        const jobId = body.job_id;
         if (!jobId) return { ok: false, error: 'Missing job_id' };
-        var bountyCoins = body.bounty_coins || 500;
-        var bountyDesc = body.bounty_description || 'Refer a friend who gets hired and earn ' + bountyCoins + ' GMX Coins!';
+        const bountyCoins = body.bounty_coins || 500;
+        const bountyDesc = body.bounty_description || 'Refer a friend who gets hired and earn ' + bountyCoins + ' GMX Coins!';
 
         await supaFetch(supabaseUrl, supabaseKey, 'job_referral_bounties', {
             method: 'POST',
@@ -639,21 +639,21 @@ async function handleReferrals(env, body) {
     }
 
     if (sub === 'get-bounty') {
-        var jobId = body.job_id;
+        const jobId = body.job_id;
         if (!jobId) return { ok: false, error: 'Missing job_id' };
-        var res = await supaFetch(supabaseUrl, supabaseKey,
+        const res = await supaFetch(supabaseUrl, supabaseKey,
             'job_referral_bounties?job_id=eq.' + jobId + '&is_active=eq.true&limit=1');
-        var data = await res.json();
+        const data = await res.json();
         return { ok: true, bounty: Array.isArray(data) && data[0] ? data[0] : null };
     }
 
     if (sub === 'create-referral') {
         if (!userId) return { ok: false, error: 'Missing user_id' };
-        var jobId = body.job_id;
-        var referredEmail = body.referred_email;
+        const jobId = body.job_id;
+        const referredEmail = body.referred_email;
         if (!jobId || !referredEmail) return { ok: false, error: 'Missing job_id or referred_email' };
 
-        var code = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        const code = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
         await supaFetch(supabaseUrl, supabaseKey, 'job_referrals', {
             method: 'POST',
             body: {
@@ -668,9 +668,9 @@ async function handleReferrals(env, body) {
 
     if (sub === 'my-referrals') {
         if (!userId) return { ok: false, error: 'Missing user_id' };
-        var res = await supaFetch(supabaseUrl, supabaseKey,
+        const res = await supaFetch(supabaseUrl, supabaseKey,
             'job_referrals?referrer_id=eq.' + encodeURIComponent(userId) + '&order=created_at.desc');
-        var refs = await res.json();
+        const refs = await res.json();
         return { ok: true, referrals: refs || [] };
     }
 
@@ -681,24 +681,24 @@ async function handleReferrals(env, body) {
 /* 10. INTERVIEW SCHEDULING                                       */
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleInterviewScheduling(env, body) {
-    var supabaseUrl = env.SUPABASE_URL;
-    var supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
-    var sub = body.sub_action || 'propose';
-    var userId = body.user_id;
+    const supabaseUrl = env.SUPABASE_URL;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const sub = body.sub_action || 'propose';
+    const userId = body.user_id;
     if (!userId) return { ok: false, error: 'Missing user_id' };
 
     if (sub === 'propose') {
         // Employer proposes time slots
-        var applicationId = body.application_id;
-        var candidateId = body.candidate_id;
-        var jobId = body.job_id;
-        var proposedTimes = body.proposed_times || [];
+        const applicationId = body.application_id;
+        const candidateId = body.candidate_id;
+        const jobId = body.job_id;
+        const proposedTimes = body.proposed_times || [];
 
         if (!applicationId || !candidateId || !jobId || proposedTimes.length === 0) {
             return { ok: false, error: 'Missing required fields (application_id, candidate_id, job_id, proposed_times)' };
         }
 
-        var res = await supaFetch(supabaseUrl, supabaseKey, 'interview_slots', {
+        const res = await supaFetch(supabaseUrl, supabaseKey, 'interview_slots', {
             method: 'POST',
             body: {
                 job_id: jobId,
@@ -709,14 +709,14 @@ async function handleInterviewScheduling(env, body) {
                 notes: body.notes || ''
             }
         });
-        var data = await res.json();
+        const data = await res.json();
         return { ok: true, interview: Array.isArray(data) ? data[0] : data };
     }
 
     if (sub === 'select-time') {
         // Candidate selects a time slot
-        var interviewId = body.interview_id;
-        var selectedTime = body.selected_time;
+        const interviewId = body.interview_id;
+        const selectedTime = body.selected_time;
         if (!interviewId || !selectedTime) return { ok: false, error: 'Missing interview_id or selected_time' };
 
         await supaFetch(supabaseUrl, supabaseKey, 'interview_slots?id=eq.' + interviewId, {
@@ -730,9 +730,9 @@ async function handleInterviewScheduling(env, body) {
         });
 
         // Generate Google Calendar link
-        var start = new Date(selectedTime);
-        var end = new Date(start.getTime() + (body.duration || 30) * 60000);
-        var calendarLink = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+        const start = new Date(selectedTime);
+        const end = new Date(start.getTime() + (body.duration || 30) * 60000);
+        const calendarLink = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
             '&text=' + encodeURIComponent('Interview - GroupsMix') +
             '&dates=' + start.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '') +
             '/' + end.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '') +
@@ -742,7 +742,7 @@ async function handleInterviewScheduling(env, body) {
     }
 
     if (sub === 'cancel') {
-        var interviewId = body.interview_id;
+        const interviewId = body.interview_id;
         if (!interviewId) return { ok: false, error: 'Missing interview_id' };
         await supaFetch(supabaseUrl, supabaseKey, 'interview_slots?id=eq.' + interviewId, {
             method: 'PATCH',
@@ -753,10 +753,10 @@ async function handleInterviewScheduling(env, body) {
 
     if (sub === 'my-interviews') {
         // Get interviews for user (as candidate or employer)
-        var res = await supaFetch(supabaseUrl, supabaseKey,
+        const res = await supaFetch(supabaseUrl, supabaseKey,
             'interview_slots?or=(candidate_id.eq.' + encodeURIComponent(userId) +
             ',employer_id.eq.' + encodeURIComponent(userId) + ')&order=created_at.desc');
-        var interviews = await res.json();
+        const interviews = await res.json();
         return { ok: true, interviews: interviews || [] };
     }
 
@@ -767,9 +767,9 @@ async function handleInterviewScheduling(env, body) {
 /* MAIN HANDLER                                                   */
 /* ═══════════════════════════════════════════════════════════════ */
 export async function onRequest(context) {
-    var request = context.request;
-    var env = context.env || {};
-    var origin = request.headers.get('Origin') || '';
+    const request = context.request;
+    const env = context.env || {};
+    const origin = request.headers.get('Origin') || '';
 
     if (request.method === 'OPTIONS') {
         return new Response(null, { status: 204, headers: corsHeaders(origin) });
@@ -780,9 +780,9 @@ export async function onRequest(context) {
             { status: 405, headers: corsHeaders(origin) });
     }
 
-    var ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
+    const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
 
-    var body;
+    let body;
     try {
         body = await request.json();
     } catch (e) {
@@ -790,7 +790,7 @@ export async function onRequest(context) {
             { status: 400, headers: corsHeaders(origin) });
     }
 
-    var action = (body.action || '').trim();
+    let action = (body.action || '').trim();
 
     if (!checkRateLimit(ip, action)) {
         return new Response(JSON.stringify({ error: 'Too many requests. Please try again later.' }),
@@ -798,7 +798,7 @@ export async function onRequest(context) {
     }
 
     try {
-        var result;
+        let result;
         switch (action) {
             case 'job-alerts':
                 result = await handleJobAlerts(env, body);
