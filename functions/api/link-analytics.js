@@ -78,39 +78,39 @@ export async function onRequest(context) {
         const clicks = await clicksRes.json();
 
         // Aggregate stats
-        var countryMap = {};
-        var deviceMap = {};
-        var referrerMap = {};
-        var dailyMap = {};
+        const countryMap = {};
+        const deviceMap = {};
+        const referrerMap = {};
+        const dailyMap = {};
 
-        (clicks || []).forEach(function(c) {
+        (clicks || []).forEach((c) => {
             // Country breakdown
-            var country = c.country || 'Unknown';
+            const country = c.country || 'Unknown';
             countryMap[country] = (countryMap[country] || 0) + 1;
 
             // Device breakdown
-            var device = c.device || 'Unknown';
+            const device = c.device || 'Unknown';
             deviceMap[device] = (deviceMap[device] || 0) + 1;
 
             // Referrer breakdown
-            var referrer = c.referrer || 'Direct';
+            let referrer = c.referrer || 'Direct';
             try { referrer = new URL(referrer).hostname; } catch(e) {}
             referrerMap[referrer] = (referrerMap[referrer] || 0) + 1;
 
             // Daily clicks
-            var day = (c.clicked_at || '').split('T')[0];
+            const day = (c.clicked_at || '').split('T')[0];
             if (day) dailyMap[day] = (dailyMap[day] || 0) + 1;
         });
 
         // Sort and limit breakdowns
-        var sortMap = function(m, limit) {
+        const sortMap = (m, limit) => {
             return Object.entries(m)
-                .sort(function(a, b) { return b[1] - a[1]; })
+                .sort((a, b) => { return b[1] - a[1]; })
                 .slice(0, limit || 20)
-                .map(function(e) { return { name: e[0], count: e[1] }; });
+                .map((e) => { return { name: e[0], count: e[1] }; });
         };
 
-        var analytics = {
+        const analytics = {
             link: {
                 code: link.code,
                 long_url: link.long_url,
@@ -123,12 +123,12 @@ export async function onRequest(context) {
             devices: sortMap(deviceMap, 10),
             referrers: sortMap(referrerMap, 20),
             daily_clicks: Object.entries(dailyMap)
-                .sort(function(a, b) { return a[0].localeCompare(b[0]); })
-                .map(function(e) { return { date: e[0], clicks: e[1] }; })
+                .sort((a, b) => { return a[0].localeCompare(b[0]); })
+                .map((e) => { return { date: e[0], clicks: e[1] }; })
         };
 
         if (detail === 'clicks') {
-            analytics.recent_clicks = (clicks || []).slice(0, 100).map(function(c) {
+            analytics.recent_clicks = (clicks || []).slice(0, 100).map((c) => {
                 return {
                     country: c.country,
                     device: c.device,

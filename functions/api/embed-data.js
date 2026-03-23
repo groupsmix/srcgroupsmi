@@ -7,6 +7,19 @@
  * No auth required — public endpoint with CORS for any origin (widgets embed on external sites).
  */
 
+/**
+ * Wildcard CORS (`Access-Control-Allow-Origin: *`) is intentional here.
+ *
+ * This endpoint powers embeddable widgets (`/public/embed.html`) that site
+ * owners place on their own domains via `<iframe>` or `<script>` tags.
+ * Because widgets run on arbitrary third-party origins we cannot restrict
+ * the allowed origin list.  The endpoint is read-only (GET), returns only
+ * publicly-visible group metadata, requires no authentication, and exposes
+ * no user-specific data — so wildcard CORS carries no additional security
+ * risk beyond what the public website already surfaces.
+ *
+ * See SEC-5 in the audit report for the full rationale.
+ */
 function corsHeaders() {
     return {
         'Access-Control-Allow-Origin': '*',

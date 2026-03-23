@@ -121,7 +121,7 @@ export async function onRequest(context) {
             const referrals = await referralsRes.json();
             const user = users && users[0] ? users[0] : {};
 
-            var totalEarned = (referrals || []).reduce(function(sum, r) {
+            const totalEarned = (referrals || []).reduce((sum, r) => {
                 return sum + (r.status === 'completed' || r.status === 'rewarded' ? (r.reward_coins || 0) : 0);
             }, 0);
 
@@ -143,7 +143,7 @@ export async function onRequest(context) {
     }
 
     if (request.method === 'POST') {
-        var body;
+        let body;
         try {
             body = await request.json();
         } catch(e) {

@@ -18,20 +18,20 @@ function corsHeaders(origin) {
 }
 
 function generateVerificationCode() {
-    var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    var code = 'GMX-';
-    var bytes = new Uint8Array(6);
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = 'GMX-';
+    const bytes = new Uint8Array(6);
     crypto.getRandomValues(bytes);
-    for (var i = 0; i < 6; i++) {
+    for (let i = 0; i < 6; i++) {
         code += chars[bytes[i] % chars.length];
     }
     return code;
 }
 
 function generateBotToken() {
-    var bytes = new Uint8Array(32);
+    const bytes = new Uint8Array(32);
     crypto.getRandomValues(bytes);
-    return Array.from(bytes).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+    return Array.from(bytes).map((b) => { return b.toString(16).padStart(2, '0'); }).join('');
 }
 
 export async function onRequest(context) {
@@ -57,7 +57,7 @@ export async function onRequest(context) {
 
         if (action === 'bot-instructions') {
             const platform = url.searchParams.get('platform') || 'whatsapp';
-            var instructions = {};
+            let instructions = {};
 
             if (platform === 'whatsapp') {
                 instructions = {
@@ -126,7 +126,7 @@ export async function onRequest(context) {
 
             if (!records || !records.length) {
                 // Generate new verification code
-                var verificationCode = generateVerificationCode();
+                const verificationCode = generateVerificationCode();
                 return new Response(JSON.stringify({
                     ok: true,
                     connected: false,
@@ -154,7 +154,7 @@ export async function onRequest(context) {
     }
 
     if (request.method === 'POST') {
-        var body;
+        let body;
         try {
             body = await request.json();
         } catch(e) {
@@ -183,10 +183,10 @@ export async function onRequest(context) {
             }
 
             // Register a new bot integration
-            var verificationCode = generateVerificationCode();
-            var botToken = generateBotToken();
+            const verificationCode = generateVerificationCode();
+            const botToken = generateBotToken();
 
-            var record = {
+            const record = {
                 group_id: body.group_id || null,
                 platform: body.platform || 'whatsapp',
                 admin_uid: body.admin_uid || null,
@@ -226,14 +226,14 @@ export async function onRequest(context) {
 
         if (action === 'sync') {
             // Sync member count and status
-            var botToken = request.headers.get('X-Bot-Token') || body.bot_token;
+            const botToken = request.headers.get('X-Bot-Token') || body.bot_token;
             if (!botToken) {
                 return new Response(JSON.stringify({ ok: false, error: 'Bot token required' }), {
                     status: 401, headers: corsHeaders(origin)
                 });
             }
 
-            var updates = {
+            const updates = {
                 last_sync: new Date().toISOString(),
                 status: 'active'
             };
@@ -265,7 +265,7 @@ export async function onRequest(context) {
         }
 
         if (action === 'verify') {
-            var code = body.verification_code || body.code;
+            let code = body.verification_code || body.code;
             if (!code) {
                 return new Response(JSON.stringify({ ok: false, error: 'Verification code required' }), {
                     status: 400, headers: corsHeaders(origin)

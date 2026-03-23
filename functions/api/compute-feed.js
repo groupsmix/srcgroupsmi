@@ -36,7 +36,7 @@ function jsonResponse(data, status, origin) {
 }
 
 async function callRpc(supabaseUrl, supabaseKey, fnName, params) {
-    var res = await fetch(supabaseUrl + '/rest/v1/rpc/' + fnName, {
+    const res = await fetch(supabaseUrl + '/rest/v1/rpc/' + fnName, {
         method: 'POST',
         headers: {
             'apikey': supabaseKey,
@@ -48,12 +48,12 @@ async function callRpc(supabaseUrl, supabaseKey, fnName, params) {
     });
 
     if (!res.ok) {
-        var errText = await res.text();
+        const errText = await res.text();
         console.error('RPC ' + fnName + ' error:', res.status, errText);
         return { error: errText, status: res.status };
     }
 
-    var text = await res.text();
+    const text = await res.text();
     try {
         return JSON.parse(text);
     } catch (e) {
@@ -62,13 +62,13 @@ async function callRpc(supabaseUrl, supabaseKey, fnName, params) {
 }
 
 async function runTrending(supabaseUrl, supabaseKey, hours) {
-    var startTime = Date.now();
+    const startTime = Date.now();
 
-    var groupsResult = await callRpc(supabaseUrl, supabaseKey, 'compute_trending_scores_groups', {
+    const groupsResult = await callRpc(supabaseUrl, supabaseKey, 'compute_trending_scores_groups', {
         p_hours: hours
     });
 
-    var articlesResult = await callRpc(supabaseUrl, supabaseKey, 'compute_trending_scores_articles', {
+    const articlesResult = await callRpc(supabaseUrl, supabaseKey, 'compute_trending_scores_articles', {
         p_hours: hours
     });
 
@@ -82,13 +82,13 @@ async function runTrending(supabaseUrl, supabaseKey, hours) {
 }
 
 async function runCollaborative(supabaseUrl, supabaseKey, minCoOccurrence) {
-    var startTime = Date.now();
+    const startTime = Date.now();
 
-    var groupsResult = await callRpc(supabaseUrl, supabaseKey, 'compute_collaborative_groups', {
+    const groupsResult = await callRpc(supabaseUrl, supabaseKey, 'compute_collaborative_groups', {
         p_min_co_occurrence: minCoOccurrence
     });
 
-    var articlesResult = await callRpc(supabaseUrl, supabaseKey, 'compute_collaborative_articles', {
+    const articlesResult = await callRpc(supabaseUrl, supabaseKey, 'compute_collaborative_articles', {
         p_min_co_occurrence: minCoOccurrence
     });
 
@@ -102,9 +102,9 @@ async function runCollaborative(supabaseUrl, supabaseKey, minCoOccurrence) {
 }
 
 async function runDecay(supabaseUrl, supabaseKey, decayFactor) {
-    var startTime = Date.now();
+    const startTime = Date.now();
 
-    var result = await callRpc(supabaseUrl, supabaseKey, 'decay_user_interests', {
+    const result = await callRpc(supabaseUrl, supabaseKey, 'decay_user_interests', {
         p_decay_factor: decayFactor
     });
 
@@ -116,13 +116,13 @@ async function runDecay(supabaseUrl, supabaseKey, decayFactor) {
 }
 
 async function runEmbeddings(supabaseUrl, supabaseKey) {
-    var startTime = Date.now();
+    const startTime = Date.now();
 
     // Compute user embedding vectors based on interaction history
-    var userResult = await callRpc(supabaseUrl, supabaseKey, 'compute_user_embeddings', {});
+    const userResult = await callRpc(supabaseUrl, supabaseKey, 'compute_user_embeddings', {});
 
     // Compute group embedding vectors based on metadata
-    var groupResult = await callRpc(supabaseUrl, supabaseKey, 'compute_group_embeddings', {});
+    const groupResult = await callRpc(supabaseUrl, supabaseKey, 'compute_group_embeddings', {});
 
     return {
         job: 'embeddings',
@@ -133,10 +133,10 @@ async function runEmbeddings(supabaseUrl, supabaseKey) {
 }
 
 async function runReEngagement(supabaseUrl, supabaseKey, inactiveDays) {
-    var startTime = Date.now();
+    const startTime = Date.now();
 
     // Flag users inactive for N+ days and compute re-engagement scores
-    var result = await callRpc(supabaseUrl, supabaseKey, 'compute_re_engagement_scores', {
+    const result = await callRpc(supabaseUrl, supabaseKey, 'compute_re_engagement_scores', {
         p_inactive_days: inactiveDays || 7
     });
 
@@ -149,13 +149,13 @@ async function runReEngagement(supabaseUrl, supabaseKey, inactiveDays) {
 }
 
 async function runCleanup(supabaseUrl, supabaseKey) {
-    var startTime = Date.now();
+    const startTime = Date.now();
 
-    var impressionsResult = await callRpc(supabaseUrl, supabaseKey, 'cleanup_old_impressions', {
+    const impressionsResult = await callRpc(supabaseUrl, supabaseKey, 'cleanup_old_impressions', {
         p_days: 60
     });
 
-    var sessionsResult = await callRpc(supabaseUrl, supabaseKey, 'cleanup_old_sessions', {
+    const sessionsResult = await callRpc(supabaseUrl, supabaseKey, 'cleanup_old_sessions', {
         p_days: 30
     });
 
@@ -168,9 +168,9 @@ async function runCleanup(supabaseUrl, supabaseKey) {
 }
 
 export async function onRequest(context) {
-    var request = context.request;
-    var env = context.env;
-    var origin = request.headers.get('Origin') || '';
+    const request = context.request;
+    const env = context.env;
+    const origin = request.headers.get('Origin') || '';
 
     if (request.method === 'OPTIONS') {
         return new Response(null, { status: 204, headers: corsHeaders(origin) });
@@ -180,38 +180,38 @@ export async function onRequest(context) {
         return jsonResponse({ ok: false, error: 'Method not allowed' }, 405, origin);
     }
 
-    var supabaseUrl = env?.SUPABASE_URL;
-    var supabaseKey = env?.SUPABASE_SERVICE_KEY;
+    const supabaseUrl = env?.SUPABASE_URL;
+    const supabaseKey = env?.SUPABASE_SERVICE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
         return jsonResponse({ ok: false, error: 'Service not configured' }, 503, origin);
     }
 
     // Optional: verify cron secret for security
-    var cronSecret = env?.CRON_SECRET;
+    const cronSecret = env?.CRON_SECRET;
     if (cronSecret) {
-        var providedSecret = request.headers.get('X-Cron-Secret') || '';
+        const providedSecret = request.headers.get('X-Cron-Secret') || '';
         if (providedSecret !== cronSecret) {
             return jsonResponse({ ok: false, error: 'Unauthorized' }, 401, origin);
         }
     }
 
-    var body;
+    let body;
     try {
         body = await request.json();
     } catch (e) {
         body = {};
     }
 
-    var job = body.job || 'all';
-    var hours = parseInt(body.hours) || 6;
-    var minCoOccurrence = parseInt(body.min_co_occurrence) || 2;
-    var decayFactor = parseFloat(body.decay_factor) || 0.95;
-    var inactiveDays = parseInt(body.inactive_days) || 7;
+    const job = body.job || 'all';
+    const hours = parseInt(body.hours) || 6;
+    const minCoOccurrence = parseInt(body.min_co_occurrence) || 2;
+    const decayFactor = parseFloat(body.decay_factor) || 0.95;
+    const inactiveDays = parseInt(body.inactive_days) || 7;
 
     try {
-        var results = [];
-        var totalStart = Date.now();
+        const results = [];
+        const totalStart = Date.now();
 
         if (job === 'trending' || job === 'all') {
             results.push(await runTrending(supabaseUrl, supabaseKey, hours));

@@ -68,15 +68,15 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
     const action = url.searchParams.get('action') || 'list';
 
     if (action === 'list') {
-        var limit = parseInt(url.searchParams.get('limit')) || 20;
-        var offset = parseInt(url.searchParams.get('offset')) || 0;
-        var category = url.searchParams.get('category') || '';
-        var eventType = url.searchParams.get('event_type') || '';
-        var country = url.searchParams.get('country') || '';
-        var groupId = url.searchParams.get('group_id') || '';
-        var search = url.searchParams.get('search') || '';
+        let limit = parseInt(url.searchParams.get('limit')) || 20;
+        const offset = parseInt(url.searchParams.get('offset')) || 0;
+        let category = url.searchParams.get('category') || '';
+        const eventType = url.searchParams.get('event_type') || '';
+        const country = url.searchParams.get('country') || '';
+        const groupId = url.searchParams.get('group_id') || '';
+        const search = url.searchParams.get('search') || '';
 
-        var res = await fetch(
+        const res = await fetch(
             supabaseUrl + '/rest/v1/rpc/get_upcoming_events',
             {
                 method: 'POST',
@@ -94,7 +94,7 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
                 })
             }
         );
-        var data = await res.json();
+        const data = await res.json();
         if (!res.ok) {
             return new Response(JSON.stringify({ ok: false, error: (data && data.message) || 'Failed to fetch events' }), {
                 status: 400, headers: corsHeaders(origin)
@@ -102,9 +102,9 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
         }
 
         // Filter by group_id client-side if provided (RPC doesn't support it directly)
-        var events = Array.isArray(data) ? data : [];
+        let events = Array.isArray(data) ? data : [];
         if (groupId) {
-            events = events.filter(function(e) { return e.group_id === groupId; });
+            events = events.filter((e) => { return e.group_id === groupId; });
         }
 
         return new Response(JSON.stringify({ ok: true, events: events, total: events.length }), {
@@ -113,33 +113,33 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
     }
 
     if (action === 'detail') {
-        var eventId = url.searchParams.get('event_id');
+        const eventId = url.searchParams.get('event_id');
         if (!eventId) {
             return new Response(JSON.stringify({ ok: false, error: 'event_id required' }), {
                 status: 400, headers: corsHeaders(origin)
             });
         }
 
-        var res = await fetch(
+        const res = await fetch(
             supabaseUrl + '/rest/v1/community_events?id=eq.' + encodeURIComponent(eventId) + '&select=*&limit=1',
             { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
         );
-        var data = await res.json();
+        const data = await res.json();
         if (!data || !data.length) {
             return new Response(JSON.stringify({ ok: false, error: 'Event not found' }), {
                 status: 404, headers: corsHeaders(origin)
             });
         }
 
-        var event = data[0];
+        const event = data[0];
 
         // Get group info
         if (event.group_id) {
-            var groupRes = await fetch(
+            const groupRes = await fetch(
                 supabaseUrl + '/rest/v1/groups?id=eq.' + encodeURIComponent(event.group_id) + '&select=id,name,platform,is_verified&limit=1',
                 { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
             );
-            var groupData = await groupRes.json();
+            const groupData = await groupRes.json();
             if (groupData && groupData.length) {
                 event.group_name = groupData[0].name;
                 event.group_platform = groupData[0].platform;
@@ -148,13 +148,13 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
         }
 
         // Get RSVP counts
-        var rsvpRes = await fetch(
+        const rsvpRes = await fetch(
             supabaseUrl + '/rest/v1/event_rsvps?event_id=eq.' + encodeURIComponent(eventId) + '&select=status',
             { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
         );
-        var rsvps = await rsvpRes.json();
-        event.rsvp_count = (rsvps || []).filter(function(r) { return r.status === 'going'; }).length;
-        event.interested_count = (rsvps || []).filter(function(r) { return r.status === 'interested'; }).length;
+        const rsvps = await rsvpRes.json();
+        event.rsvp_count = (rsvps || []).filter((r) => { return r.status === 'going'; }).length;
+        event.interested_count = (rsvps || []).filter((r) => { return r.status === 'interested'; }).length;
 
         // Increment views
         await fetch(
@@ -177,30 +177,30 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
 
     if (action === 'recommendations') {
         // Smart event recommendations based on user's groups and engagement topics
-        var userId = url.searchParams.get('user_id') || '';
-        var recLimit = parseInt(url.searchParams.get('limit')) || 10;
+        const userId = url.searchParams.get('user_id') || '';
+        const recLimit = parseInt(url.searchParams.get('limit')) || 10;
 
         // Get user's group memberships and interests
-        var userGroups = [];
-        var userCategories = [];
-        var userCountry = '';
+        let userGroups = [];
+        let userCategories = [];
+        let userCountry = '';
 
         if (userId) {
             try {
                 // Get groups the user is associated with
-                var userGroupsRes = await fetch(
+                const userGroupsRes = await fetch(
                     supabaseUrl + '/rest/v1/groups?submitted_by=eq.' + encodeURIComponent(userId) + '&status=eq.approved&select=id,category,country,tags&limit=20',
                     { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
                 );
                 userGroups = await userGroupsRes.json();
                 if (Array.isArray(userGroups)) {
-                    userCategories = [...new Set(userGroups.map(function(g) { return g.category; }).filter(Boolean))];
+                    userCategories = [...new Set(userGroups.map((g) => { return g.category; }).filter(Boolean))];
                     // Get most common country
-                    var countryCounts = {};
-                    userGroups.forEach(function(g) {
+                    const countryCounts = {};
+                    userGroups.forEach((g) => {
                         if (g.country) countryCounts[g.country] = (countryCounts[g.country] || 0) + 1;
                     });
-                    var topCountry = Object.entries(countryCounts).sort(function(a, b) { return b[1] - a[1]; })[0];
+                    const topCountry = Object.entries(countryCounts).sort((a, b) => { return b[1] - a[1]; })[0];
                     if (topCountry) userCountry = topCountry[0];
                 }
             } catch (e) {
@@ -209,7 +209,7 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
         }
 
         // Fetch upcoming events
-        var eventsRes = await fetch(
+        const eventsRes = await fetch(
             supabaseUrl + '/rest/v1/rpc/get_upcoming_events',
             {
                 method: 'POST',
@@ -221,20 +221,20 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
                 body: JSON.stringify({ p_limit: 50, p_offset: 0, p_category: '', p_event_type: '', p_country: '' })
             }
         );
-        var allEvents = await eventsRes.json();
+        let allEvents = await eventsRes.json();
         allEvents = Array.isArray(allEvents) ? allEvents : [];
 
         // Get user's engagement topics from feed interactions if available
-        var engagementTopics = [];
+        let engagementTopics = [];
         if (userId) {
             try {
-                var interestsRes = await fetch(
+                const interestsRes = await fetch(
                     supabaseUrl + '/rest/v1/user_interests?user_id=eq.' + encodeURIComponent(userId) + '&select=category,weight&order=weight.desc&limit=10',
                     { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
                 );
-                var interests = await interestsRes.json();
+                const interests = await interestsRes.json();
                 if (Array.isArray(interests)) {
-                    engagementTopics = interests.map(function(i) { return { category: i.category, weight: i.weight || 1 }; });
+                    engagementTopics = interests.map((i) => { return { category: i.category, weight: i.weight || 1 }; });
                 }
             } catch (e) {
                 // silently continue without engagement data
@@ -242,23 +242,23 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
         }
 
         // Score events by relevance to user
-        var scoredEvents = allEvents.map(function(evt) {
-            var score = 0;
+        const scoredEvents = allEvents.map((evt) => {
+            let score = 0;
 
             // Category match (strongest signal)
             if (evt.category && userCategories.indexOf(evt.category) !== -1) score += 40;
 
             // Engagement topic signals (from feed interactions / implicit feedback)
-            engagementTopics.forEach(function(topic) {
+            engagementTopics.forEach((topic) => {
                 if (evt.category === topic.category) {
                     score += 25 * Math.min(3, topic.weight); // weighted by engagement strength
                 }
             });
 
             // Tag overlap with user's group tags
-            var evtTags = (evt.tags || []).map(function(t) { return (t || '').toLowerCase(); });
-            userGroups.forEach(function(g) {
-                (g.tags || []).forEach(function(t) {
+            const evtTags = (evt.tags || []).map((t) => { return (t || '').toLowerCase(); });
+            userGroups.forEach((g) => {
+                (g.tags || []).forEach((t) => {
                     if (evtTags.indexOf((t || '').toLowerCase()) !== -1) score += 10;
                 });
             });
@@ -268,12 +268,12 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
 
             // Group match (event is from a group the user owns/follows)
             if (evt.group_id) {
-                var isUserGroup = userGroups.some(function(g) { return g.id === evt.group_id; });
+                const isUserGroup = userGroups.some((g) => { return g.id === evt.group_id; });
                 if (isUserGroup) score += 50;
             }
 
             // Recency bonus (events happening sooner get a slight boost)
-            var daysUntil = (new Date(evt.start_date) - Date.now()) / 86400000;
+            const daysUntil = (new Date(evt.start_date) - Date.now()) / 86400000;
             if (daysUntil > 0 && daysUntil <= 7) score += 15;
             else if (daysUntil > 7 && daysUntil <= 30) score += 5;
 
@@ -288,9 +288,9 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
             return evt;
         });
 
-        scoredEvents.sort(function(a, b) { return b._relevance_score - a._relevance_score; });
-        var recommended = scoredEvents.slice(0, recLimit);
-        recommended.forEach(function(evt) { delete evt._relevance_score; });
+        scoredEvents.sort((a, b) => { return b._relevance_score - a._relevance_score; });
+        const recommended = scoredEvents.slice(0, recLimit);
+        recommended.forEach((evt) => { delete evt._relevance_score; });
 
         return new Response(JSON.stringify({
             ok: true,
@@ -302,7 +302,7 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
 
     if (action === 'attendance-prediction') {
         // Attendance prediction based on RSVP velocity
-        var predEventId = url.searchParams.get('event_id');
+        const predEventId = url.searchParams.get('event_id');
         if (!predEventId) {
             return new Response(JSON.stringify({ ok: false, error: 'event_id required' }), {
                 status: 400, headers: corsHeaders(origin)
@@ -310,54 +310,54 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
         }
 
         // Get event details
-        var predEventRes = await fetch(
+        const predEventRes = await fetch(
             supabaseUrl + '/rest/v1/community_events?id=eq.' + encodeURIComponent(predEventId) + '&select=*&limit=1',
             { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
         );
-        var predEvents = await predEventRes.json();
+        const predEvents = await predEventRes.json();
         if (!predEvents || !predEvents.length) {
             return new Response(JSON.stringify({ ok: false, error: 'Event not found' }), {
                 status: 404, headers: corsHeaders(origin)
             });
         }
-        var predEvent = predEvents[0];
+        const predEvent = predEvents[0];
 
         // Get all RSVPs with timestamps
-        var predRsvpRes = await fetch(
+        const predRsvpRes = await fetch(
             supabaseUrl + '/rest/v1/event_rsvps?event_id=eq.' + encodeURIComponent(predEventId) + '&select=status,created_at&order=created_at.asc',
             { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
         );
-        var predRsvps = await predRsvpRes.json();
+        let predRsvps = await predRsvpRes.json();
         predRsvps = Array.isArray(predRsvps) ? predRsvps : [];
 
-        var goingCount = predRsvps.filter(function(r) { return r.status === 'going'; }).length;
-        var interestedCount = predRsvps.filter(function(r) { return r.status === 'interested'; }).length;
-        var maxAttendees = predEvent.max_attendees || 0;
+        const goingCount = predRsvps.filter((r) => { return r.status === 'going'; }).length;
+        const interestedCount = predRsvps.filter((r) => { return r.status === 'interested'; }).length;
+        const maxAttendees = predEvent.max_attendees || 0;
 
         // Calculate RSVP velocity (RSVPs per day)
-        var eventCreated = new Date(predEvent.created_at);
-        var now = new Date();
-        var daysLive = Math.max(1, (now - eventCreated) / 86400000);
-        var rsvpVelocity = goingCount / daysLive;
+        const eventCreated = new Date(predEvent.created_at);
+        const now = new Date();
+        const daysLive = Math.max(1, (now - eventCreated) / 86400000);
+        const rsvpVelocity = goingCount / daysLive;
 
         // Calculate days until event
-        var eventStart = new Date(predEvent.start_date);
-        var daysUntilEvent = Math.max(0, (eventStart - now) / 86400000);
+        const eventStart = new Date(predEvent.start_date);
+        const daysUntilEvent = Math.max(0, (eventStart - now) / 86400000);
 
         // Get historical event data for same category/group to improve prediction
-        var historicalMultiplier = 1.0;
+        let historicalMultiplier = 1.0;
         if (predEvent.category || predEvent.group_id) {
             try {
-                var histQuery = supabaseUrl + '/rest/v1/community_events?start_date=lt.' + encodeURIComponent(new Date().toISOString()) + '&select=id,rsvp_count,max_attendees,category,group_id&limit=50&order=start_date.desc';
+                let histQuery = supabaseUrl + '/rest/v1/community_events?start_date=lt.' + encodeURIComponent(new Date().toISOString()) + '&select=id,rsvp_count,max_attendees,category,group_id&limit=50&order=start_date.desc';
                 if (predEvent.category) histQuery += '&category=eq.' + encodeURIComponent(predEvent.category);
-                var histRes = await fetch(histQuery, { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } });
-                var histEvents = await histRes.json();
+                const histRes = await fetch(histQuery, { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } });
+                const histEvents = await histRes.json();
                 if (Array.isArray(histEvents) && histEvents.length >= 3) {
-                    var avgHistRsvps = histEvents.reduce(function(s, e) { return s + (e.rsvp_count || 0); }, 0) / histEvents.length;
+                    const avgHistRsvps = histEvents.reduce((s, e) => { return s + (e.rsvp_count || 0); }, 0) / histEvents.length;
                     if (avgHistRsvps > 0 && goingCount > 0) {
                         // If current velocity is above historical average, boost projection
-                        var currentPace = goingCount / daysLive;
-                        var historicalPace = avgHistRsvps / 14; // assume avg 2 week event lifecycle
+                        const currentPace = goingCount / daysLive;
+                        const historicalPace = avgHistRsvps / 14; // assume avg 2 week event lifecycle
                         if (currentPace > historicalPace * 1.5) historicalMultiplier = 1.2;
                         else if (currentPace < historicalPace * 0.5) historicalMultiplier = 0.8;
                     }
@@ -368,15 +368,15 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
         }
 
         // Predict total RSVPs by event date (enhanced with historical data)
-        var projectedTotal = Math.round((goingCount + (rsvpVelocity * daysUntilEvent)) * historicalMultiplier);
+        const projectedTotal = Math.round((goingCount + (rsvpVelocity * daysUntilEvent)) * historicalMultiplier);
 
         // Determine fill-up likelihood
-        var fillPercentage = maxAttendees > 0 ? (goingCount / maxAttendees * 100) : 0;
-        var projectedFillPercentage = maxAttendees > 0 ? (projectedTotal / maxAttendees * 100) : 0;
+        const fillPercentage = maxAttendees > 0 ? (goingCount / maxAttendees * 100) : 0;
+        const projectedFillPercentage = maxAttendees > 0 ? (projectedTotal / maxAttendees * 100) : 0;
 
-        var badge = 'normal';
-        var badgeLabel = 'Open';
-        var badgeLabelAr = '\u0645\u0641\u062a\u0648\u062d';
+        let badge = 'normal';
+        let badgeLabel = 'Open';
+        let badgeLabelAr = '\u0645\u0641\u062a\u0648\u062d';
 
         if (maxAttendees > 0) {
             if (fillPercentage >= 90) {
@@ -434,7 +434,7 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
 }
 
 async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
-    var body;
+    let body;
     try {
         body = await request.json();
     } catch (e) {
@@ -443,7 +443,7 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
         });
     }
 
-    var action = body.action;
+    let action = body.action;
 
     if (action === 'create') {
         if (!body.title || !body.start_date) {
@@ -452,7 +452,7 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
             });
         }
 
-        var eventData = {
+        const eventData = {
             creator_uid: user.id,
             group_id: body.group_id || null,
             title: (body.title || '').slice(0, 200),
@@ -473,7 +473,7 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
             status: 'published'
         };
 
-        var res = await fetch(
+        const res = await fetch(
             supabaseUrl + '/rest/v1/community_events',
             {
                 method: 'POST',
@@ -486,22 +486,22 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
                 body: JSON.stringify(eventData)
             }
         );
-        var data = await res.json();
+        const data = await res.json();
         if (!res.ok) {
             return new Response(JSON.stringify({ ok: false, error: (data && data.message) || 'Failed to create event' }), {
                 status: 400, headers: corsHeaders(origin)
             });
         }
 
-        var created = Array.isArray(data) ? data[0] : data;
+        const created = Array.isArray(data) ? data[0] : data;
         return new Response(JSON.stringify({ ok: true, event: created, message: 'Event created!' }), {
             status: 201, headers: corsHeaders(origin)
         });
     }
 
     if (action === 'rsvp') {
-        var eventId = body.event_id;
-        var rsvpStatus = body.status || 'going';
+        const eventId = body.event_id;
+        const rsvpStatus = body.status || 'going';
 
         if (!eventId) {
             return new Response(JSON.stringify({ ok: false, error: 'event_id required' }), {
@@ -515,7 +515,7 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
             });
         }
 
-        var res = await fetch(
+        const res = await fetch(
             supabaseUrl + '/rest/v1/rpc/rsvp_to_event',
             {
                 method: 'POST',
@@ -527,7 +527,7 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
                 body: JSON.stringify({ p_event_id: eventId, p_uid: user.id, p_status: rsvpStatus })
             }
         );
-        var data = await res.json();
+        const data = await res.json();
         if (!res.ok) {
             return new Response(JSON.stringify({ ok: false, error: (data && data.message) || 'RSVP failed' }), {
                 status: 400, headers: corsHeaders(origin)
@@ -540,7 +540,7 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
     }
 
     if (action === 'cancel') {
-        var eventId = body.event_id;
+        const eventId = body.event_id;
         if (!eventId) {
             return new Response(JSON.stringify({ ok: false, error: 'event_id required' }), {
                 status: 400, headers: corsHeaders(origin)
@@ -548,7 +548,7 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
         }
 
         // Update event status to cancelled (only creator can do this via RLS)
-        var res = await fetch(
+        const res = await fetch(
             supabaseUrl + '/rest/v1/community_events?id=eq.' + encodeURIComponent(eventId) + '&creator_uid=eq.' + encodeURIComponent(user.id),
             {
                 method: 'PATCH',
@@ -561,7 +561,7 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
                 body: JSON.stringify({ status: 'cancelled' })
             }
         );
-        var data = await res.json();
+        const data = await res.json();
         if (!res.ok || !data || !data.length) {
             return new Response(JSON.stringify({ ok: false, error: 'Failed to cancel event or not authorized' }), {
                 status: 400, headers: corsHeaders(origin)

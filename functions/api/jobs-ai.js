@@ -43,13 +43,13 @@ function checkRateLimit(ip, action) {
     const key = ip + ':jobs-ai:' + action;
     let bucket = ipBuckets.get(key);
     if (!bucket) { bucket = []; ipBuckets.set(key, bucket); }
-    const recent = bucket.filter(function(t) { return now - t < window; });
+    const recent = bucket.filter((t) => { return now - t < window; });
     if (recent.length >= max) { ipBuckets.set(key, recent); return false; }
     recent.push(now);
     ipBuckets.set(key, recent);
     if (ipBuckets.size > 2000) {
         for (const [k, v] of ipBuckets) {
-            const f = v.filter(function(t) { return now - t < 120000; });
+            const f = v.filter((t) => { return now - t < 120000; });
             if (f.length === 0) ipBuckets.delete(k);
             else ipBuckets.set(k, f);
         }
@@ -88,11 +88,11 @@ const SUSPICIOUS_PATTERNS = [
 ];
 
 function quickSpamCheck(text) {
-    for (var i = 0; i < SPAM_PATTERNS.length; i++) {
+    for (let i = 0; i < SPAM_PATTERNS.length; i++) {
         if (SPAM_PATTERNS[i].test(text)) return { spam: true, reason: 'Content matches known spam/fraud pattern' };
     }
-    var suspiciousCount = 0;
-    for (var j = 0; j < SUSPICIOUS_PATTERNS.length; j++) {
+    let suspiciousCount = 0;
+    for (let j = 0; j < SUSPICIOUS_PATTERNS.length; j++) {
         if (SUSPICIOUS_PATTERNS[j].test(text)) suspiciousCount++;
     }
     if (suspiciousCount >= 2) return { spam: true, reason: 'Content contains multiple suspicious indicators' };
@@ -102,7 +102,7 @@ function quickSpamCheck(text) {
 /* ── Call OpenRouter AI ───────────────────────────────────────── */
 async function callAI(apiKey, prompt, maxTokens) {
     maxTokens = maxTokens || 300;
-    var res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
             'Authorization': 'Bearer ' + apiKey,
@@ -123,8 +123,8 @@ async function callAI(apiKey, prompt, maxTokens) {
         return null;
     }
 
-    var data = await res.json();
-    var content = data.choices && data.choices[0] && data.choices[0].message
+    const data = await res.json();
+    const content = data.choices && data.choices[0] && data.choices[0].message
         ? data.choices[0].message.content
         : '';
     return content.trim();
@@ -134,11 +134,11 @@ async function callAI(apiKey, prompt, maxTokens) {
 function parseAIJSON(content) {
     if (!content) return null;
     try {
-        var jsonStr = content.replace(/```json?\s*/g, '').replace(/```/g, '').trim();
+        const jsonStr = content.replace(/```json?\s*/g, '').replace(/```/g, '').trim();
         return JSON.parse(jsonStr);
     } catch (e) {
         try {
-            var match = content.match(/\{[\s\S]*\}/);
+            const match = content.match(/\{[\s\S]*\}/);
             if (match) return JSON.parse(match[0]);
         } catch (e2) {
             // ignore
@@ -149,17 +149,17 @@ function parseAIJSON(content) {
 
 /* ── ACTION: validate (AI Gatekeeper) ─────────────────────────── */
 async function handleValidate(body, apiKey) {
-    var title = (body.title || '').trim();
-    var description = (body.description || '').trim();
+    const title = (body.title || '').trim();
+    const description = (body.description || '').trim();
 
     if (!title) {
         return { valid: false, message: 'Job title is required', category: null };
     }
 
-    var combined = title + ' ' + description;
+    const combined = title + ' ' + description;
 
     // Quick spam check first
-    var spamResult = quickSpamCheck(combined);
+    const spamResult = quickSpamCheck(combined);
     if (spamResult.spam) {
         return { valid: false, message: spamResult.reason, category: null };
     }
@@ -169,7 +169,7 @@ async function handleValidate(body, apiKey) {
         return { valid: true, message: '', category: 'other' };
     }
 
-    var prompt = 'You are a job posting content filter for GroupsMix, a social media community platform. Analyze this job posting and determine:\n' +
+    const prompt = 'You are a job posting content filter for GroupsMix, a social media community platform. Analyze this job posting and determine:\n' +
         '1. Is it legitimate (not spam, scam, or fraudulent)?\n' +
         '2. What category best fits: "design", "programming", "marketing", "writing", "community", "other"\n\n' +
         'Job Title: ' + title + '\n' +
@@ -177,8 +177,8 @@ async function handleValidate(body, apiKey) {
         'Respond with ONLY a JSON object (no markdown, no extra text):\n' +
         '{"is_valid": true/false, "reason": "brief explanation if invalid", "category": "one of the categories above"}';
 
-    var aiContent = await callAI(apiKey, prompt, 150);
-    var result = parseAIJSON(aiContent);
+    const aiContent = await callAI(apiKey, prompt, 150);
+    let result = parseAIJSON(aiContent);
 
     if (!result) {
         return { valid: true, message: '', category: 'other' };
@@ -193,8 +193,8 @@ async function handleValidate(body, apiKey) {
 
 /* ── ACTION: enhance (Job Description Generator) ──────────────── */
 async function handleEnhance(body, apiKey) {
-    var title = (body.title || '').trim();
-    var description = (body.description || '').trim();
+    const title = (body.title || '').trim();
+    const description = (body.description || '').trim();
 
     if (!title && !description) {
         return { enhanced: false, message: 'Title or description is required', description: '' };
@@ -204,7 +204,7 @@ async function handleEnhance(body, apiKey) {
         return { enhanced: false, message: 'AI enhancement is temporarily unavailable', description: description };
     }
 
-    var prompt = 'You are a professional job description writer. The user has provided a basic job title/description for their job posting on GroupsMix (a social media community platform).\n\n' +
+    const prompt = 'You are a professional job description writer. The user has provided a basic job title/description for their job posting on GroupsMix (a social media community platform).\n\n' +
         'Original title: ' + title + '\n' +
         (description ? 'Original description: ' + description + '\n' : '') +
         '\nTransform this into a professional, compelling job description. Include:\n' +
@@ -215,22 +215,22 @@ async function handleEnhance(body, apiKey) {
         'Use markdown formatting (## for headers, - for bullets). Keep it concise but professional. Do NOT include salary or company info.\n' +
         'Write in a warm, professional tone. Maximum 300 words.';
 
-    var aiContent = await callAI(apiKey, prompt, 500);
+    const aiContent = await callAI(apiKey, prompt, 500);
 
     if (!aiContent) {
         return { enhanced: false, message: 'AI enhancement failed. Please try again.', description: description };
     }
 
     // Also auto-detect skills from the enhanced description
-    var skillsPrompt = 'From this job description, extract 5-8 key skills as a JSON array of lowercase strings.\n\n' +
+    const skillsPrompt = 'From this job description, extract 5-8 key skills as a JSON array of lowercase strings.\n\n' +
         'Description: ' + aiContent + '\n\n' +
         'Respond with ONLY a JSON array, e.g.: ["javascript", "react", "ui design"]';
 
-    var skillsContent = await callAI(apiKey, skillsPrompt, 100);
-    var skills = [];
+    const skillsContent = await callAI(apiKey, skillsPrompt, 100);
+    let skills = [];
     try {
-        var parsed = JSON.parse(skillsContent.replace(/```json?\s*/g, '').replace(/```/g, '').trim());
-        if (Array.isArray(parsed)) skills = parsed.map(function(s) { return String(s).toLowerCase().trim(); }).filter(Boolean).slice(0, 8);
+        const parsed = JSON.parse(skillsContent.replace(/```json?\s*/g, '').replace(/```/g, '').trim());
+        if (Array.isArray(parsed)) skills = parsed.map((s) => { return String(s).toLowerCase().trim(); }).filter(Boolean).slice(0, 8);
     } catch (e) {
         // ignore
     }
@@ -245,8 +245,8 @@ async function handleEnhance(body, apiKey) {
 
 /* ── ACTION: categorize (Auto-classification) ─────────────────── */
 async function handleCategorize(body, apiKey) {
-    var title = (body.title || '').trim();
-    var description = (body.description || '').trim();
+    const title = (body.title || '').trim();
+    const description = (body.description || '').trim();
 
     if (!title) {
         return { category: 'other', confidence: 0 };
@@ -256,17 +256,17 @@ async function handleCategorize(body, apiKey) {
         return { category: 'other', confidence: 0 };
     }
 
-    var prompt = 'Classify this job posting into exactly ONE category.\n\n' +
+    const prompt = 'Classify this job posting into exactly ONE category.\n\n' +
         'Categories: design, programming, marketing, writing, community, other\n\n' +
         'Job Title: ' + title + '\n' +
         (description ? 'Description: ' + description.substring(0, 200) + '\n' : '') +
         '\nRespond with ONLY a JSON object:\n' +
         '{"category": "one_category", "confidence": 0.0-1.0}';
 
-    var aiContent = await callAI(apiKey, prompt, 50);
-    var result = parseAIJSON(aiContent);
+    const aiContent = await callAI(apiKey, prompt, 50);
+    let result = parseAIJSON(aiContent);
 
-    var validCategories = ['design', 'programming', 'marketing', 'writing', 'community', 'other'];
+    const validCategories = ['design', 'programming', 'marketing', 'writing', 'community', 'other'];
     if (result && validCategories.indexOf(result.category) !== -1) {
         return { category: result.category, confidence: result.confidence || 0.5 };
     }
@@ -276,22 +276,22 @@ async function handleCategorize(body, apiKey) {
 
 /* ── ACTION: match (Smart Matching) ───────────────────────────── */
 async function handleMatch(body, apiKey) {
-    var userSkills = body.skills || [];
-    var jobTitle = (body.job_title || '').trim();
-    var jobDescription = (body.job_description || '').trim();
-    var jobSkills = body.job_skills || [];
+    const userSkills = body.skills || [];
+    const jobTitle = (body.job_title || '').trim();
+    const jobDescription = (body.job_description || '').trim();
+    const jobSkills = body.job_skills || [];
 
     if (!userSkills.length) {
         return { match_score: 0, explanation: 'No skills provided' };
     }
 
     // Quick keyword-based matching
-    var matchCount = 0;
-    var totalRequired = jobSkills.length || 1;
+    let matchCount = 0;
+    const totalRequired = jobSkills.length || 1;
 
-    for (var i = 0; i < jobSkills.length; i++) {
-        var reqSkill = jobSkills[i].toLowerCase();
-        for (var j = 0; j < userSkills.length; j++) {
+    for (let i = 0; i < jobSkills.length; i++) {
+        const reqSkill = jobSkills[i].toLowerCase();
+        for (let j = 0; j < userSkills.length; j++) {
             if (userSkills[j].toLowerCase().indexOf(reqSkill) !== -1 ||
                 reqSkill.indexOf(userSkills[j].toLowerCase()) !== -1) {
                 matchCount++;
@@ -300,11 +300,11 @@ async function handleMatch(body, apiKey) {
         }
     }
 
-    var quickScore = Math.round((matchCount / totalRequired) * 100);
+    const quickScore = Math.round((matchCount / totalRequired) * 100);
 
     // If we have an API key and the quick score isn't definitive, use AI for better matching
     if (apiKey && quickScore > 0 && quickScore < 100 && jobDescription) {
-        var prompt = 'You are a job matching expert. Rate how well this candidate matches the job.\n\n' +
+        const prompt = 'You are a job matching expert. Rate how well this candidate matches the job.\n\n' +
             'Candidate Skills: ' + userSkills.join(', ') + '\n' +
             'Job Title: ' + jobTitle + '\n' +
             'Job Skills Required: ' + jobSkills.join(', ') + '\n' +
@@ -312,8 +312,8 @@ async function handleMatch(body, apiKey) {
             'Respond with ONLY a JSON object:\n' +
             '{"score": 0-100, "explanation": "one sentence why"}';
 
-        var aiContent = await callAI(apiKey, prompt, 80);
-        var result = parseAIJSON(aiContent);
+        const aiContent = await callAI(apiKey, prompt, 80);
+        let result = parseAIJSON(aiContent);
 
         if (result && typeof result.score === 'number') {
             return {
@@ -331,8 +331,8 @@ async function handleMatch(body, apiKey) {
 
 /* ── Main handler ───────────────────────────────────────────────── */
 export async function onRequest(context) {
-    var request = context.request;
-    var origin = request.headers.get('Origin') || '';
+    const request = context.request;
+    const origin = request.headers.get('Origin') || '';
 
     if (request.method === 'OPTIONS') {
         return new Response(null, { status: 204, headers: corsHeaders(origin) });
@@ -345,9 +345,9 @@ export async function onRequest(context) {
         );
     }
 
-    var ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
+    const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
 
-    var body;
+    let body;
     try {
         body = await request.json();
     } catch (e) {
@@ -357,8 +357,8 @@ export async function onRequest(context) {
         );
     }
 
-    var action = (body.action || '').trim();
-    var validActions = ['validate', 'enhance', 'categorize', 'match'];
+    const action = (body.action || '').trim();
+    const validActions = ['validate', 'enhance', 'categorize', 'match'];
 
     if (validActions.indexOf(action) === -1) {
         return new Response(
@@ -374,10 +374,10 @@ export async function onRequest(context) {
         );
     }
 
-    var apiKey = (context.env && context.env.OPENROUTER_API_KEY) || '';
+    const apiKey = (context.env && context.env.OPENROUTER_API_KEY) || '';
 
     try {
-        var result;
+        let result;
         switch (action) {
             case 'validate':
                 result = await handleValidate(body, apiKey);

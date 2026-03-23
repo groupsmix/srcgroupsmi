@@ -32,9 +32,9 @@ function stripHtml(html) {
  * Generate n-gram shingles from text.
  */
 function generateShingles(text, n) {
-    var words = text.split(/\s+/).filter(function (w) { return w.length > 0; });
-    var shingles = [];
-    for (var i = 0; i <= words.length - n; i++) {
+    const words = text.split(/\s+/).filter((w) => { return w.length > 0; });
+    const shingles = [];
+    for (let i = 0; i <= words.length - n; i++) {
         shingles.push(words.slice(i, i + n).join(' '));
     }
     return shingles;
@@ -44,9 +44,9 @@ function generateShingles(text, n) {
  * Simple hash function for shingles.
  */
 function hashShingle(str) {
-    var hash = 0;
-    for (var i = 0; i < str.length; i++) {
-        var chr = str.charCodeAt(i);
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const chr = str.charCodeAt(i);
         hash = ((hash << 5) - hash) + chr;
         hash |= 0;
     }
@@ -58,11 +58,11 @@ function hashShingle(str) {
  */
 function jaccardSimilarity(setA, setB) {
     if (setA.length === 0 && setB.length === 0) return 0;
-    var a = new Set(setA);
-    var b = new Set(setB);
-    var intersection = 0;
-    a.forEach(function (v) { if (b.has(v)) intersection++; });
-    var union = a.size + b.size - intersection;
+    const a = new Set(setA);
+    const b = new Set(setB);
+    let intersection = 0;
+    a.forEach((v) => { if (b.has(v)) intersection++; });
+    const union = a.size + b.size - intersection;
     return union === 0 ? 0 : intersection / union;
 }
 
@@ -149,7 +149,7 @@ export async function onRequest(context) {
         }
 
         // Sort by similarity descending
-        matches.sort(function (a, b) { return b.similarity - a.similarity; });
+        matches.sort((a, b) => { return b.similarity - a.similarity; });
 
         // If article_id provided, save/update the content hash
         if (article_id) {

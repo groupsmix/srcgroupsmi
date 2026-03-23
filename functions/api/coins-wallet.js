@@ -127,7 +127,7 @@ async function handleGet(request, env, user, origin) {
                     { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
                 );
                 const wallets = await walletRes.json();
-                var walletData = wallets[0] || null;
+                const walletData = wallets[0] || null;
 
                 // Ensure split balance fields are present
                 if (walletData) {
@@ -204,7 +204,7 @@ async function handleGet(request, env, user, origin) {
             case 'escrow-status': {
                 // Get escrow transactions for this user (as buyer or seller)
                 const escrowRole = url.searchParams.get('role') || 'buyer';
-                var escrowField = escrowRole === 'seller' ? 'seller_id' : 'buyer_id';
+                const escrowField = escrowRole === 'seller' ? 'seller_id' : 'buyer_id';
                 const escrowRes = await fetch(
                     supabaseUrl + '/rest/v1/escrow_transactions?' + escrowField + '=eq.' + encodeURIComponent(user.userId) + '&order=created_at.desc&limit=50',
                     { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
@@ -226,17 +226,17 @@ async function handleGet(request, env, user, origin) {
                     { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
                 );
                 const allTxns = await allTxnRes.json();
-                var txnList = Array.isArray(allTxns) ? allTxns : [];
+                const txnList = Array.isArray(allTxns) ? allTxns : [];
 
                 // Categorize spending
-                var categories = {
+                const categories = {
                     tips: { total: 0, count: 0, label: 'Tips Sent' },
                     purchases: { total: 0, count: 0, label: 'Store Purchases' },
                     boosts: { total: 0, count: 0, label: 'Boosts & Promotions' },
                     withdrawals_cat: { total: 0, count: 0, label: 'Withdrawals' },
                     other_spending: { total: 0, count: 0, label: 'Other' }
                 };
-                var earnings = {
+                const earnings = {
                     purchases_received: { total: 0, count: 0, label: 'Coins Purchased' },
                     tips_received: { total: 0, count: 0, label: 'Tips Received' },
                     rewards: { total: 0, count: 0, label: 'Rewards & Bonuses' },
@@ -245,13 +245,13 @@ async function handleGet(request, env, user, origin) {
                 };
 
                 // Daily spending for chart data
-                var dailySpending = {};
-                var dailyEarning = {};
+                const dailySpending = {};
+                const dailyEarning = {};
 
-                txnList.forEach(function(t) {
-                    var amt = Math.abs(t.amount || 0);
-                    var day = (t.created_at || '').substring(0, 10);
-                    var txType = t.type || '';
+                txnList.forEach((t) => {
+                    const amt = Math.abs(t.amount || 0);
+                    const day = (t.created_at || '').substring(0, 10);
+                    const txType = t.type || '';
 
                     if (t.amount < 0) {
                         // Spending
@@ -275,10 +275,10 @@ async function handleGet(request, env, user, origin) {
                 });
 
                 // Build chart-friendly daily data (last N days)
-                var chartData = [];
-                for (var d = 0; d < insightDays; d++) {
-                    var date = new Date(Date.now() - d * 86400000);
-                    var dayKey = date.toISOString().substring(0, 10);
+                const chartData = [];
+                for (let d = 0; d < insightDays; d++) {
+                    const date = new Date(Date.now() - d * 86400000);
+                    const dayKey = date.toISOString().substring(0, 10);
                     chartData.unshift({
                         date: dayKey,
                         spent: dailySpending[dayKey] || 0,
@@ -286,14 +286,14 @@ async function handleGet(request, env, user, origin) {
                     });
                 }
 
-                var totalSpent = Object.values(categories).reduce(function(s, c) { return s + c.total; }, 0);
-                var totalEarned = Object.values(earnings).reduce(function(s, c) { return s + c.total; }, 0);
+                const totalSpent = Object.values(categories).reduce((s, c) => { return s + c.total; }, 0);
+                const totalEarned = Object.values(earnings).reduce((s, c) => { return s + c.total; }, 0);
 
                 // Spending trend analysis: compare first half vs second half of period
-                var halfPoint = Math.floor(chartData.length / 2);
-                var firstHalfSpent = 0, secondHalfSpent = 0;
-                var firstHalfEarned = 0, secondHalfEarned = 0;
-                chartData.forEach(function(day, idx) {
+                const halfPoint = Math.floor(chartData.length / 2);
+                let firstHalfSpent = 0, secondHalfSpent = 0;
+                let firstHalfEarned = 0, secondHalfEarned = 0;
+                chartData.forEach((day, idx) => {
                     if (idx < halfPoint) {
                         firstHalfSpent += day.spent;
                         firstHalfEarned += day.earned;
@@ -303,16 +303,16 @@ async function handleGet(request, env, user, origin) {
                     }
                 });
 
-                var spendingTrend = 'stable';
-                var spendingChangePercent = 0;
+                let spendingTrend = 'stable';
+                let spendingChangePercent = 0;
                 if (firstHalfSpent > 0) {
                     spendingChangePercent = Math.round(((secondHalfSpent - firstHalfSpent) / firstHalfSpent) * 100);
                     if (spendingChangePercent > 20) spendingTrend = 'increasing';
                     else if (spendingChangePercent < -20) spendingTrend = 'decreasing';
                 }
 
-                var earningTrend = 'stable';
-                var earningChangePercent = 0;
+                let earningTrend = 'stable';
+                let earningChangePercent = 0;
                 if (firstHalfEarned > 0) {
                     earningChangePercent = Math.round(((secondHalfEarned - firstHalfEarned) / firstHalfEarned) * 100);
                     if (earningChangePercent > 20) earningTrend = 'increasing';
@@ -320,12 +320,12 @@ async function handleGet(request, env, user, origin) {
                 }
 
                 // Find top spending category
-                var topCategory = Object.entries(categories)
-                    .sort(function(a, b) { return b[1].total - a[1].total; })[0];
+                const topCategory = Object.entries(categories)
+                    .sort((a, b) => { return b[1].total - a[1].total; })[0];
 
                 // Avg daily spending
-                var avgDailySpend = insightDays > 0 ? Math.round(totalSpent / insightDays) : 0;
-                var avgDailyEarn = insightDays > 0 ? Math.round(totalEarned / insightDays) : 0;
+                const avgDailySpend = insightDays > 0 ? Math.round(totalSpent / insightDays) : 0;
+                const avgDailyEarn = insightDays > 0 ? Math.round(totalEarned / insightDays) : 0;
 
                 return new Response(JSON.stringify({
                     ok: true,
@@ -353,38 +353,38 @@ async function handleGet(request, env, user, origin) {
 
             case 'earn-more': {
                 // Get user profile data to determine personalized earn suggestions
-                var profileRes2 = await fetch(
+                const profileRes2 = await fetch(
                     supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(user.authId) +
                     '&select=id,display_name,photo_url,bio,article_count,writer_xp,gxp,referral_code,last_active_at,created_at&limit=1',
                     { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
                 );
-                var profile = (await profileRes2.json())[0] || {};
+                const profile = (await profileRes2.json())[0] || {};
 
                 // Get wallet balance
-                var walletRes2 = await fetch(
+                const walletRes2 = await fetch(
                     supabaseUrl + '/rest/v1/user_wallets?user_id=eq.' + encodeURIComponent(user.userId) + '&limit=1',
                     { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
                 );
-                var wallet = ((await walletRes2.json()) || [])[0] || {};
+                const wallet = ((await walletRes2.json()) || [])[0] || {};
 
                 // Get recent activity for personalization
-                var recentTxnRes = await fetch(
+                const recentTxnRes = await fetch(
                     supabaseUrl + '/rest/v1/wallet_transactions?user_id=eq.' + encodeURIComponent(user.userId) +
                     '&order=created_at.desc&select=type,amount,created_at&limit=50',
                     { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
                 );
-                var recentTxns = await recentTxnRes.json();
+                let recentTxns = await recentTxnRes.json();
                 recentTxns = Array.isArray(recentTxns) ? recentTxns : [];
 
                 // Analyze activity patterns
-                var hasWritten = recentTxns.some(function(t) { return t.type === 'article_reward'; });
-                var hasReferred = recentTxns.some(function(t) { return t.type === 'referral' || t.type === 'referral_bonus'; });
-                var hasReviewed = recentTxns.some(function(t) { return t.type === 'review_reward'; });
-                var hasTipped = recentTxns.some(function(t) { return t.type === 'tip_received'; });
-                var daysSinceSignup = Math.max(1, (Date.now() - new Date(profile.created_at || Date.now()).getTime()) / 86400000);
-                var isNewUser = daysSinceSignup < 7;
+                const hasWritten = recentTxns.some((t) => { return t.type === 'article_reward'; });
+                const hasReferred = recentTxns.some((t) => { return t.type === 'referral' || t.type === 'referral_bonus'; });
+                const hasReviewed = recentTxns.some((t) => { return t.type === 'review_reward'; });
+                const hasTipped = recentTxns.some((t) => { return t.type === 'tip_received'; });
+                const daysSinceSignup = Math.max(1, (Date.now() - new Date(profile.created_at || Date.now()).getTime()) / 86400000);
+                const isNewUser = daysSinceSignup < 7;
 
-                var suggestions = [];
+                const suggestions = [];
 
                 // Suggest based on what the user hasn't done yet
                 if ((profile.article_count || 0) === 0) {
@@ -525,8 +525,8 @@ async function handleGet(request, env, user, origin) {
                 }
 
                 // Sort by priority
-                var priorityOrder = { high: 0, medium: 1, low: 2 };
-                suggestions.sort(function(a, b) {
+                const priorityOrder = { high: 0, medium: 1, low: 2 };
+                suggestions.sort((a, b) => {
                     return (priorityOrder[a.priority] || 2) - (priorityOrder[b.priority] || 2);
                 });
 
@@ -536,7 +536,7 @@ async function handleGet(request, env, user, origin) {
                         suggestions: suggestions,
                         current_balance: wallet.coins_balance || 0,
                         is_low_balance: (wallet.coins_balance || 0) < 100,
-                        total_potential: suggestions.reduce(function(s, sg) { return s + (sg.potential_coins || 0); }, 0),
+                        total_potential: suggestions.reduce((s, sg) => { return s + (sg.potential_coins || 0); }, 0),
                         user_activity: {
                             has_written: hasWritten,
                             has_referred: hasReferred,
@@ -624,7 +624,7 @@ async function handlePost(request, env, user, origin) {
                     });
                 }
 
-                var earnedBalance = wallets[0].earned_balance || 0;
+                const earnedBalance = wallets[0].earned_balance || 0;
                 if (earnedBalance < coinsAmount) {
                     return new Response(JSON.stringify({
                         ok: false,
@@ -649,22 +649,22 @@ async function handlePost(request, env, user, origin) {
                 }
 
                 // Get cashout fee from config
-                var feePercent = 10;
+                let feePercent = 10;
                 try {
-                    var configRes = await fetch(
+                    const configRes = await fetch(
                         supabaseUrl + '/rest/v1/platform_config?key=eq.cashout_fee_percent&limit=1',
                         { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
                     );
-                    var configData = await configRes.json();
+                    const configData = await configRes.json();
                     if (configData && configData.length > 0) {
                         feePercent = parseInt(configData[0].value) || 10;
                     }
                 } catch (e) { /* use default */ }
 
                 // Calculate fee and payout
-                var feeCoins = Math.floor(coinsAmount * feePercent / 100);
-                var payoutCoins = coinsAmount - feeCoins;
-                var usdAmount = payoutCoins * 0.01; // $1 = 100 coins → $0.01 per coin
+                const feeCoins = Math.floor(coinsAmount * feePercent / 100);
+                const payoutCoins = coinsAmount - feeCoins;
+                const usdAmount = payoutCoins * 0.01; // $1 = 100 coins → $0.01 per coin
 
                 // Create withdrawal request with fee details
                 const wRes = await fetch(supabaseUrl + '/rest/v1/withdrawal_requests', {
@@ -823,7 +823,7 @@ async function handlePost(request, env, user, origin) {
                 }
 
                 // Create escrow record
-                var autoReleaseAt = new Date(Date.now() + 7 * 86400000).toISOString(); // 7 days auto-release
+                const autoReleaseAt = new Date(Date.now() + 7 * 86400000).toISOString(); // 7 days auto-release
                 const escrowCreateRes = await fetch(supabaseUrl + '/rest/v1/escrow_transactions', {
                     method: 'POST',
                     headers: {
@@ -897,7 +897,7 @@ async function handlePost(request, env, user, origin) {
                         status: 404, headers: corsHeaders(origin)
                     });
                 }
-                var escrowRecord = escrowRecords[0];
+                const escrowRecord = escrowRecords[0];
 
                 // Verify the confirmer is the buyer
                 if (escrowRecord.buyer_id !== user.userId) {
