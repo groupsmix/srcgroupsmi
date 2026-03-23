@@ -1,21 +1,24 @@
 // Cache version — auto-stamped at build time by scripts/stamp-sw.js.
-// Falls back to a static string during local dev.
-var CACHE_VERSION = '%%SW_VERSION%%';
-var CACHE_NAME = 'groupsmix-v' + CACHE_VERSION;
+// In dev mode the placeholder is never replaced, so we fall back to a
+// timestamp-based version to guarantee cache-busting during development.
+const CACHE_VERSION = (typeof '%%SW_VERSION%%' === 'string' && '%%SW_VERSION%%'.includes('%%'))
+    ? 'dev-' + Date.now()
+    : '%%SW_VERSION%%';
+const CACHE_NAME = 'groupsmix-v' + CACHE_VERSION;
 
-self.addEventListener('install', function(e) {
+self.addEventListener('install', (e) => {
     // Skip pre-caching static assets — always go network-first.
     // This avoids stale cache issues when deploying new versions.
     self.skipWaiting();
 });
 
-self.addEventListener('activate', function(e) {
+self.addEventListener('activate', (e) => {
     // Delete ALL old caches on activation so fresh content is fetched
     e.waitUntil(
-        caches.keys().then(function(keys) {
+        caches.keys().then((keys) => {
             return Promise.all(
-                keys.filter(function(k) { return k !== CACHE_NAME; })
-                    .map(function(k) { return caches.delete(k); })
+                keys.filter((k) => k !== CACHE_NAME)
+                    .map((k) => caches.delete(k))
             );
         })
     );
@@ -24,8 +27,8 @@ self.addEventListener('activate', function(e) {
 
 // Network-first strategy for ALL resources.
 // Always try the network; only fall back to cache when offline.
-self.addEventListener('fetch', function(e) {
-    var url = new URL(e.request.url);
+self.addEventListener('fetch', (e) => {
+    const url = new URL(e.request.url);
     if (e.request.method !== 'GET' || url.origin !== self.location.origin) return;
     if (url.hostname.includes('supabase')) return;
 
@@ -33,7 +36,7 @@ self.addEventListener('fetch', function(e) {
     // and never serve stale HTML from cache
     if (e.request.mode === 'navigate') {
         e.respondWith(
-            fetch(e.request).catch(function() {
+            fetch(e.request).catch(() => {
                 return caches.match(e.request);
             })
         );
@@ -42,22 +45,22 @@ self.addEventListener('fetch', function(e) {
 
     // For CSS/JS/images: network-first, cache as fallback for offline use
     e.respondWith(
-        fetch(e.request).then(function(response) {
+        fetch(e.request).then((response) => {
             if (response && response.status === 200 && response.type === 'basic') {
-                var responseClone = response.clone();
-                caches.open(CACHE_NAME).then(function(cache) {
+                const responseClone = response.clone();
+                caches.open(CACHE_NAME).then((cache) => {
                     cache.put(e.request, responseClone);
                 });
             }
             return response;
-        }).catch(function() {
+        }).catch(() => {
             return caches.match(e.request); // Fallback to cache only when offline
         })
     );
 });
 
 // Listen for messages from the page to skip waiting
-self.addEventListener('message', function(e) {
+self.addEventListener('message', (e) => {
     if (e.data && e.data.type === 'SKIP_WAITING') {
         self.skipWaiting();
     }
@@ -67,10 +70,10 @@ self.addEventListener('message', function(e) {
 // PUSH NOTIFICATIONS
 // ═══════════════════════════════════════
 
-self.addEventListener('push', function(e) {
+self.addEventListener('push', (e) => {
     if (!e.data) return;
 
-    var data;
+    let data;
     try {
         data = e.data.json();
     } catch (err) {
@@ -81,8 +84,8 @@ self.addEventListener('push', function(e) {
         };
     }
 
-    var title = data.title || 'GroupsMix';
-    var options = {
+    const title = data.title || 'GroupsMix';
+    const options = {
         body: data.body || '',
         icon: data.icon || '/assets/img/favicon.svg',
         badge: data.badge || '/assets/img/favicon.svg',
@@ -103,10 +106,10 @@ self.addEventListener('push', function(e) {
 });
 
 // Handle notification click — open the target URL
-self.addEventListener('notificationclick', function(e) {
+self.addEventListener('notificationclick', (e) => {
     e.notification.close();
 
-    var targetUrl = '/';
+    let targetUrl = '/';
     if (e.notification.data && e.notification.data.url) {
         targetUrl = e.notification.data.url;
     }
@@ -119,10 +122,10 @@ self.addEventListener('notificationclick', function(e) {
     }
 
     e.waitUntil(
-        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
             // If a window is already open, focus it and navigate
-            for (var i = 0; i < clientList.length; i++) {
-                var client = clientList[i];
+            for (let i = 0; i < clientList.length; i++) {
+                const client = clientList[i];
                 if (client.url && 'focus' in client) {
                     client.focus();
                     if (client.navigate) {
@@ -140,7 +143,7 @@ self.addEventListener('notificationclick', function(e) {
 });
 
 // Handle notification close
-self.addEventListener('notificationclose', function(e) {
+self.addEventListener('notificationclose', (e) => {
     // Optionally track dismissals via analytics
     // (silent — no network call needed for now)
 });
