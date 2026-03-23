@@ -27,6 +27,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from '../_shared/cors.js';
+import { errorResponse } from '../_shared/response.js';
 import { handleSearch } from './_helpers/search.js';
 import { handleRecommend } from './_helpers/recommend.js';
 import { handleEnhanceDesc } from './_helpers/enhance-desc.js';
@@ -55,27 +56,18 @@ export async function onRequest(context) {
     }
 
     if (request.method !== 'POST') {
-        return new Response(
-            JSON.stringify({ ok: false, error: 'Method not allowed' }),
-            { status: 405, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
-        );
+        return errorResponse('Method not allowed', 405, origin);
     }
 
     if (!env?.GROQ_API_KEY && !env?.OPENROUTER_API_KEY) {
-        return new Response(
-            JSON.stringify({ ok: false, error: 'AI not configured' }),
-            { status: 503, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
-        );
+        return errorResponse('AI not configured', 503, origin);
     }
 
     let body;
     try {
         body = await request.json();
     } catch {
-        return new Response(
-            JSON.stringify({ ok: false, error: 'Invalid JSON' }),
-            { status: 400, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
-        );
+        return errorResponse('Invalid JSON', 400, origin);
     }
 
     const action = (body.action || '').trim();
@@ -131,7 +123,7 @@ export async function onRequest(context) {
     return new Response(
         JSON.stringify(result),
         {
-            status: result.ok === false ? 400 : 200,
+            status: result.ok === false ? (result.status || 400) : 200,
             headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' }
         }
     );

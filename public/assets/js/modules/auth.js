@@ -228,15 +228,16 @@ const Auth = {
             // Security: check network connectivity before attempting signup
             if (!Security.checkOnline()) { UI.toast('You appear to be offline. Please check your connection.', 'error'); return null; }
             // Security: enforce strong password on client side before server call
-            var pwCheck = Security.validatePassword(password);
+            const pwCheck = Security.validatePassword(password);
             if (!pwCheck.valid) { UI.toast(pwCheck.errors[0], 'error'); return null; }
             // ── Server-side validation (rate limit + email + Turnstile + password) ──
             // Only send turnstileToken if it is a real token (not the bypass placeholder)
             // Audit fix #20: do NOT send password to server-side validation — keep strength check client-side only
-            var svParams = { email: email, action: 'signup' };
+            const svParams = { email: email, action: 'signup' };
             if (turnstileToken && turnstileToken !== 'bypass_sdk_unavailable') { svParams.turnstileToken = turnstileToken; }
-            var sv = await Security.serverValidate(svParams);
+            const sv = await Security.serverValidate(svParams);
             if (!sv.ok) { UI.toast(sv.errors?.[0] || 'Validation failed. Please try again.', 'error'); return null; }
+            if (sv.serverBypassed) { console.warn('Server validation bypassed during signup'); }
             // Store display name for _initListener to use when creating profile
             Auth._pendingDisplayName = Security.sanitize(displayName);
             // Also persist to localStorage so it survives the email-verification redirect
@@ -289,11 +290,12 @@ const Auth = {
             if (!Security.checkRateLimit('login')) { UI.toast('Too many attempts. Please try again later.', 'error'); return null; }
             if (!Security.checkOnline()) { UI.toast('You appear to be offline. Please check your connection.', 'error'); return null; }
             // ── Server-side validation (rate limit + email) ──
-            var sv = await Security.serverValidate({ email: email, action: 'signin' });
+            const sv = await Security.serverValidate({ email: email, action: 'signin' });
             if (!sv.ok) { UI.toast(sv.errors?.[0] || 'Validation failed. Please try again.', 'error'); return null; }
+            if (sv.serverBypassed) { console.warn('Server validation bypassed during signin'); }
             const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
             if (error) {
-                var friendlyMsg = Auth._handleAuthError(error);
+                const friendlyMsg = Auth._handleAuthError(error);
                 if (friendlyMsg === 'EMAIL_NOT_CONFIRMED') return 'email_not_confirmed';
                 UI.toast(friendlyMsg, 'error');
                 return null;
@@ -338,8 +340,9 @@ const Auth = {
     async resetPassword(email) {
         try {
             // ── Server-side validation (rate limit + email) ──
-            var sv = await Security.serverValidate({ email: email, action: 'reset' });
+            const sv = await Security.serverValidate({ email: email, action: 'reset' });
             if (!sv.ok) { UI.toast(sv.errors?.[0] || 'Validation failed. Please try again.', 'error'); return false; }
+            if (sv.serverBypassed) { console.warn('Server validation bypassed during password reset'); }
             // Bug fix: correct redirect path to /pages/user/reset-password
             const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
                 redirectTo: CONFIG.siteUrl + '/pages/user/reset-password'
@@ -353,7 +356,7 @@ const Auth = {
     async updatePassword(newPassword) {
         try {
             // Security: enforce strong password requirements on password update
-            var pwCheck = Security.validatePassword(newPassword);
+            const pwCheck = Security.validatePassword(newPassword);
             if (!pwCheck.valid) { UI.toast(pwCheck.errors[0], 'error'); return false; }
             const { error } = await window.supabaseClient.auth.updateUser({ password: newPassword });
             if (error) { UI.toast(Auth._handleAuthError(error), 'error'); return false; }
