@@ -13,12 +13,12 @@
     "check": "astro check"
   },
   "dependencies": {
-    "astro": "^6.0.8"
+    "astro": "^6.1.2"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
-    "@biomejs/biome": "^2.4.8",
+    "@biomejs/biome": "^2.4.10",
     "typescript": "^5.8.3",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.2"
   }
 }
