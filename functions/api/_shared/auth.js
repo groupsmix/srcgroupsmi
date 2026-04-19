@@ -26,7 +26,7 @@ export function extractToken(request) {
             const parsed = JSON.parse(decodeURIComponent(match[1]));
             if (Array.isArray(parsed) && parsed[0]) return parsed[0];
             if (parsed.access_token) return parsed.access_token;
-        } catch (e) {
+        } catch (_e) {
             // Not valid JSON, use raw value
             return match[1];
         }

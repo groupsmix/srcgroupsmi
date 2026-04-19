@@ -108,13 +108,13 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
     let body;
     try {
         body = await request.json();
-    } catch (e) {
+    } catch (_e) {
         return new Response(JSON.stringify({ ok: false, error: 'Invalid JSON body' }), {
             status: 400, headers: corsHeaders(origin)
         });
     }
 
-    let action = body.action;
+    const action = body.action;
     const groupId = body.group_id;
 
     if (!groupId) {

@@ -67,7 +67,7 @@ function checkBannedKeywords(text) {
 }
 
 /* ── Valid digital product categories ─────────────────────────────── */
-const VALID_CATEGORIES = ['templates', 'bots', 'scripts', 'design_assets', 'guides', 'tools'];
+const _VALID_CATEGORIES = ['templates', 'bots', 'scripts', 'design_assets', 'guides', 'tools'];
 
 /* ── Digital product keywords for fast pre-check ──────────────────── */
 const DIGITAL_PRODUCT_KEYWORDS = [

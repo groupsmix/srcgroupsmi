@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════
 // MODULE 3: Security
 // ═══════════════════════════════════════
-const Security = {
+const _Security = {
     _behavioral: { events: new Set(), startTime: 0, fieldFocused: false },
 
     init() {
@@ -170,12 +170,12 @@ const Security = {
 
     obfuscateLink(url) {
         if (typeof url !== 'string' || !url) return '';
-        try { return btoa(unescape(encodeURIComponent(url))); } catch (e) { return ''; }
+        try { return btoa(unescape(encodeURIComponent(url))); } catch (_e) { return ''; }
     },
 
     deobfuscateLink(encoded) {
         if (typeof encoded !== 'string' || !encoded) return '';
-        try { return decodeURIComponent(escape(atob(encoded))); } catch (e) { return ''; }
+        try { return decodeURIComponent(escape(atob(encoded))); } catch (_e) { return ''; }
     },
 
     /**
@@ -203,7 +203,7 @@ const Security = {
             let data;
             try {
                 data = await res.json();
-            } catch (jsonErr) {
+            } catch (_jsonErr) {
                 console.error('Security.serverValidate: non-JSON response');
                 return { ok: false, errors: ['Validation service returned invalid response.'], serverBypassed: true };
             }

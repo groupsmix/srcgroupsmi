@@ -8,7 +8,7 @@
 // ═══════════════════════════════════════
 // MODULE: Newsletter
 // ═══════════════════════════════════════
-const Newsletter = {
+const _Newsletter = {
     _subscribedKey: 'gm_newsletter_subscribed',
 
     isSubscribed() {
@@ -43,7 +43,7 @@ const Newsletter = {
             };
             var { error } = await window.supabaseClient.from('newsletter_subscribers').upsert(row, { onConflict: 'email' });
             if (error) throw error;
-            Newsletter.markSubscribed();
+            _Newsletter.markSubscribed();
             // Track analytics event
             Analytics.track('newsletter_subscribe', 'engagement', { source: source });
             return true;
@@ -51,7 +51,7 @@ const Newsletter = {
             console.error('Newsletter.subscribe:', err.message);
             if (err.message && err.message.indexOf('duplicate') !== -1) {
                 UI.toast('You are already subscribed!', 'info');
-                Newsletter.markSubscribed();
+                _Newsletter.markSubscribed();
                 return true;
             }
             UI.toast('Failed to subscribe. Please try again.', 'error');
@@ -66,7 +66,7 @@ const Newsletter = {
                 .update({ status: 'unsubscribed', unsubscribed_at: new Date().toISOString() })
                 .eq('email', email.toLowerCase().trim());
             if (error) throw error;
-            localStorage.removeItem(Newsletter._subscribedKey);
+            localStorage.removeItem(_Newsletter._subscribedKey);
             return true;
         } catch (err) {
             console.error('Newsletter.unsubscribe:', err.message);
@@ -110,7 +110,7 @@ const Wishlist = {
         try {
             var raw = localStorage.getItem(this._localKey);
             return raw ? JSON.parse(raw) : [];
-        } catch (e) { return []; }
+        } catch (_e) { return []; }
     },
 
     _saveLocal(items) {
@@ -362,7 +362,7 @@ const Analytics = {
                 device_type: this._getDeviceType()
             };
             await window.supabaseClient.from('analytics_events').insert(row);
-        } catch (err) { /* silent fail for analytics */ }
+        } catch (_err) { /* silent fail for analytics */ }
     },
 
     trackPageView() {
@@ -679,7 +679,7 @@ const MultiCurrency = {
                 return data.rates;
             }
             return this._fallbackRates;
-        } catch (err) {
+        } catch (_err) {
             console.warn('MultiCurrency.getRates: Using fallback rates');
             return this._fallbackRates;
         }
@@ -737,7 +737,7 @@ const MultiCurrency = {
             };
             var detected = regionMap[locale];
             if (detected) this.setCurrency(detected);
-        } catch (e) { /* ignore detection errors */ }
+        } catch (_e) { /* ignore detection errors */ }
     }
 };
 
@@ -758,7 +758,7 @@ const ABTesting = {
         try {
             var raw = localStorage.getItem(this._assignmentsKey);
             this._assignments = raw ? JSON.parse(raw) : {};
-        } catch (e) { this._assignments = {}; }
+        } catch (_e) { this._assignments = {}; }
     },
 
     async getActiveTests() {
@@ -868,7 +868,7 @@ const ABTesting = {
     _saveAssignments() {
         try {
             localStorage.setItem(this._assignmentsKey, JSON.stringify(this._assignments));
-        } catch (e) { /* ignore */ }
+        } catch (_e) { /* ignore */ }
     },
 
     // Admin: get test results
@@ -920,7 +920,7 @@ const ABTesting = {
 // ═══════════════════════════════════════
 // MODULE: Purchases (LemonSqueezy Order History)
 // ═══════════════════════════════════════
-const Purchases = {
+const _Purchases = {
     async getByUser() {
         try {
             if (!Auth.requireAuth()) return [];

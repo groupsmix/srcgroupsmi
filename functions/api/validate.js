@@ -86,7 +86,7 @@ async function verifyTurnstile(token, ip, secretKey) {
             return { success: false, error: 'CAPTCHA verification failed' };
         }
         return { success: true };
-    } catch (err) {
+    } catch (_err) {
         // On network error, allow through (don't block legitimate users)
         return { success: true };
     }

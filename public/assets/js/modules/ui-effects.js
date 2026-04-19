@@ -223,7 +223,7 @@ document.addEventListener('click', function(e) {
         } else if (type === 'email' && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
             isValid = false;
             errorMsg = 'Please enter a valid email address';
-        } else if (minLength && value.length < parseInt(minLength)) {
+        } else if (minLength && value.length < parseInt(minLength, 10)) {
             isValid = false;
             errorMsg = 'Must be at least ' + minLength + ' characters';
         } else if (type === 'url' && value && !/^https?:\/\/.+/.test(value)) {

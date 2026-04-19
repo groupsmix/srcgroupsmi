@@ -68,13 +68,13 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
     const action = url.searchParams.get('action') || 'list';
 
     if (action === 'list') {
-        let limit = parseInt(url.searchParams.get('limit')) || 20;
-        const offset = parseInt(url.searchParams.get('offset')) || 0;
-        let category = url.searchParams.get('category') || '';
+        const limit = parseInt(url.searchParams.get('limit'), 10) || 20;
+        const offset = parseInt(url.searchParams.get('offset'), 10) || 0;
+        const category = url.searchParams.get('category') || '';
         const eventType = url.searchParams.get('event_type') || '';
         const country = url.searchParams.get('country') || '';
         const groupId = url.searchParams.get('group_id') || '';
-        const search = url.searchParams.get('search') || '';
+        const _search = url.searchParams.get('search') || '';
 
         const res = await fetch(
             supabaseUrl + '/rest/v1/rpc/get_upcoming_events',
@@ -178,7 +178,7 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
     if (action === 'recommendations') {
         // Smart event recommendations based on user's groups and engagement topics
         const userId = url.searchParams.get('user_id') || '';
-        const recLimit = parseInt(url.searchParams.get('limit')) || 10;
+        const recLimit = parseInt(url.searchParams.get('limit'), 10) || 10;
 
         // Get user's group memberships and interests
         let userGroups = [];
@@ -236,7 +236,7 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
                 if (Array.isArray(interests)) {
                     engagementTopics = interests.map((i) => { return { category: i.category, weight: i.weight || 1 }; });
                 }
-            } catch (e) {
+            } catch (_e) {
                 // silently continue without engagement data
             }
         }
@@ -296,7 +296,7 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
             ok: true,
             events: recommended,
             total: recommended.length,
-            personalized: userId ? true : false
+            personalized: !!userId
         }), { status: 200, headers: corsHeaders(origin) });
     }
 
@@ -362,7 +362,7 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
                         else if (currentPace < historicalPace * 0.5) historicalMultiplier = 0.8;
                     }
                 }
-            } catch (e) {
+            } catch (_e) {
                 // continue with default multiplier
             }
         }
@@ -437,13 +437,13 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
     let body;
     try {
         body = await request.json();
-    } catch (e) {
+    } catch (_e) {
         return new Response(JSON.stringify({ ok: false, error: 'Invalid JSON body' }), {
             status: 400, headers: corsHeaders(origin)
         });
     }
 
-    let action = body.action;
+    const action = body.action;
 
     if (action === 'create') {
         if (!body.title || !body.start_date) {
@@ -466,7 +466,7 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
             start_date: body.start_date,
             end_date: body.end_date || null,
             timezone: body.timezone || 'UTC',
-            max_attendees: parseInt(body.max_attendees) || 0,
+            max_attendees: parseInt(body.max_attendees, 10) || 0,
             cover_image: body.cover_image || '',
             tags: Array.isArray(body.tags) ? body.tags.slice(0, 10) : [],
             category: body.category || '',

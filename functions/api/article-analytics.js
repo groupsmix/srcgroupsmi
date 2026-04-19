@@ -77,7 +77,7 @@ export async function onRequest(context) {
             // Get analytics for an author
             const url = new URL(request.url);
             const userId = url.searchParams.get('user_id');
-            const days = parseInt(url.searchParams.get('days') || '30');
+            const days = parseInt(url.searchParams.get('days') || '30', 10);
 
             if (!userId) {
                 return new Response(

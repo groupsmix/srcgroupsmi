@@ -13,7 +13,7 @@ export async function handleOffers(env, body) {
         const buyerId = (body.buyer_id || '').trim();
         const sellerId = (body.seller_id || '').trim();
         const productId = (body.product_id || '').trim();
-        const offerPrice = parseInt(body.offer_price) || 0;
+        const offerPrice = parseInt(body.offer_price, 10) || 0;
         const message = (body.message || '').substring(0, 500).trim();
 
         if (!buyerId || !sellerId || !productId || !offerPrice) {
@@ -61,7 +61,7 @@ export async function handleOffers(env, body) {
     if (offerAction === 'respond') {
         const offerId = (body.offer_id || '').trim();
         const response = (body.response || '').trim(); // accept, reject, counter
-        const counterPrice = parseInt(body.counter_price) || 0;
+        const counterPrice = parseInt(body.counter_price, 10) || 0;
 
         if (!offerId || !response) return { ok: false, error: 'Missing offer_id or response' };
 

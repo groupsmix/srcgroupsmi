@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════
 // MODULE 5: DB
 // ═══════════════════════════════════════
-const DB = {
+const _DB = {
     groups: {
         async getApproved({ platform, category, country, sort, limit, offset } = {}) {
             try {
@@ -74,9 +74,9 @@ const DB = {
                 return data || [];
             } catch (err) { console.error('DB.groups.getNew:', err.message); return []; }
         },
-        async getByPlatform(platform, opts = {}) { return DB.groups.getApproved({ ...opts, platform }); },
-        async getByCategory(category, opts = {}) { return DB.groups.getApproved({ ...opts, category }); },
-        async getByCountry(country, opts = {}) { return DB.groups.getApproved({ ...opts, country }); },
+        async getByPlatform(platform, opts = {}) { return _DB.groups.getApproved({ ...opts, platform }); },
+        async getByCategory(category, opts = {}) { return _DB.groups.getApproved({ ...opts, category }); },
+        async getByCountry(country, opts = {}) { return _DB.groups.getApproved({ ...opts, country }); },
         async getSimilar(group) {
             try {
                 if (!group) return [];
@@ -119,7 +119,7 @@ const DB = {
             try {
                 const key = 'gm_view_' + id;
                 const last = localStorage.getItem(key);
-                if (last && Date.now() - parseInt(last) < 3600000) return;
+                if (last && Date.now() - parseInt(last, 10) < 3600000) return;
                 await window.supabaseClient.rpc('increment_views', { p_group_id: id });
                 localStorage.setItem(key, Date.now().toString());
             } catch (err) { console.error('DB.groups.incrementViews:', err.message); }
@@ -128,7 +128,7 @@ const DB = {
             try {
                 const key = 'gm_click_' + id;
                 const last = localStorage.getItem(key);
-                if (last && Date.now() - parseInt(last) < 1800000) return;
+                if (last && Date.now() - parseInt(last, 10) < 1800000) return;
                 await window.supabaseClient.rpc('increment_clicks', { p_group_id: id });
                 localStorage.setItem(key, Date.now().toString());
             } catch (err) { console.error('DB.groups.incrementClicks:', err.message); }
@@ -230,7 +230,7 @@ const DB = {
                 const { error: rpcErr } = await window.supabaseClient.rpc('approve_group', { p_pending_id: id });
                 if (!rpcErr) {
                     CACHE.clear();
-                    DB.admin.log('approve_group', { pending_id: id });
+                    _DB.admin.log('approve_group', { pending_id: id });
                     return true;
                 }
 
@@ -290,7 +290,7 @@ const DB = {
                     .update({ status: 'approved', description: safeDesc }).eq('id', id);
 
                 CACHE.clear();
-                DB.admin.log('approve_group', { pending_id: id, method: 'manual_fallback' });
+                _DB.admin.log('approve_group', { pending_id: id, method: 'manual_fallback' });
                 return true;
             } catch (err) { console.error('DB.pending.approve:', err.message); return err.message || 'Unknown error'; }
         },
@@ -302,7 +302,7 @@ const DB = {
                     console.error('DB.pending.reject error:', error.code, error.message, error.details, error.hint);
                     return error.message || 'Reject update failed';
                 }
-                DB.admin.log('reject_group', { pending_id: id, reason });
+                _DB.admin.log('reject_group', { pending_id: id, reason });
                 return true;
             } catch (err) { console.error('DB.pending.reject:', err.message); return err.message || 'Unknown error'; }
         }
@@ -325,19 +325,19 @@ const DB = {
                 if (!Security.checkOnline()) { UI.toast('You appear to be offline. Please check your connection.', 'error'); return null; }
                 if (!Auth.requireAuth()) return null;
                 if (!Security.checkRateLimit('review')) { UI.toast('Too many reviews. Please wait.', 'error'); return null; }
-                const hasReviewed = await DB.reviews.hasReviewed(Auth.getUserId(), groupId);
+                const hasReviewed = await _DB.reviews.hasReviewed(Auth.getUserId(), groupId);
                 if (hasReviewed) { UI.toast('You have already reviewed this group.', 'warning'); return null; }
                 const row = {
                     group_id: groupId, uid: Auth.getUserId(),
                     display_name: Auth.getUser()?.display_name || 'Anonymous',
                     photo_url: Auth.getUser()?.photo_url || '',
-                    rating: Math.max(1, Math.min(5, parseInt(rating) || 1)),
+                    rating: Math.max(1, Math.min(5, parseInt(rating, 10) || 1)),
                     text: Security.sanitize(text || '').slice(0, 500)
                 };
                 const { data, error } = await window.supabaseClient.from('reviews').insert(row).select().single();
                 if (error) throw error;
                 try { await window.supabaseClient.rpc('update_review_stats', { p_group_id: groupId, p_new_rating: row.rating }); } catch (err) { console.error('DB.reviews.submit update_review_stats:', err.message); }
-                try { await DB.user.addGXP(Auth.getUserId(), 10); } catch (err) { console.error('DB.reviews.submit addGXP:', err.message); }
+                try { await _DB.user.addGXP(Auth.getUserId(), 10); } catch (err) { console.error('DB.reviews.submit addGXP:', err.message); }
                 CACHE.remove('group_' + groupId);
                 return data;
             } catch (err) { console.error('DB.reviews.submit:', err.message); UI.toast('Failed to submit review.', 'error'); return null; }
@@ -360,7 +360,7 @@ const DB = {
                 const row = { group_id: groupId, reporter_uid: Auth.getUserId(), reason: Security.sanitize(reason || ''), details: Security.sanitize(details || '').slice(0, 1000) };
                 const { data, error } = await window.supabaseClient.from('reports').insert(row).select().single();
                 if (error) throw error;
-                try { await DB.groups.incrementReports(groupId); } catch (err) { console.error('DB.reports.submit incrementReports:', err.message); }
+                try { await _DB.groups.incrementReports(groupId); } catch (err) { console.error('DB.reports.submit incrementReports:', err.message); }
                 return data;
             } catch (err) { console.error('DB.reports.submit:', err.message); UI.toast('Failed to submit report.', 'error'); return null; }
         },
@@ -381,7 +381,7 @@ const DB = {
                 if (!Auth.requireAdmin()) return false;
                 const { error } = await window.supabaseClient.from('reports').update({ status: 'resolved', action: Security.sanitize(action || ''), resolved_at: new Date().toISOString(), resolved_by: Auth.getUserId() }).eq('id', id);
                 if (error) throw error;
-                DB.admin.log('resolve_report', { report_id: id, action });
+                _DB.admin.log('resolve_report', { report_id: id, action });
                 return true;
             } catch (err) { console.error('DB.reports.resolve:', err.message); return false; }
         }
@@ -439,7 +439,7 @@ const DB = {
                 if (!Auth.requireAdmin()) return false;
                 const { error } = await window.supabaseClient.from('payments').update({ status: 'verified', verified_at: new Date().toISOString(), verified_by: Auth.getUserId() }).eq('id', id);
                 if (error) throw error;
-                DB.admin.log('verify_payment', { payment_id: id });
+                _DB.admin.log('verify_payment', { payment_id: id });
                 return true;
             } catch (err) { console.error('DB.payments.verify:', err.message); return false; }
         },
@@ -448,7 +448,7 @@ const DB = {
                 if (!Auth.requireAdmin()) return false;
                 const { error } = await window.supabaseClient.from('payments').update({ status: 'rejected', rejection_reason: Security.sanitize(reason || '') }).eq('id', id);
                 if (error) throw error;
-                DB.admin.log('reject_payment', { payment_id: id, reason });
+                _DB.admin.log('reject_payment', { payment_id: id, reason });
                 return true;
             } catch (err) { console.error('DB.payments.reject:', err.message); return false; }
         }
@@ -560,7 +560,7 @@ const DB = {
                 const today = new Date().toISOString().split('T')[0];
                 const key = 'gm_last_daily_' + userId;
                 if (localStorage.getItem(key) === today) return;
-                await DB.user.addGXP(userId, 3);
+                await _DB.user.addGXP(userId, 3);
                 await window.supabaseClient.from('users').update({ last_login: new Date().toISOString() }).eq('id', userId);
                 localStorage.setItem(key, today);
             } catch (err) { console.error('DB.user.dailyLoginCheck:', err.message); }
@@ -682,7 +682,7 @@ const DB = {
             try {
                 const raw = sessionStorage.getItem(this._seenKey);
                 return raw ? JSON.parse(raw) : [];
-            } catch (err) { return []; }
+            } catch (_err) { return []; }
         },
         _markSeen(adId) {
             try {
@@ -724,13 +724,13 @@ const DB = {
                     allAds = data || [];
                 }
                 var qualityAds = allAds.filter(function(ad) {
-                    var trustScore = ad.trust_score !== undefined ? (isNaN(ad.trust_score) ? 0 : Number(ad.trust_score)) : 100;
+                    var trustScore = ad.trust_score !== undefined ? (Number.isNaN(ad.trust_score) ? 0 : Number(ad.trust_score)) : 100;
                     return trustScore >= 70;
                 });
                 var seenIds = this._getSeenIds();
                 var unseenAds = qualityAds.filter(function(ad) { return seenIds.indexOf(ad.id) === -1; });
                 if (unseenAds.length === 0) {
-                    try { sessionStorage.removeItem(this._seenKey); } catch (e) { /* ok */ }
+                    try { sessionStorage.removeItem(this._seenKey); } catch (_e) { /* ok */ }
                     unseenAds = qualityAds;
                 }
                 for (var i = unseenAds.length - 1; i > 0; i--) {
@@ -822,7 +822,7 @@ const DB = {
                 const { error } = await window.supabaseClient.from('config').update({ value }).eq('key', 'settings');
                 if (error) throw error;
                 CACHE.remove('settings');
-                DB.admin.log('update_settings', { keys: Object.keys(value) });
+                _DB.admin.log('update_settings', { keys: Object.keys(value) });
                 return true;
             } catch (err) { console.error('DB.config.updateSettings:', err.message); return false; }
         }
@@ -877,7 +877,7 @@ const DB = {
                 if (!Auth.requireAdmin()) return false;
                 const { error } = await window.supabaseClient.from('users').update(updates).eq('id', userId);
                 if (error) throw error;
-                DB.admin.log('update_user', { user_id: userId, updates });
+                _DB.admin.log('update_user', { user_id: userId, updates });
                 return true;
             } catch (err) { console.error('DB.admin.updateUser:', err.message); return false; }
         },
@@ -888,7 +888,7 @@ const DB = {
                 if (!validRoles.includes(newRole)) { UI.toast('Invalid role', 'error'); return false; }
                 const { error } = await window.supabaseClient.rpc('update_user_role', { p_user_id: userId, p_new_role: newRole });
                 if (error) throw error;
-                DB.admin.log('update_user_role', { user_id: userId, new_role: newRole });
+                _DB.admin.log('update_user_role', { user_id: userId, new_role: newRole });
                 return true;
             } catch (err) { console.error('DB.admin.updateUserRole:', err.message); UI.toast(err.message || 'Failed to update role', 'error'); return false; }
         },
@@ -927,7 +927,7 @@ const DB = {
                 if (!Auth.requireAdmin()) return false;
                 const { error } = await window.supabaseClient.from('donations').update(updates).eq('id', id);
                 if (error) throw error;
-                DB.admin.log('update_donation', { donation_id: id });
+                _DB.admin.log('update_donation', { donation_id: id });
                 return true;
             } catch (err) { console.error('DB.admin.updateDonation:', err.message); return false; }
         }

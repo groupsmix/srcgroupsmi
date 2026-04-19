@@ -71,7 +71,7 @@ export async function onRequest(context) {
     // Extract user info from request
     const userAgent = request.headers.get('User-Agent') || '';
     const cfCountry = request.headers.get('CF-IPCountry') || '';
-    const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || '';
+    const _ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || '';
 
     // Detect device type from User-Agent
     let deviceType = 'desktop';
@@ -80,11 +80,11 @@ export async function onRequest(context) {
     }
 
     // Detect browser
-    let browser = 'other';
-    if (/Chrome/i.test(userAgent) && !/Edg/i.test(userAgent)) browser = 'chrome';
-    else if (/Safari/i.test(userAgent) && !/Chrome/i.test(userAgent)) browser = 'safari';
-    else if (/Firefox/i.test(userAgent)) browser = 'firefox';
-    else if (/Edg/i.test(userAgent)) browser = 'edge';
+    let _browser = 'other';
+    if (/Chrome/i.test(userAgent) && !/Edg/i.test(userAgent)) _browser = 'chrome';
+    else if (/Safari/i.test(userAgent) && !/Chrome/i.test(userAgent)) _browser = 'safari';
+    else if (/Firefox/i.test(userAgent)) _browser = 'firefox';
+    else if (/Edg/i.test(userAgent)) _browser = 'edge';
 
     const eventData = {
         event_name: eventName,

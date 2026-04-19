@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════
 // MODULE 10: getPrice
 // ═══════════════════════════════════════
-function getPrice(service, options = {}) {
+function _getPrice(service, options = {}) {
     const prices = {
         vip_verified: { monthly: 5, quarterly: 12, yearly: 40 },
         vip_global: { monthly: 30, quarterly: 75, yearly: 250 },

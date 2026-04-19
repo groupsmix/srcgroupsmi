@@ -10,7 +10,7 @@ function renderHeader() {
     const isLoggedIn = Auth.isLoggedIn();
     const user = Auth.getUser();
     const unread = user?.unread_notifications || 0;
-    const displayName = Security.sanitize(user?.display_name || 'User').slice(0, 16);
+    const _displayName = Security.sanitize(user?.display_name || 'User').slice(0, 16);
     const photoUrl = user?.photo_url || '';
     const avatarInitial = (user?.display_name || 'U').charAt(0).toUpperCase();
 
@@ -307,7 +307,7 @@ function renderAnnouncement() {
 // ═══════════════════════════════════════
 // MODULE 12: renderFooter
 // ═══════════════════════════════════════
-function renderFooter() {
+function _renderFooter() {
     const footer = document.getElementById('site-footer');
     if (!footer) return;
     footer.innerHTML = '<div class="site-footer">' +
@@ -359,7 +359,7 @@ function renderFooter() {
 // ═══════════════════════════════════════
 // MODULE 12.5: renderMobileNav
 // ═══════════════════════════════════════
-function renderMobileNav() {
+function _renderMobileNav() {
     const nav = document.createElement('nav');
     nav.className = 'mobile-nav';
     nav.id = 'mobile-nav';

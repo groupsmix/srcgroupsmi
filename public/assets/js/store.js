@@ -121,13 +121,13 @@
         try {
             var data = localStorage.getItem(key);
             return data ? JSON.parse(data) : null;
-        } catch (e) { return null; }
+        } catch (_e) { return null; }
     }
 
     function setStored(key, value) {
         try {
             localStorage.setItem(key, JSON.stringify(value));
-        } catch (e) { /* quota exceeded — ignore */ }
+        } catch (_e) { /* quota exceeded — ignore */ }
     }
 
     /* ── Track viewed product ─────────────── */

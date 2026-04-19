@@ -69,7 +69,7 @@ function formatDate(dateStr) {
     if (!dateStr) return new Date().toISOString().split('T')[0];
     try {
         return new Date(dateStr).toISOString().split('T')[0];
-    } catch (e) {
+    } catch (_e) {
         return new Date().toISOString().split('T')[0];
     }
 }

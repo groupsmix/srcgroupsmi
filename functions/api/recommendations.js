@@ -76,7 +76,7 @@ const CATEGORY_DIMENSIONS = [
 ];
 
 function buildGroupEmbedding(group) {
-    let vec = new Array(CATEGORY_DIMENSIONS.length).fill(0);
+    const vec = new Array(CATEGORY_DIMENSIONS.length).fill(0);
     const cat = (group.category || '').toLowerCase();
     const idx = CATEGORY_DIMENSIONS.indexOf(cat);
     if (idx !== -1) vec[idx] = 1.0;
@@ -221,7 +221,7 @@ export async function onRequest(context) {
     const groupId = url.searchParams.get('group_id');
     const category = url.searchParams.get('category');
     const userId = url.searchParams.get('user_id');
-    const limit = parseInt(url.searchParams.get('limit')) || 6;
+    const limit = parseInt(url.searchParams.get('limit'), 10) || 6;
     const epsilon = parseFloat(url.searchParams.get('epsilon')) || 0.12;
 
     try {

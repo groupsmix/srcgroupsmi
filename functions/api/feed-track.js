@@ -55,7 +55,7 @@ async function callRpc(supabaseUrl, supabaseKey, fnName, params) {
 
     try {
         return JSON.parse(text);
-    } catch (e) {
+    } catch (_e) {
         return { ok: true, raw: text };
     }
 }
@@ -83,7 +83,7 @@ export async function onRequest(context) {
     let body;
     try {
         body = await request.json();
-    } catch (e) {
+    } catch (_e) {
         return jsonResponse({ ok: false, error: 'Invalid JSON body' }, 400, origin);
     }
 
@@ -105,7 +105,7 @@ export async function onRequest(context) {
                 return jsonResponse({ ok: false, error: 'content_id and content_type required' }, 400, origin);
             }
 
-            const result = await callRpc(supabaseUrl, supabaseKey, 'record_content_impression', {
+            const _result = await callRpc(supabaseUrl, supabaseKey, 'record_content_impression', {
                 p_user_id: userId,
                 p_content_id: body.content_id,
                 p_content_type: body.content_type
@@ -121,7 +121,7 @@ export async function onRequest(context) {
             }
 
             // Record click on impression
-            const clickResult = await callRpc(supabaseUrl, supabaseKey, 'record_impression_click', {
+            const _clickResult = await callRpc(supabaseUrl, supabaseKey, 'record_impression_click', {
                 p_user_id: userId,
                 p_content_id: body.content_id,
                 p_content_type: body.content_type
@@ -146,7 +146,7 @@ export async function onRequest(context) {
                 return jsonResponse({ ok: false, error: 'content_type and category required' }, 400, origin);
             }
 
-            const result = await callRpc(supabaseUrl, supabaseKey, 'track_user_interest', {
+            const _result = await callRpc(supabaseUrl, supabaseKey, 'track_user_interest', {
                 p_user_id: userId,
                 p_content_type: body.content_type,
                 p_category: body.category,
@@ -187,7 +187,7 @@ export async function onRequest(context) {
                 return jsonResponse({ ok: false, error: 'session_id and content_ids[] required' }, 400, origin);
             }
 
-            const result = await callRpc(supabaseUrl, supabaseKey, 'update_feed_session', {
+            const _result = await callRpc(supabaseUrl, supabaseKey, 'update_feed_session', {
                 p_session_id: body.session_id,
                 p_content_ids: body.content_ids
             });
@@ -201,7 +201,7 @@ export async function onRequest(context) {
                 return jsonResponse({ ok: false, error: 'user_id, content_ids[], and content_type required' }, 400, origin);
             }
 
-            const result = await callRpc(supabaseUrl, supabaseKey, 'record_batch_impressions', {
+            const _result = await callRpc(supabaseUrl, supabaseKey, 'record_batch_impressions', {
                 p_user_id: userId,
                 p_content_ids: body.content_ids,
                 p_content_type: body.content_type

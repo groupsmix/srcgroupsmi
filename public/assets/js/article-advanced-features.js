@@ -13,7 +13,7 @@
 // ═══════════════════════════════════════
 // 1. AUDIO — Text-to-Speech (Web Speech API)
 // ═══════════════════════════════════════
-const ArticleAudio = {
+const _ArticleAudio = {
     _synth: window.speechSynthesis || null,
     _utterance: null,
     _isPlaying: false,
@@ -206,7 +206,7 @@ const ArticleAudio = {
 // ═══════════════════════════════════════
 // 2. AI TRANSLATOR (Browser-side instant translation)
 // ═══════════════════════════════════════
-const ArticleTranslator = {
+const _ArticleTranslator = {
     /**
      * Render translate button for any article
      * Shows on ALL articles regardless of reading_time
@@ -283,7 +283,7 @@ const ArticleTranslator = {
 
                     btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg> ' +
                         (article.language === 'ar' ? 'Read in English' : 'اقرأ بالعربية');
-                    btn.onclick = function () { ArticleTranslator.translate(article); };
+                    btn.onclick = function () { _ArticleTranslator.translate(article); };
                 };
             } else {
                 UI.toast(targetLang === 'ar' ? 'Translation not available' : 'الترجمة غير متوفرة', 'error');
@@ -305,7 +305,7 @@ const ArticleTranslator = {
 // ═══════════════════════════════════════
 // 3. INLINE POLLS
 // ═══════════════════════════════════════
-const ArticlePolls = {
+const _ArticlePolls = {
     /**
      * Render polls for article detail page
      */
@@ -349,7 +349,7 @@ const ArticlePolls = {
                         .maybeSingle();
                     if (vote) userVote = vote.option_index;
                 }
-            } catch (e) { /* ok */ }
+            } catch (_e) { /* ok */ }
         }
 
         var showResults = userVote >= 0 || hasEnded;
@@ -405,7 +405,7 @@ const ArticlePolls = {
                 }
 
                 var pollId = btn.dataset.pollId;
-                var optionIndex = parseInt(btn.dataset.option);
+                var optionIndex = parseInt(btn.dataset.option, 10);
                 btn.disabled = true;
 
                 try {
@@ -578,7 +578,7 @@ const ArticlePolls = {
 // ═══════════════════════════════════════
 // 4. SERIES NAVIGATION
 // ═══════════════════════════════════════
-const ArticleSeries = {
+const _ArticleSeries = {
     /**
      * Render series navigation bar in article detail
      */
@@ -632,7 +632,7 @@ const ArticleSeries = {
                             .maybeSingle();
                         isFollowing = !!followCheck;
                     }
-                } catch (e) { /* ok */ }
+                } catch (_e) { /* ok */ }
             }
 
             var html = '<div class="series-nav">' +
@@ -713,7 +713,7 @@ const ArticleSeries = {
                     btn.textContent = 'Follow Series';
                     btn.className = 'btn btn-primary btn-sm';
                 }
-            } catch (err) {
+            } catch (_err) {
                 UI.toast('Failed to update follow', 'error');
             }
             btn.disabled = false;
@@ -816,7 +816,7 @@ const ArticleSeries = {
 
                     newForm.style.display = 'none';
                     UI.toast('Series created!', 'success');
-                } catch (err) {
+                } catch (_err) {
                     UI.toast('Failed to create series', 'error');
                 }
                 createBtn.disabled = false;
@@ -829,7 +829,7 @@ const ArticleSeries = {
 // ═══════════════════════════════════════
 // 5. READING LISTS
 // ═══════════════════════════════════════
-const ReadingLists = {
+const _ReadingLists = {
     /**
      * Render "Add to Reading List" button
      */
@@ -969,7 +969,7 @@ const ReadingLists = {
 
                         container.innerHTML = '';
                         container.style.display = 'none';
-                    } catch (err) {
+                    } catch (_err) {
                         UI.toast('Failed to create list', 'error');
                         createBtn.disabled = false;
                     }
@@ -1001,7 +1001,7 @@ const ReadingLists = {
                 // Update article count via RPC or manual count
                 try {
                     await window.supabaseClient.rpc('update_reading_list_count', { p_list_id: listId });
-                } catch (rpcErr) {
+                } catch (_rpcErr) {
                     // Fallback: count items manually
                     var { data: countData } = await window.supabaseClient
                         .from('reading_list_items')
@@ -1046,7 +1046,7 @@ const ReadingLists = {
 // ═══════════════════════════════════════
 // 6. FOLLOWERS-ONLY GATE
 // ═══════════════════════════════════════
-const FollowersOnlyGate = {
+const _FollowersOnlyGate = {
     /**
      * Check if article is followers-only and user has access
      */
@@ -1082,7 +1082,7 @@ const FollowersOnlyGate = {
                         return !!followCheck;
                     }
                 }
-            } catch (e) { /* fall through */ }
+            } catch (_e) { /* fall through */ }
         }
 
         return false;

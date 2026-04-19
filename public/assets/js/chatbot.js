@@ -160,15 +160,15 @@
                 ]
             }
         };
-        var base = messages[lang] || messages['default'];
+        var base = messages[lang] || messages.default;
 
         // Override with context-specific actions if available
         if (contextQuickActions[context]) {
-            var ctxActions = contextQuickActions[context][lang] || contextQuickActions[context]['default'];
+            var ctxActions = contextQuickActions[context][lang] || contextQuickActions[context].default;
             if (ctxActions) base.quickActions = ctxActions;
         }
         if (contextSubtitles[context]) {
-            var ctxSub = contextSubtitles[context][lang] || contextSubtitles[context]['default'];
+            var ctxSub = contextSubtitles[context][lang] || contextSubtitles[context].default;
             if (ctxSub) base.subtitle = ctxSub;
         }
 
@@ -183,11 +183,11 @@
         // Bold
         s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
         // Links [text](url)
-        s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+        s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
         // Plain URLs
         s = s.replace(/(^|[\s(])(https?:\/\/[^\s)<]+)/g, '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>');
         // Unordered lists
-        s = s.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>');
+        s = s.replace(/^[-*] (.+)$/gm, '<li>$1</li>');
         s = s.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
         // Ordered lists
         s = s.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
@@ -209,7 +209,7 @@
         try {
             var data = localStorage.getItem(STORAGE_KEY);
             if (data) chatHistory = JSON.parse(data);
-        } catch (e) { chatHistory = []; }
+        } catch (_e) { chatHistory = []; }
     }
 
     function saveHistory() {
@@ -217,7 +217,7 @@
             // Keep only last MAX_HISTORY messages
             var toSave = chatHistory.slice(-MAX_HISTORY);
             localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-        } catch (e) { /* quota exceeded etc */ }
+        } catch (_e) { /* quota exceeded etc */ }
     }
 
     /* ── Build DOM ────────────────────────── */
@@ -232,7 +232,7 @@
         win.setAttribute('role', 'dialog');
         win.setAttribute('aria-label', 'AI Chat Assistant');
 
-        var welcome = getWelcomeMessage();
+        var _welcome = getWelcomeMessage();
         var placeholderText = detectLanguage() === 'ar' ? 'اكتب رسالتك...' : 'Type your message...';
 
         win.innerHTML =
@@ -501,7 +501,7 @@
                                 botDiv.innerHTML = parseMarkdown(fullText) + '<span class="chatbot-cursor">|</span>';
                                 scrollToBottom();
                             }
-                        } catch (e) {
+                        } catch (_e) {
                             // Skip malformed data
                         }
                     }

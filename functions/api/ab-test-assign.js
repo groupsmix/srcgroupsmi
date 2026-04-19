@@ -146,7 +146,7 @@ export async function onRequest(context) {
         // Variants can be JSONB array of objects [{id:'control',...}] or simple strings
         let variants = test.variants || [{ id: 'control' }, { id: 'variant_a' }];
         if (typeof variants === 'string') {
-            try { variants = JSON.parse(variants); } catch (e) { variants = [{ id: 'control' }, { id: 'variant_a' }]; }
+            try { variants = JSON.parse(variants); } catch (_e) { variants = [{ id: 'control' }, { id: 'variant_a' }]; }
         }
         const variantIds = variants.map(v => typeof v === 'string' ? v : (v.id || 'control'));
         const trafficPercent = test.traffic_percent || 100;

@@ -46,7 +46,7 @@ export async function onRequest(context) {
     const url = new URL(request.url);
     const code = url.searchParams.get('code');
     const detail = url.searchParams.get('detail');
-    const days = parseInt(url.searchParams.get('days')) || 30;
+    const days = parseInt(url.searchParams.get('days'), 10) || 30;
 
     if (!code) {
         return new Response(JSON.stringify({ ok: false, error: 'Link code required' }), {
@@ -94,7 +94,7 @@ export async function onRequest(context) {
 
             // Referrer breakdown
             let referrer = c.referrer || 'Direct';
-            try { referrer = new URL(referrer).hostname; } catch(e) {}
+            try { referrer = new URL(referrer).hostname; } catch(_e) {}
             referrerMap[referrer] = (referrerMap[referrer] || 0) + 1;
 
             // Daily clicks

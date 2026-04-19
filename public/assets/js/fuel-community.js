@@ -32,7 +32,7 @@ const TIP_TYPES = {
 // ═══════════════════════════════════════
 // XP REWARDS CONFIG
 // ═══════════════════════════════════════
-const XP_REWARDS = {
+const _XP_REWARDS = {
     publish_article: 10,
     receive_like: 2,
     receive_comment: 3,
@@ -173,7 +173,7 @@ const Wallet = {
 // ═══════════════════════════════════════
 // MODULE: Tips
 // ═══════════════════════════════════════
-const Tips = {
+const _Tips = {
     async send(receiverId, articleId, tipType, message, isAnonymous) {
         try {
             if (!Auth.requireAuth()) return null;
@@ -370,7 +370,7 @@ const WriterBadges = {
             'flame': '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 23c-3.866 0-7-2.686-7-6 0-2.418 1.511-4.497 2.5-5.5.987-.998 1.5-1.878 1.5-3.5 0 0 1 1.5 1 3.5 0 1.454-.478 2.49-1 3.5 2-2 4-5 4-8.5 0 0 3 2.5 3 6.5 0 .857-.143 1.665-.391 2.42C16.668 17.253 18 19 18 19s-1.5 4-6 4z"/></svg>',
             'thumbs-up': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>'
         };
-        return icons[iconName] || icons['star'];
+        return icons[iconName] || icons.star;
     }
 };
 
@@ -435,7 +435,7 @@ const WriterLevels = {
 // ═══════════════════════════════════════
 // MODULE: OwnerDashboard
 // ═══════════════════════════════════════
-const OwnerDashboard = {
+const _OwnerDashboard = {
     async getStats(days) {
         try {
             if (!Auth.hasRole('admin')) return null;

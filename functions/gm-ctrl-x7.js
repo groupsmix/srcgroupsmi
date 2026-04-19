@@ -49,15 +49,15 @@ function getAccessTokenFromCookies(cookieHeader, projectRef) {
         let session;
         try {
             session = JSON.parse(decoded);
-        } catch (e) {
+        } catch (_e) {
             try {
                 session = JSON.parse(atob(decoded));
-            } catch (e2) {
+            } catch (_e2) {
                 return null;
             }
         }
         return session.access_token || (session[0] && session[0].access_token) || null;
-    } catch (e) {
+    } catch (_e) {
         return null;
     }
 }
@@ -71,7 +71,7 @@ function getProjectRef(supabaseUrl) {
         const host = new URL(supabaseUrl).hostname;
         const ref = host.split('.')[0];
         return ref || null;
-    } catch (e) {
+    } catch (_e) {
         return null;
     }
 }

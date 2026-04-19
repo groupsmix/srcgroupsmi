@@ -59,7 +59,7 @@ export async function onRequest(context) {
                 JSON.stringify({ ok: true, group: data[0] }),
                 { status: 200, headers: corsHeaders() }
             );
-        } catch (err) {
+        } catch (_err) {
             return new Response(
                 JSON.stringify({ ok: false, error: 'Failed to fetch group' }),
                 { status: 500, headers: corsHeaders() }

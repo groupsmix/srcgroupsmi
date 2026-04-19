@@ -7,7 +7,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
-import { errorResponse, successResponse } from './_shared/response.js';
+import { errorResponse, } from './_shared/response.js';
 import { requireAuthWithOwnership } from './_shared/auth.js';
 
 function corsHeaders(origin) {
@@ -119,7 +119,7 @@ export async function onRequest(context) {
         let body;
         try {
             body = await request.json();
-        } catch(e) {
+        } catch(_e) {
             return errorResponse('Invalid JSON', 400, origin);
         }
 

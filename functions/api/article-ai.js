@@ -56,7 +56,7 @@ export async function onRequestPost(context) {
 
         // Rate limiting via CF
         const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
-        const rateLimitKey = `article-ai:${clientIP}:${task}`;
+        const _rateLimitKey = `article-ai:${clientIP}:${task}`;
 
         // Get API key from environment
         const apiKey = env.GROQ_API_KEY;

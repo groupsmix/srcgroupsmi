@@ -21,7 +21,7 @@
             var data = JSON.parse(localStorage.getItem(key) || '[]');
             if (!Array.isArray(data)) return [];
             return data.slice(-(maxItems || 50));
-        } catch (e) { return []; }
+        } catch (_e) { return []; }
     }
 
     function addToStoredArray(key, item, maxItems) {
@@ -30,7 +30,7 @@
         arr = arr.filter(function (x) { return x.id !== item.id; });
         arr.push(item);
         if (arr.length > (maxItems || 50)) arr = arr.slice(-(maxItems || 50));
-        try { localStorage.setItem(key, JSON.stringify(arr)); } catch (e) { /* quota */ }
+        try { localStorage.setItem(key, JSON.stringify(arr)); } catch (_e) { /* quota */ }
     }
 
     // ═══════════════════════════════════════
@@ -363,7 +363,7 @@
                         try {
                             var parsed = JSON.parse(d);
                             if (parsed.text) fullText += parsed.text;
-                        } catch (e) { /* skip */ }
+                        } catch (_e) { /* skip */ }
                     }
                 }
 
@@ -435,7 +435,7 @@
                         try {
                             var parsed = JSON.parse(d);
                             if (parsed.text) fullText += parsed.text;
-                        } catch (e) { /* skip */ }
+                        } catch (_e) { /* skip */ }
                     }
                 }
 
@@ -524,7 +524,7 @@
                 var existing = cats.filter(function (c) { return c !== product.product_type; });
                 existing.unshift(product.product_type);
                 if (existing.length > 20) existing = existing.slice(0, 20);
-                try { localStorage.setItem(AI_FEATURES_STORAGE.viewedProductCategories, JSON.stringify(existing)); } catch (e) { /* quota */ }
+                try { localStorage.setItem(AI_FEATURES_STORAGE.viewedProductCategories, JSON.stringify(existing)); } catch (_e) { /* quota */ }
             }
         },
 
@@ -559,7 +559,7 @@
             try {
                 var data = JSON.parse(localStorage.getItem(AI_FEATURES_STORAGE.viewedProductCategories) || '[]');
                 return Array.isArray(data) ? data : [];
-            } catch (e) { return []; }
+            } catch (_e) { return []; }
         }
     };
 
