@@ -244,13 +244,13 @@ async function recordImplicitFeedback(supabaseUrl, supabaseKey, body) {
     const contentType = body.content_type || 'group';
     if (!userId || !contentId) return { ok: false, error: 'user_id and content_id required' };
 
-    const dwellSeconds = Math.max(0, Math.min(3600, parseInt(body.dwell_seconds) || 0));
+    const dwellSeconds = Math.max(0, Math.min(3600, parseInt(body.dwell_seconds, 10) || 0));
     const scrollDepth = Math.max(0, Math.min(100, parseFloat(body.scroll_depth) || 0));
     const clicked = body.clicked === true || body.clicked === 'true';
     const bounced = dwellSeconds < 3 && !clicked;
 
     // Upsert implicit feedback into feed_impressions
-    const res = await fetch(supabaseUrl + '/rest/v1/feed_impressions', {
+    const _res = await fetch(supabaseUrl + '/rest/v1/feed_impressions', {
         method: 'POST',
         headers: {
             'apikey': supabaseKey,
@@ -378,8 +378,8 @@ export async function onRequest(context) {
     const url = new URL(request.url);
     const feedType = url.searchParams.get('type') || 'groups';
     const userId = url.searchParams.get('user_id');
-    let limit = Math.min(parseInt(url.searchParams.get('limit')) || 20, 50);
-    let offset = parseInt(url.searchParams.get('offset')) || 0;
+    const limit = Math.min(parseInt(url.searchParams.get('limit'), 10) || 20, 50);
+    const offset = parseInt(url.searchParams.get('offset'), 10) || 0;
     const explorationRatio = parseFloat(url.searchParams.get('exploration')) || 0.12;
     const contentType = url.searchParams.get('content_type') || 'group';
 
@@ -387,7 +387,7 @@ export async function onRequest(context) {
         // Handle implicit feedback recording (POST)
         if (request.method === 'POST') {
             let postBody;
-            try { postBody = await request.json(); } catch (e) { postBody = {}; }
+            try { postBody = await request.json(); } catch (_e) { postBody = {}; }
 
             if (postBody.action === 'implicit_feedback') {
                 // Verify authentication and ownership for implicit feedback
@@ -426,7 +426,7 @@ export async function onRequest(context) {
         }
 
         if (feedType === 'digest') {
-            const days = parseInt(url.searchParams.get('days')) || 7;
+            const days = parseInt(url.searchParams.get('days'), 10) || 7;
             const result = await getDigest(supabaseUrl, supabaseKey, userId, days, limit);
             return jsonResponse(result, 200, origin);
         }

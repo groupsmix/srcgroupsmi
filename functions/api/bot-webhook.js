@@ -152,7 +152,7 @@ export async function onRequest(context) {
         let body;
         try {
             body = await request.json();
-        } catch(e) {
+        } catch(_e) {
             return errorResponse('Invalid JSON', 400, origin);
         }
 
@@ -196,7 +196,7 @@ export async function onRequest(context) {
                 return errorResponse('Failed to register bot', 500, origin);
             }
 
-            const result = await res.json();
+            const _result = await res.json();
             return new Response(JSON.stringify({
                 ok: true,
                 verification_code: verificationCode,
@@ -216,8 +216,8 @@ export async function onRequest(context) {
                 last_sync: new Date().toISOString(),
                 status: 'active'
             };
-            if (body.member_count !== undefined) updates.member_count = parseInt(body.member_count) || 0;
-            if (body.active_members !== undefined) updates.active_members = parseInt(body.active_members) || 0;
+            if (body.member_count !== undefined) updates.member_count = parseInt(body.member_count, 10) || 0;
+            if (body.active_members !== undefined) updates.active_members = parseInt(body.active_members, 10) || 0;
 
             const res = await fetch(
                 supabaseUrl + '/rest/v1/bot_integrations?bot_token=eq.' + encodeURIComponent(botToken),
@@ -240,7 +240,7 @@ export async function onRequest(context) {
         }
 
         if (action === 'verify') {
-            let code = body.verification_code || body.code;
+            const code = body.verification_code || body.code;
             if (!code) {
                 return errorResponse('Verification code required', 400, origin);
             }

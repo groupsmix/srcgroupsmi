@@ -22,7 +22,7 @@
  *   - cleanup: weekly
  */
 
-import { corsHeaders as _sharedCorsHeaders, handlePreflight } from './_shared/cors.js';
+import { corsHeaders as _sharedCorsHeaders, } from './_shared/cors.js';
 
 function corsHeaders(origin) {
     return _sharedCorsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -56,7 +56,7 @@ async function callRpc(supabaseUrl, supabaseKey, fnName, params) {
     const text = await res.text();
     try {
         return JSON.parse(text);
-    } catch (e) {
+    } catch (_e) {
         return text;
     }
 }
@@ -199,15 +199,15 @@ export async function onRequest(context) {
     let body;
     try {
         body = await request.json();
-    } catch (e) {
+    } catch (_e) {
         body = {};
     }
 
     const job = body.job || 'all';
-    const hours = parseInt(body.hours) || 6;
-    const minCoOccurrence = parseInt(body.min_co_occurrence) || 2;
+    const hours = parseInt(body.hours, 10) || 6;
+    const minCoOccurrence = parseInt(body.min_co_occurrence, 10) || 2;
     const decayFactor = parseFloat(body.decay_factor) || 0.95;
-    const inactiveDays = parseInt(body.inactive_days) || 7;
+    const inactiveDays = parseInt(body.inactive_days, 10) || 7;
 
     try {
         const results = [];

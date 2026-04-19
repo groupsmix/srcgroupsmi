@@ -8,7 +8,7 @@
 
 /* global Security, Auth, DB, UI, CONFIG, ICONS, ArticleAI, ArticleAudio, ArticleTranslator, ArticlePolls, ArticleSeries, ReadingLists, FollowersOnlyGate */
 
-const ArticleDetail = {
+const _ArticleDetail = {
     _article: null,
     _slug: null,
 
@@ -73,7 +73,7 @@ const ArticleDetail = {
                                     UI.toast('Followed! Reloading...', 'success');
                                     setTimeout(() => window.location.reload(), 800);
                                 }
-                            } catch (err) {
+                            } catch (_err) {
                                 UI.toast('Failed to follow', 'error');
                                 unlockBtn.disabled = false;
                             }
@@ -89,7 +89,7 @@ const ArticleDetail = {
             if (metaDesc) metaDesc.setAttribute('content', Security.sanitize(article.excerpt || '').slice(0, 160));
 
             // Increment views
-            try { await window.supabaseClient.rpc('increment_article_views', { p_article_id: article.id }); } catch (e) { /* ok */ }
+            try { await window.supabaseClient.rpc('increment_article_views', { p_article_id: article.id }); } catch (_e) { /* ok */ }
 
             // Track reading history
             this._trackReading(article.id);
@@ -242,7 +242,7 @@ const ArticleDetail = {
                 }
             });
             return doc.body.innerHTML;
-        } catch (e) {
+        } catch (_e) {
             return Security.sanitize(html);
         }
     },
@@ -328,7 +328,7 @@ const ArticleDetail = {
                             followBtn.textContent = 'Follow';
                             followBtn.className = 'btn btn-primary btn-sm';
                         }
-                    } catch (err) {
+                    } catch (_err) {
                         UI.toast('Failed to update follow status', 'error');
                     }
                     followBtn.disabled = false;
@@ -437,7 +437,7 @@ const ArticleDetail = {
                                     .from('articles')
                                     .update({ comment_count: (article.comment_count || 0) + 1 })
                                     .eq('id', article.id);
-                            } catch (e) { /* ok */ }
+                            } catch (_e) { /* ok */ }
 
                             // Reload comments
                             this._fetchComments(article, listEl, titleEl);
@@ -453,7 +453,7 @@ const ArticleDetail = {
                                         content_type: 'article',
                                         message: (user ? user.display_name : 'Someone') + ' commented on your article "' + (article.title || '').slice(0, 50) + '"'
                                     });
-                                } catch (e) { /* ok */ }
+                                } catch (_e) { /* ok */ }
                             }
                         } catch (err) {
                             console.error('Comment submit:', err.message);
@@ -500,12 +500,12 @@ const ArticleDetail = {
                     try {
                         await window.supabaseClient
                             .from('comments')
-                            .update({ reports: (parseInt(btn.dataset.reports) || 0) + 1 })
+                            .update({ reports: (parseInt(btn.dataset.reports, 10) || 0) + 1 })
                             .eq('id', btn.dataset.commentId);
                         btn.textContent = 'Reported';
                         btn.disabled = true;
                         UI.toast('Comment reported', 'info');
-                    } catch (e) {
+                    } catch (_e) {
                         UI.toast('Failed to report', 'error');
                     }
                 });
@@ -604,7 +604,7 @@ const ArticleDetail = {
                     } else {
                         UI.toast('Unable to generate summary', 'error');
                     }
-                } catch (e) {
+                } catch (_e) {
                     UI.toast('Summary generation failed', 'error');
                 }
                 tldrBtn.textContent = 'TL;DR Summary';
@@ -631,7 +631,7 @@ const ArticleDetail = {
                     } else {
                         UI.toast('Translation failed', 'error');
                     }
-                } catch (e) {
+                } catch (_e) {
                     UI.toast('Translation failed', 'error');
                 }
                 translateBtn.textContent = article.language === 'ar' ? 'Translate to English' : 'ترجم إلى العربية';
@@ -655,7 +655,7 @@ const ArticleDetail = {
                         output.innerHTML = html;
                         output.style.display = '';
                     }
-                } catch (e) {
+                } catch (_e) {
                     UI.toast('Thread conversion failed', 'error');
                 }
                 threadBtn.textContent = 'Convert to Thread';
@@ -677,7 +677,7 @@ const ArticleDetail = {
                     article_id: articleId,
                     read_at: new Date().toISOString()
                 }, { onConflict: 'user_id,article_id' });
-        } catch (e) { /* ok */ }
+        } catch (_e) { /* ok */ }
     },
 
     // ═══════════════════════════════════════
@@ -785,7 +785,7 @@ const ArticleDetail = {
             try {
                 var { data: feeData } = await window.supabaseClient.rpc('get_tip_fee_percent');
                 if (feeData !== null && feeData !== undefined) feePercent = feeData;
-            } catch (e) { /* use default */ }
+            } catch (_e) { /* use default */ }
 
             // Build tip options
             var tipOptionsHtml = Object.keys(TIP_TYPES).map(function(key) {
@@ -831,10 +831,10 @@ const ArticleDetail = {
                             btn.querySelector('.tip-section__option-name').textContent = 'Sending...';
                             Tips.send(authorUserId, article.id, tipType, '', false).then(function(result) {
                                 if (result) {
-                                    ArticleDetail._loadTipStats(article.id);
+                                    _ArticleDetail._loadTipStats(article.id);
                                 }
                                 var tipInfo = TIP_TYPES[tipType];
-                                var icon = typeof WriterBadges !== 'undefined' ? WriterBadges.getBadgeIcon(tipInfo.icon) : tipInfo.emoji;
+                                var _icon = typeof WriterBadges !== 'undefined' ? WriterBadges.getBadgeIcon(tipInfo.icon) : tipInfo.emoji;
                                 btn.disabled = false;
                                 btn.querySelector('.tip-section__option-name').textContent = tipInfo.name;
                             });

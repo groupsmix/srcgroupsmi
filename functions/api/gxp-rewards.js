@@ -91,7 +91,7 @@ export async function onRequest(context) {
         }
         const userData = await userRes.json();
         callerAuthId = userData.id;
-    } catch (err) {
+    } catch (_err) {
         return new Response(JSON.stringify({ ok: false, error: 'Auth verification failed' }), {
             status: 401, headers: corsHeaders(origin)
         });
@@ -101,7 +101,7 @@ export async function onRequest(context) {
     let body;
     try {
         body = await request.json();
-    } catch (e) {
+    } catch (_e) {
         return new Response(JSON.stringify({ ok: false, error: 'Invalid JSON body' }), {
             status: 400, headers: corsHeaders(origin)
         });

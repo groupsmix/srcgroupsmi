@@ -65,7 +65,7 @@ async function handleGet(request, env, admin, origin) {
     try {
         switch (action) {
             case 'stats': {
-                const days = parseInt(url.searchParams.get('days')) || 30;
+                const days = parseInt(url.searchParams.get('days'), 10) || 30;
 
                 // Use RPC if available
                 try {
@@ -82,7 +82,7 @@ async function handleGet(request, env, admin, origin) {
                         const stats = await rpcRes.json();
                         return successResponse({ data: stats }, origin);
                     }
-                } catch (e) { /* fallback */ }
+                } catch (_e) { /* fallback */ }
 
                 // Fallback: manual aggregation
                 const cutoff = new Date(Date.now() - days * 86400000).toISOString();
@@ -101,13 +101,13 @@ async function handleGet(request, env, admin, origin) {
                 ]);
 
                 const totalUsersRange = usersRes.headers.get('content-range') || '0/0';
-                const totalUsers = parseInt(totalUsersRange.split('/')[1]) || 0;
+                const totalUsers = parseInt(totalUsersRange.split('/')[1], 10) || 0;
                 const newUsersRange = newUsersRes.headers.get('content-range') || '0/0';
-                const newUsers = parseInt(newUsersRange.split('/')[1]) || 0;
+                const newUsers = parseInt(newUsersRange.split('/')[1], 10) || 0;
                 const totalArticlesRange = articlesRes.headers.get('content-range') || '0/0';
-                const totalArticles = parseInt(totalArticlesRange.split('/')[1]) || 0;
+                const totalArticles = parseInt(totalArticlesRange.split('/')[1], 10) || 0;
                 const newArticlesRange = newArticlesRes.headers.get('content-range') || '0/0';
-                const newArticles = parseInt(newArticlesRange.split('/')[1]) || 0;
+                const newArticles = parseInt(newArticlesRange.split('/')[1], 10) || 0;
                 const coinsTxns = await coinsRes.json();
                 const totalCoinsPurchased = (coinsTxns || []).reduce((sum, t) => { return sum + (t.amount || 0); }, 0);
                 const tipsTxns = await tipsRes.json();
@@ -137,7 +137,7 @@ async function handleGet(request, env, admin, origin) {
 
             case 'predictive-growth': {
                 // Platform-wide predictive growth analytics using linear regression
-                const growthDays = parseInt(url.searchParams.get('days')) || 30;
+                const growthDays = parseInt(url.searchParams.get('days'), 10) || 30;
                 const growthCutoff = new Date(Date.now() - growthDays * 86400000).toISOString();
 
                 // Fetch daily user signups
@@ -247,7 +247,7 @@ async function handleGet(request, env, admin, origin) {
                             projected_next_90d: Math.max(0, Math.round(avgDailyRevenue * 90 + revSlope * 90))
                         };
                     }
-                } catch (e) {
+                } catch (_e) {
                     // revenue data unavailable
                 }
 
@@ -288,7 +288,7 @@ async function handleGet(request, env, admin, origin) {
 
             case 'insights': {
                 // Platform-wide actionable insights
-                const insightDays = parseInt(url.searchParams.get('days')) || 30;
+                const insightDays = parseInt(url.searchParams.get('days'), 10) || 30;
                 const insightCutoff = new Date(Date.now() - insightDays * 86400000).toISOString();
                 const prevCutoff = new Date(Date.now() - insightDays * 2 * 86400000).toISOString();
 
@@ -311,10 +311,10 @@ async function handleGet(request, env, admin, origin) {
                         { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
                     )
                 ]);
-                const curUsersCount = parseInt((curUsersRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
-                const prevUsersCount = parseInt((prevUsersRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
-                const curArticlesCount = parseInt((curArticlesRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
-                const prevArticlesCount = parseInt((prevArticlesRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
+                const curUsersCount = parseInt((curUsersRes.headers.get('content-range') || '0/0').split('/')[1], 10) || 0;
+                const prevUsersCount = parseInt((prevUsersRes.headers.get('content-range') || '0/0').split('/')[1], 10) || 0;
+                const curArticlesCount = parseInt((curArticlesRes.headers.get('content-range') || '0/0').split('/')[1], 10) || 0;
+                const prevArticlesCount = parseInt((prevArticlesRes.headers.get('content-range') || '0/0').split('/')[1], 10) || 0;
 
                 const platformInsights = [];
 
@@ -388,13 +388,13 @@ async function handleGet(request, env, admin, origin) {
                         supabaseUrl + '/rest/v1/users?last_active_at=gte.' + encodeURIComponent(insightCutoff) + '&select=id,created_at,last_active_at&limit=1',
                         { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
                     );
-                    const activeCount = parseInt((activeUsersRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
+                    const activeCount = parseInt((activeUsersRes.headers.get('content-range') || '0/0').split('/')[1], 10) || 0;
 
                     const returningRes = await fetch(
                         supabaseUrl + '/rest/v1/users?last_active_at=gte.' + encodeURIComponent(insightCutoff) + '&created_at=lt.' + encodeURIComponent(insightCutoff) + '&select=id&limit=1',
                         { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey, 'Prefer': 'count=estimated' } }
                     );
-                    const returningCount = parseInt((returningRes.headers.get('content-range') || '0/0').split('/')[1]) || 0;
+                    const returningCount = parseInt((returningRes.headers.get('content-range') || '0/0').split('/')[1], 10) || 0;
 
                     if (activeCount > 0) {
                         const retentionRate = (returningCount / activeCount * 100);
@@ -425,7 +425,7 @@ async function handleGet(request, env, admin, origin) {
                             });
                         }
                     }
-                } catch (e) {
+                } catch (_e) {
                     // retention data unavailable
                 }
 
@@ -446,7 +446,7 @@ async function handleGet(request, env, admin, origin) {
 
             case 'leaderboard': {
                 const type = url.searchParams.get('type') || 'xp';
-                const limit = Math.min(parseInt(url.searchParams.get('limit')) || 10, 100);
+                const limit = Math.min(parseInt(url.searchParams.get('limit'), 10) || 10, 100);
 
                 try {
                     const lbRes = await fetch(supabaseUrl + '/rest/v1/rpc/get_fuel_leaderboard', {
@@ -462,7 +462,7 @@ async function handleGet(request, env, admin, origin) {
                         const lb = await lbRes.json();
                         return successResponse({ data: lb || [] }, origin);
                     }
-                } catch (e) { /* fallback */ }
+                } catch (_e) { /* fallback */ }
 
                 // Fallback: direct query
                 let orderCol = 'writer_xp';
@@ -494,7 +494,7 @@ async function handlePost(request, env, admin, origin) {
     let body;
     try {
         body = await request.json();
-    } catch (e) {
+    } catch (_e) {
         return errorResponse('Invalid JSON', 400, origin);
     }
 

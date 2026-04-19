@@ -12,9 +12,9 @@ export async function handleFlashSales(env, body) {
     if (saleAction === 'create') {
         const sellerId = (body.seller_id || '').trim();
         const pId = (body.product_id || '').trim();
-        const discountPct = parseInt(body.discount_percent) || 0;
-        const originalPrice = parseInt(body.original_price) || 0;
-        const durationHours = parseInt(body.duration_hours) || 24;
+        const discountPct = parseInt(body.discount_percent, 10) || 0;
+        const originalPrice = parseInt(body.original_price, 10) || 0;
+        const durationHours = parseInt(body.duration_hours, 10) || 24;
 
         if (!sellerId || !pId || !discountPct) return { ok: false, error: 'Missing seller_id, product_id, or discount_percent' };
         if (discountPct < 5 || discountPct > 80) return { ok: false, error: 'Discount must be between 5% and 80%' };

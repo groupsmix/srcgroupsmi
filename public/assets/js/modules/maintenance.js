@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════
 // MODULE 14b: Maintenance Mode Middleware
 // ═══════════════════════════════════════
-const MaintenanceMode = {
+const _MaintenanceMode = {
     /**
      * Check site_settings in Supabase and enforce maintenance/store locks.
      * Admins bypass all restrictions.
@@ -37,7 +37,7 @@ const MaintenanceMode = {
                         .single();
                     if (profile && profile.role === 'admin') isAdmin = true;
                 }
-            } catch (e) { /* not logged in or error, treat as non-admin */ }
+            } catch (_e) { /* not logged in or error, treat as non-admin */ }
 
             if (isAdmin) return; // Admins bypass everything
 

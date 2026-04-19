@@ -43,7 +43,7 @@ export async function onRequest(context) {
         if (request.method === 'GET') {
             const url = new URL(request.url);
             const articleId = url.searchParams.get('article_id');
-            const limit = parseInt(url.searchParams.get('limit') || '20');
+            const limit = parseInt(url.searchParams.get('limit') || '20', 10);
 
             if (!articleId) {
                 return new Response(

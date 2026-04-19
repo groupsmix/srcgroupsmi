@@ -8,7 +8,7 @@
 
 /* global Quill, Security, Auth, DB, UI, CONFIG, ICONS, ArticleAI, ArticlePolls, ArticleSeries, FollowersOnlyGate */
 
-const ArticleEditor = {
+const _ArticleEditor = {
     _quill: null,
     _articleId: null,
     _isDirty: false,
@@ -259,7 +259,7 @@ const ArticleEditor = {
         container.querySelectorAll('.tags-input__tag-remove').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this._removeTag(parseInt(btn.dataset.index));
+                this._removeTag(parseInt(btn.dataset.index, 10));
             });
         });
     },
@@ -460,9 +460,9 @@ const ArticleEditor = {
                 this._isNewArticle = false;
 
                 // Award points
-                try { await window.supabaseClient.rpc('add_writer_points', { p_user_id: user.id, p_points: 10, p_reason: 'article_published' }); } catch (e) { /* ok */ }
+                try { await window.supabaseClient.rpc('add_writer_points', { p_user_id: user.id, p_points: 10, p_reason: 'article_published' }); } catch (_e) { /* ok */ }
                 // Check badges
-                try { await window.supabaseClient.rpc('check_and_award_badges', { p_user_id: user.id }); } catch (e) { /* ok */ }
+                try { await window.supabaseClient.rpc('check_and_award_badges', { p_user_id: user.id }); } catch (_e) { /* ok */ }
             } else {
                 const { error } = await window.supabaseClient
                     .from('articles')
@@ -490,7 +490,7 @@ const ArticleEditor = {
                         : 'Your article "' + articleData.title + '" is being reviewed.',
                     link: '/article?slug=' + articleData.slug
                 });
-            } catch (e) { /* ok */ }
+            } catch (_e) { /* ok */ }
 
             // Save poll if any
             if (typeof ArticlePolls !== 'undefined') {
@@ -502,7 +502,7 @@ const ArticleEditor = {
 
             // Save revision snapshot
             if (typeof ArticleRevisions !== 'undefined' && this._articleId) {
-                try { await ArticleRevisions.saveRevision(this._articleId, articleData.title, articleData.content); } catch (e) { /* ok */ }
+                try { await ArticleRevisions.saveRevision(this._articleId, articleData.title, articleData.content); } catch (_e) { /* ok */ }
             }
 
             // Apply paywall settings if any
@@ -514,13 +514,13 @@ const ArticleEditor = {
                             coin_price: paywallSettings.coin_price,
                             free_preview_pct: paywallSettings.free_preview_pct
                         }).eq('id', this._articleId);
-                    } catch (e) { /* ok */ }
+                    } catch (_e) { /* ok */ }
                 }
             }
 
             // Update series article count
             if (articleData.series_id) {
-                try { await window.supabaseClient.rpc('update_series_article_count', { p_series_id: articleData.series_id }); } catch (e) { /* ok */ }
+                try { await window.supabaseClient.rpc('update_series_article_count', { p_series_id: articleData.series_id }); } catch (_e) { /* ok */ }
             }
 
             if (articleData.moderation_status === 'approved') {
@@ -564,7 +564,7 @@ const ArticleEditor = {
             reading_time: Math.max(1, Math.round(words / 200)),
             slug: this._generateSlug((titleInput?.value || '').trim()),
             series_id: (seriesSelect && seriesSelect.value) ? seriesSelect.value : null,
-            series_order: seriesOrderInput ? parseInt(seriesOrderInput.value) || 1 : 1,
+            series_order: seriesOrderInput ? parseInt(seriesOrderInput.value, 10) || 1 : 1,
             visibility: visibilitySelect ? visibilitySelect.value : 'public'
         };
     },

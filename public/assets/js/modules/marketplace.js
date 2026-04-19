@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════
 // MODULE 5a: DB.marketplace (Marketplace Listings System)
 // ═══════════════════════════════════════
-const Marketplace = {
+const _Marketplace = {
     // ── Digital product category definitions (whitelist — no freeform "Other") ──
     _categories: [
         {
@@ -150,7 +150,7 @@ const Marketplace = {
 
             if (sort === 'smart' && listings.length > 0) {
                 // Popularity-weighted shuffle algorithm
-                listings = Marketplace._popularityShuffle(listings);
+                listings = _Marketplace._popularityShuffle(listings);
                 listings = listings.slice(offset, offset + limit);
             }
 
@@ -231,7 +231,7 @@ const Marketplace = {
             if (!Security.checkRateLimit('submit')) { UI.toast('Too many submissions. Please wait.', 'error'); return null; }
 
             // Feature 1: Seller verification — require email + phone
-            var verification = await Marketplace.checkSellerVerification();
+            var verification = await _Marketplace.checkSellerVerification();
             if (!verification.verified) {
                 UI.toast(verification.reason, 'error');
                 return null;
@@ -239,14 +239,14 @@ const Marketplace = {
 
             // Feature 2: Validate product category is in the whitelist
             var category = listingData.category || '';
-            if (!Marketplace.isValidCategory(category)) {
+            if (!_Marketplace.isValidCategory(category)) {
                 UI.toast('Please select a valid product category.', 'error');
                 return null;
             }
 
             // Feature 5: Banned keywords filter
-            var titleCheck = Marketplace.checkBannedKeywords(listingData.title || '');
-            var descCheck = Marketplace.checkBannedKeywords(listingData.description || '');
+            var titleCheck = _Marketplace.checkBannedKeywords(listingData.title || '');
+            var descCheck = _Marketplace.checkBannedKeywords(listingData.description || '');
             if (titleCheck.banned) {
                 UI.toast('Listing rejected: title contains banned keyword "' + titleCheck.keyword + '". Please remove it.', 'error');
                 return null;
@@ -262,7 +262,7 @@ const Marketplace = {
                 product_category: category,
                 title: Security.sanitize(listingData.title || '').slice(0, 100),
                 description: Security.sanitize(listingData.description || '').slice(0, 1000),
-                price: Math.max(1, parseInt(listingData.price) || 1),
+                price: Math.max(1, parseInt(listingData.price, 10) || 1),
                 currency: 'coins',
                 contact_link: Security.sanitize(listingData.contact_link || ''),
                 delivery_url: Security.sanitize(listingData.delivery_url || ''),
@@ -319,7 +319,7 @@ const Marketplace = {
             if (!id) return;
             var key = 'mk_imp_' + id;
             var last = sessionStorage.getItem(key);
-            if (last && Date.now() - parseInt(last) < 60000) return; // 1 min throttle
+            if (last && Date.now() - parseInt(last, 10) < 60000) return; // 1 min throttle
             await window.supabaseClient.rpc('increment_listing_impressions', { p_listing_id: id });
             sessionStorage.setItem(key, Date.now().toString());
         } catch (err) { console.error('Marketplace.incrementImpressions:', err.message); }
@@ -369,7 +369,7 @@ const Marketplace = {
             return {
                 user: user,
                 avg_rating: parseFloat(stats.avg_rating) || 0,
-                review_count: parseInt(stats.review_count) || 0,
+                review_count: parseInt(stats.review_count, 10) || 0,
                 listings: listings
             };
         } catch (err) { console.error('Marketplace.getSellerProfile:', err.message); return null; }
@@ -408,7 +408,7 @@ const Marketplace = {
                 seller_id: sellerId,
                 reviewer_id: Auth.getUserId(),
                 listing_id: listingId || null,
-                rating: Math.max(1, Math.min(5, parseInt(rating) || 1)),
+                rating: Math.max(1, Math.min(5, parseInt(rating, 10) || 1)),
                 review_text: Security.sanitize(reviewText || '').slice(0, 500)
             };
 
@@ -498,7 +498,7 @@ const Marketplace = {
                 return { valid: true, message: '' };
             }
             return await res.json();
-        } catch (err) {
+        } catch (_err) {
             console.warn('Marketplace.validatePlatformWithAI: unavailable, allowing');
             return { valid: true, message: '' };
         }
@@ -522,7 +522,7 @@ const Marketplace = {
             }
             var data = await res.json();
             return data;
-        } catch (err) {
+        } catch (_err) {
             console.warn('Marketplace.validateWithAI: endpoint unavailable, allowing submission');
             return { valid: true, message: '' };
         }
@@ -657,7 +657,7 @@ const Marketplace = {
             if (!Security.checkRateLimit('review')) { UI.toast('Too many reviews. Please wait.', 'error'); return null; }
 
             // Get listing to find seller
-            var listing = await Marketplace.getOne(listingId);
+            var listing = await _Marketplace.getOne(listingId);
             if (!listing) { UI.toast('Listing not found.', 'error'); return null; }
             if (listing.seller_id === Auth.getUserId()) { UI.toast('You cannot review your own product.', 'warning'); return null; }
 
@@ -666,7 +666,7 @@ const Marketplace = {
                 escrow_id: escrowId || null,
                 reviewer_id: Auth.getUserId(),
                 seller_id: listing.seller_id,
-                rating: Math.max(1, Math.min(5, parseInt(rating) || 1)),
+                rating: Math.max(1, Math.min(5, parseInt(rating, 10) || 1)),
                 review_text: Security.sanitize(reviewText || '').slice(0, 500)
             };
 
@@ -728,7 +728,7 @@ const Marketplace = {
             var stats = Array.isArray(data) && data.length > 0 ? data[0] : (data || {});
             return {
                 avg_rating: parseFloat(stats.avg_rating) || 0,
-                review_count: parseInt(stats.review_count) || 0
+                review_count: parseInt(stats.review_count, 10) || 0
             };
         } catch (err) {
             console.error('Marketplace.getProductReviewStats:', err.message);
@@ -747,7 +747,7 @@ const Marketplace = {
      */
     async getSellerTrustScore(sellerId) {
         try {
-            if (!sellerId) return Marketplace._defaultTrustScore();
+            if (!sellerId) return _Marketplace._defaultTrustScore();
             var cacheKey = 'mk_trust_' + sellerId;
             var cached = CACHE.get(cacheKey, 120000);
             if (cached) return cached;
@@ -758,16 +758,16 @@ const Marketplace = {
                 if (!error && data) {
                     var serverScore = Array.isArray(data) ? data[0] : data;
                     if (serverScore && typeof serverScore.score === 'number') {
-                        var result = Marketplace._enrichTrustScore(serverScore);
+                        var result = _Marketplace._enrichTrustScore(serverScore);
                         CACHE.set(cacheKey, result);
                         return result;
                     }
                 }
-            } catch (e) { /* RPC may not exist yet — fall back to client computation */ }
+            } catch (_e) { /* RPC may not exist yet — fall back to client computation */ }
 
             // Client-side computation fallback
             var [profileResult, escrowResult, disputeResult] = await Promise.allSettled([
-                Marketplace.getSellerProfile(sellerId),
+                _Marketplace.getSellerProfile(sellerId),
                 window.supabaseClient.from('marketplace_escrow').select('id, status, created_at', { count: 'exact' }).eq('seller_id', sellerId),
                 window.supabaseClient.from('marketplace_disputes').select('id', { count: 'exact' }).eq('seller_id', sellerId)
             ]);
@@ -776,7 +776,7 @@ const Marketplace = {
             var escrows = escrowResult.status === 'fulfilled' && !escrowResult.value.error ? escrowResult.value : { data: [], count: 0 };
             var disputes = disputeResult.status === 'fulfilled' && !disputeResult.value.error ? disputeResult.value : { data: [], count: 0 };
 
-            if (!profile) return Marketplace._defaultTrustScore();
+            if (!profile) return _Marketplace._defaultTrustScore();
 
             // Factor 1: Account age (max 20 points)
             var accountAgeDays = 0;
@@ -809,7 +809,7 @@ const Marketplace = {
 
             var totalScore = Math.min(100, Math.round(ageScore + txScore + ratingScore + responseScore + refundScore));
 
-            var result = Marketplace._enrichTrustScore({
+            var result = _Marketplace._enrichTrustScore({
                 score: totalScore,
                 factors: {
                     account_age: { score: ageScore, max: 20, days: Math.floor(accountAgeDays) },
@@ -824,7 +824,7 @@ const Marketplace = {
             return result;
         } catch (err) {
             console.error('Marketplace.getSellerTrustScore:', err.message);
-            return Marketplace._defaultTrustScore();
+            return _Marketplace._defaultTrustScore();
         }
     },
 
@@ -880,7 +880,7 @@ const Marketplace = {
             if (!Auth.requireAuth()) return null;
             if (!Security.checkRateLimit('offer')) { UI.toast('Too many offers. Please wait.', 'error'); return null; }
 
-            var listing = await Marketplace.getOne(listingId);
+            var listing = await _Marketplace.getOne(listingId);
             if (!listing) { UI.toast('Listing not found.', 'error'); return null; }
             if (listing.seller_id === Auth.getUserId()) { UI.toast('You cannot make an offer on your own listing.', 'warning'); return null; }
             if (offerAmount >= listing.price) { UI.toast('Offer must be below list price. Use Buy Now instead.', 'info'); return null; }
@@ -947,7 +947,7 @@ const Marketplace = {
             // If accepted, auto-create escrow
             if (action === 'accept' && data) {
                 try {
-                    await Marketplace.purchaseWithCoins(data.listing_id, data.offer_amount);
+                    await _Marketplace.purchaseWithCoins(data.listing_id, data.offer_amount);
                 } catch (e) { console.warn('Auto-escrow after offer accept:', e.message); }
             }
 
@@ -1096,7 +1096,7 @@ const Marketplace = {
 
         // Formatting bonus (max 10)
         if (/\n/.test(description) || /\r/.test(description)) score += 5; // uses line breaks
-        if (/[•\-\*]/.test(description)) score += 5; // uses bullet points
+        if (/[•\-*]/.test(description)) score += 5; // uses bullet points
         if (description.indexOf('\n') === -1 && description.length > 100) tips.push('Use line breaks or bullet points to make your description easier to read');
 
         score = Math.min(100, score);
@@ -1133,10 +1133,10 @@ const Marketplace = {
                     CACHE.set(cacheKey, data);
                     return data;
                 }
-            } catch (e) { /* RPC may not exist yet */ }
+            } catch (_e) { /* RPC may not exist yet */ }
 
             // Fallback: get same-category listings
-            var listing = await Marketplace.getOne(listingId);
+            var listing = await _Marketplace.getOne(listingId);
             if (!listing) return [];
             var { data: similar, error: simErr } = await window.supabaseClient
                 .from('marketplace_listings').select('*')
@@ -1308,7 +1308,7 @@ const Marketplace = {
                 return null;
             }
 
-            var listing = await Marketplace.getOne(listingId);
+            var listing = await _Marketplace.getOne(listingId);
             if (!listing) { UI.toast('Listing not found.', 'error'); return null; }
             if (listing.seller_id !== Auth.getUserId()) { UI.toast('You can only set sales on your own listings.', 'error'); return null; }
 
@@ -1420,7 +1420,7 @@ const Marketplace = {
             if (!Auth.requireAuth()) return null;
 
             // Check verified purchase
-            var hasPurchase = await Marketplace.hasVerifiedPurchase(listingId);
+            var hasPurchase = await _Marketplace.hasVerifiedPurchase(listingId);
             if (!hasPurchase) {
                 UI.toast('Only verified buyers can leave reviews. Please purchase this product first.', 'warning');
                 return null;
@@ -1434,7 +1434,7 @@ const Marketplace = {
                 .limit(1);
             var escrowId = escrows && escrows.length > 0 ? escrows[0].id : null;
 
-            return await Marketplace.submitProductReview(listingId, escrowId, rating, reviewText);
+            return await _Marketplace.submitProductReview(listingId, escrowId, rating, reviewText);
         } catch (err) {
             console.error('Marketplace.submitVerifiedReview:', err.message);
             UI.toast('Failed to submit review.', 'error');

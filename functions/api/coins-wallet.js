@@ -77,7 +77,7 @@ async function handleGet(request, env, user, origin) {
         switch (action) {
             case 'balance': {
                 // Ensure wallet exists and get balance
-                const res = await fetch(supabaseUrl + '/rest/v1/rpc/ensure_user_wallet', {
+                const _res = await fetch(supabaseUrl + '/rest/v1/rpc/ensure_user_wallet', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -112,8 +112,8 @@ async function handleGet(request, env, user, origin) {
             }
 
             case 'transactions': {
-                const limit = Math.min(parseInt(url.searchParams.get('limit')) || 20, 100);
-                const offset = parseInt(url.searchParams.get('offset')) || 0;
+                const limit = Math.min(parseInt(url.searchParams.get('limit'), 10) || 20, 100);
+                const offset = parseInt(url.searchParams.get('offset'), 10) || 0;
                 const type = url.searchParams.get('type') || '';
 
                 let query = supabaseUrl + '/rest/v1/wallet_transactions?user_id=eq.' + encodeURIComponent(user.userId) +
@@ -135,7 +135,7 @@ async function handleGet(request, env, user, origin) {
 
                 return successResponse({
                     data: txns || [],
-                    count: count ? parseInt(count.split('/')[1]) || 0 : (txns || []).length
+                    count: count ? parseInt(count.split('/')[1], 10) || 0 : (txns || []).length
                 }, origin);
             }
 
@@ -171,7 +171,7 @@ async function handleGet(request, env, user, origin) {
 
             case 'spending-insights': {
                 // Server-side aggregation via RPC (replaces client-side 500-txn fetch)
-                const insightDays = parseInt(url.searchParams.get('days')) || 30;
+                const insightDays = parseInt(url.searchParams.get('days'), 10) || 30;
 
                 const insightRes = await fetch(supabaseUrl + '/rest/v1/rpc/get_spending_insights', {
                     method: 'POST',
@@ -409,7 +409,7 @@ async function handlePost(request, env, user, origin) {
     let body;
     try {
         body = await request.json();
-    } catch (e) {
+    } catch (_e) {
         return errorResponse('Invalid JSON', 400, origin);
     }
 
@@ -418,7 +418,7 @@ async function handlePost(request, env, user, origin) {
     try {
         switch (action) {
             case 'withdraw': {
-                const coinsAmount = parseInt(body.coins_amount) || 0;
+                const coinsAmount = parseInt(body.coins_amount, 10) || 0;
                 const paymentMethod = (body.payment_method || '').trim();
                 const paymentDetails = body.payment_details || {};
 
@@ -450,9 +450,9 @@ async function handlePost(request, env, user, origin) {
                     );
                     const configData = await configRes.json();
                     if (configData && configData.length > 0) {
-                        feePercent = parseInt(configData[0].value) || 10;
+                        feePercent = parseInt(configData[0].value, 10) || 10;
                     }
-                } catch (e) { /* use default */ }
+                } catch (_e) { /* use default */ }
 
                 // Atomic withdrawal via RPC (prevents race conditions with FOR UPDATE lock)
                 const wRes = await fetch(supabaseUrl + '/rest/v1/rpc/create_withdrawal', {
@@ -493,7 +493,7 @@ async function handlePost(request, env, user, origin) {
                 // Create an escrow transaction — atomic RPC prevents race conditions
                 const escrowSellerId = (body.seller_id || '').trim();
                 const escrowProductId = (body.product_id || '').trim();
-                const escrowAmount = parseInt(body.amount) || 0;
+                const escrowAmount = parseInt(body.amount, 10) || 0;
                 const escrowProductName = (body.product_name || 'Product').substring(0, 200);
 
                 if (!escrowSellerId || !escrowProductId || !escrowAmount) {

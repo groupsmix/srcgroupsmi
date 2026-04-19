@@ -25,7 +25,7 @@ var AuthorAnalytics = {
             btn.addEventListener('click', function () {
                 document.querySelectorAll('.analytics__period-btn').forEach(function (b) { b.classList.remove('analytics__period-btn--active'); });
                 btn.classList.add('analytics__period-btn--active');
-                self._days = parseInt(btn.dataset.days) || 30;
+                self._days = parseInt(btn.dataset.days, 10) || 30;
                 self._load();
             });
         });
@@ -184,7 +184,7 @@ var AuthorAnalytics = {
                     source: source || AuthorAnalytics._detectSource()
                 })
             });
-        } catch (e) { /* non-critical */ }
+        } catch (_e) { /* non-critical */ }
     },
 
     _detectSource() {
@@ -264,7 +264,7 @@ var ArticleRevisions = {
             listEl.querySelectorAll('.btn-preview-rev').forEach(function (btn) {
                 btn.addEventListener('click', function (e) {
                     e.stopPropagation();
-                    var idx = parseInt(btn.dataset.idx);
+                    var idx = parseInt(btn.dataset.idx, 10);
                     self._previewRevision(idx);
                 });
             });
@@ -281,7 +281,7 @@ var ArticleRevisions = {
             // Bind item clicks to preview
             listEl.querySelectorAll('.revision-item').forEach(function (item) {
                 item.addEventListener('click', function () {
-                    var idx = parseInt(item.dataset.idx);
+                    var idx = parseInt(item.dataset.idx, 10);
                     self._previewRevision(idx);
                 });
             });
@@ -334,7 +334,7 @@ var ArticleRevisions = {
             } else {
                 UI.toast(json.error || 'Failed to restore revision', 'error');
             }
-        } catch (err) {
+        } catch (_err) {
             UI.toast('Failed to restore revision', 'error');
         }
     },
@@ -352,7 +352,7 @@ var ArticleRevisions = {
                     user_id: Auth.getAuthId()
                 })
             });
-        } catch (e) { /* non-critical */ }
+        } catch (_e) { /* non-critical */ }
     }
 };
 
@@ -422,7 +422,7 @@ var ArticleSchedule = {
                 } else {
                     UI.toast(json.error || 'Failed to schedule', 'error');
                 }
-            } catch (err) {
+            } catch (_err) {
                 UI.toast('Failed to schedule article', 'error');
             }
 
@@ -467,8 +467,8 @@ var ArticlePaywall = {
         var priceEl = document.getElementById('paywall-price');
         var previewEl = document.getElementById('paywall-preview');
         return {
-            coin_price: priceEl ? parseInt(priceEl.value) || 0 : 0,
-            free_preview_pct: previewEl ? parseInt(previewEl.value) || 30 : 30
+            coin_price: priceEl ? parseInt(priceEl.value, 10) || 0 : 0,
+            free_preview_pct: previewEl ? parseInt(previewEl.value, 10) || 30 : 30
         };
     },
 
@@ -526,7 +526,7 @@ var ArticlePaywall = {
                     });
                     var json = await res.json();
                     if (json.ok && json.has_access) return; // Already purchased
-                } catch (e) { /* continue to show paywall */ }
+                } catch (_e) { /* continue to show paywall */ }
             }
         }
 
@@ -597,7 +597,7 @@ var ArticlePaywall = {
                     purchaseBtn.textContent = 'Unlock for ' + article.coin_price + ' Coins';
                 }
             }
-        } catch (err) {
+        } catch (_err) {
             UI.toast('Purchase failed', 'error');
             if (purchaseBtn) {
                 purchaseBtn.disabled = false;
@@ -647,7 +647,7 @@ var PlagiarismCheck = {
                 } else {
                     UI.toast(json.error || 'Plagiarism check failed', 'error');
                 }
-            } catch (err) {
+            } catch (_err) {
                 UI.toast('Plagiarism check failed', 'error');
             }
 
@@ -768,7 +768,7 @@ var ArticleCollaborate = {
                 } else {
                     UI.toast(json.error || 'Failed to invite', 'error');
                 }
-            } catch (err) {
+            } catch (_err) {
                 UI.toast('Failed to invite collaborator', 'error');
             }
 
@@ -804,7 +804,7 @@ var ArticleCollaborate = {
                     statusBadge +
                     '</div>';
             }).join('');
-        } catch (err) {
+        } catch (_err) {
             listEl.innerHTML = '<span style="color:var(--text-tertiary)">Unable to load collaborators</span>';
         }
     }

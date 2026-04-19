@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════
 // MODULE 1: CONFIG
 // ═══════════════════════════════════════
-const CONFIG = {
+const _CONFIG = {
     siteName: 'GroupsMix',
     // Issue 14 fix: environment-aware siteUrl — uses current origin at runtime,
     // falls back to production domain for non-browser contexts (e.g. build/SSR)

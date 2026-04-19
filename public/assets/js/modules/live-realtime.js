@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════
 // MODULE 14b: Realtime Live Stats
 // ═══════════════════════════════════════
-const LiveRealtime = {
+const _LiveRealtime = {
     _channel: null,
 
     init() {
@@ -18,7 +18,7 @@ const LiveRealtime = {
                     schema: 'public',
                     table: 'groups'
                 }, (payload) => {
-                    if (payload.new) LiveRealtime._handleGroupUpdate(payload.new);
+                    if (payload.new) _LiveRealtime._handleGroupUpdate(payload.new);
                 })
                 .on('postgres_changes', {
                     event: 'INSERT',
@@ -26,7 +26,7 @@ const LiveRealtime = {
                     table: 'comments'
                 }, (payload) => {
                     if (payload.new && payload.new.content_id) {
-                        LiveRealtime._handleNewComment(payload.new.content_id);
+                        _LiveRealtime._handleNewComment(payload.new.content_id);
                     }
                 })
                 .subscribe((status) => {
@@ -71,14 +71,14 @@ const LiveRealtime = {
         if (!bar) return;
         var countEl = bar.querySelector('[data-count="comments"]');
         if (countEl) {
-            var current = parseInt(countEl.textContent.replace(/[^\d]/g, '')) || 0;
+            var current = parseInt(countEl.textContent.replace(/[^\d]/g, ''), 10) || 0;
             countEl.textContent = UI.formatNumber(current + 1);
         }
     },
 
     destroy() {
         if (this._channel) {
-            try { window.supabaseClient.removeChannel(this._channel); } catch (e) { /* ignore */ }
+            try { window.supabaseClient.removeChannel(this._channel); } catch (_e) { /* ignore */ }
             this._channel = null;
         }
     }

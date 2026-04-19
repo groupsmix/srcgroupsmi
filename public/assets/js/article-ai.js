@@ -8,7 +8,7 @@
 
 /* global Security, Auth, UI, CONFIG */
 
-const ArticleAI = {
+const _ArticleAI = {
     _endpoint: '/api/groq',
     _cache: {},
     _rateLimitMs: 2000,
@@ -76,7 +76,7 @@ const ArticleAI = {
                     this._cache[cacheKey] = titles.slice(0, 3);
                     return this._cache[cacheKey];
                 }
-            } catch (e) {
+            } catch (_e) {
                 // Try extracting from text
                 const matches = result.result.match(/"([^"]+)"/g);
                 if (matches) {
@@ -104,7 +104,7 @@ const ArticleAI = {
             try {
                 const tags = typeof result.result === 'string' ? JSON.parse(result.result) : result.result;
                 if (Array.isArray(tags)) return tags.map(t => String(t).toLowerCase().trim()).filter(t => t.length > 0).slice(0, 5);
-            } catch (e) {
+            } catch (_e) {
                 const matches = result.result.match(/"([^"]+)"/g);
                 if (matches) return matches.map(m => m.replace(/"/g, '').toLowerCase().trim()).slice(0, 5);
             }
@@ -185,7 +185,7 @@ const ArticleAI = {
         if (result && result.result) {
             try {
                 return typeof result.result === 'string' ? JSON.parse(result.result) : result.result;
-            } catch (e) {
+            } catch (_e) {
                 return [];
             }
         }
@@ -206,7 +206,7 @@ const ArticleAI = {
         if (result && result.result) {
             try {
                 return typeof result.result === 'string' ? JSON.parse(result.result) : result.result;
-            } catch (e) {
+            } catch (_e) {
                 return null;
             }
         }
@@ -239,7 +239,7 @@ const ArticleAI = {
                 'Return ONLY valid JSON: {"spam_score": 0, "quality_score": 80, "is_appropriate": true, "detected_language": "en", "issues": [], "moderation_note": "..."}'
         });
 
-        let moderationResult = {
+        const moderationResult = {
             moderation_score: 75,
             moderation_status: 'approved',
             moderation_note: 'Auto-reviewed',
@@ -250,8 +250,8 @@ const ArticleAI = {
             try {
                 const parsed = typeof result.result === 'string' ? JSON.parse(result.result) : result.result;
 
-                const spamScore = parseInt(parsed.spam_score) || 0;
-                const qualityScore = parseInt(parsed.quality_score) || 50;
+                const spamScore = parseInt(parsed.spam_score, 10) || 0;
+                const qualityScore = parseInt(parsed.quality_score, 10) || 50;
                 const isAppropriate = parsed.is_appropriate !== false;
 
                 // Calculate final score: higher = better
@@ -297,8 +297,8 @@ const ArticleAI = {
                         .single();
 
                     if (article && article.user_id) {
-                        try { await window.supabaseClient.rpc('add_writer_points', { p_user_id: article.user_id, p_points: 5, p_reason: 'article_approved' }); } catch (e) { /* ok */ }
-                        try { await window.supabaseClient.rpc('check_and_award_badges', { p_user_id: article.user_id }); } catch (e) { /* ok */ }
+                        try { await window.supabaseClient.rpc('add_writer_points', { p_user_id: article.user_id, p_points: 5, p_reason: 'article_approved' }); } catch (_e) { /* ok */ }
+                        try { await window.supabaseClient.rpc('check_and_award_badges', { p_user_id: article.user_id }); } catch (_e) { /* ok */ }
                     }
                 }
             } catch (err) {
@@ -508,7 +508,7 @@ const ArticleAI = {
                 const parsed = typeof result.result === 'string' ? JSON.parse(result.result) : result.result;
                 this._cache[cacheKey] = parsed;
                 return parsed;
-            } catch (e) {
+            } catch (_e) {
                 const text = String(result.result).trim();
                 const fallback = { summary: text.slice(0, 200), key_points: [text] };
                 this._cache[cacheKey] = fallback;
@@ -535,7 +535,7 @@ const ArticleAI = {
         if (result && result.result) {
             try {
                 return typeof result.result === 'string' ? JSON.parse(result.result) : result.result;
-            } catch (e) {
+            } catch (_e) {
                 return { title: '', content: String(result.result).trim() };
             }
         }
@@ -559,7 +559,7 @@ const ArticleAI = {
             try {
                 const parsed = typeof result.result === 'string' ? JSON.parse(result.result) : result.result;
                 if (Array.isArray(parsed)) return parsed;
-            } catch (e) {
+            } catch (_e) {
                 return [String(result.result).trim()];
             }
         }
@@ -591,7 +591,7 @@ const ArticleAI = {
                 const parsed = typeof result.result === 'string' ? JSON.parse(result.result) : result.result;
                 if (parsed.keywords && Array.isArray(parsed.keywords)) searchKeywords = parsed.keywords;
                 if (parsed.categories && Array.isArray(parsed.categories)) searchCategories = parsed.categories;
-            } catch (e) { /* use original query */ }
+            } catch (_e) { /* use original query */ }
         }
 
         // Execute search against database
@@ -603,7 +603,7 @@ const ArticleAI = {
                 .eq('moderation_status', 'approved');
 
             // Text search using OR across keywords
-            const searchTerms = searchKeywords.join(' | ');
+            const _searchTerms = searchKeywords.join(' | ');
             queryBuilder = queryBuilder.or(
                 'title.ilike.%' + searchKeywords[0] + '%,excerpt.ilike.%' + searchKeywords[0] + '%'
             );
@@ -628,7 +628,7 @@ const ArticleAI = {
                     .ilike('title', '%' + query + '%')
                     .limit(limit);
                 return data || [];
-            } catch (e) {
+            } catch (_e) {
                 return [];
             }
         }

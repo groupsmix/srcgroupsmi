@@ -335,7 +335,7 @@ function streamToClient(aiRes, hdrs) {
                         if (content) {
                             await writer.write(encoder.encode('data: ' + JSON.stringify({ text: content }) + '\n\n'));
                         }
-                    } catch (e) {
+                    } catch (_e) {
                         // Skip malformed SSE lines
                     }
                 }

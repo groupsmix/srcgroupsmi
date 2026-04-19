@@ -96,7 +96,7 @@ UI.fuelLevelProgress = function (xp) {
  */
 UI.fuelLevelCard = function (levelKey, xp) {
     var info = WriterLevels.getLevelInfo(levelKey || 'newcomer');
-    var progress = WriterLevels.getLevelProgress(xp);
+    var _progress = WriterLevels.getLevelProgress(xp);
     return '<div class="fuel-level-card" style="--level-color:' + info.color + '">' +
         '<div class="fuel-level-card__icon">' + WriterBadges.getBadgeIcon(info.icon) + '</div>' +
         '<div class="fuel-level-card__info">' +
@@ -292,7 +292,7 @@ UI.fuelTipModal = function (receiverId, receiverName, articleId) {
             btn.classList.add('fuel-tip-option--selected');
 
             // Show fee breakdown
-            var coins = parseInt(btn.dataset.coins) || 0;
+            var coins = parseInt(btn.dataset.coins, 10) || 0;
             var fee = Math.floor(coins * _tipFeePercent / 100);
             var authorGets = coins - fee;
             var feeEl = document.getElementById('fuel-tip-fee-info');

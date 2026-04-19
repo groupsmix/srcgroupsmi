@@ -156,7 +156,7 @@ export async function onRequest(context) {
 
         if (action === 'predictive-growth') {
             // Predictive growth analytics using linear regression on the last 30 days
-            const days = parseInt(url.searchParams.get('days')) || 30;
+            const days = parseInt(url.searchParams.get('days'), 10) || 30;
 
             // Get daily view snapshots (using analytics events if available)
             const cutoff = new Date(Date.now() - days * 86400000).toISOString();
@@ -252,7 +252,7 @@ export async function onRequest(context) {
                         };
                     }
                 }
-            } catch (e) {
+            } catch (_e) {
                 // view trend data unavailable, continue without it
             }
 
@@ -282,7 +282,7 @@ export async function onRequest(context) {
 
         if (action === 'insights') {
             // Actionable insights — derive patterns from group data
-            const insightsDays = parseInt(url.searchParams.get('days')) || 30;
+            const insightsDays = parseInt(url.searchParams.get('days'), 10) || 30;
             const insightsCutoff = new Date(Date.now() - insightsDays * 86400000).toISOString();
 
             // Get reviews with timestamps for pattern analysis

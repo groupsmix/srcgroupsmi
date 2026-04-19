@@ -317,12 +317,12 @@ DB.articles.moderate = async function (id, status, note) {
                         ? 'Your article "' + (article.title || '').slice(0, 50) + '" has been approved!'
                         : 'Your article "' + (article.title || '').slice(0, 50) + '" was not approved. Reason: ' + (note || 'N/A')
                 });
-            } catch (e) { /* ok */ }
+            } catch (_e) { /* ok */ }
 
             // Award points if approved
             if (status === 'approved') {
-                try { await window.supabaseClient.rpc('add_writer_points', { p_user_id: article.user_id, p_points: 5, p_reason: 'article_approved' }); } catch (e) { /* ok */ }
-                try { await window.supabaseClient.rpc('check_and_award_badges', { p_user_id: article.user_id }); } catch (e) { /* ok */ }
+                try { await window.supabaseClient.rpc('add_writer_points', { p_user_id: article.user_id, p_points: 5, p_reason: 'article_approved' }); } catch (_e) { /* ok */ }
+                try { await window.supabaseClient.rpc('check_and_award_badges', { p_user_id: article.user_id }); } catch (_e) { /* ok */ }
             }
         }
 
@@ -459,7 +459,7 @@ DB.articleCategories = {
         try {
             const all = await this.getAll();
             return all.find(c => c.slug === slug) || null;
-        } catch (err) {
+        } catch (_err) {
             return null;
         }
     },
@@ -600,7 +600,7 @@ DB.readingHistory = {
                     article_id: articleId,
                     read_at: new Date().toISOString()
                 }, { onConflict: 'user_id,article_id' });
-        } catch (e) { /* silent */ }
+        } catch (_e) { /* silent */ }
     },
 
     /**

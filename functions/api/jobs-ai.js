@@ -136,11 +136,11 @@ function parseAIJSON(content) {
     try {
         const jsonStr = content.replace(/```json?\s*/g, '').replace(/```/g, '').trim();
         return JSON.parse(jsonStr);
-    } catch (e) {
+    } catch (_e) {
         try {
             const match = content.match(/\{[\s\S]*\}/);
             if (match) return JSON.parse(match[0]);
-        } catch (e2) {
+        } catch (_e2) {
             // ignore
         }
         return null;
@@ -178,7 +178,7 @@ async function handleValidate(body, apiKey) {
         '{"is_valid": true/false, "reason": "brief explanation if invalid", "category": "one of the categories above"}';
 
     const aiContent = await callAI(apiKey, prompt, 150);
-    let result = parseAIJSON(aiContent);
+    const result = parseAIJSON(aiContent);
 
     if (!result) {
         return { valid: true, message: '', category: 'other' };
@@ -231,7 +231,7 @@ async function handleEnhance(body, apiKey) {
     try {
         const parsed = JSON.parse(skillsContent.replace(/```json?\s*/g, '').replace(/```/g, '').trim());
         if (Array.isArray(parsed)) skills = parsed.map((s) => { return String(s).toLowerCase().trim(); }).filter(Boolean).slice(0, 8);
-    } catch (e) {
+    } catch (_e) {
         // ignore
     }
 
@@ -264,7 +264,7 @@ async function handleCategorize(body, apiKey) {
         '{"category": "one_category", "confidence": 0.0-1.0}';
 
     const aiContent = await callAI(apiKey, prompt, 50);
-    let result = parseAIJSON(aiContent);
+    const result = parseAIJSON(aiContent);
 
     const validCategories = ['design', 'programming', 'marketing', 'writing', 'community', 'other'];
     if (result && validCategories.indexOf(result.category) !== -1) {
@@ -313,7 +313,7 @@ async function handleMatch(body, apiKey) {
             '{"score": 0-100, "explanation": "one sentence why"}';
 
         const aiContent = await callAI(apiKey, prompt, 80);
-        let result = parseAIJSON(aiContent);
+        const result = parseAIJSON(aiContent);
 
         if (result && typeof result.score === 'number') {
             return {
@@ -350,7 +350,7 @@ export async function onRequest(context) {
     let body;
     try {
         body = await request.json();
-    } catch (e) {
+    } catch (_e) {
         return new Response(
             JSON.stringify({ error: 'Invalid request body' }),
             { status: 400, headers: corsHeaders(origin) }

@@ -113,6 +113,6 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ group: gid, event: event })
             });
-        } catch(e) { /* silent */ }
+        } catch(_e) { /* silent */ }
     }
 })();

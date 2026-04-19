@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════
 // MODULE 7: Saved
 // ═══════════════════════════════════════
-const Saved = {
+const _Saved = {
     _key: 'gm_saved_groups',
     getAll() {
         try { return JSON.parse(localStorage.getItem(this._key) || '[]'); } catch (err) { console.error('Saved.getAll:', err.message); return []; }

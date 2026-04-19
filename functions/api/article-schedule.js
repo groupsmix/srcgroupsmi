@@ -77,7 +77,7 @@ export async function onRequest(context) {
 
             // Validate scheduled_at is in the future
             const schedDate = new Date(scheduled_at);
-            if (isNaN(schedDate.getTime()) || schedDate <= new Date()) {
+            if (Number.isNaN(schedDate.getTime()) || schedDate <= new Date()) {
                 return new Response(
                     JSON.stringify({ ok: false, error: 'scheduled_at must be a future date' }),
                     { status: 400, headers: corsHeaders(origin) }

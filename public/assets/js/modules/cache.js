@@ -9,7 +9,7 @@
 // MODULE 2: CACHE (sessionStorage)
 // ═══════════════════════════════════════
 // Audit fix #8: added _maxSize and eviction to prevent unbounded memory growth in sessionStorage
-const CACHE = {
+const _CACHE = {
     _prefix: 'gm_cache_',
     _maxSize: 100,
     get(key, maxAgeMs) {
@@ -28,7 +28,7 @@ const CACHE = {
             if (allKeys.length >= this._maxSize) {
                 const entries = allKeys.map(k => {
                     try { const parsed = JSON.parse(sessionStorage.getItem(k)); return { key: k, ts: parsed.ts || 0 }; }
-                    catch (e) { return { key: k, ts: 0 }; }
+                    catch (_e) { return { key: k, ts: 0 }; }
                 }).sort((a, b) => a.ts - b.ts);
                 // Remove oldest 20% to avoid evicting on every set
                 const removeCount = Math.max(1, Math.floor(this._maxSize * 0.2));

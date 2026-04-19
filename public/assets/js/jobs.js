@@ -4,7 +4,7 @@
 // Full Production Build
 // ═══════════════════════════════════════
 
-var Jobs = (function () {
+var _Jobs = (function () {
     'use strict';
 
     // ── Category Icons (SVG) ──────────────────
@@ -181,7 +181,7 @@ var Jobs = (function () {
     // ── Truncate text ─────────────────────────
     function truncateText(text, maxLen) {
         if (!text) return '';
-        var clean = text.replace(/[#*\-]/g, '').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+        var clean = text.replace(/[#*-]/g, '').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
         return clean.length > maxLen ? clean.substring(0, maxLen) + '...' : clean;
     }
 
@@ -209,7 +209,7 @@ var Jobs = (function () {
                     job_ids: state.savedJobs,
                     updated_at: new Date().toISOString()
                 }]);
-            } catch (e) { /* ignore */ }
+            } catch (_e) { /* ignore */ }
         }
         renderJobList();
     }
@@ -571,7 +571,7 @@ var Jobs = (function () {
             } else {
                 showSkillsBanner();
             }
-        } catch (err) {
+        } catch (_err) {
             showSkillsBanner();
         }
     }
@@ -862,7 +862,7 @@ var Jobs = (function () {
         // Increment views
         try {
             window.supabaseClient.rpc('increment_job_views', { p_job_id: job.id });
-        } catch (e) {
+        } catch (_e) {
             // ignore
         }
     }
@@ -944,7 +944,7 @@ var Jobs = (function () {
                     if (result.error) throw result.error;
                     UI.toast('Application submitted successfully!', 'success');
                     UI.closeModal();
-                } catch (err) {
+                } catch (_err) {
                     UI.toast('Application submitted! (Pending table setup)', 'info');
                     UI.closeModal();
                 }
@@ -1003,7 +1003,7 @@ var Jobs = (function () {
                     if (result.error) throw result.error;
                     UI.toast('Question sent! You\'ll be notified when they reply.', 'success');
                     UI.closeModal();
-                } catch (err) {
+                } catch (_err) {
                     UI.toast('Question sent! (Pending table setup)', 'info');
                     UI.closeModal();
                 }
@@ -1087,7 +1087,7 @@ var Jobs = (function () {
                     if (result.error) throw result.error;
                     UI.toast('Report submitted. Thank you for keeping GroupsMix safe!', 'success');
                     UI.closeModal();
-                } catch (err) {
+                } catch (_err) {
                     // Table might not exist yet
                     UI.toast('Report submitted. Thank you!', 'info');
                     UI.closeModal();
@@ -1537,9 +1537,8 @@ var Jobs = (function () {
         document.getElementById('btn-create-alert').addEventListener('click', async function() {
             var name = document.getElementById('alert-name').value.trim();
             if (!name) { UI.toast('Enter an alert name', 'warning'); return; }
-            var btn = this;
-            btn.disabled = true;
-            btn.innerHTML = '<div class="btn-spinner"></div> Creating...';
+            this.disabled = true;
+            this.innerHTML = '<div class="btn-spinner"></div> Creating...';
             try {
                 var result = await boardAPI('job-alerts', {
                     sub_action: 'create',
@@ -1557,13 +1556,13 @@ var Jobs = (function () {
                     UI.closeModal();
                 } else {
                     UI.toast(result.error || 'Failed to create alert', 'error');
-                    btn.disabled = false;
-                    btn.textContent = 'Create Alert';
+                    this.disabled = false;
+                    this.textContent = 'Create Alert';
                 }
-            } catch (e) {
+            } catch (_e) {
                 UI.toast('Failed to create alert', 'error');
-                btn.disabled = false;
-                btn.textContent = 'Create Alert';
+                this.disabled = false;
+                this.textContent = 'Create Alert';
             }
         });
     }
@@ -1596,7 +1595,7 @@ var Jobs = (function () {
                 }).join('') + '</div>';
             }
             UI.modal({ title: 'My Job Alerts', content: content, size: 'large' });
-        } catch (e) {
+        } catch (_e) {
             UI.toast('Could not load alerts', 'error');
         }
     }
@@ -1606,7 +1605,7 @@ var Jobs = (function () {
             await boardAPI('job-alerts', { sub_action: 'delete', alert_id: alertId });
             UI.toast('Alert deleted', 'info');
             showMyAlerts();
-        } catch (e) { UI.toast('Failed to delete alert', 'error'); }
+        } catch (_e) { UI.toast('Failed to delete alert', 'error'); }
     }
 
     // ── 4. Resume Parser ─────────────────────
@@ -1651,10 +1650,8 @@ var Jobs = (function () {
             var text = document.getElementById('resume-text').value.trim();
             var linkedin = document.getElementById('resume-linkedin').value.trim();
             if (!text && !linkedin) { UI.toast('Paste resume text or enter LinkedIn URL', 'warning'); return; }
-
-            var btn = this;
-            btn.disabled = true;
-            btn.innerHTML = '<div class="btn-spinner"></div> Parsing with AI...';
+            this.disabled = true;
+            this.innerHTML = '<div class="btn-spinner"></div> Parsing with AI...';
 
             try {
                 var data = { sub_action: text ? 'parse-text' : 'parse-linkedin' };
@@ -1663,7 +1660,7 @@ var Jobs = (function () {
                 var result = await boardAPI('resume-parser', data);
                 if (result.ok && result.parsed) {
                     var p = result.parsed;
-                    var skillsList = (p.skills || []).join(', ');
+                    var _skillsList = (p.skills || []).join(', ');
                     var expList = (p.experience || []).map(function(e) { return e.title + ' at ' + e.company; }).join(', ');
 
                     UI.closeModal();
@@ -1691,20 +1688,20 @@ var Jobs = (function () {
                             UI.toast('Profile updated with parsed skills!', 'success');
                             UI.closeModal();
                             loadUserSkills();
-                        } catch (e) {
+                        } catch (_e) {
                             UI.toast('Skills saved! (Profile updated)', 'success');
                             UI.closeModal();
                         }
                     });
                 } else {
                     UI.toast(result.error || 'Could not parse resume', 'error');
-                    btn.disabled = false;
-                    btn.textContent = 'Parse & Auto-Fill';
+                    this.disabled = false;
+                    this.textContent = 'Parse & Auto-Fill';
                 }
-            } catch (e) {
+            } catch (_e) {
                 UI.toast('Failed to parse resume', 'error');
-                btn.disabled = false;
-                btn.textContent = 'Parse & Auto-Fill';
+                this.disabled = false;
+                this.textContent = 'Parse & Auto-Fill';
             }
         });
     }
@@ -1731,11 +1728,11 @@ var Jobs = (function () {
                     (ins.region ? '<span>' + (REGION_LABELS[ins.region] || ins.region) + '</span>' : '') +
                     '</div></div>';
             }).join('');
-        } catch (e) { /* ignore */ }
+        } catch (_e) { /* ignore */ }
     }
 
     // ── 7. Featured/Boosted Job Badge ────────
-    function addBoostBadgeToCard(job) {
+    function _addBoostBadgeToCard(job) {
         // Already handled via is_promoted in jobCardHTML
         // This extends it for boost types (pinned, highlighted, featured)
         if (job.boost_type === 'pinned') return ' job-card--pinned';
@@ -1792,7 +1789,7 @@ var Jobs = (function () {
             } else {
                 UI.toast(result.error || 'Could not analyze skills', 'error');
             }
-        } catch (e) { UI.toast('Skill gap analysis failed', 'error'); }
+        } catch (_e) { UI.toast('Skill gap analysis failed', 'error'); }
     }
 
     // ── 9. Referral Bounties (candidate side) ─
@@ -1822,7 +1819,7 @@ var Jobs = (function () {
                 }).join('') + '</div>';
             }
             UI.modal({ title: 'My Referrals', content: content, size: 'large' });
-        } catch (e) { UI.toast('Could not load referrals', 'error'); }
+        } catch (_e) { UI.toast('Could not load referrals', 'error'); }
     }
 
     async function referFriend(jobId) {
@@ -1864,12 +1861,12 @@ var Jobs = (function () {
                 } else {
                     UI.toast(result.error || 'Failed to send referral', 'error');
                 }
-            } catch (e) { UI.toast('Failed to send referral', 'error'); }
+            } catch (_e) { UI.toast('Failed to send referral', 'error'); }
         });
     }
 
     // ── Enhanced Job Detail (with skill gap + referral) ──
-    var originalShowJobDetail = showJobDetail;
+    var _originalShowJobDetail = showJobDetail;
 
     // ── Advanced Init ────────────────────────
     function initAdvancedFeatures() {

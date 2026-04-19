@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════
 // MODULE 13: loadSettings
 // ═══════════════════════════════════════
-async function loadSettings() {
+async function _loadSettings() {
     try {
         const settings = await DB.config.getSettings();
         if (!settings || !Object.keys(settings).length) return;

@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════
 // MODULE 5b: DB.interactions (Universal Interaction System)
 // ═══════════════════════════════════════
-const Interactions = {
+const _Interactions = {
     // In-memory cache of user interactions for current session
     _cache: {},
     _cacheKey(contentId, contentType) { return contentType + ':' + contentId; },

@@ -43,7 +43,7 @@ function checkRateLimit(ip, action) {
     recent.push(now);
     ipBuckets.set(key, recent);
     if (ipBuckets.size > 2000) {
-        for (let [k, v] of ipBuckets) {
+        for (const [k, v] of ipBuckets) {
             const f = v.filter((t) => { return now - t < 120000; });
             if (f.length === 0) ipBuckets.delete(k);
             else ipBuckets.set(k, f);
@@ -98,11 +98,11 @@ function parseAIJSON(content) {
     try {
         const jsonStr = content.replace(/```json?\s*/g, '').replace(/```/g, '').trim();
         return JSON.parse(jsonStr);
-    } catch (e) {
+    } catch (_e) {
         try {
             const match = content.match(/\{[\s\S]*\}/);
             if (match) return JSON.parse(match[0]);
-        } catch (e2) { /* ignore */ }
+        } catch (_e2) { /* ignore */ }
         return null;
     }
 }
@@ -118,9 +118,9 @@ async function handleJobAlerts(env, body) {
     if (!userId) return { ok: false, error: 'Missing user_id' };
 
     if (sub === 'create') {
-        let filters = body.filters || {};
-        let name = body.name || 'My Alert';
-        let frequency = body.frequency || 'daily';
+        const filters = body.filters || {};
+        const name = body.name || 'My Alert';
+        const frequency = body.frequency || 'daily';
         const res = await supaFetch(supabaseUrl, supabaseKey, 'job_alerts', {
             method: 'POST',
             body: { user_id: userId, name: name, filters: filters, frequency: frequency }
@@ -138,7 +138,7 @@ async function handleJobAlerts(env, body) {
         if (body.frequency !== undefined) updates.frequency = body.frequency;
         if (body.is_active !== undefined) updates.is_active = body.is_active;
         updates.updated_at = new Date().toISOString();
-        const res = await supaFetch(supabaseUrl, supabaseKey, 'job_alerts?id=eq.' + alertId + '&user_id=eq.' + userId, {
+        const _res = await supaFetch(supabaseUrl, supabaseKey, 'job_alerts?id=eq.' + alertId + '&user_id=eq.' + userId, {
             method: 'PATCH',
             body: updates
         });
@@ -381,7 +381,7 @@ async function handleSalaryInsights(env, body) {
     const sub = body.sub_action || 'get';
 
     if (sub === 'get') {
-        let category = body.category || '';
+        const category = body.category || '';
         const roleTitle = body.role_title || '';
         let query = 'salary_insights?';
         if (category) query += 'category=eq.' + encodeURIComponent(category) + '&';
@@ -414,11 +414,11 @@ async function handleSalaryInsights(env, body) {
         });
 
         const insights = [];
-        for (let key in groups) {
+        for (const key in groups) {
             const g = groups[key];
             if (g.salaries.length < 2) continue;
             g.salaries.sort((a, b) => { return a - b; });
-            const sum = g.salaries.reduce((a, b) => { return a + b; }, 0);
+            const _sum = g.salaries.reduce((a, b) => { return a + b; }, 0);
             insights.push({
                 category: g.category,
                 role_title: g.role_title,
@@ -581,7 +581,7 @@ async function handleSkillGap(env, body) {
 
     const matchPercent = Math.round((matched.length / jobSkills.length) * 100);
 
-    let result = {
+    const result = {
         ok: true,
         match_percent: matchPercent,
         matched_skills: matched,
@@ -785,12 +785,12 @@ export async function onRequest(context) {
     let body;
     try {
         body = await request.json();
-    } catch (e) {
+    } catch (_e) {
         return new Response(JSON.stringify({ error: 'Invalid request body' }),
             { status: 400, headers: corsHeaders(origin) });
     }
 
-    let action = (body.action || '').trim();
+    const action = (body.action || '').trim();
 
     if (!checkRateLimit(ip, action)) {
         return new Response(JSON.stringify({ error: 'Too many requests. Please try again later.' }),

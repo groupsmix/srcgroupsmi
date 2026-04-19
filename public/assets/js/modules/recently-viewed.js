@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════
 // MODULE 8: RecentlyViewed
 // ═══════════════════════════════════════
-const RecentlyViewed = {
+const _RecentlyViewed = {
     _key: 'gm_recent_groups',
     _max: 20,
     getAll() {
@@ -12,7 +12,7 @@ const RecentlyViewed = {
     },
     add(group) {
         if (!group?.id) return;
-        let all = this.getAll().filter(g => g.id !== group.id);
+        const all = this.getAll().filter(g => g.id !== group.id);
         all.unshift({ id: group.id, name: group.name, platform: group.platform, ts: Date.now() });
         localStorage.setItem(this._key, JSON.stringify(all.slice(0, this._max)));
     },

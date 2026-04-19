@@ -4,12 +4,12 @@
 // ═══════════════════════════════════════
 // MODULE 9: Algorithms
 // ═══════════════════════════════════════
-const Algorithms = {
+const _Algorithms = {
     calculateTrustScore(group) {
         if (!group) return 0;
         let score = 20;
         const vipBonus = { none: 0, verified: 15, niche: 20, global: 25, diamond: 30 };
-        const tier = Algorithms.getEffectiveTier(group);
+        const tier = _Algorithms.getEffectiveTier(group);
         score += vipBonus[tier] || 0;
         const avgRating = parseFloat(group.avg_rating) || 0;
         const reviewCount = group.review_count || 0;
@@ -28,12 +28,12 @@ const Algorithms = {
     },
     calculateRankingScore(group) {
         if (!group) return 0;
-        const trust = Algorithms.calculateTrustScore(group);
+        const trust = _Algorithms.calculateTrustScore(group);
         const views = group.views || 0;
         const clicks = group.clicks || 0;
         const rating = parseFloat(group.avg_rating) || 0;
         const reviews = group.review_count || 0;
-        const tier = Algorithms.getEffectiveTier(group);
+        const tier = _Algorithms.getEffectiveTier(group);
         const tierMultiplier = { none: 1, verified: 1.2, niche: 1.5, global: 2.0, diamond: 3.0 };
         const base = (trust * 2) + (views * 0.01) + (clicks * 0.05) + (rating * 10) + (reviews * 3);
         return Math.round(base * (tierMultiplier[tier] || 1) * 100) / 100;
@@ -42,7 +42,7 @@ const Algorithms = {
         if (!group?.vip_tier || group.vip_tier === 'none') return 'none';
         if (!group.vip_expiry) return 'none';
         const expiry = new Date(group.vip_expiry).getTime();
-        if (isNaN(expiry) || Date.now() > expiry) return 'none';
+        if (Number.isNaN(expiry) || Date.now() > expiry) return 'none';
         return group.vip_tier;
     },
     generateSearchTerms(name, description, tags, category, platform) {
@@ -56,7 +56,7 @@ const Algorithms = {
         return Array.from(terms).slice(0, 40);
     },
     getLevelInfo(gxp) {
-        const g = isNaN(gxp) ? 0 : Number(gxp);
+        const g = Number.isNaN(gxp) ? 0 : Number(gxp);
         const levels = CONFIG.levels;
         let current = levels[0];
         for (let i = levels.length - 1; i >= 0; i--) {
@@ -80,7 +80,7 @@ const Algorithms = {
     sortByOrganicRanking(groups) {
         if (!Array.isArray(groups)) return [];
         return groups.slice().sort(function(a, b) {
-            return Algorithms.calculateOrganicScore(b) - Algorithms.calculateOrganicScore(a);
+            return _Algorithms.calculateOrganicScore(b) - _Algorithms.calculateOrganicScore(a);
         });
     },
     async getBestGroups(options) {
@@ -99,7 +99,7 @@ const Algorithms = {
             if (category) q = q.eq('category', category);
             var { data, error } = await q;
             if (error) throw error;
-            var ranked = Algorithms.sortByOrganicRanking(data || []);
+            var ranked = _Algorithms.sortByOrganicRanking(data || []);
             var result = ranked.slice(0, limit);
             CACHE.set(cacheKey, result);
             return result;
@@ -114,7 +114,7 @@ const Algorithms = {
         try {
             var raw = sessionStorage.getItem(this._velocityKey);
             return raw ? JSON.parse(raw) : {};
-        } catch (err) { return {}; }
+        } catch (_err) { return {}; }
     },
     _saveVelocitySnapshot(groupId, clicks) {
         try {
@@ -144,7 +144,7 @@ const Algorithms = {
         var threshold = (options && options.threshold) ? options.threshold : 5;
         var limit = (options && options.limit) ? options.limit : 12;
         var withVelocity = groups.map(function(g) {
-            return { group: g, velocity: Algorithms.calculateVelocity(g) };
+            return { group: g, velocity: _Algorithms.calculateVelocity(g) };
         });
         var trending = withVelocity
             .filter(function(item) { return item.velocity >= threshold; })
@@ -163,7 +163,7 @@ const Algorithms = {
                 .order('clicks', { ascending: false })
                 .limit(100);
             if (error) throw error;
-            var trending = Algorithms.detectTrendingGroups(data || [], { threshold: 3, limit: limit });
+            var trending = _Algorithms.detectTrendingGroups(data || [], { threshold: 3, limit: limit });
             if (trending.length < limit) {
                 var trendingIds = trending.map(function(g) { return g.id; });
                 var fallback = (data || [])
@@ -191,7 +191,7 @@ const Algorithms = {
                 state.seen = state.seen.slice(-20);
             }
             return state;
-        } catch (err) { return { seen: [], lastCategory: '', rotationIndex: 0 }; }
+        } catch (_err) { return { seen: [], lastCategory: '', rotationIndex: 0 }; }
     },
     _saveAdRotationState(state) {
         try {
@@ -218,7 +218,7 @@ const Algorithms = {
                 nicheScore += (CONFIG.nichePricing[category.toLowerCase()] || 10) * 2;
             }
             // Boost by trust score
-            var trust = ad.trust_score !== undefined ? (isNaN(ad.trust_score) ? 50 : Number(ad.trust_score)) : 50;
+            var trust = ad.trust_score !== undefined ? (Number.isNaN(ad.trust_score) ? 50 : Number(ad.trust_score)) : 50;
             nicheScore += trust * 0.5;
             // Penalize already-seen ads
             if (state.seen.indexOf(ad.id) !== -1) {

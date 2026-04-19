@@ -374,7 +374,7 @@ async function syncSubscriptionEvent(env, eventName, payload) {
     if (!supabaseUrl || !supabaseKey) return;
 
     try {
-        const attrs = payload.data?.attributes || {};
+        const _attrs = payload.data?.attributes || {};
         const orderId = String(payload.data?.id || '');
         let status = 'active';
 
@@ -434,7 +434,7 @@ export async function onRequest(context) {
     let payload;
     try {
         payload = JSON.parse(rawBody);
-    } catch (e) {
+    } catch (_e) {
         return new Response(JSON.stringify({ ok: false, error: 'Invalid JSON' }), {
             status: 400,
             headers: { 'Content-Type': 'application/json' }

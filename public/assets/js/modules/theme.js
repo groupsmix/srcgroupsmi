@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════
 // MODULE 6: Theme
 // ═══════════════════════════════════════
-const Theme = {
+const _Theme = {
     _current: 'dark',
     init() {
         const saved = localStorage.getItem('gm_theme');

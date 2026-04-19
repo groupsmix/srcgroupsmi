@@ -77,7 +77,7 @@ export async function onRequest(context) {
 
     const url = new URL(request.url);
     const action = url.searchParams.get('action') || 'stats';
-    const days = parseInt(url.searchParams.get('days')) || 30;
+    const days = parseInt(url.searchParams.get('days'), 10) || 30;
     const cutoff = new Date(Date.now() - days * 86400000).toISOString();
 
     try {

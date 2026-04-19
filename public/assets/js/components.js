@@ -2,7 +2,7 @@
 // GROUPSMIX — components.js
 // UI Module — All rendering functions
 // ═══════════════════════════════════════
-const UI = {
+const _UI = {
 
     // ─── Role Badge (RBAC) ──────────────────
     roleBadge(role) {
@@ -19,7 +19,7 @@ const UI = {
         const tier = Algorithms.getEffectiveTier(group);
         const platform = CONFIG.platforms.find(p => p.id === group.platform);
         const trustScore = Algorithms.calculateTrustScore(group);
-        const isSaved = Saved.isSaved(group.id);
+        const _isSaved = Saved.isSaved(group.id);
         const tags = Array.isArray(group.tags) ? group.tags.slice(0, 3) : [];
         const avgRating = parseFloat(group.avg_rating) || 0;
         const views = group.views || 0;
@@ -32,8 +32,8 @@ const UI = {
             '<div class="group-card__header">' +
             '<span class="group-card__platform">' + (platform?.svgIcon || platform?.emoji || ICONS.smartphone) + ' ' + Security.sanitize(platform?.name || group.platform || '') + '</span>' +
             '<span style="display:inline-flex;gap:4px;align-items:center">' +
-            (tier !== 'none' ? UI.trustBadge(tier) : '') +
-            (group.is_verified ? UI.trustBadge('owner_verified') : '') +
+            (tier !== 'none' ? _UI.trustBadge(tier) : '') +
+            (group.is_verified ? _UI.trustBadge('owner_verified') : '') +
             (healthCache ? GroupHealth.healthBadge(healthCache.status) : '') +
             '</span>' +
             '</div>' +
@@ -45,11 +45,11 @@ const UI = {
             '<div class="group-card__live-stats" data-group-id="' + group.id + '">' +
             (views > 0 ? '<span class="live-stat live-stat--views" data-stat="views" title="Views">' +
             '<svg class="live-stat__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
-            '<span class="live-stat__count" data-count="views">' + UI.formatNumber(views) + '</span>' +
+            '<span class="live-stat__count" data-count="views">' + _UI.formatNumber(views) + '</span>' +
             '</span>' : '') +
             (likes > 0 ? '<span class="live-stat live-stat--likes" data-stat="likes" title="Like">' +
             '<svg class="live-stat__icon live-stat__heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>' +
-            '<span class="live-stat__count" data-count="likes">' + UI.formatNumber(likes) + '</span>' +
+            '<span class="live-stat__count" data-count="likes">' + _UI.formatNumber(likes) + '</span>' +
             '</span>' : '') +
             (avgRating > 0 ? '<span class="live-stat live-stat--rating" data-stat="rating" title="Rating">' +
             '<svg class="live-stat__icon live-stat__star" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
@@ -57,7 +57,7 @@ const UI = {
             '</span>' : '') +
             (commentsCount > 0 ? '<span class="live-stat live-stat--comments" data-stat="comments" title="Comments">' +
             '<svg class="live-stat__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>' +
-            '<span class="live-stat__count" data-count="comments">' + UI.formatNumber(commentsCount) + '</span>' +
+            '<span class="live-stat__count" data-count="comments">' + _UI.formatNumber(commentsCount) + '</span>' +
             '</span>' : '') +
             '<span class="live-stat live-stat--trust" data-stat="trust" title="Trust Score">' +
             '<svg class="live-stat__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' +
@@ -68,7 +68,7 @@ const UI = {
             '<div class="group-card__footer">' +
             '<button type="button" class="btn btn-primary btn-sm group-card__btn-join" data-group-id="' + group.id + '" data-group-name="' + Security.sanitize(group.name || 'Unnamed').replace(/"/g, '&quot;') + '" data-group-platform="' + (group.platform || '') + '" data-group-tier="' + tier + '">Join</button>' +
             '</div>' +
-            UI.interactionToolbar(group.id, 'group') +
+            _UI.interactionToolbar(group.id, 'group') +
             '</div>';
     },
 
@@ -91,12 +91,12 @@ const UI = {
         const container = document.getElementById(containerId);
         if (!container) return;
         // Filter out spam/placeholder groups before rendering
-        var filtered = Array.isArray(groups) ? groups.filter(g => UI._isQualityGroup(g)) : [];
+        var filtered = Array.isArray(groups) ? groups.filter(g => _UI._isQualityGroup(g)) : [];
         if (!filtered.length) {
-            UI.emptyState(containerId, ICONS.inbox, 'No Groups Found', 'Try adjusting your filters or search terms.', 'Browse All', '/search');
+            _UI.emptyState(containerId, ICONS.inbox, 'No Groups Found', 'Try adjusting your filters or search terms.', 'Browse All', '/search');
             return;
         }
-        container.innerHTML = `<div class="grid grid-4">${filtered.map(g => UI.groupCard(g)).join('')}</div>`;
+        container.innerHTML = `<div class="grid grid-4">${filtered.map(g => _UI.groupCard(g)).join('')}</div>`;
         container.style.animation = 'fadeIn 0.3s ease';
         container.querySelectorAll('.group-card__btn-join').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -104,13 +104,13 @@ const UI = {
                 e.stopPropagation();
                 const gid = btn.dataset.groupId;
                 const group = groups.find(g => g.id === gid);
-                if (group) UI.groupPreviewModal(group);
+                if (group) _UI.groupPreviewModal(group);
             });
         });
         // Initialize live stat interactions (likes, rating)
-        UI.initLiveStats(container, groups);
+        _UI.initLiveStats(container, groups);
         // Initialize interaction toolbars (Like/Dislike/Save/Comment/Share)
-        UI.initInteractionToolbar(container);
+        _UI.initInteractionToolbar(container);
     },
 
     groupCardSkeleton() {
@@ -120,7 +120,7 @@ const UI = {
     groupGridSkeleton(count, containerId) {
         const container = document.getElementById(containerId);
         if (!container) return;
-        container.innerHTML = `<div class="grid grid-4">${Array(count || 12).fill('').map(() => UI.groupCardSkeleton()).join('')}</div>`;
+        container.innerHTML = `<div class="grid grid-4">${Array(count || 12).fill('').map(() => _UI.groupCardSkeleton()).join('')}</div>`;
     },
 
     // ─── Common Components ──────────────────
@@ -201,7 +201,7 @@ const UI = {
 
     // ─── Modal ──────────────────────────────
     modal(options) {
-        UI.closeModal();
+        _UI.closeModal();
         const sizeClass = options.size === 'small' ? ' modal--small' : options.size === 'large' ? ' modal--large' : '';
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
@@ -267,26 +267,26 @@ const UI = {
     },
 
     confirmModal(title, message, onConfirm) {
-        UI.modal({
+        _UI.modal({
             title: title || 'Confirm',
             content: '<p style="color:var(--text-secondary)">' + Security.sanitize(message || 'Are you sure?') + '</p>',
             footer: '<button class="btn btn-secondary" id="confirm-cancel">Cancel</button>' +
                 '<button class="btn btn-danger" id="confirm-yes">Yes</button>',
             size: 'small'
         });
-        document.getElementById('confirm-cancel')?.addEventListener('click', UI.closeModal);
-        document.getElementById('confirm-yes')?.addEventListener('click', () => { UI.closeModal(); if (onConfirm) onConfirm(); });
+        document.getElementById('confirm-cancel')?.addEventListener('click', _UI.closeModal);
+        document.getElementById('confirm-yes')?.addEventListener('click', () => { _UI.closeModal(); if (onConfirm) onConfirm(); });
     },
 
     // ─── Auth Modal ─────────────────────────
     authModal(defaultTab) {
         const tab = defaultTab || 'signin';
-        UI.modal({
+        _UI.modal({
             title: (tab === 'signup' ? 'Create Account' : 'Sign In to GroupsMix'),
-            content: UI._authModalContent(tab),
+            content: _UI._authModalContent(tab),
             size: 'small'
         });
-        UI._initAuthModal(tab);
+        _UI._initAuthModal(tab);
     },
 
     /**
@@ -357,8 +357,8 @@ const UI = {
                 const savedEmail = document.getElementById('auth-email')?.value || '';
                 const body = document.querySelector('.modal__body');
                 // Bug fix: update modal title when switching tabs
-                UI._updateAuthModalTitle(currentTab);
-                if (body) { body.innerHTML = UI._authModalContent(currentTab); UI._initAuthModal(currentTab); }
+                _UI._updateAuthModalTitle(currentTab);
+                if (body) { body.innerHTML = _UI._authModalContent(currentTab); _UI._initAuthModal(currentTab); }
                 const emailEl = document.getElementById('auth-email');
                 if (emailEl && savedEmail) emailEl.value = savedEmail;
             });
@@ -375,7 +375,7 @@ const UI = {
             var strengthContainer = document.getElementById('password-strength-container');
             if (pwInput && strengthContainer) {
                 pwInput.addEventListener('input', function() {
-                    strengthContainer.innerHTML = pwInput.value ? UI._passwordStrengthMeter(pwInput.value) : '';
+                    strengthContainer.innerHTML = pwInput.value ? _UI._passwordStrengthMeter(pwInput.value) : '';
                 });
             }
         }
@@ -384,8 +384,8 @@ const UI = {
             const savedEmail = document.getElementById('auth-email')?.value || '';
             const body = document.querySelector('.modal__body');
             // Bug fix: update modal title when switching to signup
-            UI._updateAuthModalTitle('signup');
-            if (body) { body.innerHTML = UI._authModalContent('signup'); UI._initAuthModal('signup'); }
+            _UI._updateAuthModalTitle('signup');
+            if (body) { body.innerHTML = _UI._authModalContent('signup'); _UI._initAuthModal('signup'); }
             const emailEl = document.getElementById('auth-email');
             if (emailEl && savedEmail) emailEl.value = savedEmail;
         });
@@ -427,8 +427,8 @@ const UI = {
             const savedEmail = document.getElementById('auth-email')?.value || '';
             const body = document.querySelector('.modal__body');
             // Bug fix: update modal title when switching to signin
-            UI._updateAuthModalTitle('signin');
-            if (body) { body.innerHTML = UI._authModalContent('signin'); UI._initAuthModal('signin'); }
+            _UI._updateAuthModalTitle('signin');
+            if (body) { body.innerHTML = _UI._authModalContent('signin'); _UI._initAuthModal('signin'); }
             const emailEl = document.getElementById('auth-email');
             if (emailEl && savedEmail) emailEl.value = savedEmail;
         });
@@ -443,17 +443,17 @@ const UI = {
                     '<div class="auth-footer" style="margin-top:var(--space-4)"><a id="back-to-signin" href="#">← Back to Sign In</a></div>';
                 document.getElementById('back-to-signin')?.addEventListener('click', (ev) => {
                     ev.preventDefault();
-                    body.innerHTML = UI._authModalContent('signin');
-                    UI._initAuthModal('signin');
+                    body.innerHTML = _UI._authModalContent('signin');
+                    _UI._initAuthModal('signin');
                 });
                 document.getElementById('reset-form')?.addEventListener('submit', async (ev) => {
                     ev.preventDefault();
                     const email = document.getElementById('reset-email')?.value?.trim();
-                    if (!email || !Security.isValidEmail(email)) { UI.toast('Please enter a valid email', 'error'); return; }
+                    if (!email || !Security.isValidEmail(email)) { _UI.toast('Please enter a valid email', 'error'); return; }
                     const btn = ev.target.querySelector('button[type="submit"]');
                     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Sending...'; }
                     await Auth.resetPassword(email);
-                    UI.closeModal();
+                    _UI.closeModal();
                 });
             }
         });
@@ -503,7 +503,7 @@ const UI = {
                             '<p style="margin-top:var(--space-4);font-size:var(--text-sm);color:var(--text-secondary)">' +
                             'Already confirmed? <a href="#" id="verify-signin-link">Sign In</a></p>' +
                             '</div>';
-                        document.getElementById('verify-close-btn')?.addEventListener('click', () => UI.closeModal());
+                        document.getElementById('verify-close-btn')?.addEventListener('click', () => _UI.closeModal());
                         document.getElementById('resend-signup-verify-btn')?.addEventListener('click', async function() {
                             this.disabled = true;
                             this.innerHTML = '<span class="btn-spinner"></span> Sending...';
@@ -513,12 +513,12 @@ const UI = {
                         });
                         document.getElementById('verify-signin-link')?.addEventListener('click', (ev) => {
                             ev.preventDefault();
-                            body.innerHTML = UI._authModalContent('signin');
-                            UI._initAuthModal('signin');
+                            body.innerHTML = _UI._authModalContent('signin');
+                            _UI._initAuthModal('signin');
                         });
                     }
                 } else if (result) {
-                    UI.closeModal();
+                    _UI.closeModal();
                     // Redirect to dashboard after successful sign-up (instant login)
                     // If already on dashboard, just re-init instead of full reload
                     var _onDash = window.location.pathname === '/dashboard';
@@ -555,12 +555,12 @@ const UI = {
                         });
                         document.getElementById('retry-signin-link')?.addEventListener('click', (ev) => {
                             ev.preventDefault();
-                            body.innerHTML = UI._authModalContent('signin');
-                            UI._initAuthModal('signin');
+                            body.innerHTML = _UI._authModalContent('signin');
+                            _UI._initAuthModal('signin');
                         });
                     }
                 } else if (result) {
-                    UI.closeModal();
+                    _UI.closeModal();
                     // Redirect to dashboard after successful sign-in
                     // If already on dashboard, just re-init instead of full reload
                     var _onDash = window.location.pathname === '/dashboard';
@@ -581,7 +581,7 @@ const UI = {
     // ─── Pagination ─────────────────────────
     pagination(current, total, callback) {
         if (total <= 1) return '';
-        let pages = [];
+        const pages = [];
         if (total <= 7) {
             for (let i = 1; i <= total; i++) pages.push(i);
         } else {
@@ -607,8 +607,8 @@ const UI = {
         if (!container) return;
         container.querySelectorAll('.pagination__btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                const page = parseInt(btn.dataset.page);
-                if (!isNaN(page) && !btn.disabled) callback(page);
+                const page = parseInt(btn.dataset.page, 10);
+                if (!Number.isNaN(page) && !btn.disabled) callback(page);
             });
         });
     },
@@ -626,7 +626,7 @@ const UI = {
     },
 
     trustScore(score) {
-        const s = isNaN(score) ? 0 : Math.max(0, Math.min(100, Number(score)));
+        const s = Number.isNaN(score) ? 0 : Math.max(0, Math.min(100, Number(score)));
         let color = 'var(--error)';
         if (s > 80) color = 'var(--success)';
         else if (s > 60) color = 'var(--info)';
@@ -650,7 +650,7 @@ const UI = {
         if (!container) return;
         container.querySelectorAll('.star-rating__star').forEach(star => {
             star.addEventListener('click', () => {
-                const val = parseInt(star.dataset.value);
+                const val = parseInt(star.dataset.value, 10);
                 container.querySelectorAll('.star-rating__star').forEach((s, i) => {
                     s.className = 'star-rating__star star-rating__star--' + (i < val ? 'filled' : 'empty');
                     s.innerHTML = i < val ? ICONS.star : '<svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
@@ -666,9 +666,9 @@ const UI = {
         return '<div class="review-card">' +
             '<div class="review-card__header">' +
             '<div class="review-card__avatar">' + initial + '</div>' +
-            '<div><div class="review-card__name">' + Security.sanitize(review.display_name || 'Anonymous') + UI.roleBadge(review.role) + '</div>' +
-            '<div class="review-card__date">' + UI.formatDate(review.created_at) + '</div></div>' +
-            '<div style="margin-left:auto">' + UI.starRating(review.rating) + '</div>' +
+            '<div><div class="review-card__name">' + Security.sanitize(review.display_name || 'Anonymous') + _UI.roleBadge(review.role) + '</div>' +
+            '<div class="review-card__date">' + _UI.formatDate(review.created_at) + '</div></div>' +
+            '<div style="margin-left:auto">' + _UI.starRating(review.rating) + '</div>' +
             '</div>' +
             (review.text ? '<div class="review-card__text">' + Security.sanitize(review.text) + '</div>' : '') +
             '</div>';
@@ -683,10 +683,10 @@ const UI = {
             '<div class="article-card__body">' +
             '<div class="article-card__title">' + Security.sanitize(article.title || '') + '</div>' +
             '<div class="article-card__excerpt">' + Security.sanitize(article.excerpt || '') + '</div>' +
-            '<div class="article-card__meta"><span>' + Security.sanitize(article.author_name || '') + '</span><span>' + ICONS.eye + ' ' + UI.formatNumber(article.views || 0) + '</span></div>' +
+            '<div class="article-card__meta"><span>' + Security.sanitize(article.author_name || '') + '</span><span>' + ICONS.eye + ' ' + _UI.formatNumber(article.views || 0) + '</span></div>' +
             '</div>' +
             '</a>' +
-            UI.interactionToolbar(article.slug || article.id, 'article') +
+            _UI.interactionToolbar(article.slug || article.id, 'article') +
             '</div>';
     },
 
@@ -716,8 +716,8 @@ const UI = {
         var categoryId = listing.product_category || listing.platform || 'other';
         var categoryName = categoryId.charAt(0).toUpperCase() + categoryId.slice(1).replace('_', ' ');
         var price = parseFloat(listing.price) || 0;
-        var currency = listing.currency || 'USD';
-        var priceDisplay = price > 0 ? UI.formatCurrency(price) : 'Contact';
+        var _currency = listing.currency || 'USD';
+        var priceDisplay = price > 0 ? _UI.formatCurrency(price) : 'Contact';
         var sellerId = listing.seller_id || '';
         var impressions = listing.impressions || 0;
         var clicks = listing.clicks || 0;
@@ -754,12 +754,12 @@ const UI = {
             '</div>' +
             '<div class="mk-listing-card__footer">' +
             '<span class="mk-listing-card__stats">' +
-            '<span title="Views">' + UI.formatNumber(impressions) + ' views</span>' +
-            '<span title="Clicks">' + UI.formatNumber(clicks) + ' clicks</span>' +
+            '<span title="Views">' + _UI.formatNumber(impressions) + ' views</span>' +
+            '<span title="Clicks">' + _UI.formatNumber(clicks) + ' clicks</span>' +
             '</span>' +
             '<a href="/seller?id=' + sellerId + '#listing-' + listing.id + '" class="btn btn-primary btn-sm mk-listing-card__contact">Contact</a>' +
             '</div>' +
-            UI.interactionToolbar(listing.id, 'marketplace') +
+            _UI.interactionToolbar(listing.id, 'marketplace') +
             '</article>';
     },
 
@@ -770,13 +770,13 @@ const UI = {
         var container = document.getElementById(containerId);
         if (!container) return;
         if (!Array.isArray(listings) || !listings.length) {
-            UI.emptyState(containerId, ICONS.inbox, 'No Listings Found', 'Be the first to sell a digital product! Templates, bots, scripts, design assets, guides & tools.', 'Sell Now', '/sell');
+            _UI.emptyState(containerId, ICONS.inbox, 'No Listings Found', 'Be the first to sell a digital product! Templates, bots, scripts, design assets, guides & tools.', 'Sell Now', '/sell');
             return;
         }
-        container.innerHTML = `<div class="mk-listings-grid">${listings.map(function(l) { return UI.marketplaceCard(l); }).join('')}</div>`;
+        container.innerHTML = `<div class="mk-listings-grid">${listings.map(function(l) { return _UI.marketplaceCard(l); }).join('')}</div>`;
         container.style.animation = 'fadeIn 0.3s ease';
         // Initialize interaction toolbars
-        UI.initInteractionToolbar(container);
+        _UI.initInteractionToolbar(container);
         // Report button handlers
         container.querySelectorAll('.mk-listing-card__report').forEach(function(btn) {
             btn.addEventListener('click', function(e) {
@@ -784,7 +784,7 @@ const UI = {
                 e.stopPropagation();
                 var listingId = btn.dataset.listingId;
                 if (!listingId) return;
-                UI.confirmModal('Report this listing?', 'Are you sure you want to report this listing? Our team will review it.', function() {
+                _UI.confirmModal('Report this listing?', 'Are you sure you want to report this listing? Our team will review it.', function() {
                     if (typeof Marketplace !== 'undefined') Marketplace.reportListing(listingId);
                 });
             });
@@ -794,7 +794,7 @@ const UI = {
             if (typeof Marketplace !== 'undefined') Marketplace.incrementImpressions(l.id);
         });
         // Load seller ratings async
-        UI._loadSellerRatings(container, listings);
+        _UI._loadSellerRatings(container, listings);
     },
 
     /**
@@ -817,7 +817,7 @@ const UI = {
                             el.textContent = rating > 0 ? rating.toFixed(1) : 'New';
                         });
                     }
-                } catch (e) { /* ignore individual seller rating errors */ }
+                } catch (_e) { /* ignore individual seller rating errors */ }
             }
         } catch (err) { console.warn('_loadSellerRatings:', err.message); }
     },
@@ -841,14 +841,14 @@ const UI = {
         var currentRating = 0;
         container.querySelectorAll('.star-rating-input__star').forEach(function(star) {
             star.addEventListener('click', function() {
-                currentRating = parseInt(star.dataset.rating);
+                currentRating = parseInt(star.dataset.rating, 10);
                 container.querySelectorAll('.star-rating-input__star svg').forEach(function(svg, idx) {
                     svg.setAttribute('fill', idx < currentRating ? 'currentColor' : 'none');
                 });
                 if (typeof onChange === 'function') onChange(currentRating);
             });
             star.addEventListener('mouseenter', function() {
-                var r = parseInt(star.dataset.rating);
+                var r = parseInt(star.dataset.rating, 10);
                 container.querySelectorAll('.star-rating-input__star svg').forEach(function(svg, idx) {
                     svg.setAttribute('fill', idx < r ? 'currentColor' : 'none');
                 });
@@ -866,7 +866,7 @@ const UI = {
         if (!isoString) return '';
         try {
             const date = new Date(isoString);
-            if (isNaN(date.getTime())) return '';
+            if (Number.isNaN(date.getTime())) return '';
             const now = Date.now();
             const diff = now - date.getTime();
             if (diff < 60000) return 'Just now';
@@ -882,7 +882,7 @@ const UI = {
     },
 
     formatNumber(n) {
-        const num = isNaN(n) ? 0 : Number(n);
+        const num = Number.isNaN(n) ? 0 : Number(n);
         if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
         if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
         return num.toString();
@@ -896,14 +896,14 @@ const UI = {
     // ─── Utilities ──────────────────────────
     countUp(element, target, duration) {
         if (!element) return;
-        const t = isNaN(target) ? 0 : Number(target);
+        const t = Number.isNaN(target) ? 0 : Number(target);
         const d = duration || 1500;
         let start = 0;
         const step = (timestamp) => {
             if (!start) start = timestamp;
             const progress = Math.min((timestamp - start) / d, 1);
             const eased = 1 - Math.pow(1 - progress, 3);
-            element.textContent = UI.formatNumber(Math.floor(eased * t));
+            element.textContent = _UI.formatNumber(Math.floor(eased * t));
             if (progress < 1) requestAnimationFrame(step);
         };
         requestAnimationFrame(step);
@@ -917,7 +917,7 @@ const UI = {
     async copyToClipboard(text) {
         try {
             await navigator.clipboard.writeText(text);
-            UI.toast('Copied to clipboard!', 'success');
+            _UI.toast('Copied to clipboard!', 'success');
         } catch {
             const textarea = document.createElement('textarea');
             textarea.value = text;
@@ -927,7 +927,7 @@ const UI = {
             textarea.select();
             document.execCommand('copy');
             textarea.remove();
-            UI.toast('Copied to clipboard!', 'success');
+            _UI.toast('Copied to clipboard!', 'success');
         }
     },
 
@@ -937,9 +937,9 @@ const UI = {
         const text = 'Check out ' + (group.name || 'this group') + ' on GroupsMix!';
         if (navigator.share) {
             try { await navigator.share({ title: group.name, text, url }); }
-            catch { UI.copyToClipboard(url); }
+            catch { _UI.copyToClipboard(url); }
         } else {
-            UI.copyToClipboard(url);
+            _UI.copyToClipboard(url);
         }
     },
 
@@ -986,7 +986,7 @@ const UI = {
             '<div class="gpm-preview__badge">' + safetyBadge + ownerVerifiedBadge + '</div>' +
             (group.description ? '<div class="gpm-preview__desc">' + Security.sanitize(group.description) + '</div>' : '') +
             '<div class="gpm-preview__stats">' +
-            '<div class="gpm-preview__stat"><span class="gpm-preview__stat-value">&#128065; ' + UI.formatNumber(group.views || 0) + '</span><span class="gpm-preview__stat-label">Views</span></div>' +
+            '<div class="gpm-preview__stat"><span class="gpm-preview__stat-value">&#128065; ' + _UI.formatNumber(group.views || 0) + '</span><span class="gpm-preview__stat-label">Views</span></div>' +
             '<div class="gpm-preview__stat"><span class="gpm-preview__stat-value">&#11088; ' + (parseFloat(group.avg_rating) || 0).toFixed(1) + '</span><span class="gpm-preview__stat-label">Rating</span></div>' +
             '<div class="gpm-preview__stat"><span class="gpm-preview__stat-value">&#128737;&#65039; ' + trustScore + '</span><span class="gpm-preview__stat-label">Trust</span></div>' +
             '</div>' +
@@ -994,7 +994,7 @@ const UI = {
 
         const footer = '<a href="/go?id=' + encodeURIComponent(group.id) + '" class="btn btn-primary btn-lg gpm-preview__confirm">Confirm &amp; Redirect &#8594;</a>';
 
-        UI.modal({
+        _UI.modal({
             title: '&#128279; Group Preview',
             content: content,
             footer: footer,
@@ -1084,14 +1084,14 @@ const UI = {
             toolbar.querySelector('.ix-btn[data-action="comment"]')?.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                UI.openCommentsPanel(contentId, contentType);
+                _UI.openCommentsPanel(contentId, contentType);
             });
 
             // Share button
             toolbar.querySelector('.ix-btn[data-action="share"]')?.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                UI.smartShare(contentId, contentType);
+                _UI.smartShare(contentId, contentType);
             });
         });
     },
@@ -1161,15 +1161,15 @@ const UI = {
                 if (list) {
                     const noComments = list.querySelector('.comments-panel__empty');
                     if (noComments) noComments.remove();
-                    list.insertAdjacentHTML('afterbegin', UI._commentItem(result));
-                    UI._initCommentReportBtns(list);
+                    list.insertAdjacentHTML('afterbegin', _UI._commentItem(result));
+                    _UI._initCommentReportBtns(list);
                 }
             }
             if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Post'; }
         });
 
         // Fetch comments on-demand
-        UI._loadComments(contentId, contentType);
+        _UI._loadComments(contentId, contentType);
     },
 
     async _loadComments(contentId, contentType) {
@@ -1180,14 +1180,14 @@ const UI = {
             list.innerHTML = `<div class="comments-panel__empty">No comments yet. Be the first!</div>`;
             return;
         }
-        list.innerHTML = data.map(c => UI._commentItem(c)).join('');
-        UI._initCommentReportBtns(list);
+        list.innerHTML = data.map(c => _UI._commentItem(c)).join('');
+        _UI._initCommentReportBtns(list);
     },
 
     _commentItem(comment) {
         if (!comment) return '';
         const initial = (comment.display_name || 'U').charAt(0).toUpperCase();
-        return `<div class="comment-item" data-comment-id="${comment.id}"><div class="comment-item__avatar">${initial}</div><div class="comment-item__body"><div class="comment-item__header"><span class="comment-item__name">${Security.sanitize(comment.display_name || 'User')}${UI.roleBadge(comment.role)}</span><span class="comment-item__date">${UI.formatDate(comment.created_at)}</span></div><div class="comment-item__text">${Security.sanitize(comment.body || '')}</div></div><button class="comment-item__report" data-comment-id="${comment.id}" aria-label="Report comment" title="Report">&#128681;</button></div>`;
+        return `<div class="comment-item" data-comment-id="${comment.id}"><div class="comment-item__avatar">${initial}</div><div class="comment-item__body"><div class="comment-item__header"><span class="comment-item__name">${Security.sanitize(comment.display_name || 'User')}${_UI.roleBadge(comment.role)}</span><span class="comment-item__date">${_UI.formatDate(comment.created_at)}</span></div><div class="comment-item__text">${Security.sanitize(comment.body || '')}</div></div><button class="comment-item__report" data-comment-id="${comment.id}" aria-label="Report comment" title="Report">&#128681;</button></div>`;
     },
 
     _initCommentReportBtns(container) {
@@ -1198,7 +1198,7 @@ const UI = {
                 e.stopPropagation();
                 const cid = btn.dataset.commentId;
                 if (!cid) return;
-                UI.confirmModal('Report Comment', 'Are you sure you want to report this comment?', async () => {
+                _UI.confirmModal('Report Comment', 'Are you sure you want to report this comment?', async () => {
                     await Comments.report(cid);
                     const item = container.querySelector('.comment-item[data-comment-id="' + cid + '"]');
                     if (item) { item.style.opacity = '0.5'; item.style.pointerEvents = 'none'; }
@@ -1228,10 +1228,10 @@ const UI = {
 
         if (navigator.share) {
             navigator.share({ title: 'GroupsMix', text: text, url: url }).catch(() => {
-                UI._showShareMenu(url, text);
+                _UI._showShareMenu(url, text);
             });
         } else {
-            UI._showShareMenu(url, text);
+            _UI._showShareMenu(url, text);
         }
     },
 
@@ -1239,7 +1239,7 @@ const UI = {
         const encodedUrl = encodeURIComponent(url);
         const encodedText = encodeURIComponent(text);
         const shareIconSvg = function(paths) { return '<svg class="svg-icon share-menu__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + paths + '</svg>'; };
-        UI.modal({
+        _UI.modal({
             title: 'Share',
             content:
                 '<div class="share-menu">' +
@@ -1254,8 +1254,8 @@ const UI = {
             size: 'small'
         });
         document.getElementById('share-copy-btn')?.addEventListener('click', () => {
-            UI.copyToClipboard(url);
-            UI.closeModal();
+            _UI.copyToClipboard(url);
+            _UI.closeModal();
         });
     },
 
@@ -1289,8 +1289,8 @@ const UI = {
 
                 // Optimistic count update
                 if (countEl) {
-                    var current = parseInt(countEl.textContent.replace(/[^\d]/g, '')) || 0;
-                    countEl.textContent = UI.formatNumber(isActive ? Math.max(0, current - 1) : current + 1);
+                    var current = parseInt(countEl.textContent.replace(/[^\d]/g, ''), 10) || 0;
+                    countEl.textContent = _UI.formatNumber(isActive ? Math.max(0, current - 1) : current + 1);
                 }
 
                 // Persist to Supabase via Interactions module
@@ -1300,8 +1300,8 @@ const UI = {
                         // Revert on failure
                         stat.classList.toggle('live-stat--active');
                         if (countEl) {
-                            var reverted = parseInt(countEl.textContent.replace(/[^\d]/g, '')) || 0;
-                            countEl.textContent = UI.formatNumber(isActive ? reverted + 1 : Math.max(0, reverted - 1));
+                            var reverted = parseInt(countEl.textContent.replace(/[^\d]/g, ''), 10) || 0;
+                            countEl.textContent = _UI.formatNumber(isActive ? reverted + 1 : Math.max(0, reverted - 1));
                         }
                     }
                 } catch (err) {
@@ -1334,13 +1334,13 @@ const UI = {
                 }
                 starHtml += '</div></div>';
 
-                UI.modal({ title: 'Rate Group', content: starHtml, size: 'small' });
+                _UI.modal({ title: 'Rate Group', content: starHtml, size: 'small' });
 
                 // Bind star click events
                 setTimeout(function() {
                     document.querySelectorAll('.live-rating-star').forEach(function(starEl) {
                         starEl.addEventListener('click', async function() {
-                            var val = parseInt(starEl.dataset.value);
+                            var val = parseInt(starEl.dataset.value, 10);
                             // Visual update
                             document.querySelectorAll('.live-rating-star').forEach(function(s, idx) {
                                 var isFilled = idx < val;
@@ -1350,16 +1350,16 @@ const UI = {
                             // Submit to Supabase
                             try {
                                 await DB.reviews.submit(groupId, 'group', val);
-                                UI.toast('Rating submitted!', 'success');
+                                _UI.toast('Rating submitted!', 'success');
                                 // Update the stat on the card
                                 var countEl = bar.querySelector('[data-count="rating"]');
                                 if (countEl) countEl.textContent = val.toFixed(1);
                                 var starIcon = bar.querySelector('.live-stat__star');
                                 if (starIcon) starIcon.setAttribute('fill', 'currentColor');
-                                setTimeout(function() { UI.closeModal(); }, 600);
+                                setTimeout(function() { _UI.closeModal(); }, 600);
                             } catch (err) {
                                 console.error('LiveStats rating error:', err);
-                                UI.toast('Could not submit rating', 'error');
+                                _UI.toast('Could not submit rating', 'error');
                             }
                         });
                     });
@@ -1376,12 +1376,12 @@ const UI = {
                 var bar = stat.closest('.group-card__live-stats');
                 if (!bar) return;
                 var groupId = bar.dataset.groupId;
-                if (groupId) UI.openCommentsPanel(groupId, 'group');
+                if (groupId) _UI.openCommentsPanel(groupId, 'group');
             });
         });
 
         // Load interaction states for authenticated users
-        UI._loadLiveStatStates(container, groups);
+        _UI._loadLiveStatStates(container, groups);
     },
 
     async _loadLiveStatStates(container, groups) {

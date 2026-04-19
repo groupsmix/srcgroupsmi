@@ -47,7 +47,7 @@ export async function onRequest(context) {
 
     const action = body.action || 'subscribe';
     const subscription = body.subscription;
-    let uid = body.uid || null;
+    const uid = body.uid || null;
 
     // Verify authentication and ownership when uid is provided
     if (uid) {

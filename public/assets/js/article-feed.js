@@ -8,7 +8,7 @@
 
 /* global Security, Auth, DB, UI, CONFIG, ICONS, ArticleAI */
 
-const ArticleFeed = {
+const _ArticleFeed = {
     _currentTab: 'all',
     _currentCategory: null,
     _page: 0,
@@ -303,7 +303,7 @@ const ArticleFeed = {
             });
             if (error) throw error;
             return data || [];
-        } catch (err) {
+        } catch (_err) {
             // Fallback: sort by engagement
             const { data } = await window.supabaseClient
                 .from('articles')

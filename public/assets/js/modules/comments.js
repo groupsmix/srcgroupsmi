@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════
 // MODULE 5c: Comments (On-Demand Comments System)
 // ═══════════════════════════════════════
-const Comments = {
+const _Comments = {
     // Blacklist of banned words (basic list, extend as needed)
     _blacklist: ['spam', 'scam', 'hack', 'nigger', 'faggot', 'porn', 'xxx', 'viagra', 'casino'],
 
@@ -15,14 +15,14 @@ const Comments = {
     // Audit fix #15: use word boundary regex to prevent false positives (e.g. "hackathon", "anti-scam")
     _containsBlacklisted(text) {
         const lower = text.toLowerCase();
-        return Comments._blacklist.some(word => new RegExp('\\b' + word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(lower));
+        return _Comments._blacklist.some(word => new RegExp('\\b' + word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(lower));
     },
 
     _validate(body) {
         if (!body || body.trim().length < 1) return 'Comment cannot be empty.';
         if (body.length > 1000) return 'Comment must be under 1000 characters.';
-        if (Comments._containsUrl(body)) return 'Links are not allowed in comments.';
-        if (Comments._containsBlacklisted(body)) return 'Your comment contains inappropriate content.';
+        if (_Comments._containsUrl(body)) return 'Links are not allowed in comments.';
+        if (_Comments._containsBlacklisted(body)) return 'Your comment contains inappropriate content.';
         return null;
     },
 
@@ -33,7 +33,7 @@ const Comments = {
             if (!userId) { UI.authModal(); return null; }
             if (!Security.checkOnline()) { UI.toast('You appear to be offline.', 'error'); return null; }
             if (!Security.checkRateLimit('comment')) { UI.toast('Too many comments. Please wait.', 'error'); return null; }
-            const err = Comments._validate(body);
+            const err = _Comments._validate(body);
             if (err) { UI.toast(err, 'warning'); return null; }
             const user = Auth.getUser();
             const displayName = user?.display_name || user?.email?.split('@')[0] || 'User';

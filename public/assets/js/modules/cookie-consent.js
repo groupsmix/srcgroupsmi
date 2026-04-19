@@ -4,23 +4,23 @@
 // ═══════════════════════════════════════
 // MODULE 14: Cookie Consent
 // ═══════════════════════════════════════
-const CookieConsent = {
+const _CookieConsent = {
     _key: 'gm_cookie_consent',
 
     /** Returns 'accepted', 'rejected', or null (no choice yet) */
     getChoice() {
-        try { return localStorage.getItem(this._key); } catch (e) { return null; }
+        try { return localStorage.getItem(this._key); } catch (_e) { return null; }
     },
 
     /** Save user's choice and dismiss banner */
     _save(choice) {
-        try { localStorage.setItem(this._key, choice); } catch (e) { /* private browsing */ }
+        try { localStorage.setItem(this._key, choice); } catch (_e) { /* private browsing */ }
         var banner = document.getElementById('cookie-banner');
         if (banner) { banner.style.animation = 'fadeOut 0.2s ease forwards'; setTimeout(function() { banner.remove(); }, 200); }
         if (choice === 'accepted') {
-            CookieConsent._loadAnalytics();
+            _CookieConsent._loadAnalytics();
         } else {
-            CookieConsent._removeAnalytics();
+            _CookieConsent._removeAnalytics();
         }
     },
 
@@ -64,8 +64,8 @@ const CookieConsent = {
             '<button class="btn btn-primary btn-sm" id="cookie-accept">Accept</button>' +
             '</div>';
         document.body.appendChild(banner);
-        document.getElementById('cookie-accept')?.addEventListener('click', function() { CookieConsent.accept(); });
-        document.getElementById('cookie-reject')?.addEventListener('click', function() { CookieConsent.reject(); });
+        document.getElementById('cookie-accept')?.addEventListener('click', function() { _CookieConsent.accept(); });
+        document.getElementById('cookie-reject')?.addEventListener('click', function() { _CookieConsent.reject(); });
     }
 };
 
