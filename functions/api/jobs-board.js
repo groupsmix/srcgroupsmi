@@ -112,7 +112,7 @@ function parseAIJSON(content) {
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleJobAlerts(env, body) {
     const supabaseUrl = env.SUPABASE_URL;
-    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_ANON_KEY;
     const sub = body.sub_action || 'list';
     const userId = body.user_id;
     if (!userId) return { ok: false, error: 'Missing user_id' };
@@ -166,7 +166,7 @@ async function handleJobAlerts(env, body) {
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleApplications(env, body) {
     const supabaseUrl = env.SUPABASE_URL;
-    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_ANON_KEY;
     const sub = body.sub_action || 'list';
     const userId = body.user_id;
     if (!userId) return { ok: false, error: 'Missing user_id' };
@@ -248,7 +248,7 @@ async function handleApplications(env, body) {
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleEmployerProfile(env, body) {
     const supabaseUrl = env.SUPABASE_URL;
-    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_ANON_KEY;
     const sub = body.sub_action || 'get';
     const userId = body.user_id;
 
@@ -292,7 +292,7 @@ async function handleEmployerProfile(env, body) {
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleResumeParser(env, body) {
     const supabaseUrl = env.SUPABASE_URL;
-    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_ANON_KEY;
     const apiKey = env.OPENROUTER_API_KEY || '';
     const userId = body.user_id;
     if (!userId) return { ok: false, error: 'Missing user_id' };
@@ -377,7 +377,7 @@ async function handleResumeParser(env, body) {
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleSalaryInsights(env, body) {
     const supabaseUrl = env.SUPABASE_URL;
-    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_ANON_KEY;
     const sub = body.sub_action || 'get';
 
     if (sub === 'get') {
@@ -443,7 +443,7 @@ async function handleSalaryInsights(env, body) {
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleJobExpiration(env, body) {
     const supabaseUrl = env.SUPABASE_URL;
-    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_ANON_KEY;
     const sub = body.sub_action || 'check';
     const userId = body.user_id;
 
@@ -483,7 +483,7 @@ async function handleJobExpiration(env, body) {
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleJobBoost(env, body) {
     const supabaseUrl = env.SUPABASE_URL;
-    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_ANON_KEY;
     const sub = body.sub_action || 'boost';
     const userId = body.user_id;
 
@@ -615,7 +615,7 @@ async function handleSkillGap(env, body) {
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleReferrals(env, body) {
     const supabaseUrl = env.SUPABASE_URL;
-    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_ANON_KEY;
     const sub = body.sub_action || 'get-bounty';
     const userId = body.user_id;
 
@@ -682,7 +682,7 @@ async function handleReferrals(env, body) {
 /* ═══════════════════════════════════════════════════════════════ */
 async function handleInterviewScheduling(env, body) {
     const supabaseUrl = env.SUPABASE_URL;
-    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_KEY;
+    const supabaseKey = env.SUPABASE_SERVICE_KEY || env.SUPABASE_ANON_KEY;
     const sub = body.sub_action || 'propose';
     const userId = body.user_id;
     if (!userId) return { ok: false, error: 'Missing user_id' };
