@@ -28,7 +28,8 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
                     }
                 }
             });
-            console.log('✅ Connection Established for:', SUPABASE_URL);
+            // Intentionally no console log here — we do not want to leak the
+            // Supabase project URL into end-users' browser devtools on every page load.
         } catch (err) {
             console.error('Init failed:', err.message);
         }

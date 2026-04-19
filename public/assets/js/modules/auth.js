@@ -190,7 +190,7 @@ const Auth = {
 
         // Use a short delay before redirecting to allow any pending
         // INITIAL_SESSION or TOKEN_REFRESHED events to arrive first.
-        const _dashPaths = ['/dashboard', '/pages/user/dashboard'];
+        const _dashPaths = ['/dashboard'];
         // NOTE: admin page (/gm-ctrl-x7) removed — its own gate handles sign-out redirect
         if (_dashPaths.indexOf(window.location.pathname) !== -1) {
             Auth._signOutRedirectTimer = setTimeout(function() {
@@ -330,8 +330,14 @@ const Auth = {
             if (Auth._inactivityTimer) { clearTimeout(Auth._inactivityTimer); Auth._inactivityTimer = null; }
             renderHeader();
             UI.toast('Signed out successfully', 'success');
-            const authPages = ['/user/', '/admin'];
-            if (authPages.some(p => window.location.pathname.includes(p))) {
+            const authPages = [
+                '/admin', '/dashboard', '/wallet', '/wishlist', '/saved',
+                '/settings', '/my-groups', '/reset-password', '/seller-dashboard',
+                '/owner-dashboard', '/employer-dashboard', '/write-article',
+                '/post-job', '/submit', '/sell'
+            ];
+            const path = window.location.pathname;
+            if (authPages.some(p => path === p || path.startsWith(p + '/'))) {
                 window.location.href = '/';
             }
         } catch (err) { UI.toast('Something went wrong. Please try again.', 'error'); }
@@ -343,9 +349,8 @@ const Auth = {
             const sv = await Security.serverValidate({ email: email, action: 'reset' });
             if (!sv.ok) { UI.toast(sv.errors?.[0] || 'Validation failed. Please try again.', 'error'); return false; }
             if (sv.serverBypassed) { console.warn('Server validation bypassed during password reset'); }
-            // Bug fix: correct redirect path to /pages/user/reset-password
             const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
-                redirectTo: CONFIG.siteUrl + '/pages/user/reset-password'
+                redirectTo: CONFIG.siteUrl + '/reset-password'
             });
             if (error) { UI.toast(Auth._handleAuthError(error), 'error'); return false; }
             UI.toast('Password reset link sent to your email', 'success');

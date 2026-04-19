@@ -105,7 +105,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                             (user.photo_url ? '<img src="' + Security.sanitize(user.photo_url) + '" class="fuel-lb-row__img" loading="lazy">' : '<div class="fuel-lb-row__placeholder">' + (user.display_name || '?').charAt(0).toUpperCase() + '</div>') +
                             '</div>' +
                             '<div class="fuel-lb-row__info">' +
-                            '<a href="/pages/user/author.html?id=' + user.id + '" class="fuel-lb-row__name">' + Security.sanitize(user.display_name || 'Anonymous') + '</a>' +
+                            '<a href="/author?id=' + user.id + '" class="fuel-lb-row__name">' + Security.sanitize(user.display_name || 'Anonymous') + '</a>' +
                             (user.writer_level ? UI.fuelLevelBadge(user.writer_level, user.writer_xp) : '') +
                             '</div>' +
                             '<div class="fuel-lb-row__xp">' + Wallet.formatCoins(a.total_received) + ' GMX</div>' +

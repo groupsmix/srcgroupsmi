@@ -64,7 +64,7 @@ srcgroupsmi/
 │   ├── manifest.json     # PWA manifest
 │   └── sw.js             # Service worker
 ├── supabase/
-│   └── migrations/       # Database migrations (001–025)
+│   └── migrations/       # Database migrations (001–028, plus 017b / 020b)
 ├── tests/                # Test files (Vitest)
 ├── scripts/              # Build scripts (SW stamping)
 └── .github/workflows/    # CI pipeline

@@ -119,7 +119,7 @@ UI.fuelLevelCard = function (levelKey, xp) {
 UI.fuelWalletWidget = function (wallet) {
     var balance = wallet ? wallet.coins_balance : 0;
     return '<div class="fuel-wallet-widget" id="fuel-wallet-widget">' +
-        '<a href="/pages/user/wallet.html" class="fuel-wallet-widget__link">' +
+        '<a href="/wallet" class="fuel-wallet-widget__link">' +
         '<span class="fuel-wallet-widget__icon">' +
         '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' +
         '</span>' +
@@ -397,7 +397,7 @@ UI.fuelLeaderboardRow = function (user, rank) {
         (user.photo_url ? '<img src="' + Security.sanitize(user.photo_url) + '" alt="" class="fuel-lb-row__img" loading="lazy">' : '<div class="fuel-lb-row__placeholder">' + (user.display_name || '?').charAt(0).toUpperCase() + '</div>') +
         '</div>' +
         '<div class="fuel-lb-row__info">' +
-        '<a href="/pages/user/profile.html?id=' + user.id + '" class="fuel-lb-row__name">' + Security.sanitize(user.display_name || 'Anonymous') + '</a>' +
+        '<a href="/author?id=' + user.id + '" class="fuel-lb-row__name">' + Security.sanitize(user.display_name || 'Anonymous') + '</a>' +
         UI.fuelLevelBadge(user.writer_level, user.writer_xp) +
         '</div>' +
         '<div class="fuel-lb-row__xp">' + (user.writer_xp || user.gxp || 0) + ' XP</div>' +

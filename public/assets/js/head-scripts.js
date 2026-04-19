@@ -127,7 +127,7 @@
         });
     }
 
-    if (path === '/about' || path === '/about.html' || path === '/pages/legal/about.html') {
+    if (path === '/about' || path === '/about.html') {
         injectJsonLd({
             '@context': 'https://schema.org',
             '@type': 'AboutPage',

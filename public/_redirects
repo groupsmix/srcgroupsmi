@@ -1,0 +1,46 @@
+# ─────────────────────────────────────────────────────────────────────────
+# Subdir → flat route redirects
+#
+# Legacy `src/pages/<subdir>/<page>.astro` duplicates have been removed
+# so every page now has a single canonical URL at the site root. These
+# 301 redirects preserve any inbound links that pointed at the old
+# grouped paths (internal links already use the flat paths).
+# ─────────────────────────────────────────────────────────────────────────
+
+/legal/about           /about              301
+/legal/contact         /contact            301
+/legal/faq             /faq                301
+/legal/privacy         /privacy            301
+/legal/support         /support            301
+/legal/terms           /terms              301
+
+/promote/advertise     /advertise          301
+/promote/donate        /donate             301
+/promote/jobs          /jobs               301
+/promote/marketplace   /marketplace        301
+/promote/newsletter    /newsletter         301
+/promote/store         /store              301
+
+/user/author           /author             301
+/user/dashboard        /dashboard          301
+/user/my-groups        /my-groups          301
+/user/reset-password   /reset-password     301
+/user/saved            /saved              301
+/user/settings         /settings           301
+/user/wallet           /wallet             301
+/user/wishlist         /wishlist           301
+
+/browse/category       /category           301
+/browse/country        /country            301
+/browse/platform       /platform           301
+
+/content/article       /article            301
+/content/articles      /articles           301
+/content/write-article /write-article      301
+
+/boards/leaderboard    /leaderboard        301
+/trust/scam-wall       /scam-wall          301
+/trust/stats           /stats              301
+
+# Legacy `/pages/*` sitemap paths that never actually existed as Astro routes
+/pages/*               /:splat             301

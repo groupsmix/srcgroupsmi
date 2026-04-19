@@ -240,7 +240,7 @@ async function handleGet(request, env, user, origin) {
                         description: 'Earn 50-200 coins per article. Quality articles earn tips from readers too!',
                         description_ar: 'اربح 50-200 عملة لكل مقال. المقالات المميزة تكسب إكراميات من القراء!',
                         potential_coins: 200,
-                        action_url: '/pages/user/write-article.html',
+                        action_url: '/write-article',
                         priority: 'high'
                     });
                 } else if ((profile.article_count || 0) < 5) {
@@ -252,7 +252,7 @@ async function handleGet(request, env, user, origin) {
                         description: 'You have ' + profile.article_count + ' articles. Writers with 5+ articles earn 3x more tips!',
                         description_ar: 'لديك ' + profile.article_count + ' مقالات. الكتّاب بـ 5+ مقالات يكسبون 3 أضعاف الإكراميات!',
                         potential_coins: 150,
-                        action_url: '/pages/user/write-article.html',
+                        action_url: '/write-article',
                         priority: 'high'
                     });
                 }
@@ -266,7 +266,7 @@ async function handleGet(request, env, user, origin) {
                         description: 'Complete your profile to earn 25 bonus coins.',
                         description_ar: 'أكمل ملفك الشخصي للحصول على 25 عملة إضافية.',
                         potential_coins: 25,
-                        action_url: '/pages/user/settings.html',
+                        action_url: '/settings',
                         priority: 'medium'
                     });
                 }
@@ -280,7 +280,7 @@ async function handleGet(request, env, user, origin) {
                         description: 'Add a bio (20+ characters) to earn 15 bonus coins.',
                         description_ar: 'أضف نبذة (20+ حرف) للحصول على 15 عملة إضافية.',
                         potential_coins: 15,
-                        action_url: '/pages/user/settings.html',
+                        action_url: '/settings',
                         priority: 'medium'
                     });
                 }
@@ -294,7 +294,7 @@ async function handleGet(request, env, user, origin) {
                         description: 'Earn 100 coins for each friend who signs up with your referral code: ' + profile.referral_code,
                         description_ar: 'اربح 100 عملة لكل صديق يسجل برمز الإحالة: ' + profile.referral_code,
                         potential_coins: 100,
-                        action_url: '/pages/user/referral.html',
+                        action_url: '/referral',
                         priority: 'high'
                     });
                 }
@@ -321,7 +321,7 @@ async function handleGet(request, env, user, origin) {
                         description: 'With ' + profile.article_count + ' articles, you qualify for premium writer rewards (up to 500 coins). Write an in-depth guide or tutorial!',
                         description_ar: 'مع ' + profile.article_count + ' مقال، تأهلت لمكافآت الكتّاب المميزين (حتى 500 عملة).',
                         potential_coins: 500,
-                        action_url: '/pages/user/write-article.html',
+                        action_url: '/write-article',
                         priority: 'high'
                     });
                 }
@@ -335,7 +335,7 @@ async function handleGet(request, env, user, origin) {
                         description: 'You\'ve received tips before. Active writers who engage with comments earn 2x more tips on average.',
                         description_ar: 'لقد تلقيت إكراميات سابقاً. الكتّاب النشطون يكسبون ضعف الإكراميات.',
                         potential_coins: 50,
-                        action_url: '/pages/user/articles.html',
+                        action_url: '/articles',
                         priority: 'medium'
                     });
                 }
@@ -349,7 +349,7 @@ async function handleGet(request, env, user, origin) {
                         description: 'New users who complete their profile within the first week earn a 50 coin bonus!',
                         description_ar: 'المستخدمون الجدد الذين يكملون ملفهم خلال الأسبوع الأول يحصلون على 50 عملة إضافية!',
                         potential_coins: 50,
-                        action_url: '/pages/user/settings.html',
+                        action_url: '/settings',
                         priority: 'high'
                     });
                 }
@@ -539,7 +539,7 @@ async function handlePost(request, env, user, origin) {
                         type: 'escrow_created',
                         title: 'New Escrow Purchase!',
                         message: escrowAmount + ' GMX Coins held in escrow for ' + escrowProductName + '. Deliver the product so the buyer can confirm.',
-                        link: '/pages/user/escrow.html'
+                        link: '/escrow'
                     })
                 });
 
@@ -602,7 +602,7 @@ async function handlePost(request, env, user, origin) {
                         type: 'escrow_released',
                         title: 'Payment Released!',
                         message: escrowRecord.amount + ' GMX Coins from escrow for ' + (escrowRecord.product_name || 'product') + ' have been added to your wallet.',
-                        link: '/pages/user/wallet.html'
+                        link: '/wallet'
                     })
                 });
 
@@ -646,7 +646,7 @@ async function handlePost(request, env, user, origin) {
                         type: 'escrow_disputed',
                         title: 'Escrow Disputed',
                         message: 'The buyer has disputed the escrow for ' + (dispEscrows[0].product_name || 'product') + '. An admin will mediate.',
-                        link: '/pages/user/escrow.html'
+                        link: '/escrow'
                     })
                 });
 

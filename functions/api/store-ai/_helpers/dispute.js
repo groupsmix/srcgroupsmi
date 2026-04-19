@@ -50,7 +50,7 @@ export async function handleDispute(env, body) {
                     type: 'dispute_opened',
                     title: 'Dispute Opened \u2014 48h to Respond',
                     message: 'A buyer has reported an issue with order ' + orderId + '. You have 48 hours to respond before admin mediation.',
-                    link: '/pages/user/disputes.html'
+                    link: '/disputes'
                 })
             });
         }
