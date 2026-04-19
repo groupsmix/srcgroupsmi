@@ -521,7 +521,7 @@ const UI = {
                     UI.closeModal();
                     // Redirect to dashboard after successful sign-up (instant login)
                     // If already on dashboard, just re-init instead of full reload
-                    var _onDash = window.location.pathname === '/dashboard' || window.location.pathname === '/pages/user/dashboard';
+                    var _onDash = window.location.pathname === '/dashboard';
                     if (_onDash && typeof initDashboard === 'function') {
                         renderHeader(); initDashboard();
                     } else {
@@ -563,7 +563,7 @@ const UI = {
                     UI.closeModal();
                     // Redirect to dashboard after successful sign-in
                     // If already on dashboard, just re-init instead of full reload
-                    var _onDash = window.location.pathname === '/dashboard' || window.location.pathname === '/pages/user/dashboard';
+                    var _onDash = window.location.pathname === '/dashboard';
                     if (_onDash && typeof initDashboard === 'function') {
                         renderHeader(); initDashboard();
                     } else {

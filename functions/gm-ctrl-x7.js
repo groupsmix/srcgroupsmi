@@ -4,22 +4,19 @@
  * This middleware intercepts requests to the admin panel and verifies:
  * 1. A valid Supabase auth token exists in the request cookies
  * 2. The JWT is verified server-side against Supabase Auth
- * 3. The authenticated user has role = 'admin' in the users table
+ * 3. The authenticated user has role = 'admin' (or 'moderator') in the users table
  *
  * If any check fails, the user is redirected to the homepage.
  * The admin HTML is NEVER served to unauthenticated or non-admin users.
  */
-
-const SUPABASE_URL_FALLBACK = 'https://hmlqppacanpxmrfdlkec.supabase.co';
-const SUPABASE_ANON_KEY_FALLBACK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtbHFwcGFjYW5weG1yZmRsa2VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDkxMTUsImV4cCI6MjA4NzkyNTExNX0.xRDweHu4st7Hk--lQyLYlRU5ufUsXWbArvsIjVznr9o';
 
 /**
  * Parse the Supabase auth token from cookies.
  * Supabase JS SDK stores the session in cookies with key patterns like:
  * sb-<project-ref>-auth-token or sb-<project-ref>-auth-token.0, .1, etc.
  */
-function getAccessTokenFromCookies(cookieHeader) {
-    if (!cookieHeader) return null;
+function getAccessTokenFromCookies(cookieHeader, projectRef) {
+    if (!cookieHeader || !projectRef) return null;
 
     const cookies = {};
     cookieHeader.split(';').forEach(function (c) {
@@ -29,9 +26,6 @@ function getAccessTokenFromCookies(cookieHeader) {
         }
     });
 
-    // Supabase stores session in sb-<ref>-auth-token cookie
-    // The project ref is extracted from the URL
-    const projectRef = 'hmlqppacanpxmrfdlkec';
     const tokenKey = 'sb-' + projectRef + '-auth-token';
 
     // It might be a single cookie or chunked (.0, .1, etc.)
@@ -39,7 +33,7 @@ function getAccessTokenFromCookies(cookieHeader) {
 
     // Check for chunked cookies
     if (!raw) {
-        let chunks = [];
+        const chunks = [];
         let i = 0;
         while (cookies[tokenKey + '.' + i] !== undefined) {
             chunks.push(cookies[tokenKey + '.' + i]);
@@ -51,14 +45,11 @@ function getAccessTokenFromCookies(cookieHeader) {
     if (!raw) return null;
 
     try {
-        // The cookie value is a JSON-encoded session object
         const decoded = decodeURIComponent(raw);
-        // Try to parse as base64 first (some versions encode it)
         let session;
         try {
             session = JSON.parse(decoded);
         } catch (e) {
-            // Try base64 decode
             try {
                 session = JSON.parse(atob(decoded));
             } catch (e2) {
@@ -66,6 +57,20 @@ function getAccessTokenFromCookies(cookieHeader) {
             }
         }
         return session.access_token || (session[0] && session[0].access_token) || null;
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
+ * Extract the Supabase project ref (e.g. "hmlqppacanpxmrfdlkec")
+ * from the SUPABASE_URL so we don't have to hardcode it.
+ */
+function getProjectRef(supabaseUrl) {
+    try {
+        const host = new URL(supabaseUrl).hostname;
+        const ref = host.split('.')[0];
+        return ref || null;
     } catch (e) {
         return null;
     }
@@ -109,40 +114,55 @@ async function verifyAdmin(accessToken, supabaseUrl, supabaseAnonKey) {
     return rows[0].role === 'admin' || rows[0].role === 'moderator';
 }
 
+function redirectHome(request) {
+    return Response.redirect(new URL('/', request.url).toString(), 302);
+}
+
 export async function onRequest(context) {
     const { request, next, env } = context;
-
-    const SUPABASE_URL = (env && env.SUPABASE_URL) || SUPABASE_URL_FALLBACK;
-    const SUPABASE_ANON_KEY = (env && env.SUPABASE_ANON_KEY) || SUPABASE_ANON_KEY_FALLBACK;
 
     // Only gate GET requests to the admin page
     if (request.method !== 'GET') {
         return next();
     }
 
-    const cookieHeader = request.headers.get('Cookie');
-    const accessToken = getAccessTokenFromCookies(cookieHeader);
+    const SUPABASE_URL = env && env.SUPABASE_URL;
+    const SUPABASE_ANON_KEY = env && env.SUPABASE_ANON_KEY;
 
+    // Fail closed: without Supabase config we cannot verify anything,
+    // so refuse to serve the admin page.
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        console.error('gm-ctrl-x7: SUPABASE_URL or SUPABASE_ANON_KEY not configured — refusing to serve admin page');
+        return redirectHome(request);
+    }
+
+    const projectRef = getProjectRef(SUPABASE_URL);
+    if (!projectRef) {
+        console.error('gm-ctrl-x7: could not derive Supabase project ref from SUPABASE_URL');
+        return redirectHome(request);
+    }
+
+    const cookieHeader = request.headers.get('Cookie');
+    const accessToken = getAccessTokenFromCookies(cookieHeader, projectRef);
+
+    // Fail closed: no auth cookie → redirect. A client-side-only gate
+    // is trivially bypassed (disable JS / edit DOM), so we will not
+    // fall through to it.
     if (!accessToken) {
-        // No auth cookie found — Supabase JS v2 uses localStorage by default,
-        // so cookies may not be present. Pass through to client-side gate
-        // which checks localStorage-based session + verifies role via RLS.
-        console.warn('gm-ctrl-x7: no auth cookie found — relying on client-side admin gate');
-        return next();
+        return redirectHome(request);
     }
 
     try {
         const isAdmin = await verifyAdmin(accessToken, SUPABASE_URL, SUPABASE_ANON_KEY);
         if (!isAdmin) {
-            // Cookie exists but user is NOT admin → block at server level
-            return Response.redirect(new URL('/', request.url).toString(), 302);
+            return redirectHome(request);
         }
     } catch (err) {
-        // Verification error → pass through to client-side gate (don't lock out admins)
-        console.warn('gm-ctrl-x7: server-side admin verification failed (' + (err.message || 'unknown error') + ') — falling back to client-side gate');
-        return next();
+        // Verification error → fail closed rather than leaking the page.
+        console.error('gm-ctrl-x7: admin verification error (' + (err.message || 'unknown') + ') — denying access');
+        return redirectHome(request);
     }
 
-    // Admin verified via cookie → serve the page normally
+    // Admin verified via cookie → serve the page normally.
     return next();
 }

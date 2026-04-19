@@ -219,7 +219,7 @@ async function creditCoinsForPurchase(env, userId, order) {
                 type: 'gxp_awarded',
                 title: 'Coins Added!',
                 message: coinsToCredit + ' GMX Coins have been added to your wallet. Thank you for your purchase!',
-                link: '/pages/user/wallet.html'
+                link: '/wallet'
             })
         });
 
@@ -309,7 +309,7 @@ async function handleCoinRefund(env, payload) {
                 type: 'system',
                 title: 'Purchase Refunded',
                 message: coinsToDebit + ' GMX Coins have been removed from your wallet due to a refund.',
-                link: '/pages/user/wallet.html'
+                link: '/wallet'
             })
         });
 

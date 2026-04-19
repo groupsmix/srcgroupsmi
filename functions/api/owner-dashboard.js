@@ -560,7 +560,7 @@ async function handlePost(request, env, admin, origin) {
                             type: 'system',
                             title: 'Withdrawal Approved',
                             message: 'Your withdrawal of ' + withdrawal.coins_amount + ' GMX Coins ($' + parseFloat(withdrawal.usd_amount).toFixed(2) + ') has been approved. Payment will be sent shortly.',
-                            link: '/pages/user/wallet.html'
+                            link: '/wallet'
                         })
                     });
 
@@ -616,7 +616,7 @@ async function handlePost(request, env, admin, origin) {
                             type: 'system',
                             title: 'Withdrawal Rejected',
                             message: 'Your withdrawal request has been rejected.' + (adminNote ? ' Reason: ' + adminNote : '') + ' The coins have been returned to your wallet.',
-                            link: '/pages/user/wallet.html'
+                            link: '/wallet'
                         })
                     });
                 }

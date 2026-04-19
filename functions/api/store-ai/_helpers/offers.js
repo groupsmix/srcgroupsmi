@@ -51,7 +51,7 @@ export async function handleOffers(env, body) {
                 type: 'new_offer',
                 title: 'New Offer Received',
                 message: 'You received an offer of ' + offerPrice + ' coins. ' + (message || ''),
-                link: '/pages/user/offers.html'
+                link: '/offers'
             })
         });
 
@@ -94,7 +94,7 @@ export async function handleOffers(env, body) {
                     message: response === 'counter'
                         ? 'The seller countered with ' + counterPrice + ' coins.'
                         : 'Your offer was ' + response + '.',
-                    link: '/pages/user/offers.html'
+                    link: '/offers'
                 })
             });
         }
