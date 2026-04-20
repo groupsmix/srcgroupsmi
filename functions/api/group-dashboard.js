@@ -8,6 +8,8 @@
  * Requires the user to be the group's submitter.
  */
 
+import { requireAuth } from './_shared/auth.js';
+
 const ALLOWED_ORIGINS = ['https://groupsmix.com', 'https://www.groupsmix.com'];
 
 function corsHeaders(origin) {
@@ -53,6 +55,9 @@ export async function onRequest(context) {
         });
     }
 
+    const authResult = await requireAuth(request, env, corsHeaders(origin));
+    if (authResult instanceof Response) return authResult;
+
     try {
         // Get the group
         const groupRes = await fetch(
@@ -67,6 +72,20 @@ export async function onRequest(context) {
         }
 
         const group = groups[0];
+
+        // Verify the caller is the group's submitter or an admin.
+        const callerRes = await fetch(
+            supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authResult.user.id) + '&select=id,role&limit=1',
+            { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+        );
+        const callers = await callerRes.json();
+        const caller = Array.isArray(callers) && callers[0];
+        const submitterMatch = caller && (group.submitted_by === caller.id || group.submitter_id === caller.id || group.owner_id === caller.id);
+        if (!caller || (!submitterMatch && caller.role !== 'admin')) {
+            return new Response(JSON.stringify({ ok: false, error: 'Forbidden' }), {
+                status: 403, headers: corsHeaders(origin)
+            });
+        }
 
         if (action === 'tips') {
             // Generate growth tips based on group data

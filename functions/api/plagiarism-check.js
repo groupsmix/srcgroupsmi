@@ -11,6 +11,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { requireAuth } from './_shared/auth.js';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -96,6 +97,9 @@ export async function onRequest(context) {
         'apikey': supabaseKey,
         'Authorization': 'Bearer ' + supabaseKey
     };
+
+    const authResult = await requireAuth(request, env, corsHeaders(origin));
+    if (authResult instanceof Response) return authResult;
 
     try {
         const body = await request.json();

@@ -10,6 +10,8 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { requireAuth } from './_shared/auth.js';
+import { timingSafeEqualHex } from './_shared/webhook-verify.js';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -41,7 +43,22 @@ export async function onRequest(context) {
 
     try {
         if (request.method === 'GET') {
-            // Cron: publish scheduled articles
+            // Cron: publish scheduled articles. Fail closed — require CRON_SECRET.
+            const cronSecret = env?.CRON_SECRET;
+            if (!cronSecret) {
+                return new Response(
+                    JSON.stringify({ ok: false, error: 'Cron secret not configured' }),
+                    { status: 503, headers: corsHeaders(origin) }
+                );
+            }
+            const providedSecret = request.headers.get('X-Cron-Secret') || '';
+            if (!timingSafeEqualHex(cronSecret, providedSecret)) {
+                return new Response(
+                    JSON.stringify({ ok: false, error: 'Unauthorized' }),
+                    { status: 401, headers: corsHeaders(origin) }
+                );
+            }
+
             const res = await fetch(supabaseUrl + '/rest/v1/rpc/publish_scheduled_articles', {
                 method: 'POST',
                 headers,
@@ -65,6 +82,9 @@ export async function onRequest(context) {
         }
 
         if (request.method === 'POST') {
+            const authResult = await requireAuth(request, env, corsHeaders(origin));
+            if (authResult instanceof Response) return authResult;
+
             const body = await request.json();
             const { article_id, scheduled_at } = body;
 
@@ -81,6 +101,26 @@ export async function onRequest(context) {
                 return new Response(
                     JSON.stringify({ ok: false, error: 'scheduled_at must be a future date' }),
                     { status: 400, headers: corsHeaders(origin) }
+                );
+            }
+
+            // Verify the caller owns the article. Service-role bypasses RLS.
+            const callerRes = await fetch(
+                supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authResult.user.id) + '&select=id&limit=1',
+                { headers }
+            );
+            const callers = await callerRes.json();
+            const callerInternalId = Array.isArray(callers) && callers[0]?.id;
+            const articleRes = await fetch(
+                supabaseUrl + '/rest/v1/articles?id=eq.' + encodeURIComponent(article_id) + '&select=user_id&limit=1',
+                { headers }
+            );
+            const articles = await articleRes.json();
+            const articleOwnerId = Array.isArray(articles) && articles[0]?.user_id;
+            if (!callerInternalId || !articleOwnerId || callerInternalId !== articleOwnerId) {
+                return new Response(
+                    JSON.stringify({ ok: false, error: 'Forbidden' }),
+                    { status: 403, headers: corsHeaders(origin) }
                 );
             }
 

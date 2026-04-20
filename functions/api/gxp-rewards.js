@@ -15,6 +15,8 @@
  *   SUPABASE_SERVICE_KEY — Supabase service role key
  */
 
+import { requireAuthWithProfile } from './_shared/auth.js';
+
 /* ── XP Reward amounts ─────────────────────────────────────── */
 const XP_REWARDS = {
     publish_article: 10,
@@ -66,34 +68,17 @@ export async function onRequest(context) {
         });
     }
 
-    // Verify auth
-    const authHeader = request.headers.get('Authorization') || '';
-    if (!authHeader.startsWith('Bearer ')) {
-        return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), {
-            status: 401, headers: corsHeaders(origin)
-        });
-    }
-
-    // Verify the JWT token with Supabase
-    const token = authHeader.replace('Bearer ', '');
-    let callerAuthId = null;
+    // Verify auth and load caller profile in one call (shared helper).
+    let callerInternalId, callerRole;
     try {
-        const userRes = await fetch(supabaseUrl + '/auth/v1/user', {
-            headers: {
-                'Authorization': 'Bearer ' + token,
-                'apikey': supabaseKey
-            }
-        });
-        if (!userRes.ok) {
-            return new Response(JSON.stringify({ ok: false, error: 'Invalid token' }), {
-                status: 401, headers: corsHeaders(origin)
-            });
-        }
-        const userData = await userRes.json();
-        callerAuthId = userData.id;
-    } catch (_err) {
-        return new Response(JSON.stringify({ ok: false, error: 'Auth verification failed' }), {
-            status: 401, headers: corsHeaders(origin)
+        const profile = await requireAuthWithProfile(request, env, 'id,role');
+        callerInternalId = profile.userId;
+        callerRole = profile.profile.role;
+    } catch (err) {
+        const msg = err?.message || 'Unauthorized';
+        const status = msg === 'Server not configured' ? 500 : 401;
+        return new Response(JSON.stringify({ ok: false, error: msg }), {
+            status, headers: corsHeaders(origin)
         });
     }
 
@@ -121,21 +106,7 @@ export async function onRequest(context) {
     // For "self" actions (publish, send_tip, daily_login), the caller IS the user
     let targetUserId = user_id || null;
 
-    // Look up the internal user ID for the caller
     try {
-        const callerRes = await fetch(
-            supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(callerAuthId) + '&select=id,role&limit=1',
-            { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-        );
-        const callers = await callerRes.json();
-        if (!callers || !callers.length) {
-            return new Response(JSON.stringify({ ok: false, error: 'User not found' }), {
-                status: 404, headers: corsHeaders(origin)
-            });
-        }
-
-        const callerInternalId = callers[0].id;
-        const callerRole = callers[0].role;
 
         // Self-actions use the caller's ID
         const selfActions = ['publish_article', 'send_tip', 'daily_login'];

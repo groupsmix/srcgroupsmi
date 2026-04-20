@@ -8,6 +8,8 @@
  * Only the link creator or admins can access analytics.
  */
 
+import { requireAuth } from './_shared/auth.js';
+
 const ALLOWED_ORIGINS = ['https://groupsmix.com', 'https://www.groupsmix.com'];
 
 function corsHeaders(origin) {
@@ -54,6 +56,9 @@ export async function onRequest(context) {
         });
     }
 
+    const authResult = await requireAuth(request, env, corsHeaders(origin));
+    if (authResult instanceof Response) return authResult;
+
     try {
         // Get the short link
         const linkRes = await fetch(
@@ -68,6 +73,19 @@ export async function onRequest(context) {
         }
 
         const link = links[0];
+
+        // Authorize: caller must be the link's creator_uid or an admin. Service role bypasses RLS.
+        const callerRes = await fetch(
+            supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authResult.user.id) + '&select=id,role&limit=1',
+            { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+        );
+        const callers = await callerRes.json();
+        const caller = Array.isArray(callers) && callers[0];
+        if (!caller || (caller.id !== link.creator_uid && caller.role !== 'admin')) {
+            return new Response(JSON.stringify({ ok: false, error: 'Forbidden' }), {
+                status: 403, headers: corsHeaders(origin)
+            });
+        }
         const cutoff = new Date(Date.now() - days * 86400000).toISOString();
 
         // Get click details

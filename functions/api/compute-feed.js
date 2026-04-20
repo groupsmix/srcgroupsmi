@@ -187,13 +187,15 @@ export async function onRequest(context) {
         return jsonResponse({ ok: false, error: 'Service not configured' }, 503, origin);
     }
 
-    // Optional: verify cron secret for security
+    // Require CRON_SECRET. Fail closed — previously this was optional which meant
+    // anyone who knew the route could trigger expensive recomputation jobs.
     const cronSecret = env?.CRON_SECRET;
-    if (cronSecret) {
-        const providedSecret = request.headers.get('X-Cron-Secret') || '';
-        if (providedSecret !== cronSecret) {
-            return jsonResponse({ ok: false, error: 'Unauthorized' }, 401, origin);
-        }
+    if (!cronSecret) {
+        return jsonResponse({ ok: false, error: 'Cron secret not configured' }, 503, origin);
+    }
+    const providedSecret = request.headers.get('X-Cron-Secret') || '';
+    if (providedSecret !== cronSecret) {
+        return jsonResponse({ ok: false, error: 'Unauthorized' }, 401, origin);
     }
 
     let body;
