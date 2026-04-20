@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-    verifySignature,
-    onRequest
-} from '../functions/api/lemonsqueezy-webhook.js';
+import { verifyHmacSignature as verifySignature } from '../functions/api/_shared/webhook-verify.js';
+import { onRequest } from '../functions/api/lemonsqueezy-webhook.js';
 
 // Compute a LemonSqueezy-style hex HMAC-SHA256 for test bodies.
 async function hmacHex(secret, body) {
