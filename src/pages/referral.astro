@@ -317,8 +317,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (existingCode && existingCode.length > 0) {
                 refCode = existingCode[0];
             } else {
-                // Generate a new referral code
-                var code = 'gmx-' + Math.random().toString(36).substring(2, 8);
+                // Generate a new referral code using crypto.getRandomValues so
+                // the code is unpredictable and cannot be enumerated.
+                var code = 'gmx-' + window.SecureRandom.string(6);
                 var { data: newCode, error } = await window.supabaseClient
                     .from('referral_codes')
                     .insert({ owner_uid: uid, code: code })

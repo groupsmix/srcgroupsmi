@@ -14,6 +14,8 @@
  * 10. Interview Scheduling
  */
 
+import { secureRandomUpperAlnum } from './_shared/secure-random.js';
+
 const ALLOWED_ORIGINS = [
     'https://groupsmix.com',
     'https://www.groupsmix.com'
@@ -653,7 +655,9 @@ async function handleReferrals(env, body) {
         const referredEmail = body.referred_email;
         if (!jobId || !referredEmail) return { ok: false, error: 'Missing job_id or referred_email' };
 
-        const code = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        // Cryptographically-secure referral code so an attacker cannot enumerate
+        // or guess another user's code and hijack bounty attribution.
+        const code = 'REF-' + secureRandomUpperAlnum(6);
         await supaFetch(supabaseUrl, supabaseKey, 'job_referrals', {
             method: 'POST',
             body: {
