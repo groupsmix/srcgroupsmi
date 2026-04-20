@@ -11,21 +11,16 @@
  *   CONTACT_EMAIL_TO   — Email address to receive notifications (your Gmail)
  */
 
-/* ── Allowed origins for CORS ───────────────────────────────────── */
-const ALLOWED_ORIGINS = [
-    'https://groupsmix.com',
-    'https://www.groupsmix.com'
-];
+import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { checkRateLimit } from './_shared/rate-limit.js';
+import { verifyTurnstile } from './_shared/turnstile.js';
 
 function corsHeaders(origin) {
-    const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-    return {
-        'Access-Control-Allow-Origin': allowed,
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-Type': 'application/json'
-    };
+    return _corsHeaders(origin, { 'Content-Type': 'application/json' });
 }
+
+/* ── Rate limit config ── */
+const CONTACT_LIMIT = { window: 60000, max: 3 };
 
 /* ── Main handler ───────────────────────────────────────────────── */
 export async function onRequest(context) {
@@ -34,13 +29,24 @@ export async function onRequest(context) {
 
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
-        return new Response(null, { status: 204, headers: corsHeaders(origin) });
+        return handlePreflight(origin);
     }
 
     if (request.method !== 'POST') {
         return new Response(
             JSON.stringify({ ok: false, error: 'Method not allowed' }),
             { status: 405, headers: corsHeaders(origin) }
+        );
+    }
+
+    // Rate limiting
+    const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
+    const kvStore = context.env?.RATE_LIMIT_KV || null;
+    const allowed = await checkRateLimit(ip, 'contact', CONTACT_LIMIT, kvStore);
+    if (!allowed) {
+        return new Response(
+            JSON.stringify({ ok: false, error: 'Too many requests. Try again later.' }),
+            { status: 429, headers: corsHeaders(origin) }
         );
     }
 
@@ -54,15 +60,24 @@ export async function onRequest(context) {
         );
     }
 
+    // Turnstile CAPTCHA verification
+    const turnstileToken = body['cf-turnstile-response'] || body.turnstileToken || '';
+    const turnstileResult = await verifyTurnstile(turnstileToken, context.env?.TURNSTILE_SECRET_KEY, ip);
+    if (!turnstileResult.success) {
+        return new Response(
+            JSON.stringify({ ok: false, error: turnstileResult.error }),
+            { status: 403, headers: corsHeaders(origin) }
+        );
+    }
+
     const resendKey = context.env?.RESEND_API_KEY;
     const contactTo = context.env?.CONTACT_EMAIL_TO;
 
     if (!resendKey || !contactTo) {
-        // If env vars not configured, silently succeed (don't break the form)
-        console.warn('contact-notify: RESEND_API_KEY or CONTACT_EMAIL_TO not configured');
+        console.error('contact-notify: RESEND_API_KEY or CONTACT_EMAIL_TO not configured');
         return new Response(
-            JSON.stringify({ ok: true, warning: 'Email notification not configured' }),
-            { status: 200, headers: corsHeaders(origin) }
+            JSON.stringify({ ok: false, error: 'Email service not configured' }),
+            { status: 503, headers: corsHeaders(origin) }
         );
     }
 

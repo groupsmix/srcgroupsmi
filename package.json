@@ -15,6 +15,9 @@
   "dependencies": {
     "astro": "^6.1.8"
   },
+  "engines": {
+    "node": ">=22"
+  },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@biomejs/biome": "^2.4.12",

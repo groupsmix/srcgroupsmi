@@ -16,7 +16,7 @@
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) v20+
+- [Node.js](https://nodejs.org/) v22+
 - npm
 
 ### Setup
