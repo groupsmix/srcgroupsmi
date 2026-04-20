@@ -466,32 +466,29 @@ const _OwnerDashboard = {
     async processWithdrawal(requestId, action, adminNote) {
         try {
             if (!Auth.hasRole('admin')) return false;
-            var status = action === 'approve' ? 'approved' : 'rejected';
+
+            if (action === 'reject') {
+                // Atomic server-side: verify admin, update status, refund coins.
+                var { error: rpcErr } = await window.supabaseClient.rpc('reject_withdrawal', {
+                    p_request_id: requestId,
+                    p_admin_note: Security.sanitize(adminNote || '')
+                });
+                if (rpcErr) throw rpcErr;
+                UI.toast('Withdrawal rejected', 'success');
+                return true;
+            }
+
+            // Approve path: no coin refund, just mark approved. The actual
+            // payout is handled out-of-band by the operator.
             var { error } = await window.supabaseClient.from('withdrawal_requests').update({
-                status: status,
+                status: 'approved',
                 admin_note: Security.sanitize(adminNote || ''),
                 processed_at: new Date().toISOString(),
                 processed_by: Auth.getUserId()
             }).eq('id', requestId);
             if (error) throw error;
 
-            if (status === 'rejected') {
-                // Refund coins
-                var { data: req } = await window.supabaseClient.from('withdrawal_requests').select('user_id, coins_amount').eq('id', requestId).single();
-                if (req) {
-                    await window.supabaseClient.rpc('credit_coins', {
-                        p_user_id: req.user_id,
-                        p_amount: req.coins_amount,
-                        p_type: 'refund',
-                        p_description: 'Withdrawal request rejected: ' + (adminNote || ''),
-                        p_reference_id: requestId,
-                        p_reference_type: 'withdrawal',
-                        p_coin_source: 'earned'
-                    });
-                }
-            }
-
-            UI.toast('Withdrawal ' + status, 'success');
+            UI.toast('Withdrawal approved', 'success');
             return true;
         } catch (err) {
             console.error('OwnerDashboard.processWithdrawal:', err.message);
