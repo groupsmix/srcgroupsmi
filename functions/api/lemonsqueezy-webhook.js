@@ -16,31 +16,10 @@
  *   SUPABASE_SERVICE_KEY        — Supabase service role key (for server-side writes)
  */
 
+import { verifyHmacSignature } from './_shared/webhook-verify.js';
+
 /* ── Constants ───────────────────────────────────────────────── */
 const CACHE_KEY = 'ls_products_cache';
-
-/* ── Verify webhook signature (HMAC-SHA256) ──────────────────── */
-async function verifySignature(secret, signature, body) {
-    if (!secret || !signature || !body) return false;
-    try {
-        const encoder = new TextEncoder();
-        const key = await crypto.subtle.importKey(
-            'raw',
-            encoder.encode(secret),
-            { name: 'HMAC', hash: 'SHA-256' },
-            false,
-            ['sign']
-        );
-        const signed = await crypto.subtle.sign('HMAC', key, encoder.encode(body));
-        const expectedHex = Array.from(new Uint8Array(signed))
-            .map(b => b.toString(16).padStart(2, '0'))
-            .join('');
-        return signature === expectedHex;
-    } catch (err) {
-        console.error('Signature verification error:', err);
-        return false;
-    }
-}
 
 /* ── Sync order to Supabase purchases table ──────────────────── */
 async function syncOrderToSupabase(env, payload) {
@@ -414,20 +393,29 @@ export async function onRequest(context) {
 
     const webhookSecret = env?.LEMONSQUEEZY_WEBHOOK_SECRET;
 
+    // Fail closed: refuse to process webhooks when the signing secret is not
+    // configured. A missing secret means we cannot verify authenticity, so
+    // accepting the request would allow an attacker to forge order events and
+    // trigger purchase syncs, coin credits, or subscription state changes.
+    if (!webhookSecret) {
+        console.error('LEMONSQUEEZY_WEBHOOK_SECRET is not configured — refusing webhook');
+        return new Response(
+            JSON.stringify({ ok: false, error: 'Webhook signing secret not configured' }),
+            { status: 503, headers: { 'Content-Type': 'application/json' } }
+        );
+    }
+
     // Read raw body for signature verification
     const rawBody = await request.text();
 
-    // Verify signature if secret is configured
-    if (webhookSecret) {
-        const signature = request.headers.get('X-Signature') || '';
-        const valid = await verifySignature(webhookSecret, signature, rawBody);
-        if (!valid) {
-            console.error('Invalid webhook signature');
-            return new Response(JSON.stringify({ ok: false, error: 'Invalid signature' }), {
-                status: 401,
-                headers: { 'Content-Type': 'application/json' }
-            });
-        }
+    const signature = request.headers.get('X-Signature') || '';
+    const valid = await verifyHmacSignature(webhookSecret, signature, rawBody);
+    if (!valid) {
+        console.error('Invalid webhook signature');
+        return new Response(JSON.stringify({ ok: false, error: 'Invalid signature' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 
     // Parse the webhook payload
