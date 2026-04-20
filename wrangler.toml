@@ -1,0 +1,53 @@
+# Cloudflare Pages bindings + scheduled triggers
+#
+# This file documents bindings expected by functions in this repo. Cloudflare
+# Pages reads KV / cron bindings from the dashboard today; checking it in
+# keeps the expected shape reviewable alongside the code.
+#
+# KV namespaces (create in dashboard, bind under these names):
+#   STORE_KV       — caches LemonSqueezy product catalog (functions/api/lemonsqueezy.js)
+#   RATE_LIMIT_KV  — persistent rate-limit state (functions/api/_shared/rate-limit.js)
+#
+# Required environment variables (set as secrets in Pages → Settings → Env):
+#   SUPABASE_URL
+#   SUPABASE_ANON_KEY
+#   SUPABASE_SERVICE_KEY
+#   LEMONSQUEEZY_API_KEY
+#   LEMONSQUEEZY_STORE_ID
+#   LEMONSQUEEZY_WEBHOOK_SECRET   — REQUIRED; webhook fails closed without it
+#   CRON_SECRET                   — REQUIRED; /api/compute-feed fails closed without it
+#   RESEND_API_KEY
+#   CONTACT_EMAIL_TO
+#   TURNSTILE_SECRET_KEY
+#   GROQ_API_KEY
+#   OPENROUTER_API_KEY
+#
+# Optional public build-time env (read by scripts/stamp-supabase-config.js):
+#   PUBLIC_SUPABASE_URL
+#   PUBLIC_SUPABASE_ANON_KEY
+
+name = "groupsmix"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-11-01"
+
+[kv_namespaces]
+# bind KV namespaces in the Pages dashboard; the IDs are environment-specific
+# and therefore not checked in.
+# [[kv_namespaces]]
+# binding = "STORE_KV"
+# id = "<set-in-dashboard>"
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id = "<set-in-dashboard>"
+
+# Scheduled invocation of /api/compute-feed so feed scores, embeddings,
+# and cleanup jobs actually run. The handler requires the X-Cron-Secret
+# header to match CRON_SECRET.
+#
+# Cloudflare Pages Cron Triggers are scheduled in the dashboard; this
+# block documents the expected schedule. The equivalent Workers cron is
+# listed below for reference.
+[triggers]
+crons = [
+  "*/30 * * * *"  # every 30 minutes — adjust per workload
+]
