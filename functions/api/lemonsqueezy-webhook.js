@@ -119,24 +119,15 @@ async function creditCoinsForPurchase(env, userId, order) {
             const pkg = packages[0];
             coinsToCredit = (pkg.coins || 0) + (pkg.bonus_coins || 0);
             packageName = pkg.name || 'Coin Package';
-        } else {
-            // Fallback: check if product name contains "coin" or "gmx"
-            const prodName = (order.product_name || '').toLowerCase();
-            if (prodName.indexOf('coin') !== -1 || prodName.indexOf('gmx') !== -1) {
-                // Calculate coins from price: $1 = 100 coins base rate
-                const priceInDollars = (order.price || 0) / 100; // price is in cents
-                coinsToCredit = Math.round(priceInDollars * 100);
-                // Apply bonus tiers
-                if (priceInDollars >= 50) coinsToCredit = Math.round(coinsToCredit * 1.6);
-                else if (priceInDollars >= 25) coinsToCredit = Math.round(coinsToCredit * 1.4);
-                else if (priceInDollars >= 10) coinsToCredit = Math.round(coinsToCredit * 1.2);
-                else if (priceInDollars >= 5) coinsToCredit = Math.round(coinsToCredit * 1.1);
-                packageName = order.product_name || 'Coin Purchase';
-            }
         }
 
+        // coin_packages is the only source of truth. If no row matches
+        // the purchased product/variant this is not a coin purchase —
+        // do not fall back to substring-matching the product name,
+        // which let anyone with product-edit access change the coin
+        // rate without a code review.
         if (coinsToCredit <= 0) {
-            console.info('Not a coin purchase or zero coins — skipping wallet credit for order:', order.order_id);
+            console.info('No coin_packages row for order — skipping wallet credit for order:', order.order_id);
             return;
         }
 
