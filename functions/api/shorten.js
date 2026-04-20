@@ -137,8 +137,11 @@ export async function onRequest(context) {
         );
         const existing = await checkRes.json();
         if (Array.isArray(existing) && existing.length > 0) {
-            // Code taken — generate a new random one
-            code = generateCode() + Math.floor(Math.random() * 100);
+            // Code taken — generate a new unpredictable one. We keep the
+            // tie-breaker in the same 36-char alphabet as `generateCode()`
+            // rather than a 2-digit decimal suffix so the resulting space is
+            // 36^8 (~2.8e12) instead of 36^6 * 100 (~2.2e11).
+            code = generateCode() + generateCode().slice(0, 2);
         }
 
         // Insert the short link

@@ -296,8 +296,9 @@ const Referrals = {
             var { data: existing } = await window.supabaseClient.from('referral_codes')
                 .select('*').eq('uid', Auth.getAuthId()).limit(1);
             if (existing && existing.length) return existing[0];
-            // Generate new code
-            var code = 'GM' + Math.random().toString(36).substring(2, 8).toUpperCase();
+            // Generate new code using crypto.getRandomValues so the code is
+            // unpredictable and cannot be enumerated by an attacker.
+            var code = 'GM' + window.SecureRandom.upperAlnum(6);
             var { data, error } = await window.supabaseClient.from('referral_codes').insert({
                 uid: Auth.getAuthId(),
                 code: code,
@@ -334,7 +335,7 @@ const Analytics = {
         if (this._initialized) return;
         this._initialized = true;
         // Generate session ID
-        this._sessionId = sessionStorage.getItem('gm_session_id') || ('s_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8));
+        this._sessionId = sessionStorage.getItem('gm_session_id') || ('s_' + Date.now() + '_' + window.SecureRandom.string(8));
         sessionStorage.setItem('gm_session_id', this._sessionId);
         // Track page view
         this.trackPageView();
@@ -752,7 +753,7 @@ const ABTesting = {
 
     init() {
         // Generate or retrieve visitor ID
-        this._visitorId = localStorage.getItem('gm_ab_visitor') || ('v_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8));
+        this._visitorId = localStorage.getItem('gm_ab_visitor') || ('v_' + Date.now() + '_' + window.SecureRandom.string(8));
         localStorage.setItem('gm_ab_visitor', this._visitorId);
         // Load cached assignments
         try {
