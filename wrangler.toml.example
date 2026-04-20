@@ -1,8 +1,9 @@
-# Cloudflare Pages bindings + scheduled triggers
+# Cloudflare Pages bindings + scheduled triggers (documentation only).
 #
-# This file documents bindings expected by functions in this repo. Cloudflare
-# Pages reads KV / cron bindings from the dashboard today; checking it in
-# keeps the expected shape reviewable alongside the code.
+# This file is intentionally named *.example* and is NOT picked up by the
+# Cloudflare Pages build. Pages currently reads KV namespaces and Cron
+# Triggers from the dashboard; checking the expected shape in here keeps
+# them reviewable alongside the code.
 #
 # KV namespaces (create in dashboard, bind under these names):
 #   STORE_KV       — caches LemonSqueezy product catalog (functions/api/lemonsqueezy.js)
@@ -30,7 +31,6 @@ name = "groupsmix"
 pages_build_output_dir = "dist"
 compatibility_date = "2024-11-01"
 
-[kv_namespaces]
 # bind KV namespaces in the Pages dashboard; the IDs are environment-specific
 # and therefore not checked in.
 # [[kv_namespaces]]
@@ -42,12 +42,11 @@ compatibility_date = "2024-11-01"
 
 # Scheduled invocation of /api/compute-feed so feed scores, embeddings,
 # and cleanup jobs actually run. The handler requires the X-Cron-Secret
-# header to match CRON_SECRET.
+# header to match CRON_SECRET. Cloudflare Pages Cron Triggers are scheduled
+# in the dashboard; the equivalent Workers cron block is shown below for
+# reference.
 #
-# Cloudflare Pages Cron Triggers are scheduled in the dashboard; this
-# block documents the expected schedule. The equivalent Workers cron is
-# listed below for reference.
-[triggers]
-crons = [
-  "*/30 * * * *"  # every 30 minutes — adjust per workload
-]
+# [triggers]
+# crons = [
+#   "*/30 * * * *"  # every 30 minutes — adjust per workload
+# ]
