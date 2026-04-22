@@ -927,9 +927,14 @@ const _Purchases = {
             if (!Auth.requireAuth()) return [];
             var email = Auth.getEmail();
             var uid = Auth.getAuthId();
+            // F-5: UUID-validate uid and quote email before interpolating into
+            // a PostgREST `.or()` filter. Otherwise a comma in either value
+            // could break out of the predicate.
+            if (!Security.isUuid(uid)) return [];
+            var emailFilter = Security.pgrstQuoteValue(email);
             var { data, error } = await window.supabaseClient.from('purchases')
                 .select('*')
-                .or('uid.eq.' + uid + ',email.eq.' + email)
+                .or('uid.eq.' + uid + ',email.eq.' + emailFilter)
                 .order('created_at', { ascending: false });
             if (error) throw error;
             return data || [];

@@ -44,6 +44,41 @@ const _Security = {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
     },
 
+    // ─── PostgREST filter injection guards (Epic F-5 / F-015) ───
+    // `.or('a.eq.' + x + ',b.eq.' + y)` concatenation lets a caller-controlled
+    // value (`x`/`y`) inject extra `,` `(` `)` tokens that break out of the
+    // predicate and execute attacker-chosen filters against a different
+    // column — e.g. `x = 'foo,admin.eq.true'`. Values MUST be either
+    // format-validated (UUID/email) or wrapped in double quotes with
+    // `\` and `"` escaped, per PostgREST's filter grammar.
+
+    isUuid(value) {
+        return typeof value === 'string' &&
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+                .test(value);
+    },
+
+    // Quote an arbitrary value for use as a PostgREST filter-RHS value inside
+    // an `.or(...)` predicate. Wraps in double quotes and backslash-escapes
+    // any `"` or `\` in the value, which neutralises `,` `(` `)` as well.
+    pgrstQuoteValue(value) {
+        var s = value === null || value === undefined ? '' : String(value);
+        return '"' + s.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+    },
+
+    // Build a quoted `ilike` value wrapping the user-provided search term with
+    // `%...%` wildcards (the existing call pattern). `%` and `_` in the
+    // user term are escaped so a user searching for `50_off` doesn't get
+    // single-char-wildcard expansion.
+    pgrstIlikeContains(value) {
+        var s = value === null || value === undefined ? '' : String(value);
+        var likeEscaped = s
+            .replace(/\\/g, '\\\\')
+            .replace(/%/g, '\\%')
+            .replace(/_/g, '\\_');
+        return '"%' + likeEscaped.replace(/"/g, '\\"') + '%"';
+    },
+
     /**
      * Validate password strength.
      * Returns { valid: boolean, errors: string[] }
