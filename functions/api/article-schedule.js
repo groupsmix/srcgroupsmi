@@ -1,12 +1,18 @@
 /**
  * /api/article-schedule — Scheduled Publishing
  *
- * POST: Schedule an article for future publishing
- * GET:  Cron endpoint — publishes all articles whose scheduled_at has passed
+ * POST: Schedule an article for future publishing (user-initiated,
+ *       authenticated separately; no cron secret required).
+ * GET:  Cron endpoint — publishes all articles whose scheduled_at has
+ *       passed. Gated by CRON_SECRET: the GET path requires an
+ *       X-Cron-Secret header matching env.CRON_SECRET. Fails closed
+ *       (503) when the secret is unset so a forgotten secret cannot
+ *       become a public "publish everything scheduled" endpoint.
  *
  * Environment variables required:
  *   SUPABASE_URL         — Supabase project URL
  *   SUPABASE_SERVICE_KEY — Supabase service role key
+ *   CRON_SECRET          — shared cron secret (see wrangler.toml [triggers])
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
@@ -41,6 +47,23 @@ export async function onRequest(context) {
 
     try {
         if (request.method === 'GET') {
+            // Cron path — gated by the shared cron secret.
+            const cronSecret = env?.CRON_SECRET;
+            if (!cronSecret) {
+                console.error('article-schedule: CRON_SECRET not configured');
+                return new Response(
+                    JSON.stringify({ ok: false, error: 'Service not configured' }),
+                    { status: 503, headers: corsHeaders(origin) }
+                );
+            }
+            const presentedSecret = request.headers.get('X-Cron-Secret') || '';
+            if (presentedSecret !== cronSecret) {
+                return new Response(
+                    JSON.stringify({ ok: false, error: 'Unauthorized' }),
+                    { status: 401, headers: corsHeaders(origin) }
+                );
+            }
+
             // Cron: publish scheduled articles
             const res = await fetch(supabaseUrl + '/rest/v1/rpc/publish_scheduled_articles', {
                 method: 'POST',

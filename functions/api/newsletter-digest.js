@@ -1,12 +1,17 @@
 /**
  * /api/newsletter-digest — Weekly Newsletter Digest
  *
- * GET:  Cron endpoint — generates and queues weekly digest emails
- * POST: Generate a preview digest for a specific subscriber
+ * GET:  Cron endpoint — generates and queues weekly digest emails.
+ *       Gated by CRON_SECRET: the request must carry an X-Cron-Secret
+ *       header matching env.CRON_SECRET. Without the env var set the
+ *       handler fails closed (503) so a forgotten secret never becomes a
+ *       public "email all subscribers" endpoint.
+ * POST: Generate a preview digest for a specific subscriber (also gated).
  *
  * Environment variables required:
  *   SUPABASE_URL         — Supabase project URL
  *   SUPABASE_SERVICE_KEY — Supabase service role key
+ *   CRON_SECRET          — shared cron secret (see wrangler.toml [triggers])
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
@@ -56,6 +61,25 @@ export async function onRequest(context) {
         return new Response(
             JSON.stringify({ ok: false, error: 'Service not configured' }),
             { status: 503, headers: corsHeaders(origin) }
+        );
+    }
+
+    // Fail closed: this endpoint iterates all newsletter subscribers with
+    // the service role key. Refuse to run if CRON_SECRET is not configured
+    // or the presented header does not match.
+    const cronSecret = env?.CRON_SECRET;
+    if (!cronSecret) {
+        console.error('newsletter-digest: CRON_SECRET not configured');
+        return new Response(
+            JSON.stringify({ ok: false, error: 'Service not configured' }),
+            { status: 503, headers: corsHeaders(origin) }
+        );
+    }
+    const presentedSecret = request.headers.get('X-Cron-Secret') || '';
+    if (presentedSecret !== cronSecret) {
+        return new Response(
+            JSON.stringify({ ok: false, error: 'Unauthorized' }),
+            { status: 401, headers: corsHeaders(origin) }
         );
     }
 
