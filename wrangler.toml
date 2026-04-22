@@ -1,0 +1,112 @@
+# Cloudflare Pages bindings + scheduled triggers.
+#
+# Cloudflare Pages currently reads KV namespaces and Cron Triggers from
+# the dashboard, so this file is primarily **declarative / documentation**
+# and is the source of truth for what the Pages project is supposed to
+# have configured. PRs that touch bindings or crons must update this file
+# in the same commit; reviewers match it against the dashboard during
+# weekly on-call sync.
+#
+# The sibling `wrangler.toml.example` used to be the sole copy of this
+# config but was renamed in PR #58 to avoid Cloudflare accidentally
+# picking it up. Now that every entry below is safe to surface to
+# Cloudflare (no environment-specific IDs are inlined), the real
+# `wrangler.toml` is restored so tooling that expects the canonical
+# filename (e.g. `wrangler` CLI, various CI integrations) can find it.
+
+name = "groupsmix"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-11-01"
+
+# ─────────────────────────────────────────────────────────────────────
+# KV namespaces
+# ─────────────────────────────────────────────────────────────────────
+# IDs are environment-specific and are set in the Pages dashboard. The
+# binding names below are authoritative — code references these
+# literals via `env.STORE_KV` / `env.RATE_LIMIT_KV`.
+#
+# STORE_KV       — caches LemonSqueezy product catalog
+#                  (functions/api/lemonsqueezy.js)
+# RATE_LIMIT_KV  — persistent rate-limit counters
+#                  (functions/api/_shared/rate-limit.js)
+
+[[kv_namespaces]]
+binding = "STORE_KV"
+id = "set-in-dashboard"                 # placeholder — must be overridden in Pages env
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "set-in-dashboard"                 # placeholder — must be overridden in Pages env
+
+# ─────────────────────────────────────────────────────────────────────
+# Required environment variables
+# ─────────────────────────────────────────────────────────────────────
+# Set as **secrets** in Cloudflare Pages → Settings → Environment
+# variables. These names are also documented in README.md and
+# .env.example; keep all three in sync.
+#
+#   SUPABASE_URL                    Supabase project URL
+#   SUPABASE_ANON_KEY               Public anon key (also exposed as PUBLIC_SUPABASE_ANON_KEY at build time)
+#   SUPABASE_SERVICE_KEY            Server-only service role key
+#   LEMONSQUEEZY_API_KEY            LemonSqueezy REST key
+#   LEMONSQUEEZY_STORE_ID           LemonSqueezy store ID
+#   LEMONSQUEEZY_WEBHOOK_SECRET     REQUIRED — webhook fails closed without it
+#   CRON_SECRET                     REQUIRED — every cron endpoint refuses to run without this and a matching X-Cron-Secret header
+#   RESEND_API_KEY                  Contact form + newsletter delivery
+#   CONTACT_EMAIL_TO                Recipient for contact form submissions
+#   TURNSTILE_SECRET_KEY            Cloudflare Turnstile server verification
+#   GROQ_API_KEY                    AI features
+#   OPENROUTER_API_KEY              AI features
+#   SENTRY_DSN_EDGE                 Optional — edge Sentry DSN (see docs/observability.md)
+#   SENTRY_ENVIRONMENT              Optional — 'production' | 'preview' | 'development'
+#   SENTRY_RELEASE                  Optional — e.g. 'groupsmix@<git-sha>'
+#
+# Public (build-time) env, consumed by scripts/stamp-supabase-config.js
+# and scripts/stamp-site-config.js:
+#   PUBLIC_SUPABASE_URL
+#   PUBLIC_SUPABASE_ANON_KEY
+#   PUBLIC_SENTRY_DSN
+#   PUBLIC_SENTRY_RELEASE
+#   PUBLIC_SENTRY_TRACES_SAMPLE_RATE
+#   PUBLIC_ENVIRONMENT
+#   PUBLIC_PLAUSIBLE_DOMAIN
+#   PUBLIC_PLAUSIBLE_HOST
+#   PUBLIC_PLAUSIBLE_VARIANT
+
+# ─────────────────────────────────────────────────────────────────────
+# Cron Triggers
+# ─────────────────────────────────────────────────────────────────────
+# Every cron endpoint validates `X-Cron-Secret` against `CRON_SECRET`
+# before running. Cloudflare Cron Triggers send the header automatically
+# when configured via the dashboard's **Triggers → Cron** UI. The
+# schedules below are authoritative; update this file and the Pages
+# dashboard in the same PR.
+#
+# Endpoints:
+#   POST /api/compute-feed         feed scoring, embeddings, decay, cleanup
+#   GET  /api/article-schedule     publish scheduled articles
+#   GET  /api/newsletter-digest    weekly digest generation
+#   POST /api/purge-deleted        hard-delete soft-deleted users (GDPR)
+
+[triggers]
+crons = [
+    # Feed compute — every 30 min (trending + collaborative + embeddings)
+    "*/30 * * * *",
+    # Article publishing — every 5 min so scheduled posts go out near on time
+    "*/5 * * * *",
+    # Purge soft-deleted users — daily at 03:17 UTC
+    "17 3 * * *",
+    # Weekly digest — Mondays 09:00 UTC
+    "0 9 * * 1"
+]
+
+# NOTE: Cloudflare Pages Cron Triggers map each cron expression to a
+# specific URL via the dashboard. The mapping we maintain is:
+#   "*/30 * * * *"  → POST https://groupsmix.com/api/compute-feed
+#   "*/5 * * * *"   → GET  https://groupsmix.com/api/article-schedule
+#   "17 3 * * *"    → POST https://groupsmix.com/api/purge-deleted
+#   "0 9 * * 1"     → GET  https://groupsmix.com/api/newsletter-digest
+#
+# All four requests must include `X-Cron-Secret: $CRON_SECRET`. The
+# dashboard's cron request configuration supports adding headers; keep
+# the secret there (NOT in this file).

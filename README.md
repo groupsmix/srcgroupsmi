@@ -105,7 +105,18 @@ See `.env.example` for the full list and `wrangler.toml` for the expected KV + c
 
 - Drop `'unsafe-inline'` from CSP once inline `<script>` blocks and `style="..."` attributes are moved to external files / nonce-based CSP.
 - `functions/api/groq.js` `sanitizeInput()` is a length cap, not prompt-injection defense. A separate pass should validate model output shape for tool-driven prompts.
-- No centralized error tracking yet. `public/assets/js/head-scripts.js` has a placeholder Sentry / GA4 block that is inert until a DSN / measurement ID is provided.
+
+## Observability & SRE
+
+- [`docs/observability.md`](docs/observability.md) — Sentry (client + edge) and Cloudflare Logpush setup, including retention policy.
+- [`docs/alerts.md`](docs/alerts.md) — concrete Sentry alert rules, severities, channels.
+- [`docs/slos.md`](docs/slos.md) — SLOs, error budgets, uptime tracking.
+- [`docs/backups.md`](docs/backups.md) — what is backed up and where.
+- [`RUNBOOK.md`](RUNBOOK.md) — on-call playbooks.
+- [`DISASTER_RECOVERY.md`](DISASTER_RECOVERY.md) — full rebuild procedure.
+- [`wrangler.toml`](wrangler.toml) — authoritative Cloudflare bindings + cron triggers; mirror to the Pages dashboard in the same PR.
+
+Product analytics uses **Plausible** (cookieless, GDPR-safe). The loader at `public/assets/js/shared/plausible.js` is inert until `PUBLIC_PLAUSIBLE_DOMAIN` is set. Sentry uses the loaders at `public/assets/js/shared/sentry.js` (client) and `functions/api/_shared/sentry.js` (edge); both are inert until their DSN env vars are set.
 
 ## Contributing
 
