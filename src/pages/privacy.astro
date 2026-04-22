@@ -18,6 +18,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <nav class="legal-nav">
                 <a href="/terms">Terms</a>
                 <a href="/privacy" class="active">Privacy</a>
+                <a href="/data-retention">Data Retention</a>
                 <a href="/about">About</a>
                 <a href="/faq">FAQ</a>
                 <a href="/contact">Contact</a>
@@ -133,13 +134,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     </button>
                     <div class="accordion__panel">
                         <div class="accordion__content">
-                            <p>We retain your data for as long as your account is active or as needed to provide our services:</p>
+                            <p>We retain your data for as long as your account is active or as needed to provide our services. See our <a href="/data-retention">full data-retention schedule</a> for category-by-category retention windows.</p>
                             <ul>
-                                <li><strong>Account data:</strong> Retained until you request account deletion.</li>
-                                <li><strong>Group submissions:</strong> Retained as long as the group is listed. Removed groups are archived for 90 days before permanent deletion.</li>
-                                <li><strong>Reviews &amp; reports:</strong> Retained as long as the associated group is listed.</li>
-                                <li><strong>Analytics data:</strong> Anonymized and aggregated data is retained indefinitely. Identifiable usage data is purged after 12 months.</li>
-                                <li><strong>Contact messages:</strong> Retained for up to 24 months for support reference.</li>
+                                <li><strong>Account data:</strong> Retained until you request account deletion. Deleted accounts are PII-scrubbed immediately and permanently purged after a 30-day grace period.</li>
+                                <li><strong>Server &amp; authentication logs:</strong> 30 days.</li>
+                                <li><strong>Webhook payloads:</strong> 90 days, retained to support replay and fraud review.</li>
+                                <li><strong>Abandoned accounts:</strong> Soft-deleted after 24 months of inactivity, then hard-deleted 30 days later.</li>
+                                <li><strong>Contact-form submissions:</strong> 12 months.</li>
+                                <li><strong>DSAR audit records:</strong> 5 years, kept as evidence of how we handled each access/delete request.</li>
                             </ul>
                         </div>
                     </div>
@@ -170,7 +172,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                                 <li><strong>Portability:</strong> Request your data in a structured, commonly used format.</li>
                                 <li><strong>Opt out:</strong> Unsubscribe from non-essential communications at any time.</li>
                             </ul>
-                            <p>To exercise any of these rights, contact us through our <a href="/contact">Contact page</a> or the <a href="/support">Support Center</a>. We will respond to your request within 30 days.</p>
+                            <p>You can exercise most of these rights directly from the <a href="/settings">Privacy section of your settings</a> — including downloading your data (<code>/api/account/export</code>) and deleting your account. For anything else, contact us via the <a href="/contact">Contact page</a> or the <a href="/support">Support Center</a>. We respond within 30 days.</p>
                         </div>
                     </div>
                 </div>
