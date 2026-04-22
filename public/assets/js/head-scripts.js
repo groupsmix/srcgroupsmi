@@ -1,58 +1,14 @@
 // ═══════════════════════════════════════
 // GROUPSMIX — head-scripts.js
-// Analytics (GA4), Error Monitoring (Sentry),
 // Structured Data (JSON-LD), and Lazy Loading
+// Analytics and Sentry are loaded from dedicated modules in
+// `public/assets/js/shared/` and respect DNT + cookie-consent; do not
+// inline analytics snippets here.
 // Loaded on every page via <script> tag
 // ═══════════════════════════════════════
 
 (function () {
     'use strict';
-
-    // ─── Google Analytics 4 ────────────────────────────────────
-    // Replace G-XXXXXXXXXX with your actual GA4 Measurement ID
-    var GA4_ID = 'G-XXXXXXXXXX';
-
-    if (GA4_ID && GA4_ID !== 'G-XXXXXXXXXX') {
-        var gtagScript = document.createElement('script');
-        gtagScript.async = true;
-        gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA4_ID;
-        document.head.appendChild(gtagScript);
-
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { window.dataLayer.push(arguments); }
-        window.gtag = gtag;
-        gtag('js', new Date());
-        gtag('config', GA4_ID, {
-            send_page_view: true,
-            cookie_flags: 'SameSite=None;Secure'
-        });
-    }
-
-    // ─── Sentry Error Monitoring ───────────────────────────────
-    // Replace the DSN with your actual Sentry DSN
-    // Free tier: 5K errors/month
-    var SENTRY_DSN = '';
-
-    if (SENTRY_DSN) {
-        var sentryScript = document.createElement('script');
-        sentryScript.src = 'https://browser.sentry-cdn.com/7.119.0/bundle.tracing.min.js';
-        sentryScript.crossOrigin = 'anonymous';
-        sentryScript.onload = function () {
-            if (window.Sentry) {
-                window.Sentry.init({
-                    dsn: SENTRY_DSN,
-                    tracesSampleRate: 0.1,
-                    environment: window.location.hostname === 'groupsmix.com' ? 'production' : 'development',
-                    beforeSend: function (event) {
-                        // Don't send events from admin pages
-                        if (window.location.pathname.indexOf('gm-ctrl') !== -1) return null;
-                        return event;
-                    }
-                });
-            }
-        };
-        document.head.appendChild(sentryScript);
-    }
 
     // ─── Structured Data (JSON-LD) ─────────────────────────────
     // Injects Organization schema on all pages,

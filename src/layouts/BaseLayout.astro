@@ -60,6 +60,13 @@ const {
 <!DOCTYPE html>
 <html lang={lang}>
 <head>
+    <!-- Observability + analytics config, then loaders. Each loader is a
+         no-op when its config is absent, so /assets/js/site-config.js can
+         be stamped at build time with only the values that apply to the
+         current environment. -->
+    <script is:inline src="/assets/js/site-config.js"></script>
+    <script is:inline src="/assets/js/shared/sentry.js" defer></script>
+    <script is:inline src="/assets/js/shared/plausible.js" defer></script>
     <script is:inline src="/assets/js/head-scripts.js" defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
