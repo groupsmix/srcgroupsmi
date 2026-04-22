@@ -6,10 +6,15 @@ on:
   pull_request:
     branches: [main]
 
+# Third-party and shared workflows are pinned to full commit SHAs so that
+# retagging a branch or tag cannot silently ship a new workflow into CI.
+# To bump a pinned SHA: fetch the latest commit on the upstream ref and
+# update the SHA + the trailing `# v…` comment together.
+
 jobs:
   # ── Lint + Test (shared) ──────────────────────────────────────────
   ci:
-    uses: groupsmix/shared-workflows/.github/workflows/ci.yml@main
+    uses: groupsmix/shared-workflows/.github/workflows/ci.yml@11d9ced857bec31af2198c798acbb5bfcb7f83da # pinned to groupsmix/shared-workflows main @ 2026-04
     with:
       language: node
       node-version: "22"
@@ -17,7 +22,7 @@ jobs:
 
   # ── Type-check + Formatter (shared) ──────────────────────────────
   quality:
-    uses: groupsmix/shared-workflows/.github/workflows/code-quality.yml@main
+    uses: groupsmix/shared-workflows/.github/workflows/code-quality.yml@11d9ced857bec31af2198c798acbb5bfcb7f83da # pinned to groupsmix/shared-workflows main @ 2026-04
     with:
       language: node
       node-version: "22"
@@ -29,7 +34,7 @@ jobs:
   # ── Astro build (shared) ─────────────────────────────────────────
   build:
     needs: [ci, quality]
-    uses: groupsmix/shared-workflows/.github/workflows/build.yml@main
+    uses: groupsmix/shared-workflows/.github/workflows/build.yml@11d9ced857bec31af2198c798acbb5bfcb7f83da # pinned to groupsmix/shared-workflows main @ 2026-04
     with:
       language: node
       node-version: "22"
@@ -37,7 +42,7 @@ jobs:
 
   # ── Security audit (shared) ──────────────────────────────────────
   security:
-    uses: groupsmix/shared-workflows/.github/workflows/security.yml@main
+    uses: groupsmix/shared-workflows/.github/workflows/security.yml@11d9ced857bec31af2198c798acbb5bfcb7f83da # pinned to groupsmix/shared-workflows main @ 2026-04
     with:
       language: node
       node-version: "22"
@@ -48,7 +53,7 @@ jobs:
   # ── Auto-label PRs (shared) ─────────────────────────────────────
   label:
     if: github.event_name == 'pull_request'
-    uses: groupsmix/shared-workflows/.github/workflows/label.yml@main
+    uses: groupsmix/shared-workflows/.github/workflows/label.yml@11d9ced857bec31af2198c798acbb5bfcb7f83da # pinned to groupsmix/shared-workflows main @ 2026-04
     with:
       use-default-config: true
 
@@ -57,7 +62,7 @@ jobs:
     name: Reject console.log
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Check for console.log in functions/
         run: |

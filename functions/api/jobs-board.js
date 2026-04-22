@@ -15,6 +15,7 @@
  */
 
 import { secureRandomUpperAlnum } from './_shared/secure-random.js';
+import { requireAuthWithProfile } from './_shared/auth.js';
 
 const ALLOWED_ORIGINS = [
     'https://groupsmix.com',
@@ -800,6 +801,21 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({ error: 'Too many requests. Please try again later.' }),
             { status: 429, headers: corsHeaders(origin) });
     }
+
+    // All sub-actions below write to Supabase with the service-role key on
+    // behalf of a body-supplied `user_id`. Authenticate the caller and
+    // overwrite body.user_id with the verified internal user id so a
+    // malicious client cannot act on behalf of another account.
+    let authed;
+    try {
+        authed = await requireAuthWithProfile(request, env, 'id,role');
+    } catch (err) {
+        const msg = err && err.message ? err.message : 'Unauthorized';
+        const status = msg === 'Server not configured' ? 503 : 401;
+        return new Response(JSON.stringify({ ok: false, error: msg }),
+            { status: status, headers: corsHeaders(origin) });
+    }
+    body.user_id = authed.userId;
 
     try {
         let result;

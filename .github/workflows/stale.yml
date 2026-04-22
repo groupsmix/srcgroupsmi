@@ -4,9 +4,12 @@ on:
   schedule:
     - cron: "0 0 * * *"          # daily at midnight UTC
 
+# Shared workflow pinned to a full commit SHA — do not replace with @main or
+# a mutable tag. See .github/workflows/ci.yml for the bump procedure.
+
 jobs:
   stale:
-    uses: groupsmix/shared-workflows/.github/workflows/stale.yml@main
+    uses: groupsmix/shared-workflows/.github/workflows/stale.yml@11d9ced857bec31af2198c798acbb5bfcb7f83da # pinned to groupsmix/shared-workflows main @ 2026-04
     with:
       days-before-stale: 60
       days-before-close: 14

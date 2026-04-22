@@ -31,12 +31,12 @@ export async function onRequest(context) {
         return new Response(null, { status: 204, headers: corsHeaders(origin) });
     }
 
-    const supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';
+    const supabaseUrl = env?.SUPABASE_URL;
     const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
 
-    if (!supabaseKey) {
+    if (!supabaseUrl || !supabaseKey) {
         return new Response(JSON.stringify({ ok: false, error: 'Server not configured' }), {
-            status: 500, headers: corsHeaders(origin)
+            status: 503, headers: corsHeaders(origin)
         });
     }
 
