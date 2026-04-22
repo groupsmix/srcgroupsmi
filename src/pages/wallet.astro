@@ -10,13 +10,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   includeFuelComponents={true}
 >
 
-        <div class="fuel-wallet-page" style="padding:var(--space-8) var(--space-4)">
-            <h1 style="text-align:center;margin-bottom:var(--space-2)">My Wallet</h1>
-            <p style="text-align:center;color:var(--text-secondary);margin-bottom:var(--space-6);font-size:var(--text-sm)">Manage your GMX Coins, tips, and withdrawals</p>
+        <div class="fuel-wallet-page s-732ce9">
+            <h1 class="s-7bfe81">My Wallet</h1>
+            <p class="s-548e0c">Manage your GMX Coins, tips, and withdrawals</p>
             <div id="wallet-content">
-                <div class="skeleton" style="height:160px;border-radius:var(--radius-lg);margin-bottom:var(--space-4)"></div>
-                <div class="skeleton" style="height:80px;border-radius:var(--radius-lg);margin-bottom:var(--space-4)"></div>
-                <div class="skeleton" style="height:300px;border-radius:var(--radius-lg)"></div>
+                <div class="skeleton s-feabdf"></div>
+                <div class="skeleton s-748287"></div>
+                <div class="skeleton s-f03f94"></div>
             </div>
         </div>
     
@@ -303,3 +303,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </script>
 </Fragment>
 </BaseLayout>
+
+<style>
+/* inline-styles: migrated */
+.s-548e0c { text-align:center;color:var(--text-secondary);margin-bottom:var(--space-6);font-size:var(--text-sm); }
+.s-732ce9 { padding:var(--space-8) var(--space-4); }
+.s-748287 { height:80px;border-radius:var(--radius-lg);margin-bottom:var(--space-4); }
+.s-7bfe81 { text-align:center;margin-bottom:var(--space-2); }
+.s-f03f94 { height:300px;border-radius:var(--radius-lg); }
+.s-feabdf { height:160px;border-radius:var(--radius-lg);margin-bottom:var(--space-4); }
+</style>

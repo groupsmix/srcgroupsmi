@@ -43,37 +43,37 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <p class="gdash__subtitle">Track how your group performs on GroupsMix and get actionable growth tips.</p>
 
     <div class="gdash__group-select">
-        <select class="form-input" id="gdash-group-select" style="flex:1">
+        <select class="form-input s-7623f0" id="gdash-group-select">
             <option value="">Select a group...</option>
         </select>
         <button class="btn btn-primary" id="gdash-load-btn">View Dashboard</button>
     </div>
 
-    <div id="gdash-content" style="display:none">
+    <div id="gdash-content" class="s-c8be1c">
         <div class="gdash-stats" id="gdash-stats"></div>
 
         <div class="gdash-grid">
             <div class="gdash-card">
                 <div class="gdash-card__title">&#128161; Growth Tips</div>
                 <div id="gdash-tips">
-                    <div class="skeleton" style="height:60px;border-radius:var(--radius-lg);margin-bottom:var(--space-3)"></div>
-                    <div class="skeleton" style="height:60px;border-radius:var(--radius-lg);margin-bottom:var(--space-3)"></div>
+                    <div class="skeleton s-fb3854"></div>
+                    <div class="skeleton s-fb3854"></div>
                 </div>
             </div>
 
             <div>
-                <div class="gdash-card" style="margin-bottom:var(--space-6)">
+                <div class="gdash-card s-5c5470">
                     <div class="gdash-card__title">&#128228; Share Your Group</div>
                     <div class="share-buttons" id="gdash-share-buttons"></div>
                 </div>
 
                 <div class="gdash-card">
                     <div class="gdash-card__title">&#128295; Quick Actions</div>
-                    <div style="display:flex;flex-direction:column;gap:var(--space-3)">
-                        <a href="#" id="gdash-verify-link" class="share-btn" style="justify-content:center">&#9989; Verify Ownership</a>
-                        <a href="#" id="gdash-embed-link" class="share-btn" style="justify-content:center">&#128296; Get Embed Widget</a>
-                        <a href="#" id="gdash-link-link" class="share-btn" style="justify-content:center">&#128279; Create Short Link</a>
-                        <a href="#" id="gdash-bot-link" class="share-btn" style="justify-content:center">&#129302; Connect Bot</a>
+                    <div class="s-b0c7d8">
+                        <a href="#" id="gdash-verify-link" class="share-btn s-842252">&#9989; Verify Ownership</a>
+                        <a href="#" id="gdash-embed-link" class="share-btn s-842252">&#128296; Get Embed Widget</a>
+                        <a href="#" id="gdash-link-link" class="share-btn s-842252">&#128279; Create Short Link</a>
+                        <a href="#" id="gdash-bot-link" class="share-btn s-842252">&#129302; Connect Bot</a>
                     </div>
                 </div>
             </div>
@@ -81,17 +81,17 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
         <div class="gdash-card" id="gdash-embed-section">
             <div class="gdash-card__title">&#128295; Embed Widget Code</div>
-            <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-3)">Add this code to your website to show a "Join on GroupsMix" badge:</p>
+            <p class="s-5bb4e6">Add this code to your website to show a "Join on GroupsMix" badge:</p>
             <div class="embed-code-box" id="gdash-embed-code"></div>
             <button class="btn btn-secondary btn-sm" onclick="copyEmbedCode()">Copy Code</button>
         </div>
     </div>
 
     <div id="gdash-empty">
-        <div style="text-align:center;padding:var(--space-16) 0">
-            <div style="font-size:var(--text-5xl);margin-bottom:var(--space-4)">&#128200;</div>
-            <h3 style="margin-bottom:var(--space-3)">Your Group Performance Dashboard</h3>
-            <p style="color:var(--text-secondary);max-width:500px;margin:0 auto var(--space-6)">Sign in and select one of your groups to see performance stats, growth tips, and tools to promote your group.</p>
+        <div class="s-901dc8">
+            <div class="s-73d785">&#128200;</div>
+            <h3 class="s-317a2d">Your Group Performance Dashboard</h3>
+            <p class="s-b1f998">Sign in and select one of your groups to see performance stats, growth tips, and tools to promote your group.</p>
             <button class="btn btn-primary" onclick="Auth.requireAuth()">Sign In to Get Started</button>
         </div>
     </div>
@@ -238,3 +238,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 </script>
 </Fragment>
 </BaseLayout>
+
+<style>
+/* inline-styles: migrated */
+.s-317a2d { margin-bottom:var(--space-3); }
+.s-5bb4e6 { font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-3); }
+.s-5c5470 { margin-bottom:var(--space-6); }
+.s-73d785 { font-size:var(--text-5xl);margin-bottom:var(--space-4); }
+.s-7623f0 { flex:1; }
+.s-842252 { justify-content:center; }
+.s-901dc8 { text-align:center;padding:var(--space-16) 0; }
+.s-b0c7d8 { display:flex;flex-direction:column;gap:var(--space-3); }
+.s-b1f998 { color:var(--text-secondary);max-width:500px;margin:0 auto var(--space-6); }
+.s-c8be1c { display:none; }
+.s-fb3854 { height:60px;border-radius:var(--radius-lg);margin-bottom:var(--space-3); }
+</style>

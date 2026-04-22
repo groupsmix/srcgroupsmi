@@ -34,7 +34,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                         1. Overview
                         <svg class="accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                     </button>
-                    <div class="accordion__panel" style="max-height:600px">
+                    <div class="accordion__panel s-507687">
                         <div class="accordion__content">
                             <p>This schedule supplements our <a href="/privacy">Privacy Policy</a>.
                             It describes how long GroupsMix keeps each category of data and when it is erased or anonymized.
@@ -58,54 +58,54 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     </button>
                     <div class="accordion__panel">
                         <div class="accordion__content">
-                            <table style="width:100%;border-collapse:collapse">
+                            <table class="s-473e6b">
                                 <thead>
                                     <tr>
-                                        <th style="text-align:left;padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-primary)">Category</th>
-                                        <th style="text-align:left;padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-primary)">Retention</th>
-                                        <th style="text-align:left;padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-primary)">Trigger for deletion</th>
+                                        <th class="s-df9954">Category</th>
+                                        <th class="s-df9954">Retention</th>
+                                        <th class="s-df9954">Trigger for deletion</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Account profile &amp; contributed content</td>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Until account deletion + 30 days</td>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">User-initiated delete or abandonment policy (below)</td>
+                                        <td class="s-a916f4">Account profile &amp; contributed content</td>
+                                        <td class="s-a916f4">Until account deletion + 30 days</td>
+                                        <td class="s-a916f4">User-initiated delete or abandonment policy (below)</td>
                                     </tr>
                                     <tr>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Abandoned accounts (no sign-in &gt; 24 months)</td>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">24 months, then soft-deleted</td>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Inactivity sweep → 30-day grace → hard delete</td>
+                                        <td class="s-a916f4">Abandoned accounts (no sign-in &gt; 24 months)</td>
+                                        <td class="s-a916f4">24 months, then soft-deleted</td>
+                                        <td class="s-a916f4">Inactivity sweep → 30-day grace → hard delete</td>
                                     </tr>
                                     <tr>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Authentication / server logs</td>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">30 days</td>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Rolling TTL on log storage</td>
+                                        <td class="s-a916f4">Authentication / server logs</td>
+                                        <td class="s-a916f4">30 days</td>
+                                        <td class="s-a916f4">Rolling TTL on log storage</td>
                                     </tr>
                                     <tr>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Webhook payloads &amp; delivery receipts</td>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">90 days</td>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Required to support replay &amp; fraud review</td>
+                                        <td class="s-a916f4">Webhook payloads &amp; delivery receipts</td>
+                                        <td class="s-a916f4">90 days</td>
+                                        <td class="s-a916f4">Required to support replay &amp; fraud review</td>
                                     </tr>
                                     <tr>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Rate-limit counters (KV)</td>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">≤ 1 hour</td>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Auto-expiry via KV TTL</td>
+                                        <td class="s-a916f4">Rate-limit counters (KV)</td>
+                                        <td class="s-a916f4">≤ 1 hour</td>
+                                        <td class="s-a916f4">Auto-expiry via KV TTL</td>
                                     </tr>
                                     <tr>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Contact-form submissions</td>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">12 months</td>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Scheduled purge job</td>
+                                        <td class="s-a916f4">Contact-form submissions</td>
+                                        <td class="s-a916f4">12 months</td>
+                                        <td class="s-a916f4">Scheduled purge job</td>
                                     </tr>
                                     <tr>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Financial records (payments, payouts)</td>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">7 years</td>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Legal obligation — retained in anonymized form after account deletion</td>
+                                        <td class="s-a916f4">Financial records (payments, payouts)</td>
+                                        <td class="s-a916f4">7 years</td>
+                                        <td class="s-a916f4">Legal obligation — retained in anonymized form after account deletion</td>
                                     </tr>
                                     <tr>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">DSAR audit log</td>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">5 years</td>
-                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Regulatory evidence of data-subject request handling</td>
+                                        <td class="s-a916f4">DSAR audit log</td>
+                                        <td class="s-a916f4">5 years</td>
+                                        <td class="s-a916f4">Regulatory evidence of data-subject request handling</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -177,3 +177,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </script>
 </Fragment>
 </BaseLayout>
+
+<style>
+/* inline-styles: migrated */
+.s-473e6b { width:100%;border-collapse:collapse; }
+.s-507687 { max-height:600px; }
+.s-a916f4 { padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary); }
+.s-df9954 { text-align:left;padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-primary); }
+</style>
