@@ -5,8 +5,11 @@
  * GET /api/group-dashboard?group_id=X&action=tips — Get growth tips
  *
  * Shows group owners how their group is performing on GroupsMix.
- * Requires the user to be the group's submitter.
+ * Requires a valid Supabase JWT; ownership is then verified against the
+ * group's submitter_uid before any stats are returned.
  */
+
+import { requireAuth } from './_shared/auth.js';
 
 const ALLOWED_ORIGINS = ['https://groupsmix.com', 'https://www.groupsmix.com'];
 
@@ -34,14 +37,21 @@ export async function onRequest(context) {
         });
     }
 
-    const supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';
+    const supabaseUrl = env?.SUPABASE_URL;
     const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
 
-    if (!supabaseKey) {
+    if (!supabaseUrl || !supabaseKey) {
         return new Response(JSON.stringify({ ok: false, error: 'Server not configured' }), {
-            status: 500, headers: corsHeaders(origin)
+            status: 503, headers: corsHeaders(origin)
         });
     }
+
+    // This endpoint reads with the service-role key (which bypasses RLS), so
+    // the caller must be authenticated. Ownership against the group's
+    // submitter_uid is then verified below before any data is returned.
+    const authResult = await requireAuth(request, env, corsHeaders(origin));
+    if (authResult instanceof Response) return authResult;
+    const authUserId = authResult.user.id;
 
     const url = new URL(request.url);
     const groupId = url.searchParams.get('group_id');
@@ -67,6 +77,23 @@ export async function onRequest(context) {
         }
 
         const group = groups[0];
+
+        // Ownership gate: only the group's submitter (or an admin) may view
+        // the dashboard. `submitter_uid` stores the submitting auth.users id.
+        const submitterUid = group.submitter_uid || group.submitter_id || null;
+        if (submitterUid && submitterUid !== authUserId) {
+            const profileRes = await fetch(
+                supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authUserId) + '&select=role&limit=1',
+                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+            );
+            const profiles = await profileRes.json();
+            const isAdmin = Array.isArray(profiles) && profiles[0] && profiles[0].role === 'admin';
+            if (!isAdmin) {
+                return new Response(JSON.stringify({ ok: false, error: 'Forbidden' }), {
+                    status: 403, headers: corsHeaders(origin)
+                });
+            }
+        }
 
         if (action === 'tips') {
             // Generate growth tips based on group data

@@ -22,10 +22,10 @@ export async function onRequest(context) {
         return new Response(null, { status: 204, headers: corsHeaders() });
     }
 
-    const supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';  // fallback for local dev
-    const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';  // prefer service key
+    const supabaseUrl = env?.SUPABASE_URL;
+    const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
 
-    if (!supabaseKey) {
+    if (!supabaseUrl || !supabaseKey) {
         return new Response(
             JSON.stringify({ ok: false, error: 'Service unavailable' }),
             { status: 503, headers: corsHeaders() }
