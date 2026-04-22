@@ -1,0 +1,179 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Data Retention Schedule — GroupsMix"
+  description="How long GroupsMix retains user data, logs, webhook payloads, and abandoned accounts."
+  canonical="https://groupsmix.com/data-retention"
+  cssFiles={["/assets/css/legal.css"]}
+>
+
+        <div class="legal-container">
+            <section class="legal-hero">
+                <span class="legal-hero__icon">&#128197;</span>
+                <h1>Data Retention Schedule</h1>
+                <p class="legal-hero__subtitle">How long we keep each category of data, and when it is deleted.</p>
+            </section>
+
+            <nav class="legal-nav">
+                <a href="/terms">Terms</a>
+                <a href="/privacy">Privacy</a>
+                <a href="/data-retention" class="active">Data Retention</a>
+                <a href="/about">About</a>
+                <a href="/faq">FAQ</a>
+                <a href="/contact">Contact</a>
+                <a href="/support">Support Center</a>
+            </nav>
+
+            <span class="legal-meta">&#128197; Last updated: April 2026</span>
+
+            <div class="accordion" id="accordion">
+
+                <div class="accordion__item open">
+                    <button class="accordion__trigger" aria-expanded="true">
+                        1. Overview
+                        <svg class="accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="accordion__panel" style="max-height:600px">
+                        <div class="accordion__content">
+                            <p>This schedule supplements our <a href="/privacy">Privacy Policy</a>.
+                            It describes how long GroupsMix keeps each category of data and when it is erased or anonymized.
+                            Every access, export, and deletion request is recorded in our internal DSAR audit log
+                            so we can evidence compliance on demand.</p>
+                            <p>You can exercise your data-subject rights at any time from the
+                            <a href="/settings">Privacy section of your settings</a>:</p>
+                            <ul>
+                                <li><strong>Download my data</strong> — returns a JSON bundle of everything we hold for your account.</li>
+                                <li><strong>Delete my account</strong> — scrubs personal data immediately and queues your account for permanent erasure after a 30-day grace period.</li>
+                                <li><strong>Privacy preferences</strong> — opt out of marketing, analytics, or personalization at any time.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion__item">
+                    <button class="accordion__trigger" aria-expanded="false">
+                        2. Retention Schedule
+                        <svg class="accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="accordion__panel">
+                        <div class="accordion__content">
+                            <table style="width:100%;border-collapse:collapse">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align:left;padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-primary)">Category</th>
+                                        <th style="text-align:left;padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-primary)">Retention</th>
+                                        <th style="text-align:left;padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-primary)">Trigger for deletion</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Account profile &amp; contributed content</td>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Until account deletion + 30 days</td>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">User-initiated delete or abandonment policy (below)</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Abandoned accounts (no sign-in &gt; 24 months)</td>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">24 months, then soft-deleted</td>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Inactivity sweep → 30-day grace → hard delete</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Authentication / server logs</td>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">30 days</td>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Rolling TTL on log storage</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Webhook payloads &amp; delivery receipts</td>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">90 days</td>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Required to support replay &amp; fraud review</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Rate-limit counters (KV)</td>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">≤ 1 hour</td>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Auto-expiry via KV TTL</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Contact-form submissions</td>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">12 months</td>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Scheduled purge job</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Financial records (payments, payouts)</td>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">7 years</td>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Legal obligation — retained in anonymized form after account deletion</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">DSAR audit log</td>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">5 years</td>
+                                        <td style="padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-secondary)">Regulatory evidence of data-subject request handling</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion__item">
+                    <button class="accordion__trigger" aria-expanded="false">
+                        3. Account Deletion Flow
+                        <svg class="accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="accordion__panel">
+                        <div class="accordion__content">
+                            <p>When you request deletion from the settings page we:</p>
+                            <ol>
+                                <li>Re-authenticate you with your password and a CAPTCHA challenge.</li>
+                                <li>Immediately scrub personally identifiable information from your profile (email, display name, bio, phone number).</li>
+                                <li>Flag the account for hard deletion in 30 days.</li>
+                                <li>Invalidate active sessions so the account can no longer be accessed.</li>
+                            </ol>
+                            <p>During the 30-day grace period you can contact support to cancel the deletion. After the grace period our scheduled purge job removes the account permanently along with all content that cascades from it
+                            (comments, messages, tips, marketplace listings, job applications, reading history, and feed interactions).</p>
+                            <p>Financial records required by law (invoices, tax receipts, payout history) are retained in anonymized form for 7 years.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion__item">
+                    <button class="accordion__trigger" aria-expanded="false">
+                        4. Abandoned Accounts
+                        <svg class="accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="accordion__panel">
+                        <div class="accordion__content">
+                            <p>Accounts that have not signed in for 24 consecutive months are flagged for soft deletion by the inactivity sweep.
+                            We email the last known address and wait a further 30 days before running the same hard-delete pipeline as user-initiated deletions.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion__item">
+                    <button class="accordion__trigger" aria-expanded="false">
+                        5. Changes to This Schedule
+                        <svg class="accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="accordion__panel">
+                        <div class="accordion__content">
+                            <p>If we shorten any retention window we apply the change retroactively. If we extend a window we notify active users at least 30 days in advance via the email address on file and publish an updated version here.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+<Fragment slot="scripts">
+<script is:inline>
+    document.querySelectorAll('.accordion__trigger').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var item = btn.closest('.accordion__item');
+            if (!item) return;
+            var panel = item.querySelector('.accordion__panel');
+            var isOpen = item.classList.toggle('open');
+            btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            if (panel) panel.style.maxHeight = isOpen ? panel.scrollHeight + 'px' : '';
+        });
+    });
+</script>
+</Fragment>
+</BaseLayout>
