@@ -118,19 +118,19 @@ const _DB = {
         async incrementViews(id) {
             try {
                 const key = 'gm_view_' + id;
-                const last = localStorage.getItem(key);
+                const last = SafeStorage.get(key);
                 if (last && Date.now() - parseInt(last, 10) < 3600000) return;
                 await window.supabaseClient.rpc('increment_views', { p_group_id: id });
-                localStorage.setItem(key, Date.now().toString());
+                SafeStorage.set(key, Date.now().toString());
             } catch (err) { console.error('DB.groups.incrementViews:', err.message); }
         },
         async incrementClicks(id) {
             try {
                 const key = 'gm_click_' + id;
-                const last = localStorage.getItem(key);
+                const last = SafeStorage.get(key);
                 if (last && Date.now() - parseInt(last, 10) < 1800000) return;
                 await window.supabaseClient.rpc('increment_clicks', { p_group_id: id });
-                localStorage.setItem(key, Date.now().toString());
+                SafeStorage.set(key, Date.now().toString());
             } catch (err) { console.error('DB.groups.incrementClicks:', err.message); }
         },
         async incrementReports(id) {
@@ -405,11 +405,9 @@ const _DB = {
                 return result;
             } catch (err) {
                 console.error('DB.payments.submit:', err.message);
-                try {
-                    const failed = JSON.parse(localStorage.getItem('gm_failed_payments') || '[]');
-                    failed.push({ ...data, timestamp: Date.now() });
-                    localStorage.setItem('gm_failed_payments', JSON.stringify(failed));
-                } catch (err) { console.error('DB.payments.submit failed_payments save:', err.message); }
+                const failed = SafeStorage.getJSON('gm_failed_payments', []);
+                failed.push({ ...data, timestamp: Date.now() });
+                SafeStorage.setJSON('gm_failed_payments', failed);
                 UI.toast('Payment recorded locally. Please contact support.', 'warning');
                 return null;
             }
@@ -559,10 +557,10 @@ const _DB = {
                 if (!userId) return;
                 const today = new Date().toISOString().split('T')[0];
                 const key = 'gm_last_daily_' + userId;
-                if (localStorage.getItem(key) === today) return;
+                if (SafeStorage.get(key) === today) return;
                 await _DB.user.addGXP(userId, 3);
                 await window.supabaseClient.from('users').update({ last_login: new Date().toISOString() }).eq('id', userId);
-                localStorage.setItem(key, today);
+                SafeStorage.set(key, today);
             } catch (err) { console.error('DB.user.dailyLoginCheck:', err.message); }
         }
     },
