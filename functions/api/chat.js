@@ -19,6 +19,9 @@ import { corsHeaders, handlePreflight } from './_shared/cors.js';
 import { requireAuth } from './_shared/auth.js';
 import { withUserInputDirective } from './_shared/prompt-safety.js';
 import { moderateOutput, moderationBlockedEvent } from './_shared/moderation.js';
+import { STREAM_IDLE_TIMEOUT_MS, capMaxTokens } from './_shared/ai-limits.js';
+import { shouldAttempt, recordSuccess, recordFailure } from './_shared/circuit-breaker.js';
+import { logAiAudit } from './_shared/ai-audit.js';
 import { checkAndConsumeQuota, quotaExceededResponse } from './_shared/ai-quota.js';
 
 /* ── OpenRouter free models (fallback chain) ─────────────────── */
@@ -164,9 +167,20 @@ export async function onRequest(context) {
     const hasBothKeys = groqKey && openrouterKey;
 
     let aiRes = null;
+    let providerUsed = '';
+    let modelUsed = '';
+
+    // E-7: chat completions are capped at 300 tokens historically; route
+    // them through capMaxTokens as a belt-and-suspenders guard.
+    const CHAT_MAX_TOKENS = capMaxTokens(300, 300);
 
     // Helper: try Groq
     async function tryGroq() {
+        const allowed = await shouldAttempt(env, 'groq');
+        if (!allowed) {
+            console.warn('Groq breaker open for chat, skipping');
+            return null;
+        }
         try {
             const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
@@ -177,24 +191,34 @@ export async function onRequest(context) {
                 body: JSON.stringify({
                     model: 'llama-3.3-70b-versatile',
                     messages: messages,
-                    max_tokens: 300,
+                    max_tokens: CHAT_MAX_TOKENS,
                     temperature: 0.6,
                     stream: true
                 })
             });
             if (!res.ok) {
                 console.error('Groq error:', res.status);
+                await recordFailure(env, 'groq');
                 return null;
             }
+            await recordSuccess(env, 'groq');
+            modelUsed = 'llama-3.3-70b-versatile';
             return res;
         } catch (err) {
             console.error('Groq fetch error:', err);
+            await recordFailure(env, 'groq');
             return null;
         }
     }
 
     // Helper: try OpenRouter (model fallback chain)
     async function tryOpenRouter() {
+        const allowed = await shouldAttempt(env, 'openrouter');
+        if (!allowed) {
+            console.warn('OpenRouter breaker open for chat, skipping');
+            return null;
+        }
+        let anyFailure = false;
         for (const model of OPENROUTER_MODELS) {
             try {
                 const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -208,20 +232,25 @@ export async function onRequest(context) {
                     body: JSON.stringify({
                         model: model,
                         messages: messages,
-                        max_tokens: 300,
+                        max_tokens: CHAT_MAX_TOKENS,
                         temperature: 0.6,
                         stream: true
                     })
                 });
                 if (res.ok) {
                     console.info('OpenRouter success with model:', model);
+                    await recordSuccess(env, 'openrouter');
+                    modelUsed = model;
                     return res;
                 }
+                anyFailure = true;
                 console.error('OpenRouter error (' + model + '):', res.status);
             } catch (err) {
+                anyFailure = true;
                 console.error('OpenRouter fetch error (' + model + '):', err);
             }
         }
+        if (anyFailure) await recordFailure(env, 'openrouter');
         return null;
     }
 
@@ -229,21 +258,27 @@ export async function onRequest(context) {
     if (hasBothKeys) {
         if (useGroqFirst) {
             aiRes = await tryGroq();
+            if (aiRes) providerUsed = 'groq';
             if (!aiRes) {
                 console.warn('Groq unavailable for chat, falling back to OpenRouter');
                 aiRes = await tryOpenRouter();
+                if (aiRes) providerUsed = 'openrouter';
             }
         } else {
             aiRes = await tryOpenRouter();
+            if (aiRes) providerUsed = 'openrouter';
             if (!aiRes) {
                 console.warn('OpenRouter unavailable for chat, falling back to Groq');
                 aiRes = await tryGroq();
+                if (aiRes) providerUsed = 'groq';
             }
         }
     } else if (groqKey) {
         aiRes = await tryGroq();
+        if (aiRes) providerUsed = 'groq';
     } else {
         aiRes = await tryOpenRouter();
+        if (aiRes) providerUsed = 'openrouter';
     }
 
     // ── All APIs failed ────────────────────────────────────────
@@ -269,10 +304,25 @@ export async function onRequest(context) {
             const decoder = new TextDecoder();
             let buffer = '';
             let accumulated = '';
+            let idleTimedOut = false;
+            let blocked = false;
+            let blockedCategory = '';
 
             try {
                 while (true) {
-                    const { done, value } = await reader.read();
+                    // E-7: stream-idle timeout — abort the upstream when
+                    // no bytes have arrived for STREAM_IDLE_TIMEOUT_MS.
+                    const idleTimer = new Promise((resolve) => {
+                        setTimeout(() => resolve({ idle: true }), STREAM_IDLE_TIMEOUT_MS);
+                    });
+                    const chunk = await Promise.race([reader.read(), idleTimer]);
+                    if (chunk && chunk.idle) {
+                        idleTimedOut = true;
+                        try { await reader.cancel('idle-timeout'); } catch (_e) { /* noop */ }
+                        await writer.write(encoder.encode('data: ' + JSON.stringify({ error: 'stream_idle_timeout' }) + '\n\n'));
+                        break;
+                    }
+                    const { done, value } = chunk;
                     if (done) break;
 
                     buffer += decoder.decode(value, { stream: true });
@@ -302,12 +352,39 @@ export async function onRequest(context) {
                 // stream in real time. If the final text is flagged, emit
                 // a trailing SSE event so clients can surface a warning /
                 // scrub the rendered output.
-                const verdict = await moderateOutput(env, accumulated, { userText: lastUserText });
-                if (verdict.flagged) {
-                    console.warn('chat.js: response blocked by moderation', verdict.category);
-                    await writer.write(encoder.encode('data: ' + moderationBlockedEvent(verdict) + '\n\n'));
+                if (!idleTimedOut) {
+                    const verdict = await moderateOutput(env, accumulated, { userText: lastUserText });
+                    if (verdict.flagged) {
+                        console.warn('chat.js: response blocked by moderation', verdict.category);
+                        blocked = true;
+                        blockedCategory = verdict.category || 'unsafe';
+                        await writer.write(encoder.encode('data: ' + moderationBlockedEvent(verdict) + '\n\n'));
+                    }
                 }
                 await writer.write(encoder.encode('data: [DONE]\n\n'));
+
+                // E-5: best-effort hashed audit log of prompt + response.
+                try {
+                    const auditPromise = logAiAudit(env, {
+                        authId: authResult && authResult.user ? authResult.user.id : '',
+                        userId: '',
+                        endpoint: 'api/chat',
+                        provider: providerUsed,
+                        model: modelUsed,
+                        prompt: lastUserText,
+                        response: accumulated,
+                        ip: request.headers.get('CF-Connecting-IP')
+                            || request.headers.get('X-Forwarded-For') || '',
+                        status: idleTimedOut ? 0 : 200,
+                        blocked,
+                        blockedCategory
+                    });
+                    if (context.waitUntil) {
+                        context.waitUntil(auditPromise);
+                    } else {
+                        await auditPromise;
+                    }
+                } catch (_e) { /* best-effort */ }
             } catch (e) {
                 console.error('Stream processing error:', e);
             } finally {

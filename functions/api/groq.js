@@ -17,6 +17,9 @@ import { corsHeaders, handlePreflight } from './_shared/cors.js';
 import { requireAuth } from './_shared/auth.js';
 import { wrapUserInput, withUserInputDirective } from './_shared/prompt-safety.js';
 import { moderateOutput, moderationBlockedEvent } from './_shared/moderation.js';
+import { STREAM_IDLE_TIMEOUT_MS, capMaxTokens } from './_shared/ai-limits.js';
+import { shouldAttempt, recordSuccess, recordFailure } from './_shared/circuit-breaker.js';
+import { logAiAudit } from './_shared/ai-audit.js';
 import { checkAndConsumeQuota, quotaExceededResponse } from './_shared/ai-quota.js';
 
 /* ── Supported languages ─────────────────────────────────────── */
@@ -244,7 +247,12 @@ function sanitizeInput(str) {
 }
 
 /* ── Call Groq API ───────────────────────────────────────────── */
-async function callGroq(apiKey, messages, maxTokens, temperature) {
+async function callGroq(env, apiKey, messages, maxTokens, temperature) {
+    const allowed = await shouldAttempt(env, 'groq');
+    if (!allowed) {
+        console.warn('Groq breaker open, skipping primary call');
+        return { res: null, model: 'llama-3.3-70b-versatile', skipped: true };
+    }
     try {
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -255,25 +263,34 @@ async function callGroq(apiKey, messages, maxTokens, temperature) {
             body: JSON.stringify({
                 model: 'llama-3.3-70b-versatile',
                 messages: messages,
-                max_tokens: maxTokens,
+                max_tokens: capMaxTokens(maxTokens),
                 temperature: temperature,
                 stream: true
             })
         });
         if (!res.ok) {
             console.error('Groq API error:', res.status);
-            return null;
+            await recordFailure(env, 'groq');
+            return { res: null, model: 'llama-3.3-70b-versatile', skipped: false };
         }
-        return res;
+        await recordSuccess(env, 'groq');
+        return { res, model: 'llama-3.3-70b-versatile', skipped: false };
     } catch (err) {
         console.error('Groq fetch error:', err);
-        return null;
+        await recordFailure(env, 'groq');
+        return { res: null, model: 'llama-3.3-70b-versatile', skipped: false };
     }
 }
 
 /* ── Call OpenRouter API (tries multiple models in chain) ───── */
-async function callOpenRouter(apiKey, messages, maxTokens, temperature, category) {
+async function callOpenRouter(env, apiKey, messages, maxTokens, temperature, category) {
+    const allowed = await shouldAttempt(env, 'openrouter');
+    if (!allowed) {
+        console.warn('OpenRouter breaker open, skipping');
+        return { res: null, model: '', skipped: true };
+    }
     const models = OPENROUTER_MODELS[category] || OPENROUTER_MODELS.creative;
+    let anyFailure = false;
     for (const model of models) {
         try {
             const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -287,21 +304,25 @@ async function callOpenRouter(apiKey, messages, maxTokens, temperature, category
                 body: JSON.stringify({
                     model: model,
                     messages: messages,
-                    max_tokens: maxTokens,
+                    max_tokens: capMaxTokens(maxTokens),
                     temperature: temperature,
                     stream: true
                 })
             });
             if (res.ok) {
                 console.info('OpenRouter success with model:', model);
-                return res;
+                await recordSuccess(env, 'openrouter');
+                return { res, model, skipped: false };
             }
+            anyFailure = true;
             console.error('OpenRouter error (' + model + '):', res.status);
         } catch (err) {
+            anyFailure = true;
             console.error('OpenRouter fetch error (' + model + '):', err);
         }
     }
-    return null;
+    if (anyFailure) await recordFailure(env, 'openrouter');
+    return { res: null, model: '', skipped: false };
 }
 
 /* ── Stream SSE response to client ───────────────────────────── */
@@ -315,10 +336,24 @@ function streamToClient(aiRes, hdrs, moderationCtx) {
         const decoder = new TextDecoder();
         let buffer = '';
         let accumulated = '';
+        let idleTimedOut = false;
 
         try {
             while (true) {
-                const { done, value } = await reader.read();
+                // E-7: stream-idle timeout. Abort if the upstream goes
+                // quiet for longer than STREAM_IDLE_TIMEOUT_MS so we do
+                // not hold a client connection open forever.
+                const idleTimer = new Promise((resolve) => {
+                    setTimeout(() => resolve({ idle: true }), STREAM_IDLE_TIMEOUT_MS);
+                });
+                const chunk = await Promise.race([reader.read(), idleTimer]);
+                if (chunk && chunk.idle) {
+                    idleTimedOut = true;
+                    try { await reader.cancel('idle-timeout'); } catch (_e) { /* noop */ }
+                    await writer.write(encoder.encode('data: ' + JSON.stringify({ error: 'stream_idle_timeout' }) + '\n\n'));
+                    break;
+                }
+                const { done, value } = chunk;
                 if (done) break;
 
                 buffer += decoder.decode(value, { stream: true });
@@ -344,7 +379,9 @@ function streamToClient(aiRes, hdrs, moderationCtx) {
             }
 
             // E-3: Output moderation after full stream is received.
-            if (moderationCtx) {
+            let blocked = false;
+            let blockedCategory = '';
+            if (moderationCtx && !idleTimedOut) {
                 const verdict = await moderateOutput(
                     moderationCtx.env,
                     accumulated,
@@ -352,10 +389,39 @@ function streamToClient(aiRes, hdrs, moderationCtx) {
                 );
                 if (verdict.flagged) {
                     console.warn('groq.js: response blocked by moderation', verdict.category);
+                    blocked = true;
+                    blockedCategory = verdict.category || 'unsafe';
                     await writer.write(encoder.encode('data: ' + moderationBlockedEvent(verdict) + '\n\n'));
                 }
             }
             await writer.write(encoder.encode('data: [DONE]\n\n'));
+
+            // E-5: append a best-effort hashed-audit row. Runs on the
+            // `waitUntil` handle captured from the caller so the audit
+            // round-trip does not delay stream teardown.
+            if (moderationCtx && moderationCtx.audit) {
+                try {
+                    const auditPromise = logAiAudit(moderationCtx.env, {
+                        userId: moderationCtx.audit.userId,
+                        authId: moderationCtx.audit.authId,
+                        endpoint: 'api/groq',
+                        tool: moderationCtx.audit.tool || '',
+                        provider: moderationCtx.audit.provider || '',
+                        model: moderationCtx.audit.model || '',
+                        prompt: moderationCtx.userText || '',
+                        response: accumulated,
+                        ip: moderationCtx.audit.ip || '',
+                        status: idleTimedOut ? 0 : 200,
+                        blocked,
+                        blockedCategory
+                    });
+                    if (moderationCtx.waitUntil) {
+                        moderationCtx.waitUntil(auditPromise);
+                    } else {
+                        await auditPromise;
+                    }
+                } catch (_e) { /* best-effort */ }
+            }
         } catch (e) {
             console.error('Stream processing error:', e);
         } finally {
@@ -448,9 +514,14 @@ export async function onRequest(context) {
         temperature = toolConfig.temperature;
     } else {
         system = 'You are a helpful assistant for GroupsMix, a social media group directory. Be concise and professional.';
-        maxTokens = Math.min(Math.max(parseInt(body.max_tokens, 10) || 500, 50), 2000);
+        // E-7: honour the requested max_tokens but hard-cap at MAX_TOKENS_CAP.
+        maxTokens = Math.max(capMaxTokens(body.max_tokens, 500), 50);
         temperature = 0.7;
     }
+
+    // E-7: defensive cap — also clamp tool-config values so any future
+    // TOOL_PROMPTS entry that slips past MAX_TOKENS_CAP is lowered here.
+    maxTokens = capMaxTokens(maxTokens);
 
     // E-2: Append user-input directive to every system prompt so the model
     // knows anything inside <user_input>...</user_input> is data, not instructions.
@@ -493,25 +564,31 @@ export async function onRequest(context) {
         : { primary: 'groq', category: 'precision' };
 
     let aiRes = null;
+    let providerUsed = '';
+    let modelUsed = '';
 
     try {
         if (routing.primary === 'openrouter') {
             // ── Creative tools: OpenRouter first, Groq fallback ──
             if (openrouterKey) {
-                aiRes = await callOpenRouter(openrouterKey, messages, maxTokens, temperature, routing.category);
+                const r = await callOpenRouter(env, openrouterKey, messages, maxTokens, temperature, routing.category);
+                if (r.res) { aiRes = r.res; providerUsed = 'openrouter'; modelUsed = r.model; }
             }
             if (!aiRes && groqKey) {
                 console.warn('OpenRouter unavailable for ' + (toolId || 'request') + ', falling back to Groq');
-                aiRes = await callGroq(groqKey, messages, maxTokens, temperature);
+                const r = await callGroq(env, groqKey, messages, maxTokens, temperature);
+                if (r.res) { aiRes = r.res; providerUsed = 'groq'; modelUsed = r.model; }
             }
         } else {
             // ── Precision/analytical tools: Groq first, OpenRouter fallback ──
             if (groqKey) {
-                aiRes = await callGroq(groqKey, messages, maxTokens, temperature);
+                const r = await callGroq(env, groqKey, messages, maxTokens, temperature);
+                if (r.res) { aiRes = r.res; providerUsed = 'groq'; modelUsed = r.model; }
             }
             if (!aiRes && openrouterKey) {
                 console.warn('Groq unavailable for ' + (toolId || 'request') + ', falling back to OpenRouter');
-                aiRes = await callOpenRouter(openrouterKey, messages, maxTokens, temperature, routing.category);
+                const r = await callOpenRouter(env, openrouterKey, messages, maxTokens, temperature, routing.category);
+                if (r.res) { aiRes = r.res; providerUsed = 'openrouter'; modelUsed = r.model; }
             }
         }
     } catch (err) {
@@ -528,7 +605,22 @@ export async function onRequest(context) {
 
     // ── Stream the SSE response back to the client ──────────────
     try {
-        return streamToClient(aiRes, corsHeaders(origin), { env: env, userText: prompt });
+        const authUser = (authResult && authResult.user) ? authResult.user : null;
+        const clientIp = request.headers.get('CF-Connecting-IP')
+            || request.headers.get('X-Forwarded-For') || '';
+        return streamToClient(aiRes, corsHeaders(origin), {
+            env: env,
+            userText: prompt,
+            waitUntil: context.waitUntil ? context.waitUntil.bind(context) : null,
+            audit: {
+                authId: authUser ? authUser.id : '',
+                userId: '',
+                tool: toolId,
+                provider: providerUsed,
+                model: modelUsed,
+                ip: clientIp
+            }
+        });
     } catch (err) {
         console.error('Stream proxy error:', err);
         return new Response(
