@@ -10,6 +10,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { requireAuth, requireAuthWithOwnership } from './_shared/auth.js';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -41,6 +42,8 @@ export async function onRequest(context) {
 
     try {
         if (request.method === 'GET') {
+            const authResult = await requireAuth(request, env, corsHeaders(origin));
+            if (authResult instanceof Response) return authResult;
             const url = new URL(request.url);
             const articleId = url.searchParams.get('article_id');
             const limit = parseInt(url.searchParams.get('limit') || '20', 10);
@@ -78,10 +81,20 @@ export async function onRequest(context) {
             const body = await request.json();
             const { action, article_id, user_id, revision_id } = body;
 
+            if (!user_id) {
+                return new Response(
+                    JSON.stringify({ ok: false, error: 'Missing user_id' }),
+                    { status: 400, headers: corsHeaders(origin) }
+                );
+            }
+
+            const ownAuth = await requireAuthWithOwnership(request, env, corsHeaders(origin), user_id);
+            if (ownAuth instanceof Response) return ownAuth;
+
             if (action === 'save') {
-                if (!article_id || !user_id) {
+                if (!article_id) {
                     return new Response(
-                        JSON.stringify({ ok: false, error: 'Missing article_id or user_id' }),
+                        JSON.stringify({ ok: false, error: 'Missing article_id' }),
                         { status: 400, headers: corsHeaders(origin) }
                     );
                 }
@@ -109,9 +122,9 @@ export async function onRequest(context) {
             }
 
             if (action === 'restore') {
-                if (!revision_id || !user_id) {
+                if (!revision_id) {
                     return new Response(
-                        JSON.stringify({ ok: false, error: 'Missing revision_id or user_id' }),
+                        JSON.stringify({ ok: false, error: 'Missing revision_id' }),
                         { status: 400, headers: corsHeaders(origin) }
                     );
                 }

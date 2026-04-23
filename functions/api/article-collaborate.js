@@ -9,6 +9,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { requireAuth, requireAuthWithOwnership } from './_shared/auth.js';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -40,6 +41,8 @@ export async function onRequest(context) {
 
     try {
         if (request.method === 'GET') {
+            const authResult = await requireAuth(request, env, corsHeaders(origin));
+            if (authResult instanceof Response) return authResult;
             // List collaborators for an article
             const url = new URL(request.url);
             const articleId = url.searchParams.get('article_id');
@@ -88,6 +91,9 @@ export async function onRequest(context) {
                     );
                 }
 
+                const invAuth = await requireAuthWithOwnership(request, env, corsHeaders(origin), inviter_user_id);
+                if (invAuth instanceof Response) return invAuth;
+
                 const res = await fetch(supabaseUrl + '/rest/v1/rpc/invite_collaborator', {
                     method: 'POST',
                     headers,
@@ -132,6 +138,9 @@ export async function onRequest(context) {
                     );
                 }
 
+                const respAuth = await requireAuthWithOwnership(request, env, corsHeaders(origin), user_id);
+                if (respAuth instanceof Response) return respAuth;
+
                 const res = await fetch(supabaseUrl + '/rest/v1/rpc/respond_collaboration', {
                     method: 'POST',
                     headers,
@@ -165,6 +174,41 @@ export async function onRequest(context) {
                     return new Response(
                         JSON.stringify({ ok: false, error: 'Missing collaboration_id' }),
                         { status: 400, headers: corsHeaders(origin) }
+                    );
+                }
+
+                const authResult = await requireAuth(request, env, corsHeaders(origin));
+                if (authResult instanceof Response) return authResult;
+
+                // Look up collaboration + article owner, and allow removal only if the
+                // authenticated caller is either the collaborator themselves or the
+                // article's author. Service-role bypasses RLS so we must enforce this here.
+                const collabRes = await fetch(
+                    supabaseUrl + '/rest/v1/article_collaborators?id=eq.' + encodeURIComponent(collaboration_id) +
+                    '&select=user_id,articles(user_id)&limit=1',
+                    { headers }
+                );
+                const collabRows = await collabRes.json();
+                if (!Array.isArray(collabRows) || collabRows.length === 0) {
+                    return new Response(
+                        JSON.stringify({ ok: false, error: 'Collaboration not found' }),
+                        { status: 404, headers: corsHeaders(origin) }
+                    );
+                }
+                const collab = collabRows[0];
+
+                // Resolve caller's internal user id
+                const callerRes = await fetch(
+                    supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authResult.user.id) + '&select=id&limit=1',
+                    { headers }
+                );
+                const callers = await callerRes.json();
+                const callerInternalId = Array.isArray(callers) && callers[0]?.id;
+                const articleOwnerId = collab.articles?.user_id;
+                if (!callerInternalId || (callerInternalId !== collab.user_id && callerInternalId !== articleOwnerId)) {
+                    return new Response(
+                        JSON.stringify({ ok: false, error: 'Forbidden' }),
+                        { status: 403, headers: corsHeaders(origin) }
                     );
                 }
 

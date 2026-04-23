@@ -13,6 +13,8 @@
  * and session-aware rotation features.
  */
 
+import { requireAuthWithOwnership } from './_shared/auth.js';
+
 const ALLOWED_ORIGINS = ['https://groupsmix.com', 'https://www.groupsmix.com'];
 
 function corsHeaders(origin) {
@@ -96,6 +98,13 @@ export async function onRequest(context) {
 
     if (!userId && action !== 'batch_impression') {
         return jsonResponse({ ok: false, error: 'user_id required' }, 400, origin);
+    }
+
+    // When a user_id is supplied, require the caller is that user. Service-role
+    // bypasses RLS, so we cannot trust client-supplied user_id without verification.
+    if (userId) {
+        const authResult = await requireAuthWithOwnership(request, env, corsHeaders(origin), userId);
+        if (authResult instanceof Response) return authResult;
     }
 
     try {

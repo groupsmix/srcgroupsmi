@@ -78,21 +78,25 @@ export async function onRequest(context) {
 
         const group = groups[0];
 
-        // Ownership gate: only the group's submitter (or an admin) may view
-        // the dashboard. `submitter_uid` stores the submitting auth.users id.
-        const submitterUid = group.submitter_uid || group.submitter_id || null;
-        if (submitterUid && submitterUid !== authUserId) {
-            const profileRes = await fetch(
-                supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authUserId) + '&select=role&limit=1',
-                { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-            );
-            const profiles = await profileRes.json();
-            const isAdmin = Array.isArray(profiles) && profiles[0] && profiles[0].role === 'admin';
-            if (!isAdmin) {
-                return new Response(JSON.stringify({ ok: false, error: 'Forbidden' }), {
-                    status: 403, headers: corsHeaders(origin)
-                });
-            }
+        // Ownership gate: caller must be the group's submitter/owner, or an admin.
+        // Accept matches against submitter_uid (auth.users id) as well as
+        // submitted_by/submitter_id/owner_id (which may point at the public
+        // users row id) to cover both schemas.
+        const submitterUid = group.submitter_uid || null;
+        const callerRes = await fetch(
+            supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authUserId) + '&select=id,role&limit=1',
+            { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
+        );
+        const callers = await callerRes.json();
+        const caller = Array.isArray(callers) && callers[0];
+        const submitterMatch =
+            (submitterUid && submitterUid === authUserId) ||
+            (caller && (group.submitted_by === caller.id || group.submitter_id === caller.id || group.owner_id === caller.id));
+        const isAdmin = caller && caller.role === 'admin';
+        if (!submitterMatch && !isAdmin) {
+            return new Response(JSON.stringify({ ok: false, error: 'Forbidden' }), {
+                status: 403, headers: corsHeaders(origin)
+            });
         }
 
         if (action === 'tips') {

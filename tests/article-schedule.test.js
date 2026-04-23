@@ -70,8 +70,28 @@ describe('/api/article-schedule cron gate (H-7)', () => {
 
     it('POST scheduling mode is NOT gated by CRON_SECRET', async () => {
         // Schedule-an-article is a non-cron surface and must still work
-        // without a CRON_SECRET configured.
-        fetchMock.mockImplementation(async () => {
+        // without a CRON_SECRET configured. It is gated by the caller's
+        // Supabase JWT and an ownership check against the article.
+        fetchMock.mockImplementation(async (url, init) => {
+            const u = String(url);
+            if (u.endsWith('/auth/v1/user')) {
+                return new Response(JSON.stringify({ id: 'auth-user-1' }), {
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+            if (u.includes('/rest/v1/users?auth_id=')) {
+                return new Response(JSON.stringify([{ id: 'internal-1' }]), {
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+            if (u.includes('/rest/v1/articles?id=') && (!init || init.method !== 'PATCH')) {
+                return new Response(JSON.stringify([{ user_id: 'internal-1' }]), {
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
             return new Response(JSON.stringify([{ id: 'a1', scheduled_at: 'x' }]), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' }
@@ -81,10 +101,10 @@ describe('/api/article-schedule cron gate (H-7)', () => {
         const res = await onRequest({
             request: makeRequest(
                 'POST',
-                {},
+                { 'Authorization': 'Bearer test-jwt' },
                 { article_id: 'a1', scheduled_at: future }
             ),
-            env: BASE_ENV
+            env: { ...BASE_ENV, SUPABASE_ANON_KEY: 'anon-key' }
         });
         expect(res.status).toBe(200);
         const body = await res.json();
