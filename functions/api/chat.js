@@ -314,6 +314,7 @@ export async function onRequest(context) {
             const decoder = new TextDecoder();
             let buffer = '';
             let accumulated = '';
+            let streamOk = true;
 
             try {
                 while (true) {
@@ -345,6 +346,7 @@ export async function onRequest(context) {
                     }
                 }
             } catch (e) {
+                streamOk = false;
                 console.error('Stream processing error:', e);
             } finally {
                 await writer.close();
@@ -353,7 +355,7 @@ export async function onRequest(context) {
                     tool:       'chat',
                     prompt:     promptForLog,
                     response:   accumulated,
-                    status:     'ok',
+                    status:     streamOk ? 'ok' : 'stream_error',
                     weight:     quotaWeight,
                     ip:         clientIp
                 }));

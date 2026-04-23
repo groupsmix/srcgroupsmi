@@ -308,7 +308,9 @@ async function callOpenRouter(apiKey, messages, maxTokens, temperature, category
  * Proxies an upstream chat-completions SSE stream to the client while
  * tapping each delta so we can record a SHA-256 digest of the full
  * response after the stream terminates. `onComplete` is invoked
- * exactly once with the accumulated text (empty string on error).
+ * exactly once with `(accumulatedText, streamOk)` — when `streamOk` is
+ * false the caller should record a non-`ok` status so abuse logs can
+ * distinguish clean completions from partial/broken transfers.
  */
 function streamToClient(aiRes, hdrs, onComplete) {
     const { readable, writable } = new TransformStream();
@@ -320,6 +322,7 @@ function streamToClient(aiRes, hdrs, onComplete) {
         const decoder = new TextDecoder();
         let buffer = '';
         let accumulated = '';
+        let streamOk = true;
 
         try {
             while (true) {
@@ -351,11 +354,12 @@ function streamToClient(aiRes, hdrs, onComplete) {
                 }
             }
         } catch (e) {
+            streamOk = false;
             console.error('Stream processing error:', e);
         } finally {
             await writer.close();
             if (typeof onComplete === 'function') {
-                try { onComplete(accumulated); } catch (_e) { /* best-effort */ }
+                try { onComplete(accumulated, streamOk); } catch (_e) { /* best-effort */ }
             }
         }
     })();
@@ -575,14 +579,14 @@ export async function onRequest(context) {
     // resulting response hash via ctx.waitUntil so the DB insert never
     // blocks the client from receiving the last SSE byte.
     try {
-        return streamToClient(aiRes, corsHeaders(origin), (accumulated) => {
+        return streamToClient(aiRes, corsHeaders(origin), (accumulated, streamOk) => {
             context.waitUntil?.(logAIInvocation(env, {
                 userAuthId: authedUser?.id,
                 tool:       toolId || 'legacy',
                 lang:       langCode,
                 prompt:     prompt,
                 response:   accumulated,
-                status:     'ok',
+                status:     streamOk ? 'ok' : 'stream_error',
                 weight:     quotaWeight,
                 ip:         clientIp,
                 metadata:   {
