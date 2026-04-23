@@ -1,57 +1,60 @@
 /**
- * Shared Cloudflare Turnstile server-side verification.
+ * Shared Cloudflare Turnstile verification for Cloudflare Pages Functions.
  *
- * Mirrors the call site previously inlined in functions/api/validate.js so
- * that every endpoint that needs CAPTCHA verification (signup, delete,
- * abuse-sensitive mutations) runs the same check with the same fail-closed
- * semantics.
+ * Centralizes CAPTCHA verification so every public-facing endpoint
+ * uses the same validation logic without copy-pasting.
  *
- * Behaviour:
- *   - When TURNSTILE_SECRET_KEY is not configured, the helper logs a
- *     warning and returns { success: true } so local/dev environments
- *     without Turnstile don't hard-fail. Production MUST set the secret
- *     key; /api/validate documents this requirement.
- *   - When the secret is configured but no token is provided, returns
- *     { success: false } so the caller can 400 the request.
- *   - Network errors during verification are treated as allow-through to
- *     avoid blocking legitimate users when Cloudflare's siteverify endpoint
- *     is flaky — this matches existing behaviour in validate.js.
+ * Environment variable required:
+ *   TURNSTILE_SECRET_KEY — Cloudflare Turnstile secret key
  */
+
+const TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
 /**
- * Verify a Turnstile token against Cloudflare's siteverify API.
+ * Verify a Cloudflare Turnstile token.
  *
- * @param {string} token     - Turnstile response token from the client.
- * @param {string} ip        - Client IP address (for Cloudflare remoteip param).
- * @param {string} secretKey - TURNSTILE_SECRET_KEY from env.
- * @returns {Promise<{success: boolean, error?: string}>}
+ * @param {string} token     - The cf-turnstile-response token from the client.
+ * @param {string} secretKey - The Turnstile secret key from env.
+ * @param {string} [ip]      - Optional client IP for additional validation.
+ * @returns {Promise<{ success: boolean, error?: string }>}
  */
-export async function verifyTurnstile(token, ip, secretKey) {
-    if (!secretKey) {
-        console.warn('verifyTurnstile: TURNSTILE_SECRET_KEY is not configured — server-side CAPTCHA verification is disabled');
-        return { success: true };
-    }
-    if (!token) {
-        return { success: false, error: 'CAPTCHA verification required' };
+export async function verifyTurnstile(token, secretKey, ip) {
+    if (!token || typeof token !== 'string') {
+        return { success: false, error: 'Missing CAPTCHA token' };
     }
 
+    if (!secretKey) {
+        return { success: false, error: 'Turnstile not configured' };
+    }
+
+    const formData = new URLSearchParams();
+    formData.append('secret', secretKey);
+    formData.append('response', token);
+    if (ip) formData.append('remoteip', ip);
+
     try {
-        const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        const res = await fetch(TURNSTILE_VERIFY_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                secret: secretKey,
-                response: token,
-                remoteip: ip || ''
-            })
+            body: formData.toString()
         });
-        const result = await res.json();
-        if (!result.success) {
+
+        if (!res.ok) {
+            console.error('Turnstile API returned HTTP', res.status);
             return { success: false, error: 'CAPTCHA verification failed' };
         }
+
+        const data = await res.json();
+
+        if (!data.success) {
+            const codes = (data['error-codes'] || []).join(', ');
+            console.warn('Turnstile rejection:', codes);
+            return { success: false, error: 'CAPTCHA verification failed' };
+        }
+
         return { success: true };
-    } catch (_err) {
-        // On network error, allow through (don't block legitimate users).
-        return { success: true };
+    } catch (err) {
+        console.error('Turnstile verification error:', err.message || err);
+        return { success: false, error: 'CAPTCHA verification failed' };
     }
 }

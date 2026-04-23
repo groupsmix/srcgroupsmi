@@ -4,9 +4,8 @@ import { onRequest } from '../functions/api/account/delete.js';
 const ENV = {
     SUPABASE_URL: 'https://supa.test',
     SUPABASE_ANON_KEY: 'anon-key',
-    SUPABASE_SERVICE_KEY: 'service-key'
-    // TURNSTILE_SECRET_KEY intentionally unset so the helper falls open
-    // (returns success=true without a token). This matches dev behaviour.
+    SUPABASE_SERVICE_KEY: 'service-key',
+    TURNSTILE_SECRET_KEY: 'turnstile-secret'
 };
 
 let ipCounter = 0;
@@ -85,6 +84,9 @@ describe('POST /api/account/delete', () => {
 
     it('returns 401 when password re-auth fails', async () => {
         fetchMock.mockImplementation(async (url) => {
+            if (url.includes('challenges.cloudflare.com/turnstile')) {
+                return jsonResponse({ success: true });
+            }
             if (url.includes('/auth/v1/user')) {
                 return jsonResponse({ id: 'auth-123', email: 'u@test.com' });
             }
@@ -94,7 +96,7 @@ describe('POST /api/account/delete', () => {
             return jsonResponse({});
         });
         const res = await onRequest({
-            request: makeRequest({ password: 'wrong', confirm: 'DELETE' }),
+            request: makeRequest({ password: 'wrong', confirm: 'DELETE', turnstileToken: 'tok' }),
             env: ENV
         });
         expect(res.status).toBe(401);
@@ -103,6 +105,9 @@ describe('POST /api/account/delete', () => {
     it('soft-deletes and returns the grace deadline on success', async () => {
         const scheduled = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
         fetchMock.mockImplementation(async (url) => {
+            if (url.includes('challenges.cloudflare.com/turnstile')) {
+                return jsonResponse({ success: true });
+            }
             if (url.includes('/auth/v1/user')) {
                 return jsonResponse({ id: 'auth-123', email: 'u@test.com' });
             }

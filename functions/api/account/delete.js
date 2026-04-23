@@ -147,7 +147,7 @@ export async function onRequest(context) {
         return errorResponse('Password is required to delete your account', 400, origin);
     }
 
-    const captcha = await verifyTurnstile(turnstileToken, ip, env?.TURNSTILE_SECRET_KEY);
+    const captcha = await verifyTurnstile(turnstileToken, env?.TURNSTILE_SECRET_KEY, ip);
     if (!captcha.success) {
         return errorResponse(captcha.error || 'CAPTCHA verification failed', 400, origin);
     }
