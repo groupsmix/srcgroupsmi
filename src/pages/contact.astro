@@ -175,11 +175,20 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     message: message
                 });
                 if (error) throw error;
-                /* Send email notification to site owner (non-blocking) */
+                /* Send email notification to site owner (non-blocking).
+                   Forward the Turnstile token so contact-notify's server-side
+                   verification passes — otherwise the endpoint returns 403
+                   and the site owner never receives the notification email. */
                 fetch('/api/contact-notify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: name, email: email, subject: subject, message: message })
+                    body: JSON.stringify({
+                        name: name,
+                        email: email,
+                        subject: subject,
+                        message: message,
+                        turnstileToken: window._contactTurnstileToken || ''
+                    })
                 }).catch(function() { /* silent — form already saved to DB */ });
                 UI.toast('Message sent successfully! We will get back to you soon.', 'success');
                 document.getElementById('contact-message').value = '';

@@ -234,11 +234,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 
         <div class="sell-page">
-            <h1 style="text-align:center;margin-bottom:var(--space-2)">
-                <svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.2em;height:1.2em;vertical-align:-0.125em"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+            <h1 class="s-7bfe81">
+                <svg class="svg-icon s-823645" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
                 Sell a Product
             </h1>
-            <p style="text-align:center;color:var(--text-secondary);margin-bottom:var(--space-8)">List your digital product — Telegram bot templates, group management scripts, design assets, automation workflows, premium rule packs &amp; community growth guides</p>
+            <p class="s-ab7fc9">List your digital product — Telegram bot templates, group management scripts, design assets, automation workflows, premium rule packs &amp; community growth guides</p>
 
             <div class="sell-steps" id="sell-steps">
                 <div class="sell-step sell-step--active" id="sell-step-1">1. Details</div>
@@ -271,25 +271,25 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                             <div class="form-help"><span id="sell-desc-count">0</span>/1000 characters</div>
                         </div>
                         <!-- Listing Quality Score -->
-                        <div class="sell-quality" id="sell-quality" style="display:none">
+                        <div class="sell-quality s-c8be1c" id="sell-quality">
                             <div class="sell-quality__header">
                                 <span class="sell-quality__label">Listing Quality</span>
                                 <span class="sell-quality__grade" id="sell-quality-grade">--</span>
                             </div>
                             <div class="sell-quality__bar">
-                                <div class="sell-quality__fill" id="sell-quality-fill" style="width:0%"></div>
+                                <div class="sell-quality__fill s-b05fd1" id="sell-quality-fill"></div>
                             </div>
                             <ul class="sell-quality__tips" id="sell-quality-tips"></ul>
                         </div>
 
                         <div class="form-row">
-                            <div class="form-group" style="flex:1">
+                            <div class="form-group s-7623f0">
                                 <label class="form-label" for="sell-price">Price (GMX Coins) *</label>
                                 <input type="number" class="form-input" id="sell-price" placeholder="50" min="1" step="1" required>
                                 <div class="form-help">Set price in GMX Coins. Buyers pay with coins, you receive earned coins (cashout-able with manual review).</div>
                                 <div id="sell-pricing-hint"></div>
                             </div>
-                            <div class="form-group" style="flex:1">
+                            <div class="form-group s-7623f0">
                                 <label class="form-label" for="sell-contact">Contact Link *</label>
                                 <input type="url" class="form-input" id="sell-contact" placeholder="https://t.me/yourusername" required>
                                 <div class="form-help">How buyers can reach you for delivery</div>
@@ -306,23 +306,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
                     <!-- Step 2: Preview -->
                     <div id="sell-s2" class="hidden">
-                        <h3 style="margin-bottom:var(--space-4)">Preview Your Listing</h3>
+                        <h3 class="s-a76134">Preview Your Listing</h3>
                         <div class="sell-preview" id="sell-preview-content"></div>
-                        <div style="display:flex;gap:var(--space-3);margin-top:var(--space-6)">
-                            <button type="button" class="btn btn-secondary" id="sell-back-btn" style="flex:1">Back</button>
-                            <button type="submit" class="btn btn-primary" id="sell-submit-btn" style="flex:2">Publish Listing</button>
+                        <div class="s-0d5ac5">
+                            <button type="button" class="btn btn-secondary s-7623f0" id="sell-back-btn">Back</button>
+                            <button type="submit" class="btn btn-primary s-331e92" id="sell-submit-btn">Publish Listing</button>
                         </div>
                     </div>
 
                     <!-- Step 3: Done -->
                     <div id="sell-s3" class="hidden">
-                        <div style="text-align:center;padding:var(--space-8) 0">
-                            <div style="font-size:var(--text-4xl);margin-bottom:var(--space-4)">
-                                <svg class="svg-icon svg-icon--xl" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:2em;height:2em;color:var(--success)"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        <div class="s-8b5eee">
+                            <div class="s-776d9b">
+                                <svg class="svg-icon svg-icon--xl s-ec188c" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                             </div>
                             <h2>Listing Submitted!</h2>
-                            <p style="color:var(--text-secondary);margin:var(--space-4) 0">Your product listing is being reviewed by our AI trust system. It will go live once approved.</p>
-                            <div style="display:flex;gap:var(--space-3);justify-content:center;margin-top:var(--space-6)">
+                            <p class="s-ba6794">Your product listing is being reviewed by our AI trust system. It will go live once approved.</p>
+                            <div class="s-1f9cdf">
                                 <a href="/sell" class="btn btn-secondary">List Another Product</a>
                                 <a href="/marketplace" class="btn btn-primary">View Marketplace</a>
                             </div>
@@ -562,3 +562,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </script>
 </Fragment>
 </BaseLayout>
+
+<style>
+/* inline-styles: migrated */
+.s-0d5ac5 { display:flex;gap:var(--space-3);margin-top:var(--space-6); }
+.s-1f9cdf { display:flex;gap:var(--space-3);justify-content:center;margin-top:var(--space-6); }
+.s-331e92 { flex:2; }
+.s-7623f0 { flex:1; }
+.s-776d9b { font-size:var(--text-4xl);margin-bottom:var(--space-4); }
+.s-7bfe81 { text-align:center;margin-bottom:var(--space-2); }
+.s-823645 { width:1.2em;height:1.2em;vertical-align:-0.125em; }
+.s-8b5eee { text-align:center;padding:var(--space-8) 0; }
+.s-a76134 { margin-bottom:var(--space-4); }
+.s-ab7fc9 { text-align:center;color:var(--text-secondary);margin-bottom:var(--space-8); }
+.s-b05fd1 { width:0%; }
+.s-ba6794 { color:var(--text-secondary);margin:var(--space-4) 0; }
+.s-c8be1c { display:none; }
+.s-ec188c { width:2em;height:2em;color:var(--success); }
+</style>

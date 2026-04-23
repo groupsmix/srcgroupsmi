@@ -56,11 +56,12 @@ async function checkRateLimitKV(ip, action, limit, kv) {
         // TTL in seconds — set to window duration so entries auto-expire
         const ttlSeconds = Math.ceil(limit.window / 1000);
         await kv.put(key, JSON.stringify(recent), { expirationTtl: ttlSeconds });
+        return true;
     } catch {
-        // KV write failed — still allow (don't block users due to KV issues)
+        // KV write failed — fall back to in-memory so limits still apply
+        // in this isolate instead of silently allowing everything.
+        return checkRateLimitMemory(ip, action, limit);
     }
-
-    return true;
 }
 
 /* ── In-memory rate limiter (fallback, resets on isolate recycle) ── */

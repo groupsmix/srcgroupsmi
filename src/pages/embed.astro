@@ -159,12 +159,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     <div class="embed-builder">
         <div class="embed-config">
-            <h2 style="font-size:var(--text-lg);font-weight:var(--font-semibold);margin-bottom:var(--space-4)">Configure Widget</h2>
+            <h2 class="s-d3a8b9">Configure Widget</h2>
 
             <div class="form-group">
                 <label class="form-label" for="embed-group-search">Search Your Group</label>
                 <input type="text" id="embed-group-search" class="form-input" placeholder="Type group name...">
-                <div id="embed-group-results" style="margin-top:var(--space-2)"></div>
+                <div id="embed-group-results" class="s-123522"></div>
                 <input type="hidden" id="embed-group-id" value="">
             </div>
 
@@ -205,8 +205,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="embed-preview">
             <h2 class="embed-preview__title">Live Preview</h2>
             <div class="embed-preview__frame" id="embed-preview-frame">
-                <div style="color:var(--text-tertiary);text-align:center">
-                    <div style="font-size:var(--text-3xl);margin-bottom:var(--space-2)">&#128065;</div>
+                <div class="s-eb4429">
+                    <div class="s-348b6d">&#128065;</div>
                     <div>Select a group to see preview</div>
                 </div>
             </div>
@@ -373,3 +373,11 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 </Fragment>
 </BaseLayout>
+
+<style>
+/* inline-styles: migrated */
+.s-123522 { margin-top:var(--space-2); }
+.s-348b6d { font-size:var(--text-3xl);margin-bottom:var(--space-2); }
+.s-d3a8b9 { font-size:var(--text-lg);font-weight:var(--font-semibold);margin-bottom:var(--space-4); }
+.s-eb4429 { color:var(--text-tertiary);text-align:center; }
+</style>

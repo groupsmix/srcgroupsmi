@@ -16,35 +16,23 @@
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
 import { errorResponse, successResponse } from './_shared/response.js';
+import { requireAuthWithProfile } from './_shared/auth.js';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
 }
 
 /* ── Verify auth and get internal user ID ──────────────────── */
+/* Thin wrapper around the shared requireAuthWithProfile so this endpoint */
+/* matches the auth surface used by owner-dashboard / coins-wallet.       */
 async function verifyAndGetUser(request, env) {
-    const supabaseUrl = env?.SUPABASE_URL;
-    const supabaseKey = env?.SUPABASE_SERVICE_KEY;
-    if (!supabaseUrl || !supabaseKey) throw new Error('Server not configured');
-
-    const authHeader = request.headers.get('Authorization') || '';
-    if (!authHeader.startsWith('Bearer ')) throw new Error('Unauthorized');
-
-    const token = authHeader.replace('Bearer ', '');
-    const userRes = await fetch(supabaseUrl + '/auth/v1/user', {
-        headers: { 'Authorization': 'Bearer ' + token, 'apikey': supabaseKey }
-    });
-    if (!userRes.ok) throw new Error('Invalid token');
-    const authUser = await userRes.json();
-
-    const profileRes = await fetch(
-        supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authUser.id) + '&select=id,display_name,role&limit=1',
-        { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-    );
-    const profiles = await profileRes.json();
-    if (!profiles || !profiles.length) throw new Error('User not found');
-
-    return { authId: authUser.id, userId: profiles[0].id, role: profiles[0].role, displayName: profiles[0].display_name };
+    const result = await requireAuthWithProfile(request, env, 'id,display_name,role');
+    return {
+        authId: result.authId,
+        userId: result.userId,
+        role: result.profile.role,
+        displayName: result.profile.display_name
+    };
 }
 
 /* ── Main handler ──────────────────────────────────────────── */

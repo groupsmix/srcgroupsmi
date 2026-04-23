@@ -9,12 +9,12 @@ const _CookieConsent = {
 
     /** Returns 'accepted', 'rejected', or null (no choice yet) */
     getChoice() {
-        try { return localStorage.getItem(this._key); } catch (_e) { return null; }
+        return SafeStorage.get(this._key);
     },
 
     /** Save user's choice and dismiss banner */
     _save(choice) {
-        try { localStorage.setItem(this._key, choice); } catch (_e) { /* private browsing */ }
+        SafeStorage.set(this._key, choice);
         var banner = document.getElementById('cookie-banner');
         if (banner) { banner.style.animation = 'fadeOut 0.2s ease forwards'; setTimeout(function() { banner.remove(); }, 200); }
         if (choice === 'accepted') {

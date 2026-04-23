@@ -317,13 +317,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         <div class="sd-page">
             <div id="sd-loading">
-                <div style="text-align:center;padding:var(--space-8) 0">
-                    <div class="skeleton" style="height:24px;width:200px;margin:0 auto var(--space-6)"></div>
-                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-4);margin-bottom:var(--space-6)">
-                        <div class="skeleton" style="height:100px;border-radius:var(--radius-lg)"></div>
-                        <div class="skeleton" style="height:100px;border-radius:var(--radius-lg)"></div>
-                        <div class="skeleton" style="height:100px;border-radius:var(--radius-lg)"></div>
-                        <div class="skeleton" style="height:100px;border-radius:var(--radius-lg)"></div>
+                <div class="s-8b5eee">
+                    <div class="skeleton s-3bc3c3"></div>
+                    <div class="s-17034a">
+                        <div class="skeleton s-991316"></div>
+                        <div class="skeleton s-991316"></div>
+                        <div class="skeleton s-991316"></div>
+                        <div class="skeleton s-991316"></div>
                     </div>
                 </div>
             </div>
@@ -354,12 +354,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                         Revenue Over Time
                     </div>
                     <div class="sd-chart" id="sd-chart">
-                        <div style="color:var(--text-tertiary);font-size:var(--text-sm);text-align:center;width:100%">No sales data yet</div>
+                        <div class="s-9101e7">No sales data yet</div>
                     </div>
                 </div>
 
                 <!-- Offers Section -->
-                <div class="sd-section" id="sd-offers-section" style="display:none">
+                <div class="sd-section s-c8be1c" id="sd-offers-section">
                     <div class="sd-section__title">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
                         Pending Offers
@@ -376,24 +376,24 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     <div class="sd-flash-form" id="sd-flash-form">
                         <div class="form-group">
                             <label class="form-label" for="sd-flash-listing">Listing</label>
-                            <select class="form-select" id="sd-flash-listing" style="background:var(--bg-tertiary);border:1px solid var(--border-primary);color:var(--text-primary);padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);font-size:var(--text-sm);width:100%">
+                            <select class="form-select s-665551" id="sd-flash-listing">
                                 <option value="">Select a listing...</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="sd-flash-discount">Discount %</label>
-                            <input type="number" class="form-input" id="sd-flash-discount" min="5" max="80" placeholder="20" style="width:100%">
+                            <input type="number" class="form-input s-cad980" id="sd-flash-discount" min="5" max="80" placeholder="20">
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="sd-flash-duration">Duration (hours)</label>
-                            <input type="number" class="form-input" id="sd-flash-duration" min="1" max="168" placeholder="24" style="width:100%">
+                            <input type="number" class="form-input s-cad980" id="sd-flash-duration" min="1" max="168" placeholder="24">
                         </div>
-                        <button type="button" class="btn btn-primary btn-sm" id="sd-flash-btn" style="margin-bottom:var(--space-4)">Start Sale</button>
+                        <button type="button" class="btn btn-primary btn-sm s-a76134" id="sd-flash-btn">Start Sale</button>
                     </div>
                 </div>
 
                 <!-- Disputes Section -->
-                <div class="sd-section" id="sd-disputes-section" style="display:none">
+                <div class="sd-section s-c8be1c" id="sd-disputes-section">
                     <div class="sd-section__title">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                         Disputes
@@ -407,7 +407,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
                         All Listings
                     </div>
-                    <div style="overflow-x:auto">
+                    <div class="s-d0698c">
                         <table class="sd-table" id="sd-listings-table">
                             <thead>
                                 <tr>
@@ -686,3 +686,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </script>
 </Fragment>
 </BaseLayout>
+
+<style>
+/* inline-styles: migrated */
+.s-17034a { display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-4);margin-bottom:var(--space-6); }
+.s-3bc3c3 { height:24px;width:200px;margin:0 auto var(--space-6); }
+.s-665551 { background:var(--bg-tertiary);border:1px solid var(--border-primary);color:var(--text-primary);padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);font-size:var(--text-sm);width:100%; }
+.s-8b5eee { text-align:center;padding:var(--space-8) 0; }
+.s-9101e7 { color:var(--text-tertiary);font-size:var(--text-sm);text-align:center;width:100%; }
+.s-991316 { height:100px;border-radius:var(--radius-lg); }
+.s-a76134 { margin-bottom:var(--space-4); }
+.s-c8be1c { display:none; }
+.s-cad980 { width:100%; }
+.s-d0698c { overflow-x:auto; }
+</style>

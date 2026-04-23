@@ -15,6 +15,8 @@
  */
 
 import { checkRateLimit as sharedCheckRateLimit } from './_shared/rate-limit.js';
+import { secureRandomUpperAlnum } from './_shared/secure-random.js';
+import { requireAuthWithProfile } from './_shared/auth.js';
 
 const ALLOWED_ORIGINS = [
     'https://groupsmix.com',
@@ -643,7 +645,9 @@ async function handleReferrals(env, body) {
         const referredEmail = body.referred_email;
         if (!jobId || !referredEmail) return { ok: false, error: 'Missing job_id or referred_email' };
 
-        const code = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        // Cryptographically-secure referral code so an attacker cannot enumerate
+        // or guess another user's code and hijack bounty attribution.
+        const code = 'REF-' + secureRandomUpperAlnum(6);
         await supaFetch(supabaseUrl, supabaseKey, 'job_referrals', {
             method: 'POST',
             body: {
@@ -786,6 +790,21 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({ error: 'Too many requests. Please try again later.' }),
             { status: 429, headers: corsHeaders(origin) });
     }
+
+    // All sub-actions below write to Supabase with the service-role key on
+    // behalf of a body-supplied `user_id`. Authenticate the caller and
+    // overwrite body.user_id with the verified internal user id so a
+    // malicious client cannot act on behalf of another account.
+    let authed;
+    try {
+        authed = await requireAuthWithProfile(request, env, 'id,role');
+    } catch (err) {
+        const msg = err && err.message ? err.message : 'Unauthorized';
+        const status = msg === 'Server not configured' ? 503 : 401;
+        return new Response(JSON.stringify({ ok: false, error: msg }),
+            { status: status, headers: corsHeaders(origin) });
+    }
+    body.user_id = authed.userId;
 
     try {
         let result;

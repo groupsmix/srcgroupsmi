@@ -11,17 +11,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 >
 
         <div class="post-job-page">
-            <div style="text-align:center;margin-bottom:var(--space-6)">
+            <div class="s-49b95f">
                 <span class="jobs-hero__badge">
-                    <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <svg class="s-427a56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     AI-Powered
                 </span>
-                <h1 style="margin-top:var(--space-2)">Post a Job</h1>
-                <p style="color:var(--text-secondary);max-width:500px;margin:var(--space-2) auto 0">Create a professional job listing in minutes. Our AI helps you write better descriptions and validates quality automatically.</p>
+                <h1 class="s-123522">Post a Job</h1>
+                <p class="s-2e4016">Create a professional job listing in minutes. Our AI helps you write better descriptions and validates quality automatically.</p>
             </div>
 
             <!-- Steps -->
-            <div class="submit-steps" id="post-job-steps" style="display:flex;gap:var(--space-4);margin-bottom:var(--space-6);max-width:500px;margin-left:auto;margin-right:auto">
+            <div class="submit-steps s-8a7050" id="post-job-steps">
                 <div class="submit-step submit-step--active" id="pj-step-1-ind">1. Job Details</div>
                 <div class="submit-step" id="pj-step-2-ind">2. Preview</div>
                 <div class="submit-step" id="pj-step-3-ind">3. Done</div>
@@ -46,17 +46,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
                         <!-- Description + AI Enhance -->
                         <div class="form-group">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-1)">
-                                <label class="form-label" for="pj-description" style="margin-bottom:0">Job Description *</label>
+                            <div class="s-6e2104">
+                                <label class="form-label s-76084e" for="pj-description">Job Description *</label>
                                 <button type="button" class="post-job__ai-btn" id="btn-ai-enhance">
-                                    <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                                    <svg class="s-427a56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                                     Enhance with AI
                                 </button>
                             </div>
-                            <textarea class="form-textarea" id="pj-description" placeholder="Describe the role, responsibilities, and what you're looking for. You can write a simple description and let AI enhance it!" required minlength="20" maxlength="5000" style="min-height:160px"></textarea>
+                            <textarea class="form-textarea s-1d658f" id="pj-description" placeholder="Describe the role, responsibilities, and what you're looking for. You can write a simple description and let AI enhance it!" required minlength="20" maxlength="5000"></textarea>
                             <div class="form-help"><span id="pj-desc-count">0</span>/5000 characters</div>
-                            <div id="ai-enhance-status" style="display:none"></div>
-                            <div id="ai-enhanced-preview" style="display:none" class="post-job__enhanced-preview"></div>
+                            <div id="ai-enhance-status" class="s-c8be1c"></div>
+                            <div id="ai-enhanced-preview" class="post-job__enhanced-preview s-c8be1c"></div>
                         </div>
 
                         <!-- Salary Range -->
@@ -80,8 +80,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                         </div>
 
                         <!-- Job Type + Location Type -->
-                        <div style="display:flex;gap:var(--space-3)">
-                            <div class="form-group" style="flex:1">
+                        <div class="s-6541af">
+                            <div class="form-group s-7623f0">
                                 <label class="form-label" for="pj-job-type">Job Type *</label>
                                 <select class="form-select" id="pj-job-type" required>
                                     <option value="full-time">Full-Time</option>
@@ -91,7 +91,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                                     <option value="internship">Internship</option>
                                 </select>
                             </div>
-                            <div class="form-group" style="flex:1">
+                            <div class="form-group s-7623f0">
                                 <label class="form-label" for="pj-location-type">Location Type *</label>
                                 <select class="form-select" id="pj-location-type" required>
                                     <option value="remote">🌍 Remote</option>
@@ -102,13 +102,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                         </div>
 
                         <!-- Location + Region (conditional) -->
-                        <div style="display:flex;gap:var(--space-3)">
-                            <div class="form-group" style="flex:1" id="pj-location-group">
+                        <div class="s-6541af">
+                            <div class="form-group s-7623f0" id="pj-location-group">
                                 <label class="form-label" for="pj-location">City / Country</label>
                                 <input type="text" class="form-input" id="pj-location" placeholder="e.g., New York, Dubai, London">
                                 <div class="form-help">Required for On-Site and Hybrid positions</div>
                             </div>
-                            <div class="form-group" style="flex:1" id="pj-region-group">
+                            <div class="form-group s-7623f0" id="pj-region-group">
                                 <label class="form-label" for="pj-region">Region</label>
                                 <select class="form-select" id="pj-region">
                                     <option value="worldwide">🌎 Worldwide</option>
@@ -125,13 +125,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                         <!-- Platform -->
                         <div class="form-group">
                             <label class="form-label">Platform(s)</label>
-                            <div style="display:flex;flex-wrap:wrap;gap:var(--space-2)" id="pj-platform-chips">
-                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="discord" name="pj-platform" style="width:14px;height:14px;accent-color:var(--accent-primary)"> Discord</label>
-                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="telegram" name="pj-platform" style="width:14px;height:14px;accent-color:var(--accent-primary)"> Telegram</label>
-                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="whatsapp" name="pj-platform" style="width:14px;height:14px;accent-color:var(--accent-primary)"> WhatsApp</label>
-                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="slack" name="pj-platform" style="width:14px;height:14px;accent-color:var(--accent-primary)"> Slack</label>
-                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="reddit" name="pj-platform" style="width:14px;height:14px;accent-color:var(--accent-primary)"> Reddit</label>
-                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="twitter" name="pj-platform" style="width:14px;height:14px;accent-color:var(--accent-primary)"> Twitter/X</label>
+                            <div class="s-47cdf5" id="pj-platform-chips">
+                                <label class="s-f9b4f5"><input type="checkbox" value="discord" name="pj-platform" class="s-52ab32"> Discord</label>
+                                <label class="s-f9b4f5"><input type="checkbox" value="telegram" name="pj-platform" class="s-52ab32"> Telegram</label>
+                                <label class="s-f9b4f5"><input type="checkbox" value="whatsapp" name="pj-platform" class="s-52ab32"> WhatsApp</label>
+                                <label class="s-f9b4f5"><input type="checkbox" value="slack" name="pj-platform" class="s-52ab32"> Slack</label>
+                                <label class="s-f9b4f5"><input type="checkbox" value="reddit" name="pj-platform" class="s-52ab32"> Reddit</label>
+                                <label class="s-f9b4f5"><input type="checkbox" value="twitter" name="pj-platform" class="s-52ab32"> Twitter/X</label>
                             </div>
                             <div class="form-help">Select the platform(s) this job is related to</div>
                         </div>
@@ -139,13 +139,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                         <!-- Language -->
                         <div class="form-group">
                             <label class="form-label">Required Language(s)</label>
-                            <div style="display:flex;flex-wrap:wrap;gap:var(--space-2)" id="pj-language-chips">
-                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="en" name="pj-language" checked style="width:14px;height:14px;accent-color:var(--accent-primary)"> English</label>
-                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="ar" name="pj-language" style="width:14px;height:14px;accent-color:var(--accent-primary)"> Arabic</label>
-                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="fr" name="pj-language" style="width:14px;height:14px;accent-color:var(--accent-primary)"> French</label>
-                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="es" name="pj-language" style="width:14px;height:14px;accent-color:var(--accent-primary)"> Spanish</label>
-                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="de" name="pj-language" style="width:14px;height:14px;accent-color:var(--accent-primary)"> German</label>
-                                <label style="display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer"><input type="checkbox" value="other" name="pj-language" style="width:14px;height:14px;accent-color:var(--accent-primary)"> Other</label>
+                            <div class="s-47cdf5" id="pj-language-chips">
+                                <label class="s-f9b4f5"><input type="checkbox" value="en" name="pj-language" checked class="s-52ab32"> English</label>
+                                <label class="s-f9b4f5"><input type="checkbox" value="ar" name="pj-language" class="s-52ab32"> Arabic</label>
+                                <label class="s-f9b4f5"><input type="checkbox" value="fr" name="pj-language" class="s-52ab32"> French</label>
+                                <label class="s-f9b4f5"><input type="checkbox" value="es" name="pj-language" class="s-52ab32"> Spanish</label>
+                                <label class="s-f9b4f5"><input type="checkbox" value="de" name="pj-language" class="s-52ab32"> German</label>
+                                <label class="s-f9b4f5"><input type="checkbox" value="other" name="pj-language" class="s-52ab32"> Other</label>
                             </div>
                             <div class="form-help">Select the language(s) required for this position</div>
                         </div>
@@ -160,36 +160,36 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                         </div>
 
                         <!-- Contact Info -->
-                        <div style="display:flex;gap:var(--space-3)">
-                            <div class="form-group" style="flex:1">
+                        <div class="s-6541af">
+                            <div class="form-group s-7623f0">
                                 <label class="form-label" for="pj-contact-link">Application Link</label>
                                 <input type="url" class="form-input" id="pj-contact-link" placeholder="https://forms.google.com/...">
                                 <div class="form-help">Link where candidates can apply</div>
                             </div>
-                            <div class="form-group" style="flex:1">
+                            <div class="form-group s-7623f0">
                                 <label class="form-label" for="pj-contact-email">Contact Email</label>
                                 <input type="email" class="form-input" id="pj-contact-email" placeholder="hiring@company.com">
                             </div>
                         </div>
 
                         <!-- AI Gatekeeper Status -->
-                        <div id="ai-validate-status" style="display:none"></div>
+                        <div id="ai-validate-status" class="s-c8be1c"></div>
 
-                        <button type="button" class="btn btn-primary btn-full" id="pj-next-btn" style="margin-top:var(--space-4)">
+                        <button type="button" class="btn btn-primary btn-full s-c46215" id="pj-next-btn">
                             Preview Job Listing &rarr;
                         </button>
                     </div>
 
                     <!-- Step 2: Preview -->
                     <div id="pj-step-2" class="hidden">
-                        <div id="pj-preview-content" style="background:var(--bg-tertiary);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-4)"></div>
+                        <div id="pj-preview-content" class="s-acb5c2"></div>
 
-                        <div id="pj-ai-category-info" style="display:none;margin-bottom:var(--space-4)"></div>
+                        <div id="pj-ai-category-info" class="s-b14c26"></div>
 
-                        <div style="display:flex;gap:var(--space-3);margin-top:var(--space-4)">
-                            <button type="button" class="btn btn-secondary" id="pj-back-btn" style="flex:1">&larr; Edit</button>
-                            <button type="submit" class="btn btn-primary" id="pj-submit-btn" style="flex:2">
-                                <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                        <div class="s-4ced47">
+                            <button type="button" class="btn btn-secondary s-7623f0" id="pj-back-btn">&larr; Edit</button>
+                            <button type="submit" class="btn btn-primary s-331e92" id="pj-submit-btn">
+                                <svg class="s-8583a7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
                                 Submit Job Listing
                             </button>
                         </div>
@@ -197,53 +197,53 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
                     <!-- Step 3: Success -->
                     <div id="pj-step-3" class="hidden">
-                        <div style="text-align:center;padding:var(--space-8) 0">
-                            <div style="font-size:var(--text-4xl);margin-bottom:var(--space-4)">
-                                <svg style="width:64px;height:64px;color:var(--success)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        <div class="s-8b5eee">
+                            <div class="s-776d9b">
+                                <svg class="s-c0a3fe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                             </div>
                             <h2>Job Posted Successfully!</h2>
-                            <p style="color:var(--text-secondary);margin:var(--space-4) 0;max-width:400px;margin-left:auto;margin-right:auto">Your job listing has been submitted and is under review. It will appear on the jobs board once approved by our AI quality filter.</p>
-                            <div id="pj-ai-feedback" style="margin-bottom:var(--space-4)"></div>
+                            <p class="s-5edca9">Your job listing has been submitted and is under review. It will appear on the jobs board once approved by our AI quality filter.</p>
+                            <div id="pj-ai-feedback" class="s-a76134"></div>
 
                             <!-- Boost & Referral Options (shown after successful post) -->
                             <div class="post-job__success-options" id="pj-success-options">
                                 <!-- Featured/Boost Option -->
                                 <div class="post-job__success-card">
-                                    <div class="post-job__success-card-icon" style="background:rgba(255,215,0,0.1);color:#D4A017">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                    <div class="post-job__success-card-icon s-d8f3ec">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-0483b6"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                                     </div>
                                     <div>
                                         <strong>Boost Your Listing</strong>
-                                        <p style="font-size:var(--text-sm);color:var(--text-secondary)">Get 5x more views with a Featured badge, highlighted border, or pinned placement. Pay with GMX Coins.</p>
+                                        <p class="s-a562c0">Get 5x more views with a Featured badge, highlighted border, or pinned placement. Pay with GMX Coins.</p>
                                     </div>
-                                    <button class="btn btn-sm btn-primary" id="pj-boost-btn" style="flex-shrink:0">Boost Now</button>
+                                    <button class="btn btn-sm btn-primary s-f38a95" id="pj-boost-btn">Boost Now</button>
                                 </div>
 
                                 <!-- Referral Bounty Option -->
                                 <div class="post-job__success-card">
-                                    <div class="post-job__success-card-icon" style="background:rgba(16,185,129,0.1);color:#10B981">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                                    <div class="post-job__success-card-icon s-f9e0b8">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-0483b6"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
                                     </div>
                                     <div>
                                         <strong>Set a Referral Bounty</strong>
-                                        <p style="font-size:var(--text-sm);color:var(--text-secondary)">Incentivize users to share your job. Set a GMX Coins bounty for successful referrals.</p>
+                                        <p class="s-a562c0">Incentivize users to share your job. Set a GMX Coins bounty for successful referrals.</p>
                                     </div>
-                                    <button class="btn btn-sm btn-secondary" id="pj-referral-btn" style="flex-shrink:0">Set Bounty</button>
+                                    <button class="btn btn-sm btn-secondary s-f38a95" id="pj-referral-btn">Set Bounty</button>
                                 </div>
 
                                 <!-- Job Expiration Notice -->
-                                <div class="post-job__success-card" style="background:var(--bg-tertiary)">
-                                    <div class="post-job__success-card-icon" style="background:rgba(99,102,241,0.1);color:var(--accent-primary)">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <div class="post-job__success-card s-b1ab4b">
+                                    <div class="post-job__success-card-icon s-afdc1a">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-0483b6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                                     </div>
                                     <div>
                                         <strong>Auto-Expiration</strong>
-                                        <p style="font-size:var(--text-sm);color:var(--text-secondary)">Your listing will be active for 30 days. We'll notify you before it expires so you can renew or boost it.</p>
+                                        <p class="s-a562c0">Your listing will be active for 30 days. We'll notify you before it expires so you can renew or boost it.</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div style="display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap;margin-top:var(--space-6)">
+                            <div class="s-3b4607">
                                 <a href="/post-job" class="btn btn-secondary">Post Another Job</a>
                                 <a href="/employer-dashboard" class="btn btn-secondary">Employer Dashboard</a>
                                 <a href="/jobs" class="btn btn-primary">View Jobs Board</a>
@@ -254,11 +254,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             </div>
 
             <!-- Promote CTA -->
-            <div style="text-align:center;margin-top:var(--space-6);padding:var(--space-5);background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg)">
-                <div style="display:flex;align-items:center;justify-content:center;gap:var(--space-3);flex-wrap:wrap">
+            <div class="s-9058e7">
+                <div class="s-21342f">
                     <div>
-                        <strong style="color:var(--accent-gold)">&#11088; Want more visibility?</strong>
-                        <span style="color:var(--text-secondary);font-size:var(--text-sm)"> Promoted jobs get 5x more views and are pinned to the top.</span>
+                        <strong class="s-e02025">&#11088; Want more visibility?</strong>
+                        <span class="s-77924f"> Promoted jobs get 5x more views and are pinned to the top.</span>
                     </div>
                     <a href="/promote" class="btn btn-sm btn-primary">Promote Your Job</a>
                 </div>
@@ -599,3 +599,44 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </script>
 </Fragment>
 </BaseLayout>
+
+<style>
+/* inline-styles: migrated */
+.s-0483b6 { width:20px;height:20px; }
+.s-123522 { margin-top:var(--space-2); }
+.s-1d658f { min-height:160px; }
+.s-21342f { display:flex;align-items:center;justify-content:center;gap:var(--space-3);flex-wrap:wrap; }
+.s-2e4016 { color:var(--text-secondary);max-width:500px;margin:var(--space-2) auto 0; }
+.s-331e92 { flex:2; }
+.s-3b4607 { display:flex;gap:var(--space-3);justify-content:center;flex-wrap:wrap;margin-top:var(--space-6); }
+.s-427a56 { width:14px;height:14px; }
+.s-47cdf5 { display:flex;flex-wrap:wrap;gap:var(--space-2); }
+.s-49b95f { text-align:center;margin-bottom:var(--space-6); }
+.s-4ced47 { display:flex;gap:var(--space-3);margin-top:var(--space-4); }
+.s-52ab32 { width:14px;height:14px;accent-color:var(--accent-primary); }
+.s-5edca9 { color:var(--text-secondary);margin:var(--space-4) 0;max-width:400px;margin-left:auto;margin-right:auto; }
+.s-6541af { display:flex;gap:var(--space-3); }
+.s-6e2104 { display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-1); }
+.s-76084e { margin-bottom:0; }
+.s-7623f0 { flex:1; }
+.s-776d9b { font-size:var(--text-4xl);margin-bottom:var(--space-4); }
+.s-77924f { color:var(--text-secondary);font-size:var(--text-sm); }
+.s-8583a7 { width:16px;height:16px; }
+.s-8a7050 { display:flex;gap:var(--space-4);margin-bottom:var(--space-6);max-width:500px;margin-left:auto;margin-right:auto; }
+.s-8b5eee { text-align:center;padding:var(--space-8) 0; }
+.s-9058e7 { text-align:center;margin-top:var(--space-6);padding:var(--space-5);background:var(--bg-card);border:1px solid var(--border-primary);border-radius:var(--radius-lg); }
+.s-a562c0 { font-size:var(--text-sm);color:var(--text-secondary); }
+.s-a76134 { margin-bottom:var(--space-4); }
+.s-acb5c2 { background:var(--bg-tertiary);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-4); }
+.s-afdc1a { background:rgba(99,102,241,0.1);color:var(--accent-primary); }
+.s-b14c26 { display:none;margin-bottom:var(--space-4); }
+.s-b1ab4b { background:var(--bg-tertiary); }
+.s-c0a3fe { width:64px;height:64px;color:var(--success); }
+.s-c46215 { margin-top:var(--space-4); }
+.s-c8be1c { display:none; }
+.s-d8f3ec { background:rgba(255,215,0,0.1);color:#D4A017; }
+.s-e02025 { color:var(--accent-gold); }
+.s-f38a95 { flex-shrink:0; }
+.s-f9b4f5 { display:inline-flex;align-items:center;gap:4px;padding:var(--space-1) var(--space-3);background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:var(--radius-full);font-size:var(--text-sm);cursor:pointer; }
+.s-f9e0b8 { background:rgba(16,185,129,0.1);color:#10B981; }
+</style>

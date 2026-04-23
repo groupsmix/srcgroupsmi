@@ -6,6 +6,9 @@
  * Route: /api/article-ai
  */
 
+import { wrapUserInput, withUserInputDirective } from './_shared/prompt-safety.js';
+import { moderateOutput } from './_shared/moderation.js';
+
 export async function onRequestPost(context) {
     const { request, env } = context;
 
@@ -196,8 +199,8 @@ export async function onRequestPost(context) {
             body: JSON.stringify({
                 model: model,
                 messages: [
-                    { role: 'system', content: systemPrompts[task] || 'You are a helpful assistant.' },
-                    { role: 'user', content: prompt.slice(0, 4000) } // Limit input
+                    { role: 'system', content: withUserInputDirective(systemPrompts[task] || 'You are a helpful assistant.') },
+                    { role: 'user', content: wrapUserInput(prompt, { maxLength: 4000 }) }
                 ],
                 max_tokens: maxTokens[task] || 300,
                 temperature: task === 'article-moderate' ? 0.1 : 0.7,
@@ -218,11 +221,32 @@ export async function onRequestPost(context) {
         const groqData = await groqResponse.json();
         const result = groqData.choices?.[0]?.message?.content || null;
 
+        // E-3: Run output moderation on the AI-generated text. Skip for the
+        // built-in `article-moderate` task (it already produces a moderation
+        // verdict as JSON), but still guard free-form outputs.
+        let moderation = null;
+        if (result && task !== 'article-moderate') {
+            const verdict = await moderateOutput(env, result, { userText: prompt });
+            moderation = { flagged: verdict.flagged, category: verdict.category };
+            if (verdict.flagged) {
+                console.warn('article-ai: result blocked by moderation', task, verdict.category);
+                return new Response(JSON.stringify({
+                    error: 'Response blocked by content moderation',
+                    task: task,
+                    moderation: moderation
+                }), {
+                    status: 422,
+                    headers: corsHeaders
+                });
+            }
+        }
+
         return new Response(JSON.stringify({
             result: result,
             task: task,
             model: model,
-            usage: groqData.usage || null
+            usage: groqData.usage || null,
+            moderation: moderation
         }), {
             status: 200,
             headers: corsHeaders

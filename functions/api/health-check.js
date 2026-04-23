@@ -21,27 +21,59 @@ function corsHeaders(origin) {
 /* ── Rate limit config ── */
 const HEALTH_CHECK_LIMIT = { window: 60000, max: 10 }; // 10 checks per minute
 
-/* ── Known invite link patterns ── */
-const INVITE_PATTERNS = [
-    { domain: 'chat.whatsapp.com', platform: 'whatsapp' },
-    { domain: 'wa.me', platform: 'whatsapp' },
-    { domain: 't.me', platform: 'telegram' },
-    { domain: 'telegram.me', platform: 'telegram' },
-    { domain: 'discord.gg', platform: 'discord' },
-    { domain: 'discord.com/invite', platform: 'discord' },
-    { domain: 'facebook.com/groups', platform: 'facebook' },
-    { domain: 'signal.group', platform: 'signal' },
-    { domain: 'reddit.com/r/', platform: 'reddit' },
-    { domain: 'viber.com', platform: 'viber' },
-    { domain: 'line.me', platform: 'line' },
+/* ── Known invite link hostname allowlist ── */
+const INVITE_ALLOWLIST = [
+    { hostname: 'chat.whatsapp.com', pathPrefix: '/', platform: 'whatsapp' },
+    { hostname: 'wa.me', pathPrefix: '/', platform: 'whatsapp' },
+    { hostname: 't.me', pathPrefix: '/', platform: 'telegram' },
+    { hostname: 'telegram.me', pathPrefix: '/', platform: 'telegram' },
+    { hostname: 'discord.gg', pathPrefix: '/', platform: 'discord' },
+    { hostname: 'discord.com', pathPrefix: '/invite/', platform: 'discord' },
+    { hostname: 'www.discord.com', pathPrefix: '/invite/', platform: 'discord' },
+    { hostname: 'facebook.com', pathPrefix: '/groups/', platform: 'facebook' },
+    { hostname: 'www.facebook.com', pathPrefix: '/groups/', platform: 'facebook' },
+    { hostname: 'signal.group', pathPrefix: '/', platform: 'signal' },
+    { hostname: 'www.reddit.com', pathPrefix: '/r/', platform: 'reddit' },
+    { hostname: 'reddit.com', pathPrefix: '/r/', platform: 'reddit' },
+    { hostname: 'invite.viber.com', pathPrefix: '/', platform: 'viber' },
+    { hostname: 'line.me', pathPrefix: '/', platform: 'line' },
 ];
 
-function detectPlatform(url) {
-    const lower = url.toLowerCase();
-    for (const p of INVITE_PATTERNS) {
-        if (lower.includes(p.domain)) return p.platform;
+/* ── Max redirects to follow manually ── */
+const MAX_REDIRECTS = 3;
+
+/**
+ * Detect platform by strict parsed-hostname matching.
+ * Returns 'unknown' if the URL does not match the allowlist.
+ */
+export function detectPlatform(parsedUrl) {
+    const hostname = parsedUrl.hostname.toLowerCase();
+    const pathname = parsedUrl.pathname.toLowerCase();
+
+    for (const entry of INVITE_ALLOWLIST) {
+        if (hostname === entry.hostname && pathname.startsWith(entry.pathPrefix)) {
+            return entry.platform;
+        }
     }
     return 'unknown';
+}
+
+/**
+ * Reject IP literals (v4 and v6) and private/reserved ranges.
+ * Returns true if the hostname is safe (a public domain name).
+ */
+export function isSafeHostname(hostname) {
+    // Reject IPv6 literals like [::1]
+    if (hostname.startsWith('[')) return false;
+
+    // Reject IPv4 literals (all-digit dotted notation)
+    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) return false;
+
+    // Reject localhost variants
+    const lower = hostname.toLowerCase();
+    if (lower === 'localhost' || lower.endsWith('.localhost')) return false;
+
+    return true;
 }
 
 /* ── Dead-link detection heuristics ── */
@@ -137,10 +169,16 @@ export async function onRequest(context) {
         );
     }
 
-    const platform = detectPlatform(url);
+    // Reject IP literals and private ranges
+    if (!isSafeHostname(parsedUrl.hostname)) {
+        return new Response(
+            JSON.stringify({ ok: false, error: 'IP addresses and private hostnames are not allowed' }),
+            { status: 422, headers: corsHeaders(origin) }
+        );
+    }
 
-    // Security: reject URLs that don't match known group invite domains
-    // to prevent SSRF abuse (probing internal services or scanning networks)
+    const platform = detectPlatform(parsedUrl);
+
     if (platform === 'unknown') {
         return new Response(
             JSON.stringify({ ok: false, error: 'Only known group invite links are allowed (WhatsApp, Telegram, Discord, Facebook, Signal, Reddit, Viber, Line)' }),
@@ -151,38 +189,57 @@ export async function onRequest(context) {
     const checkedAt = new Date().toISOString();
 
     try {
-        // Attempt a fetch with a short timeout
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 8000);
+        let currentUrl = url;
+        let lastRes;
 
-        const res = await fetch(url, {
-            method: 'GET',
-            signal: controller.signal,
-            redirect: 'follow',
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (compatible; GroupsMix HealthCheck/1.0)',
-                'Accept': 'text/html,application/xhtml+xml,*/*'
+        for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 8000);
+
+            lastRes = await fetch(currentUrl, {
+                method: 'GET',
+                signal: controller.signal,
+                redirect: 'manual',
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (compatible; GroupsMix HealthCheck/1.0)',
+                    'Accept': 'text/html,application/xhtml+xml,*/*'
+                }
+            });
+
+            clearTimeout(timeout);
+
+            if (![301, 302, 303, 307, 308].includes(lastRes.status)) break;
+
+            const location = lastRes.headers.get('Location');
+            if (!location) break;
+
+            let redirectUrl;
+            try {
+                redirectUrl = new URL(location, currentUrl);
+            } catch {
+                break;
             }
-        });
 
-        clearTimeout(timeout);
+            if (!['http:', 'https:'].includes(redirectUrl.protocol)) break;
+            if (!isSafeHostname(redirectUrl.hostname)) break;
 
-        // Read a limited portion of the body for analysis
-        const bodyText = await res.text().then(t => t.slice(0, 5000)).catch(() => '');
-        const status = analyzeResponse(res.status, bodyText, platform);
+            currentUrl = redirectUrl.href;
+        }
+
+        const bodyText = await lastRes.text().then(t => t.slice(0, 5000)).catch(() => '');
+        const status = analyzeResponse(lastRes.status, bodyText, platform);
 
         return new Response(
             JSON.stringify({
                 ok: true,
                 status: status,
-                httpStatus: res.status,
+                httpStatus: lastRes.status,
                 platform: platform,
                 checkedAt: checkedAt
             }),
             { status: 200, headers: corsHeaders(origin) }
         );
     } catch (err) {
-        // Network error / timeout — uncertain
         const isAbort = err.name === 'AbortError';
         return new Response(
             JSON.stringify({

@@ -92,7 +92,7 @@ var _Jobs = (function () {
         loading: false,
         hasMore: true,
         filters: { search: '', category: '', jobType: '', salaryMin: '', salaryPeriod: '', locationType: '', platform: '', language: '', region: '' },
-        savedJobs: JSON.parse(localStorage.getItem('gm_saved_jobs') || '[]'),
+        savedJobs: SafeStorage.getJSON('gm_saved_jobs', []),
         userSkills: null,
         matchScores: {},
         featuredRotation: [],
@@ -200,7 +200,7 @@ var _Jobs = (function () {
             state.savedJobs.push(jobId);
             UI.toast('Job saved!', 'success');
         }
-        localStorage.setItem('gm_saved_jobs', JSON.stringify(state.savedJobs));
+        SafeStorage.setJSON('gm_saved_jobs', state.savedJobs);
         // Also save to Supabase if logged in
         if (Auth.isLoggedIn()) {
             try {

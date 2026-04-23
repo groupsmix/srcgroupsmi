@@ -117,12 +117,14 @@ export async function onRequest(context) {
     let code = alias ? alias.replace(/[^a-zA-Z0-9_-]/g, '').substring(0, 30) : generateCode();
     if (!code) code = generateCode();
 
-    // Use Supabase REST API to insert the short link
-    const supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';  // fallback for local dev
-    const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';  // prefer service key
+    // Use Supabase REST API to insert the short link. Both values must come
+    // from the environment — we no longer fall back to a hardcoded project
+    // URL because a stale fallback would silently point writes at whatever
+    // Supabase project that ref happens to resolve to.
+    const supabaseUrl = env?.SUPABASE_URL;
+    const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
 
-    if (!supabaseKey) {
-        // No Supabase key — return error instead of fake non-persisted link
+    if (!supabaseUrl || !supabaseKey) {
         return new Response(
             JSON.stringify({ ok: false, errors: ['Service temporarily unavailable. Please try again later.'] }),
             { status: 503, headers: corsHeaders(origin) }
@@ -137,8 +139,11 @@ export async function onRequest(context) {
         );
         const existing = await checkRes.json();
         if (Array.isArray(existing) && existing.length > 0) {
-            // Code taken — generate a new random one
-            code = generateCode() + Math.floor(Math.random() * 100);
+            // Code taken — generate a new unpredictable one. We keep the
+            // tie-breaker in the same 36-char alphabet as `generateCode()`
+            // rather than a 2-digit decimal suffix so the resulting space is
+            // 36^8 (~2.8e12) instead of 36^6 * 100 (~2.2e11).
+            code = generateCode() + generateCode().slice(0, 2);
         }
 
         // Insert the short link

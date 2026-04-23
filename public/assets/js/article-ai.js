@@ -602,10 +602,14 @@ const _ArticleAI = {
                 .eq('status', 'published')
                 .eq('moderation_status', 'approved');
 
-            // Text search using OR across keywords
+            // Text search using OR across keywords.
+            // F-5: escape user-supplied term for PostgREST + LIKE patterns so it
+            // cannot inject `,` `(` `)` to break out of the predicate or spray
+            // `%` / `_` wildcards into the LIKE pattern.
             const _searchTerms = searchKeywords.join(' | ');
+            const ilikeTerm = Security.pgrstIlikeContains(searchKeywords[0]);
             queryBuilder = queryBuilder.or(
-                'title.ilike.%' + searchKeywords[0] + '%,excerpt.ilike.%' + searchKeywords[0] + '%'
+                'title.ilike.' + ilikeTerm + ',excerpt.ilike.' + ilikeTerm
             );
 
             if (searchCategories.length > 0) {
