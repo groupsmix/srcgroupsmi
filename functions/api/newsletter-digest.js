@@ -1,12 +1,19 @@
 /**
  * /api/newsletter-digest — Weekly Newsletter Digest
  *
- * GET:  Cron endpoint — generates and queues weekly digest emails
- * POST: Generate a preview digest for a specific subscriber
+ * GET:  Cron endpoint — generates and queues weekly digest emails.
+ *       Gated by the same CRON_SECRET / X-Cron-Secret pattern used by
+ *       /api/compute-feed and /api/purge-deleted (H-7). Fail-closed:
+ *       the handler refuses to run at all when CRON_SECRET is unset
+ *       so an unconfigured secret never becomes an open endpoint.
+ * POST: Generate a preview digest for a specific subscriber.
+ *       Not a cron path; not gated by CRON_SECRET.
  *
  * Environment variables required:
  *   SUPABASE_URL         — Supabase project URL
  *   SUPABASE_SERVICE_KEY — Supabase service role key
+ *   CRON_SECRET          — REQUIRED for the GET cron branch. Must match
+ *                          the X-Cron-Secret request header exactly.
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
@@ -47,6 +54,27 @@ export async function onRequest(context) {
 
     if (request.method === 'OPTIONS') {
         return handlePreflight(origin);
+    }
+
+    // Cron gate (H-7): the GET branch performs batch digest generation
+    // using the service-role key and must never be reachable without
+    // the shared CRON_SECRET. Fail closed when the env var is unset.
+    if (request.method === 'GET') {
+        const cronSecret = env?.CRON_SECRET;
+        if (!cronSecret) {
+            console.error('newsletter-digest: CRON_SECRET not configured');
+            return new Response(
+                JSON.stringify({ ok: false, error: 'Service not configured' }),
+                { status: 503, headers: corsHeaders(origin) }
+            );
+        }
+        const presented = request.headers.get('X-Cron-Secret') || '';
+        if (presented !== cronSecret) {
+            return new Response(
+                JSON.stringify({ ok: false, error: 'Unauthorized' }),
+                { status: 401, headers: corsHeaders(origin) }
+            );
+        }
     }
 
     const supabaseUrl = env?.SUPABASE_URL;
