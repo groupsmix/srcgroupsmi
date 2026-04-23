@@ -1,11 +1,11 @@
 # Cloudflare Pages + Cron Triggers configuration for GroupsMix.
 #
 # The site is deployed via Cloudflare Pages Git integration, which reads
-# bindings and scheduled triggers from the Pages dashboard. Pages does NOT
-# currently consume this file as a source of truth the way Workers does —
-# it is checked in so that the expected shape of KV namespaces, env vars,
-# and cron triggers is reviewable alongside the code and stays in sync
-# between environments.
+# bindings and scheduled triggers from the Pages dashboard. Pages does
+# parse this file at build time, but it does NOT yet consume KV
+# namespace IDs or Cron Triggers from it — those stanzas live here as
+# commented-out documentation of the expected shape so reviewers can see
+# them in-tree without breaking the build.
 #
 # Tracking issues: H-6 (document bindings/env) and H-7 (move cron-style
 # endpoints to Cloudflare Cron Triggers, require a secret on every cron).
@@ -41,15 +41,20 @@ compatibility_date = "2024-11-01"
 #   RATE_LIMIT_KV — persistent rate-limit state with in-memory fallback
 #                   used by functions/api/_shared/rate-limit.js
 
-[[kv_namespaces]]
-binding = "STORE_KV"
-id      = ""                    # set in dashboard (prod)
-preview_id = ""                 # set in dashboard (preview)
-
-[[kv_namespaces]]
-binding = "RATE_LIMIT_KV"
-id      = ""                    # set in dashboard (prod)
-preview_id = ""                 # set in dashboard (preview)
+# [[kv_namespaces]]
+# binding    = "STORE_KV"
+# id         = "<set-in-dashboard-prod>"
+# preview_id = "<set-in-dashboard-preview>"
+#
+# [[kv_namespaces]]
+# binding    = "RATE_LIMIT_KV"
+# id         = "<set-in-dashboard-prod>"
+# preview_id = "<set-in-dashboard-preview>"
+#
+# Commented out intentionally: Cloudflare Pages rejects the build when
+# wrangler.toml declares a KV namespace with an empty or placeholder id.
+# Keep the real binding names in sync between this file's comments and
+# the Pages dashboard (Settings → Functions → KV namespace bindings).
 
 # ──────────────────────────────────────────────────────────────────────
 # Environment variables
@@ -117,22 +122,30 @@ preview_id = ""                 # set in dashboard (preview)
 # When you add a new cron, also add a stanza to RUNBOOK.md §Manual cron
 # invocation so on-call knows how to trigger it by hand.
 
-[triggers]
-crons = [
-  # Feed algorithm — trending scores, every 30 minutes
-  "*/30 * * * *",
-  # Scheduled article publishing — every 5 minutes
-  "*/5 * * * *",
-  # Weekly newsletter digest — Mondays at 13:00 UTC
-  "0 13 * * 1",
-  # Hard-delete soft-deleted users past their grace window — daily 03:17 UTC
-  "17 3 * * *"
-]
-
-# NOTE: Cloudflare Pages dispatches cron events to a single internal
-# route (`/__scheduled`) and does not currently route to per-endpoint
-# paths the way it does in Workers. The project invokes each endpoint
-# from an external scheduler (or a lightweight fan-out function) with
-# the matching `X-Cron-Secret` header. When Pages exposes per-cron
-# routing this file should be updated to pin each schedule to its
-# endpoint.
+# [triggers]
+# crons = [
+#   # Feed algorithm — trending scores, every 30 minutes
+#   "*/30 * * * *",
+#   # Scheduled article publishing — every 5 minutes
+#   "*/5 * * * *",
+#   # Weekly newsletter digest — Mondays at 13:00 UTC
+#   "0 13 * * 1",
+#   # Hard-delete soft-deleted users past their grace window — daily 03:17 UTC
+#   "17 3 * * *"
+# ]
+#
+# Commented out intentionally: Cloudflare Pages does not yet consume
+# `[triggers]` from wrangler.toml for Pages projects, and leaving the
+# stanza active fails the Pages build. The cron schedules above are
+# the CURRENT authoritative schedule — mirror them in the Pages
+# dashboard (Settings → Functions → Cron Triggers) and, when adding
+# or changing a cron, update BOTH this file and the dashboard in the
+# same PR.
+#
+# Cloudflare Pages dispatches cron events to a single internal route
+# (`/__scheduled`) and does not currently route to per-endpoint paths
+# the way Workers does. The project invokes each endpoint from an
+# external scheduler (or a lightweight fan-out function) with the
+# matching `X-Cron-Secret` header. When Pages exposes per-cron routing
+# this file should be updated to pin each schedule to its endpoint
+# and the `[triggers]` stanza can be un-commented.
