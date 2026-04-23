@@ -17,6 +17,8 @@
 
 import { corsHeaders, handlePreflight } from './_shared/cors.js';
 import { requireAuth } from './_shared/auth.js';
+import { withUserInputDirective } from './_shared/prompt-safety.js';
+import { moderateOutput, moderationBlockedEvent } from './_shared/moderation.js';
 
 /* ── OpenRouter free models (fallback chain) ─────────────────── */
 const OPENROUTER_MODELS = [
@@ -131,9 +133,12 @@ export async function onRequest(context) {
         );
     }
 
-    // Build full messages array with system prompt
+    // Build full messages array with system prompt.
+    // Append the prompt-injection directive so the model treats user turns
+    // as data, not instructions, even though multi-turn chat messages cannot
+    // be individually delimited without breaking conversation flow.
     const messages = [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: withUserInputDirective(SYSTEM_PROMPT) },
         ...trimmedMessages
     ];
 
@@ -237,6 +242,10 @@ export async function onRequest(context) {
     }
 
     // ── Stream the SSE response back to the client ──────────────
+    const lastUserText = trimmedMessages.length
+        ? (trimmedMessages[trimmedMessages.length - 1].content || '')
+        : '';
+
     try {
         const { readable, writable } = new TransformStream();
         const writer = writable.getWriter();
@@ -246,6 +255,7 @@ export async function onRequest(context) {
             const reader = aiRes.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
+            let accumulated = '';
 
             try {
                 while (true) {
@@ -260,14 +270,12 @@ export async function onRequest(context) {
                         const trimmed = line.trim();
                         if (!trimmed || !trimmed.startsWith('data: ')) continue;
                         const data = trimmed.slice(6);
-                        if (data === '[DONE]') {
-                            await writer.write(encoder.encode('data: [DONE]\n\n'));
-                            continue;
-                        }
+                        if (data === '[DONE]') continue;
                         try {
                             const parsed = JSON.parse(data);
                             const content = parsed.choices?.[0]?.delta?.content;
                             if (content) {
+                                accumulated += content;
                                 await writer.write(encoder.encode('data: ' + JSON.stringify({ text: content }) + '\n\n'));
                             }
                         } catch (_e) {
@@ -275,6 +283,18 @@ export async function onRequest(context) {
                         }
                     }
                 }
+
+                // ── Output moderation pass ─────────────────────
+                // Run after the stream completes so good responses still
+                // stream in real time. If the final text is flagged, emit
+                // a trailing SSE event so clients can surface a warning /
+                // scrub the rendered output.
+                const verdict = await moderateOutput(env, accumulated, { userText: lastUserText });
+                if (verdict.flagged) {
+                    console.warn('chat.js: response blocked by moderation', verdict.category);
+                    await writer.write(encoder.encode('data: ' + moderationBlockedEvent(verdict) + '\n\n'));
+                }
+                await writer.write(encoder.encode('data: [DONE]\n\n'));
             } catch (e) {
                 console.error('Stream processing error:', e);
             } finally {
