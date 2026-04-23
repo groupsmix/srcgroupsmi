@@ -68,7 +68,7 @@
                     return;
                 }
             }
-        } catch(e) {}
+        } catch(_e) {}
 
         var xhr = new XMLHttpRequest();
         xhr.open('GET', API + '?id=' + encodeURIComponent(groupId));
@@ -79,12 +79,12 @@
                     if (data.ok && data.group) {
                         try {
                             sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: data.group }));
-                        } catch(e) {}
+                        } catch(_e) {}
                         callback(null, data.group);
                     } else {
                         callback('Group not found');
                     }
-                } catch(e) {
+                } catch(_e) {
                     callback('Parse error');
                 }
             } else {
@@ -149,7 +149,7 @@
             try {
                 var img = new Image();
                 img.src = BASE + '/api/analytics-event?t=widget_impression&gid=' + encodeURIComponent(groupId) + '&r=' + encodeURIComponent(window.location.hostname);
-            } catch(e) {}
+            } catch(_e) {}
         });
     }
 

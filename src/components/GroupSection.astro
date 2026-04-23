@@ -23,7 +23,7 @@ const {
   modifier = '',
 } = Astro.props;
 
-const sectionClasses = ['home-section', alt && 'home-section--alt', modifier].filter(Boolean).join(' ');
+const _sectionClasses = ['home-section', alt && 'home-section--alt', modifier].filter(Boolean).join(' ');
 ---
 
 <section class={sectionClasses}>

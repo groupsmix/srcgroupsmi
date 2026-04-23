@@ -235,7 +235,7 @@ describe('B-2 ignore-duplicates + dup logging', () => {
         });
         const purchaseCall = fetchMock.calls.find(c => c.url.includes('/rest/v1/purchases') && c.method === 'POST');
         expect(purchaseCall).toBeDefined();
-        const prefer = purchaseCall.headers['Prefer'] || purchaseCall.headers.Prefer || '';
+        const prefer = purchaseCall.headers.Prefer || purchaseCall.headers.Prefer || '';
         expect(prefer).toMatch(/resolution=ignore-duplicates/);
     });
 
