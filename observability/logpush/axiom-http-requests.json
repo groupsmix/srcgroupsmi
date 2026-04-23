@@ -1,0 +1,45 @@
+{
+  "_comment": "Cloudflare Logpush → Axiom job for `http_requests` (edge access logs). Created via `POST /zones/{zone_id}/logpush/jobs` or the dashboard. Secrets (AXIOM_INGEST_TOKEN) must be provided at job-creation time, not stored in this repo.",
+  "name": "groupsmix-http-requests-axiom",
+  "dataset": "http_requests",
+  "destination_conf": "https://api.axiom.co/v1/datasets/cloudflare-pages-groupsmix/ingest?timestamp-field=EdgeStartTimestamp&header_Authorization=Bearer%20${AXIOM_INGEST_TOKEN}",
+  "enabled": true,
+  "frequency": "high",
+  "kind": "",
+  "output_options": {
+    "output_type": "ndjson",
+    "timestamp_format": "rfc3339",
+    "field_names": [
+      "BotScore",
+      "BotScoreSrc",
+      "CacheCacheStatus",
+      "ClientASN",
+      "ClientCountry",
+      "ClientDeviceType",
+      "ClientIP",
+      "ClientRequestHost",
+      "ClientRequestMethod",
+      "ClientRequestPath",
+      "ClientRequestProtocol",
+      "ClientRequestReferer",
+      "ClientRequestURI",
+      "ClientRequestUserAgent",
+      "EdgeEndTimestamp",
+      "EdgeResponseBytes",
+      "EdgeResponseContentType",
+      "EdgeResponseStatus",
+      "EdgeStartTimestamp",
+      "RayID",
+      "WAFAction",
+      "WAFRuleID",
+      "WorkerStatus",
+      "WorkerSubrequest",
+      "ZoneName"
+    ]
+  },
+  "filter": "{\"where\":{\"and\":[{\"key\":\"ClientRequestHost\",\"operator\":\"contains\",\"value\":\"groupsmix.com\"}]}}",
+  "retention_policy": {
+    "managed_by": "axiom",
+    "note": "Axiom retention is configured per-dataset inside Axiom, not on the Logpush job. For `cloudflare-pages-groupsmix` the dataset should be set to 30 days hot retention (Axiom free plan default) with automatic rollup to monthly aggregates for 12 months. Adjust via Axiom dashboard → Settings → Datasets → cloudflare-pages-groupsmix → Retention."
+  }
+}

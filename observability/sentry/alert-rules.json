@@ -1,0 +1,238 @@
+{
+  "$schema": "https://raw.githubusercontent.com/getsentry/sentry/master/api-docs/schema.json",
+  "_comment": "Declarative Sentry alert rules for GroupsMix. Source of truth for the rules that should exist in the Sentry project. Apply via Sentry's /api/0/projects/{org}/{project}/rules/ endpoint or the `sentry-cli` importer. See docs/observability-alerts.md for how to apply.",
+  "project": "groupsmix",
+  "environment": "production",
+  "rules": [
+    {
+      "name": "Edge 5xx spike — > 20 events in 5m",
+      "description": "Page traffic is very static; a sudden burst of 5xx from edge handlers almost always means a broken deploy or an upstream (Supabase / LemonSqueezy) outage. Paging threshold is intentionally low because any sustained 5xx rate is user-visible.",
+      "conditions": [
+        {
+          "id": "sentry.rules.conditions.event_frequency.EventFrequencyCondition",
+          "value": 20,
+          "interval": "5m"
+        }
+      ],
+      "filters": [
+        {
+          "id": "sentry.rules.filters.tagged_event.TaggedEventFilter",
+          "key": "runtime",
+          "match": "eq",
+          "value": "cloudflare"
+        },
+        {
+          "id": "sentry.rules.filters.level.LevelFilter",
+          "match": "gte",
+          "level": "40"
+        }
+      ],
+      "action_match": "all",
+      "frequency": 30,
+      "actions": [
+        {
+          "id": "sentry.rules.actions.notify_event.NotifyEventAction"
+        },
+        {
+          "id": "sentry.integrations.slack.notify_action.SlackNotifyServiceAction",
+          "workspace": "groupsmix",
+          "channel": "#alerts-prod",
+          "tags": "environment,endpoint,release"
+        }
+      ]
+    },
+    {
+      "name": "Webhook verification failure (LemonSqueezy)",
+      "description": "`/api/lemonsqueezy-webhook` fails closed when the HMAC check fails. Any capture from this endpoint means either a legitimate signing-key rotation we missed or an attempted forgery — both warrant paging.",
+      "conditions": [
+        {
+          "id": "sentry.rules.conditions.first_seen_event.FirstSeenEventCondition"
+        },
+        {
+          "id": "sentry.rules.conditions.event_frequency.EventFrequencyCondition",
+          "value": 1,
+          "interval": "5m"
+        }
+      ],
+      "filters": [
+        {
+          "id": "sentry.rules.filters.tagged_event.TaggedEventFilter",
+          "key": "endpoint",
+          "match": "eq",
+          "value": "lemonsqueezy-webhook"
+        }
+      ],
+      "action_match": "any",
+      "frequency": 5,
+      "actions": [
+        {
+          "id": "sentry.integrations.pagerduty.notify_action.PagerDutyNotifyServiceAction",
+          "service": "groupsmix-oncall"
+        },
+        {
+          "id": "sentry.integrations.slack.notify_action.SlackNotifyServiceAction",
+          "workspace": "groupsmix",
+          "channel": "#alerts-payments",
+          "tags": "environment,endpoint,release"
+        }
+      ]
+    },
+    {
+      "name": "compute-feed cron failure",
+      "description": "`/api/compute-feed` runs on Cloudflare Cron Triggers and is the single source of feed scoring + embeddings + soft-delete cleanup. Any capture here means the feed is getting stale — alert if >= 2 failures in 30m (one transient retry is acceptable).",
+      "conditions": [
+        {
+          "id": "sentry.rules.conditions.event_frequency.EventFrequencyCondition",
+          "value": 2,
+          "interval": "30m"
+        }
+      ],
+      "filters": [
+        {
+          "id": "sentry.rules.filters.tagged_event.TaggedEventFilter",
+          "key": "endpoint",
+          "match": "eq",
+          "value": "compute-feed"
+        }
+      ],
+      "action_match": "all",
+      "frequency": 60,
+      "actions": [
+        {
+          "id": "sentry.integrations.slack.notify_action.SlackNotifyServiceAction",
+          "workspace": "groupsmix",
+          "channel": "#alerts-prod",
+          "tags": "environment,endpoint,release"
+        }
+      ]
+    },
+    {
+      "name": "New issue in production",
+      "description": "Catch-all: any first-seen issue in the production environment posts to Slack. Non-paging; gives on-call a surface to triage new regressions without drowning in noise from known-flaky errors.",
+      "conditions": [
+        {
+          "id": "sentry.rules.conditions.first_seen_event.FirstSeenEventCondition"
+        }
+      ],
+      "filters": [
+        {
+          "id": "sentry.rules.filters.tagged_event.TaggedEventFilter",
+          "key": "environment",
+          "match": "eq",
+          "value": "production"
+        }
+      ],
+      "action_match": "all",
+      "frequency": 60,
+      "actions": [
+        {
+          "id": "sentry.integrations.slack.notify_action.SlackNotifyServiceAction",
+          "workspace": "groupsmix",
+          "channel": "#alerts-prod",
+          "tags": "environment,endpoint,release,level"
+        }
+      ]
+    },
+    {
+      "name": "Client error burst — > 100 events / 10m from same release",
+      "description": "Broken client deploy. A regression that breaks a common page (e.g. auth flow) will tend to produce a large number of identical JS errors within minutes; paging on >100/10m catches those while leaving background noise alone.",
+      "conditions": [
+        {
+          "id": "sentry.rules.conditions.event_frequency.EventFrequencyCondition",
+          "value": 100,
+          "interval": "10m"
+        }
+      ],
+      "filters": [
+        {
+          "id": "sentry.rules.filters.tagged_event.TaggedEventFilter",
+          "key": "runtime",
+          "match": "ne",
+          "value": "cloudflare"
+        },
+        {
+          "id": "sentry.rules.filters.tagged_event.TaggedEventFilter",
+          "key": "environment",
+          "match": "eq",
+          "value": "production"
+        }
+      ],
+      "action_match": "all",
+      "frequency": 15,
+      "actions": [
+        {
+          "id": "sentry.rules.actions.notify_event.NotifyEventAction"
+        },
+        {
+          "id": "sentry.integrations.slack.notify_action.SlackNotifyServiceAction",
+          "workspace": "groupsmix",
+          "channel": "#alerts-prod",
+          "tags": "environment,release"
+        }
+      ]
+    },
+    {
+      "name": "Quiet hours — preview environment",
+      "description": "Preview deploys are expected to have errors during iteration; mute alerts on the `preview` environment so staging noise never pages on-call.",
+      "conditions": [
+        {
+          "id": "sentry.rules.conditions.first_seen_event.FirstSeenEventCondition"
+        }
+      ],
+      "filters": [
+        {
+          "id": "sentry.rules.filters.tagged_event.TaggedEventFilter",
+          "key": "environment",
+          "match": "eq",
+          "value": "preview"
+        }
+      ],
+      "action_match": "all",
+      "frequency": 1440,
+      "actions": []
+    }
+  ],
+  "metric_alerts": [
+    {
+      "name": "Edge error rate > 2% (5m)",
+      "aggregate": "count_if(event.type, equals, error) / count()",
+      "query": "tags[runtime]:cloudflare",
+      "dataset": "events",
+      "time_window_minutes": 5,
+      "threshold_type": "above",
+      "triggers": [
+        {
+          "label": "critical",
+          "threshold": 2.0,
+          "actions": [
+            { "type": "pagerduty", "target": "groupsmix-oncall" }
+          ]
+        },
+        {
+          "label": "warning",
+          "threshold": 1.0,
+          "actions": [
+            { "type": "slack", "target": "#alerts-prod" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Apdex drop (p75 nav > 4s)",
+      "aggregate": "p75(measurements.lcp)",
+      "query": "transaction.op:pageload",
+      "dataset": "transactions",
+      "time_window_minutes": 15,
+      "threshold_type": "above",
+      "triggers": [
+        {
+          "label": "warning",
+          "threshold": 4000,
+          "actions": [
+            { "type": "slack", "target": "#alerts-perf" }
+          ]
+        }
+      ]
+    }
+  ]
+}

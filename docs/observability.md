@@ -1,9 +1,16 @@
 # Observability (scaffold)
 
-This document describes the **current scaffolding** for Sentry + Cloudflare
-Logpush. Nothing in here is switched on by default — each component activates
-only when its DSN / destination is configured via environment variables or the
-Cloudflare dashboard.
+This document describes the **current scaffolding** for Sentry, Cloudflare
+Logpush, and product analytics. Nothing in here is switched on by default —
+each component activates only when its DSN / destination / domain is
+configured via environment variables or the Cloudflare dashboard.
+
+## Index
+
+- §1 — Sentry (client + edge) — [alert rules live in `observability/sentry/`](../observability/sentry/README.md) (H-1).
+- §2 — Cloudflare Logpush → Axiom / R2 — [declarative job + retention config in `observability/logpush/`](../observability/logpush/README.md) (H-2).
+- §3 — Product analytics (Plausible / PostHog) (H-3).
+- §4 — Overall status.
 
 ## 1. Sentry
 
@@ -111,13 +118,75 @@ Neither token is read by application code; they are used by Cloudflare's
 managed Logpush runner. This doc only exists so the config is reviewable
 alongside the rest of the repo.
 
-## 3. Status
+## 3. Product analytics (Plausible / PostHog)
+
+Loader: [`public/assets/js/shared/analytics.js`](../public/assets/js/shared/analytics.js).
+Seed: [`public/assets/js/shared/observability-config.js`](../public/assets/js/shared/observability-config.js).
+Stamp: [`scripts/stamp-observability-config.js`](../scripts/stamp-observability-config.js).
+
+### Default: Plausible
+
+Plausible is the default because it is **cookieless**, respects DNT out of
+the box, and does not require a consent banner under GDPR/ePrivacy. The
+loader is inert until `PUBLIC_PLAUSIBLE_DOMAIN` is set at build time.
+
+Required Cloudflare Pages build variables:
+
+| Variable | Purpose |
+| --- | --- |
+| `PUBLIC_PLAUSIBLE_DOMAIN` | The domain Plausible tracks as (e.g. `groupsmix.com`). |
+| `PUBLIC_PLAUSIBLE_API_HOST` | Optional — defaults to `https://plausible.io`. Override to point at self-hosted. |
+
+The loader refuses to run when any of these are true:
+
+- `navigator.doNotTrack === '1'` or `'yes'`.
+- The current path starts with `/gm-ctrl` (admin console — never track).
+- `window.__gm_cookie_consent === false` (consent explicitly denied).
+
+Once loaded, emit custom events with the uniform wrapper:
+
+```js
+window.GMAnalytics.track('CTA clicked', { location: 'hero' });
+```
+
+Calls before the Plausible script has finished loading are queued and
+replayed when it is ready, so nothing needs to guard on readiness.
+
+### Alternative: PostHog
+
+PostHog is supported via the same loader by setting
+`window.PLAUSIBLE_CONFIG = { provider: 'posthog', apiKey, apiHost }` in
+the stamp script. Session recording is disabled by default; persistence
+is forced to `memory` so PostHog never writes cookies.
+
+PostHog requires a consent banner under GDPR/ePrivacy; wire
+`__gm_cookie_consent` before opting users in.
+
+### CSP
+
+Plausible is allow-listed in [`public/_headers`](../public/_headers) on
+both `script-src` (to load `https://plausible.io/js/script.js`) and
+`connect-src` (to send events to `https://plausible.io`). The Sentry
+browser CDN (`https://browser.sentry-cdn.com`) and all regional Sentry
+ingest hosts (`https://*.ingest.sentry.io`, `.us.`, `.de.`) are
+allow-listed for §1.
+
+### Tests
+
+- [`tests/analytics.test.js`](../tests/analytics.test.js) — loader
+  behaviour: inert states, queueing, DNT, admin gate, PostHog branch.
+- [`tests/stamp-observability-config.test.js`](../tests/stamp-observability-config.test.js) —
+  build-time stamping, validation, injection escaping.
+
+## 4. Status
 
 | Component | Status |
 | --- | --- |
 | Client Sentry loader | **Scaffold committed** — inert until `PUBLIC_SENTRY_DSN` is set. |
 | Edge Sentry helper | **Scaffold committed** — inert until `SENTRY_DSN_EDGE` is set. |
-| Cloudflare Logpush → Axiom/R2 | **Documented** — set up via dashboard, no code required. |
+| Sentry alert rules (H-1) | **Declarative spec committed** — see `observability/sentry/alert-rules.json`. Apply via Sentry REST API. |
+| Cloudflare Logpush → Axiom/R2 (H-2) | **Declarative config committed** — see `observability/logpush/`. Apply via Cloudflare API. |
+| Product analytics (H-3) | **Loader committed + tested** — inert until `PUBLIC_PLAUSIBLE_DOMAIN` is set. |
 
 Follow-ups:
 
@@ -126,3 +195,5 @@ Follow-ups:
 - Add a build step that stamps `PUBLIC_SENTRY_RELEASE = groupsmix@<git-sha>`
   so front- and back-end releases match.
 - Turn on Logpush once the destination is provisioned.
+- Once Plausible is live in production, audit which CTAs / funnels we
+  actually track and prune/extend via `GMAnalytics.track(...)`.

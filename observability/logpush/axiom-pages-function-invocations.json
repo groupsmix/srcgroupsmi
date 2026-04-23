@@ -1,0 +1,29 @@
+{
+  "_comment": "Cloudflare Logpush → Axiom job for `pages_function_invocation_logs`. Created on the Pages project (not the zone). Provides per-handler outcome data; pairs with `http_requests` to correlate 5xx at the edge with the handler that produced them.",
+  "name": "groupsmix-pages-functions-axiom",
+  "dataset": "pages_function_invocation_logs",
+  "destination_conf": "https://api.axiom.co/v1/datasets/cloudflare-pages-functions-groupsmix/ingest?timestamp-field=Timestamp&header_Authorization=Bearer%20${AXIOM_INGEST_TOKEN}",
+  "enabled": true,
+  "frequency": "high",
+  "output_options": {
+    "output_type": "ndjson",
+    "timestamp_format": "rfc3339",
+    "field_names": [
+      "DispatchNamespace",
+      "Entrypoint",
+      "Event",
+      "EventTimestampMs",
+      "EventType",
+      "Exceptions",
+      "Logs",
+      "Outcome",
+      "ScriptName",
+      "ScriptTags",
+      "Timestamp"
+    ]
+  },
+  "retention_policy": {
+    "managed_by": "axiom",
+    "note": "Function-invocation logs contain request-scoped context (Logs, Exceptions) that can include path parameters. Retain 14 days hot in Axiom; do NOT roll up to monthly — the value is per-request triage, not aggregates."
+  }
+}

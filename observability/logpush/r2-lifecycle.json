@@ -1,0 +1,24 @@
+{
+  "_comment": "R2 bucket lifecycle rules for the `gm-logs` bucket. Applied via Cloudflare's R2 lifecycle API: `PUT /accounts/{account_id}/r2/buckets/gm-logs/lifecycle`. Each prefix has its own retention independently from the Logpush job that writes into it; deletes happen server-side on R2 without involving Logpush.",
+  "bucket": "gm-logs",
+  "rules": [
+    {
+      "id": "http-requests-90d",
+      "enabled": true,
+      "conditions": { "prefix": "http-requests/" },
+      "deleteObjectsTransition": { "condition": { "type": "Age", "maxAge": 7776000 } }
+    },
+    {
+      "id": "pages-functions-30d",
+      "enabled": true,
+      "conditions": { "prefix": "pages-functions/" },
+      "deleteObjectsTransition": { "condition": { "type": "Age", "maxAge": 2592000 } }
+    },
+    {
+      "id": "workers-trace-events-14d",
+      "enabled": true,
+      "conditions": { "prefix": "workers-trace-events/" },
+      "deleteObjectsTransition": { "condition": { "type": "Age", "maxAge": 1209600 } }
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "_comment": "Cloudflare Logpush → R2 job for `http_requests`. Acts as a cold-storage archive / compliance backstop independent of Axiom. R2 is cheaper than Axiom for long-term retention; Axiom is used for queryable hot data, R2 for durable history.",
+  "name": "groupsmix-http-requests-r2",
+  "dataset": "http_requests",
+  "destination_conf": "r2://gm-logs/http-requests/{DATE}?account-id=${CF_ACCOUNT_ID}&access-key-id=${R2_LOGS_ACCESS_KEY_ID}&secret-access-key=${R2_LOGS_SECRET_ACCESS_KEY}",
+  "enabled": true,
+  "frequency": "low",
+  "output_options": {
+    "output_type": "ndjson",
+    "timestamp_format": "rfc3339",
+    "field_names": [
+      "ClientASN",
+      "ClientCountry",
+      "ClientRequestHost",
+      "ClientRequestMethod",
+      "ClientRequestPath",
+      "EdgeResponseStatus",
+      "EdgeResponseBytes",
+      "EdgeStartTimestamp",
+      "RayID",
+      "WAFAction",
+      "WAFRuleID",
+      "ZoneName"
+    ]
+  },
+  "retention_policy": {
+    "managed_by": "r2-lifecycle",
+    "bucket": "gm-logs",
+    "prefix": "http-requests/",
+    "rules": [
+      {
+        "id": "gm-logs-http-requests-delete-after-90d",
+        "status": "enabled",
+        "filter": { "prefix": "http-requests/" },
+        "expiration": { "days": 90 }
+      }
+    ],
+    "note": "90 days is the minimum retention for debugging historical abuse / fraud patterns on LemonSqueezy webhooks. R2 lifecycle rules are applied via `POST /accounts/{account_id}/r2/buckets/{bucket}/lifecycle` — see ./r2-lifecycle.json."
+  }
+}
