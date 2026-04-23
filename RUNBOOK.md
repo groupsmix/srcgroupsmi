@@ -40,7 +40,12 @@ the real slugs from your 1Password / ops vault if they differ.
   slow queries), Auth → Logs, Storage usage.
 - **Sentry** → projects `groupsmix-web` (browser) and
   `groupsmix-edge` (Pages Functions); see
-  [`docs/observability.md`](./docs/observability.md).
+  [`docs/observability.md`](./docs/observability.md). Alert-rule spec
+  in [`docs/sentry-alerts.md`](./docs/sentry-alerts.md).
+- **Axiom** → dataset `cloudflare-pages-groupsmix`, fed by Cloudflare
+  Logpush. Primary surface for SLO computation and post-incident
+  queries. R2 bucket `gm-logs` is the 90-day archive. See
+  [`docs/logpush.md`](./docs/logpush.md).
 - **Status page / external probe** (the uptime monitor configured per
   [`docs/slos.md §4`](./docs/slos.md)).
 

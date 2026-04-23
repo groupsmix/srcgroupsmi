@@ -69,55 +69,80 @@ Environment variables (set as Pages secrets):
 When `SENTRY_DSN_EDGE` is unset, `captureEdgeException` returns immediately
 with no side effects — safe to call unconditionally.
 
+### Alert rules
+
+Sentry alert rules (issue alerts + metric alerts) are specified in
+[`sentry-alerts.md`](./sentry-alerts.md). Thresholds mirror the
+burn-rate table in [`slos.md §3.1`](./slos.md#31-burn-rate-alerting)
+so that a Sentry page and an SLO page fire on the same fault.
+
 ## 2. Cloudflare Logpush → Axiom / R2
 
-Cloudflare Pages emits the following log datasets:
+The full spec — datasets shipped, PII-safe field allow-list,
+ready-to-run Cloudflare Logpush API payloads for Axiom and R2, and the
+retention policy (**90 days total, tiered at 30d**) — lives in
+[`logpush.md`](./logpush.md). That document is the source of truth for
+the Logpush jobs; keep it in sync with the provisioned config.
 
-- `pages_function_invocation_logs` — per-function invocation outcome
-- `http_requests` — all edge requests (used for access logs)
-- `workers_trace_events` — trace events from Workers/Pages Functions
+Summary:
 
-### Option A: Axiom
+- Datasets shipped: `http_requests`, `pages_function_invocation_logs`,
+  `workers_trace_events`.
+- Primary destination: Axiom (query surface). Archive: R2 (cold).
+- Retention: 30 days hot / 60 days cold, then deleted. See
+  [`logpush.md §4`](./logpush.md#4-retention-policy).
 
-1. Create an Axiom dataset, e.g. `cloudflare-pages-groupsmix`.
-2. Generate an Axiom ingest token.
-3. In Cloudflare dashboard → **Analytics & Logs → Logpush → Create a Logpush
-   job** using the HTTP destination:
+## 3. Product analytics (Plausible)
 
-   ```
-   https://api.axiom.co/v1/datasets/cloudflare-pages-groupsmix/ingest?timestamp-field=EdgeStartTimestamp
-   Authorization: Bearer <AXIOM_INGEST_TOKEN>
-   ```
+GroupsMix uses [Plausible][plausible] for product analytics —
+cookieless, no cross-site tracking, GDPR-friendly by default. The
+loader ([`public/assets/js/shared/analytics.js`](../public/assets/js/shared/analytics.js))
+is inert unless `PUBLIC_PLAUSIBLE_DOMAIN` is set at build time, and
+respects both DoNotTrack and the `gm_cookie_consent = rejected`
+signal so opted-out users see no beacon.
 
-4. Select the `http_requests` dataset and scope it to the GroupsMix zone /
-   Pages project. Repeat for `pages_function_invocation_logs`.
+### Build-time wiring
 
-### Option B: Cloudflare R2
+[`scripts/stamp-analytics-config.js`](../scripts/stamp-analytics-config.js)
+runs after `astro build` and stamps the following into
+`dist/assets/js/shared/analytics-config.js`:
 
-1. Create a bucket (e.g. `gm-logs`) and an API token with `Object Write` on it.
-2. In Cloudflare dashboard → **Logpush → Create a Logpush job** using the
-   R2 destination, pointing at `r2://gm-logs/pages-functions/{DATE}/`.
-3. Retention: use the R2 Lifecycle UI to age objects to Glacier-equivalent
-   or delete after N days.
+```js
+window.ANALYTICS_CONFIG = {
+    plausible: {
+        domain: 'groupsmix.com',
+        src: 'https://plausible.io/js/script.outbound-links.tagged-events.js'
+    }
+};
+```
 
-### Required secrets
+Env vars:
 
-| Variable | Purpose |
-| --- | --- |
-| `AXIOM_INGEST_TOKEN` | Only if using Axiom. Stored at the Cloudflare Logpush job level — **not** as a Pages env var. |
-| `R2_LOGS_ACCESS_KEY_ID` / `R2_LOGS_SECRET_ACCESS_KEY` | Only if using R2. Same — job-level. |
+| Variable                 | Purpose                                                          |
+| ------------------------ | ---------------------------------------------------------------- |
+| `PUBLIC_PLAUSIBLE_DOMAIN`| Plausible site identifier (e.g. `groupsmix.com`). Loader is a no-op when unset. |
+| `PUBLIC_PLAUSIBLE_SRC`   | Optional override for the Plausible script URL (proxy via Cloudflare Worker when set). Defaults to `script.outbound-links.tagged-events.js`. |
 
-Neither token is read by application code; they are used by Cloudflare's
-managed Logpush runner. This doc only exists so the config is reviewable
-alongside the rest of the repo.
+### Custom events
 
-## 3. Status
+Anywhere in client JS:
+
+```js
+if (window.gmAnalytics) window.gmAnalytics.track('submit_group', { category: 'whatsapp' });
+```
+
+`gmAnalytics.track` queues events if Plausible has not finished loading
+yet, so calling it at page-init time is safe.
+
+## 4. Status
 
 | Component | Status |
 | --- | --- |
 | Client Sentry loader | **Scaffold committed** — inert until `PUBLIC_SENTRY_DSN` is set. |
 | Edge Sentry helper | **Scaffold committed** — inert until `SENTRY_DSN_EDGE` is set. |
-| Cloudflare Logpush → Axiom/R2 | **Documented** — set up via dashboard, no code required. |
+| Sentry alert rules | **Specified** — [`sentry-alerts.md`](./sentry-alerts.md); provision via Sentry UI. |
+| Cloudflare Logpush → Axiom/R2 | **Specified** — [`logpush.md`](./logpush.md); provision via Cloudflare API. |
+| Plausible product analytics | **Wired** — inert until `PUBLIC_PLAUSIBLE_DOMAIN` is set. |
 
 Follow-ups:
 
@@ -125,4 +150,6 @@ Follow-ups:
   (`lemonsqueezy-webhook`, `compute-feed`, `owner-dashboard`).
 - Add a build step that stamps `PUBLIC_SENTRY_RELEASE = groupsmix@<git-sha>`
   so front- and back-end releases match.
-- Turn on Logpush once the destination is provisioned.
+- Provision Logpush destinations and the Sentry alert rules.
+
+[plausible]: https://plausible.io/
