@@ -13,9 +13,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="content-wrapper">
 
             <!-- Header -->
-            <section class="jobs-hero" style="padding-bottom:var(--space-4)">
+            <section class="jobs-hero s-feadff">
                 <span class="jobs-hero__badge">
-                    <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    <svg class="s-427a56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                     Employer Tools
                 </span>
                 <h1 class="jobs-hero__title">Employer Dashboard</h1>
@@ -25,23 +25,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <!-- Dashboard Tabs -->
             <div class="employer-tabs" id="employer-tabs">
                 <button class="employer-tab employer-tab--active" data-tab="profile" onclick="EmployerDash.switchTab('profile')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-8583a7"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     Company Profile
                 </button>
                 <button class="employer-tab" data-tab="listings" onclick="EmployerDash.switchTab('listings')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-8583a7"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
                     My Listings
                 </button>
                 <button class="employer-tab" data-tab="applicants" onclick="EmployerDash.switchTab('applicants')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-8583a7"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
                     Applicants
                 </button>
                 <button class="employer-tab" data-tab="interviews" onclick="EmployerDash.switchTab('interviews')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-8583a7"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                     Interviews
                 </button>
                 <button class="employer-tab" data-tab="referrals" onclick="EmployerDash.switchTab('referrals')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-8583a7"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                     Referrals
                 </button>
             </div>
@@ -50,14 +50,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <div class="employer-panel" id="panel-profile">
                 <div class="employer-card">
                     <h3 class="employer-card__title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-0483b6"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                         Company Profile
                     </h3>
-                    <p style="color:var(--text-secondary);margin-bottom:var(--space-4);font-size:var(--text-sm)">Build trust with candidates by completing your employer profile. Verified employers get a badge.</p>
+                    <p class="s-321192">Build trust with candidates by completing your employer profile. Verified employers get a badge.</p>
 
-                    <div id="employer-verified-badge" style="display:none;margin-bottom:var(--space-4)">
+                    <div id="employer-verified-badge" class="s-b14c26">
                         <span class="employer-verified-badge">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-427a56"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                             Verified Employer
                         </span>
                     </div>
@@ -72,12 +72,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                         <textarea class="form-textarea" id="ep-company-desc" placeholder="Tell candidates about your company, culture, and what makes you a great employer..." rows="4"></textarea>
                     </div>
 
-                    <div style="display:flex;gap:var(--space-3)">
-                        <div class="form-group" style="flex:1">
+                    <div class="s-6541af">
+                        <div class="form-group s-7623f0">
                             <label class="form-label" for="ep-website">Website</label>
                             <input type="url" class="form-input" id="ep-website" placeholder="https://yourcompany.com">
                         </div>
-                        <div class="form-group" style="flex:1">
+                        <div class="form-group s-7623f0">
                             <label class="form-label" for="ep-company-size">Company Size</label>
                             <select class="form-select" id="ep-company-size">
                                 <option value="">Select size</option>
@@ -90,19 +90,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                         </div>
                     </div>
 
-                    <div style="display:flex;gap:var(--space-3)">
-                        <div class="form-group" style="flex:1">
+                    <div class="s-6541af">
+                        <div class="form-group s-7623f0">
                             <label class="form-label" for="ep-industry">Industry</label>
                             <input type="text" class="form-input" id="ep-industry" placeholder="e.g., Gaming, DeFi, Social Media">
                         </div>
-                        <div class="form-group" style="flex:1">
+                        <div class="form-group s-7623f0">
                             <label class="form-label" for="ep-location">Location</label>
                             <input type="text" class="form-input" id="ep-location" placeholder="e.g., San Francisco, Remote">
                         </div>
                     </div>
 
                     <!-- Employer Stats -->
-                    <div class="employer-stats" id="employer-stats" style="display:none">
+                    <div class="employer-stats s-c8be1c" id="employer-stats">
                         <div class="employer-stats__item">
                             <div class="employer-stats__value" id="ep-total-jobs">0</div>
                             <div class="employer-stats__label">Jobs Posted</div>
@@ -117,24 +117,24 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                         </div>
                     </div>
 
-                    <button class="btn btn-primary" id="btn-save-profile" style="margin-top:var(--space-4)">Save Profile</button>
+                    <button class="btn btn-primary s-c46215" id="btn-save-profile">Save Profile</button>
                 </div>
             </div>
 
             <!-- Tab Content: My Listings -->
-            <div class="employer-panel" id="panel-listings" style="display:none">
+            <div class="employer-panel s-c8be1c" id="panel-listings">
                 <div class="employer-card">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4)">
-                        <h3 class="employer-card__title" style="margin:0">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+                    <div class="s-65274e">
+                        <h3 class="employer-card__title s-1da9fa">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-0483b6"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
                             My Job Listings
                         </h3>
                         <a href="/post-job" class="btn btn-primary btn-sm">Post New Job</a>
                     </div>
 
                     <!-- Expiring Jobs Alert -->
-                    <div id="expiring-jobs-alert" style="display:none" class="employer-alert employer-alert--warning">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <div id="expiring-jobs-alert" class="employer-alert employer-alert--warning s-c8be1c">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-55c010"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                         <div>
                             <strong>Expiring Soon!</strong>
                             <span id="expiring-jobs-text">Some of your job listings are about to expire.</span>
@@ -142,7 +142,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     </div>
 
                     <div id="my-listings-list" class="employer-listings">
-                        <div style="text-align:center;padding:var(--space-8);color:var(--text-tertiary)">
+                        <div class="s-21b655">
                             <p>Loading your listings...</p>
                         </div>
                     </div>
@@ -150,13 +150,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             </div>
 
             <!-- Tab Content: Applicants -->
-            <div class="employer-panel" id="panel-applicants" style="display:none">
+            <div class="employer-panel s-c8be1c" id="panel-applicants">
                 <div class="employer-card">
                     <h3 class="employer-card__title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-0483b6"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
                         Applicant Tracking
                     </h3>
-                    <p style="color:var(--text-secondary);margin-bottom:var(--space-4);font-size:var(--text-sm)">Select a job listing to view and manage applicants.</p>
+                    <p class="s-321192">Select a job listing to view and manage applicants.</p>
 
                     <div class="form-group">
                         <label class="form-label">Select Job</label>
@@ -166,7 +166,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     </div>
 
                     <!-- Applicant Pipeline -->
-                    <div id="applicant-pipeline" style="display:none">
+                    <div id="applicant-pipeline" class="s-c8be1c">
                         <div class="applicant-pipeline-stats" id="applicant-stats">
                             <div class="pipeline-stat pipeline-stat--pending">
                                 <span class="pipeline-stat__count" id="stat-pending">0</span>
@@ -194,16 +194,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             </div>
 
             <!-- Tab Content: Interviews -->
-            <div class="employer-panel" id="panel-interviews" style="display:none">
+            <div class="employer-panel s-c8be1c" id="panel-interviews">
                 <div class="employer-card">
                     <h3 class="employer-card__title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-0483b6"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         Interview Scheduling
                     </h3>
-                    <p style="color:var(--text-secondary);margin-bottom:var(--space-4);font-size:var(--text-sm)">Schedule and manage interviews with shortlisted candidates. Includes Google Calendar integration.</p>
+                    <p class="s-321192">Schedule and manage interviews with shortlisted candidates. Includes Google Calendar integration.</p>
 
                     <div id="interview-list" class="interview-list">
-                        <div style="text-align:center;padding:var(--space-8);color:var(--text-tertiary)">
+                        <div class="s-21b655">
                             <p>Loading interviews...</p>
                         </div>
                     </div>
@@ -211,16 +211,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             </div>
 
             <!-- Tab Content: Referrals -->
-            <div class="employer-panel" id="panel-referrals" style="display:none">
+            <div class="employer-panel s-c8be1c" id="panel-referrals">
                 <div class="employer-card">
                     <h3 class="employer-card__title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-0483b6"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                         Referral Bounties
                     </h3>
-                    <p style="color:var(--text-secondary);margin-bottom:var(--space-4);font-size:var(--text-sm)">Set up referral bounties for your jobs. When someone refers a candidate who gets hired, they earn GMX Coins.</p>
+                    <p class="s-321192">Set up referral bounties for your jobs. When someone refers a candidate who gets hired, they earn GMX Coins.</p>
 
                     <div id="referral-bounties-list">
-                        <div style="text-align:center;padding:var(--space-8);color:var(--text-tertiary)">
+                        <div class="s-21b655">
                             <p>Loading referral bounties...</p>
                         </div>
                     </div>
@@ -706,3 +706,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </script>
 </Fragment>
 </BaseLayout>
+
+<style>
+/* inline-styles: migrated */
+.s-0483b6 { width:20px;height:20px; }
+.s-1da9fa { margin:0; }
+.s-21b655 { text-align:center;padding:var(--space-8);color:var(--text-tertiary); }
+.s-321192 { color:var(--text-secondary);margin-bottom:var(--space-4);font-size:var(--text-sm); }
+.s-427a56 { width:14px;height:14px; }
+.s-55c010 { width:16px;height:16px;flex-shrink:0; }
+.s-65274e { display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4); }
+.s-6541af { display:flex;gap:var(--space-3); }
+.s-7623f0 { flex:1; }
+.s-8583a7 { width:16px;height:16px; }
+.s-b14c26 { display:none;margin-bottom:var(--space-4); }
+.s-c46215 { margin-top:var(--space-4); }
+.s-c8be1c { display:none; }
+.s-feadff { padding-bottom:var(--space-4); }
+</style>

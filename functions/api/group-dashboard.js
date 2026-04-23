@@ -5,7 +5,8 @@
  * GET /api/group-dashboard?group_id=X&action=tips — Get growth tips
  *
  * Shows group owners how their group is performing on GroupsMix.
- * Requires the user to be the group's submitter.
+ * Requires a valid Supabase JWT; ownership is then verified against the
+ * group's submitter_uid before any stats are returned.
  */
 
 import { requireAuth } from './_shared/auth.js';
@@ -36,14 +37,21 @@ export async function onRequest(context) {
         });
     }
 
-    const supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';
+    const supabaseUrl = env?.SUPABASE_URL;
     const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
 
-    if (!supabaseKey) {
+    if (!supabaseUrl || !supabaseKey) {
         return new Response(JSON.stringify({ ok: false, error: 'Server not configured' }), {
-            status: 500, headers: corsHeaders(origin)
+            status: 503, headers: corsHeaders(origin)
         });
     }
+
+    // This endpoint reads with the service-role key (which bypasses RLS), so
+    // the caller must be authenticated. Ownership against the group's
+    // submitter_uid is then verified below before any data is returned.
+    const authResult = await requireAuth(request, env, corsHeaders(origin));
+    if (authResult instanceof Response) return authResult;
+    const authUserId = authResult.user.id;
 
     const url = new URL(request.url);
     const groupId = url.searchParams.get('group_id');
@@ -54,9 +62,6 @@ export async function onRequest(context) {
             status: 400, headers: corsHeaders(origin)
         });
     }
-
-    const authResult = await requireAuth(request, env, corsHeaders(origin));
-    if (authResult instanceof Response) return authResult;
 
     try {
         // Get the group
@@ -73,15 +78,22 @@ export async function onRequest(context) {
 
         const group = groups[0];
 
-        // Verify the caller is the group's submitter or an admin.
+        // Ownership gate: caller must be the group's submitter/owner, or an admin.
+        // Accept matches against submitter_uid (auth.users id) as well as
+        // submitted_by/submitter_id/owner_id (which may point at the public
+        // users row id) to cover both schemas.
+        const submitterUid = group.submitter_uid || null;
         const callerRes = await fetch(
-            supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authResult.user.id) + '&select=id,role&limit=1',
+            supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authUserId) + '&select=id,role&limit=1',
             { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
         );
         const callers = await callerRes.json();
         const caller = Array.isArray(callers) && callers[0];
-        const submitterMatch = caller && (group.submitted_by === caller.id || group.submitter_id === caller.id || group.owner_id === caller.id);
-        if (!caller || (!submitterMatch && caller.role !== 'admin')) {
+        const submitterMatch =
+            (submitterUid && submitterUid === authUserId) ||
+            (caller && (group.submitted_by === caller.id || group.submitter_id === caller.id || group.owner_id === caller.id));
+        const isAdmin = caller && caller.role === 'admin';
+        if (!submitterMatch && !isAdmin) {
             return new Response(JSON.stringify({ ok: false, error: 'Forbidden' }), {
                 status: 403, headers: corsHeaders(origin)
             });

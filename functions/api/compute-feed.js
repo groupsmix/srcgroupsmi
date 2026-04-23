@@ -187,11 +187,13 @@ export async function onRequest(context) {
         return jsonResponse({ ok: false, error: 'Service not configured' }, 503, origin);
     }
 
-    // Require CRON_SECRET. Fail closed — previously this was optional which meant
-    // anyone who knew the route could trigger expensive recomputation jobs.
+    // Fail closed: this endpoint runs with the service-role key and
+    // triggers expensive RPCs. Refuse to run if CRON_SECRET is not
+    // configured or the header does not match.
     const cronSecret = env?.CRON_SECRET;
     if (!cronSecret) {
-        return jsonResponse({ ok: false, error: 'Cron secret not configured' }, 503, origin);
+        console.error('CRON_SECRET is not configured — refusing compute-feed');
+        return jsonResponse({ ok: false, error: 'Service not configured' }, 503, origin);
     }
     const providedSecret = request.headers.get('X-Cron-Secret') || '';
     if (providedSecret !== cronSecret) {

@@ -15,6 +15,8 @@
 
 import { corsHeaders, handlePreflight } from './_shared/cors.js';
 import { requireAuth } from './_shared/auth.js';
+import { wrapUserInput, withUserInputDirective } from './_shared/prompt-safety.js';
+import { moderateOutput, moderationBlockedEvent } from './_shared/moderation.js';
 
 /* ── Supported languages ─────────────────────────────────────── */
 const SUPPORTED_LANGUAGES = {
@@ -302,7 +304,7 @@ async function callOpenRouter(apiKey, messages, maxTokens, temperature, category
 }
 
 /* ── Stream SSE response to client ───────────────────────────── */
-function streamToClient(aiRes, hdrs) {
+function streamToClient(aiRes, hdrs, moderationCtx) {
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
@@ -311,6 +313,7 @@ function streamToClient(aiRes, hdrs) {
         const reader = aiRes.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let accumulated = '';
 
         try {
             while (true) {
@@ -325,14 +328,12 @@ function streamToClient(aiRes, hdrs) {
                     const trimmed = line.trim();
                     if (!trimmed || !trimmed.startsWith('data: ')) continue;
                     const data = trimmed.slice(6);
-                    if (data === '[DONE]') {
-                        await writer.write(encoder.encode('data: [DONE]\n\n'));
-                        continue;
-                    }
+                    if (data === '[DONE]') continue;
                     try {
                         const parsed = JSON.parse(data);
                         const content = parsed.choices?.[0]?.delta?.content;
                         if (content) {
+                            accumulated += content;
                             await writer.write(encoder.encode('data: ' + JSON.stringify({ text: content }) + '\n\n'));
                         }
                     } catch (_e) {
@@ -340,6 +341,20 @@ function streamToClient(aiRes, hdrs) {
                     }
                 }
             }
+
+            // E-3: Output moderation after full stream is received.
+            if (moderationCtx) {
+                const verdict = await moderateOutput(
+                    moderationCtx.env,
+                    accumulated,
+                    { userText: moderationCtx.userText }
+                );
+                if (verdict.flagged) {
+                    console.warn('groq.js: response blocked by moderation', verdict.category);
+                    await writer.write(encoder.encode('data: ' + moderationBlockedEvent(verdict) + '\n\n'));
+                }
+            }
+            await writer.write(encoder.encode('data: [DONE]\n\n'));
         } catch (e) {
             console.error('Stream processing error:', e);
         } finally {
@@ -399,6 +414,17 @@ export async function onRequest(context) {
         );
     }
 
+    // ── E-1: Reject client-supplied system prompts ─────────────
+    // The server owns the system prompt. Clients that pass `body.system`
+    // are rejected outright; the only legal way to influence the system
+    // prompt is to pick a registered `tool` id.
+    if (body.system !== undefined) {
+        return new Response(
+            JSON.stringify({ ok: false, error: 'Client-supplied "system" is not allowed. Use the "tool" field.' }),
+            { status: 400, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+        );
+    }
+
     const prompt = sanitizeInput(body.prompt);
     const toolId = (typeof body.tool === 'string') ? body.tool.trim() : '';
     const toolConfig = toolId ? TOOL_PROMPTS[toolId] : null;
@@ -407,7 +433,7 @@ export async function onRequest(context) {
     const langCode = (typeof body.lang === 'string') ? body.lang.trim().toLowerCase() : 'en';
     const langName = SUPPORTED_LANGUAGES[langCode] || 'English';
 
-    // Build system prompt based on tool or legacy fallback
+    // Build system prompt from the server-owned tool catalog.
     let system;
     let maxTokens;
     let temperature;
@@ -419,16 +445,15 @@ export async function onRequest(context) {
         }
         maxTokens = toolConfig.maxTokens;
         temperature = toolConfig.temperature;
-    } else if (body.system) {
-        // Legacy fallback — will be removed once all clients are migrated
-        system = sanitizeInput(body.system);
-        maxTokens = Math.min(Math.max(parseInt(body.max_tokens, 10) || 500, 50), 2000);
-        temperature = 0.7;
     } else {
         system = 'You are a helpful assistant for GroupsMix, a social media group directory. Be concise and professional.';
         maxTokens = Math.min(Math.max(parseInt(body.max_tokens, 10) || 500, 50), 2000);
         temperature = 0.7;
     }
+
+    // E-2: Append user-input directive to every system prompt so the model
+    // knows anything inside <user_input>...</user_input> is data, not instructions.
+    system = withUserInputDirective(system);
 
     if (!prompt) {
         return new Response(
@@ -437,9 +462,10 @@ export async function onRequest(context) {
         );
     }
 
+    // E-2: Wrap user prompt in explicit delimiters.
     const messages = [
         { role: 'system', content: system },
-        { role: 'user', content: prompt }
+        { role: 'user', content: wrapUserInput(prompt) }
     ];
 
     // ── Smart Task Routing ──────────────────────────────────────
@@ -486,7 +512,7 @@ export async function onRequest(context) {
 
     // ── Stream the SSE response back to the client ──────────────
     try {
-        return streamToClient(aiRes, corsHeaders(origin));
+        return streamToClient(aiRes, corsHeaders(origin), { env: env, userText: prompt });
     } catch (err) {
         console.error('Stream proxy error:', err);
         return new Response(

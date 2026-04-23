@@ -57,20 +57,20 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     </div>
 
     <div class="verify-card" id="verify-auth-gate">
-        <div style="text-align:center;padding:var(--space-8) 0">
-            <div style="font-size:var(--text-5xl);margin-bottom:var(--space-4)">&#128274;</div>
-            <h3 style="margin-bottom:var(--space-3)">Sign In to Verify</h3>
-            <p style="color:var(--text-secondary);margin-bottom:var(--space-6)">You need to be signed in to verify your groups.</p>
+        <div class="s-8b5eee">
+            <div class="s-73d785">&#128274;</div>
+            <h3 class="s-317a2d">Sign In to Verify</h3>
+            <p class="s-71fca0">You need to be signed in to verify your groups.</p>
             <button class="btn btn-primary" onclick="Auth.requireAuth()">Sign In</button>
         </div>
     </div>
 
-    <div class="verify-card" id="verify-wizard" style="display:none">
+    <div class="verify-card s-c8be1c" id="verify-wizard">
         <div class="verify-card__title">Verify Your Group</div>
 
         <!-- Step 1: Select Group -->
         <div id="verify-step-1">
-            <div class="form-group" style="margin-bottom:var(--space-4)">
+            <div class="form-group s-a76134">
                 <label class="form-label" for="verify-group-select">Select a Group to Verify</label>
                 <select class="form-input" id="verify-group-select">
                     <option value="">Choose a group...</option>
@@ -81,7 +81,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         </div>
 
         <!-- Step 2: Show Code -->
-        <div id="verify-step-2" style="display:none">
+        <div id="verify-step-2" class="s-c8be1c">
             <ol class="verify-steps">
                 <li class="verify-step">
                     <div class="verify-step__content">
@@ -103,15 +103,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </li>
             </ol>
             <div class="verify-code" id="verify-code-display" title="Click to copy"></div>
-            <p style="font-size:var(--text-xs);color:var(--text-tertiary);text-align:center;margin-bottom:var(--space-4)" id="verify-expires"></p>
-            <div style="display:flex;gap:var(--space-3);justify-content:center">
+            <p class="s-d31cb0" id="verify-expires"></p>
+            <div class="s-35ccdf">
                 <button class="btn btn-secondary" id="verify-copy-btn">&#128203; Copy Code</button>
                 <button class="btn btn-primary" id="verify-confirm-btn">&#9989; Confirm Verification</button>
             </div>
         </div>
 
         <!-- Step 3: Success -->
-        <div id="verify-step-3" style="display:none">
+        <div id="verify-step-3" class="s-c8be1c">
             <div class="verify-status verify-status--verified">
                 <div class="verify-status__icon">&#9989;</div>
                 <div>
@@ -119,8 +119,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                     <div class="verify-status__sub">Your group is now verified. The badge and ranking boost are active.</div>
                 </div>
             </div>
-            <p style="color:var(--text-secondary);font-size:var(--text-sm)">You can now remove the verification code from your group description. Your verified status is permanent.</p>
-            <div style="margin-top:var(--space-4)">
+            <p class="s-77924f">You can now remove the verification code from your group description. Your verified status is permanent.</p>
+            <div class="s-c46215">
                 <a href="/groups/dashboard" class="btn btn-primary">Go to Dashboard</a>
             </div>
         </div>
@@ -129,16 +129,16 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <div class="verify-card">
         <div class="verify-card__title">&#128221; How It Works</div>
         <div id="verify-platform-instructions">
-            <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-3)">
+            <p class="s-897c35">
                 <strong>WhatsApp:</strong> Open group &rarr; Tap group name &rarr; Tap "Description" &rarr; Paste code &rarr; Save.
             </p>
-            <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-3)">
+            <p class="s-897c35">
                 <strong>Telegram:</strong> Open group &rarr; Tap group name &rarr; Edit &rarr; "Description" &rarr; Paste code &rarr; Save.
             </p>
-            <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-3)">
+            <p class="s-897c35">
                 <strong>Discord:</strong> Server Settings &rarr; Overview &rarr; "Server Description" or a channel topic &rarr; Paste code &rarr; Save.
             </p>
-            <p style="color:var(--text-secondary);font-size:var(--text-sm)">
+            <p class="s-77924f">
                 <strong>Facebook:</strong> Group Settings &rarr; "Description" &rarr; Paste code &rarr; Save.
             </p>
         </div>
@@ -305,3 +305,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 </script>
 </Fragment>
 </BaseLayout>
+
+<style>
+/* inline-styles: migrated */
+.s-317a2d { margin-bottom:var(--space-3); }
+.s-35ccdf { display:flex;gap:var(--space-3);justify-content:center; }
+.s-71fca0 { color:var(--text-secondary);margin-bottom:var(--space-6); }
+.s-73d785 { font-size:var(--text-5xl);margin-bottom:var(--space-4); }
+.s-77924f { color:var(--text-secondary);font-size:var(--text-sm); }
+.s-897c35 { color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-3); }
+.s-8b5eee { text-align:center;padding:var(--space-8) 0; }
+.s-a76134 { margin-bottom:var(--space-4); }
+.s-c46215 { margin-top:var(--space-4); }
+.s-c8be1c { display:none; }
+.s-d31cb0 { font-size:var(--text-xs);color:var(--text-tertiary);text-align:center;margin-bottom:var(--space-4); }
+</style>

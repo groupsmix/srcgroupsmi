@@ -17,6 +17,9 @@
  *   Varies by action (see individual handlers below)
  */
 
+import { wrapUserInput, withUserInputDirective } from './_shared/prompt-safety.js';
+import { moderateOutput } from './_shared/moderation.js';
+
 /* ── Allowed origins for CORS ───────────────────────────────────── */
 const ALLOWED_ORIGINS = [
     'https://groupsmix.com',
@@ -100,7 +103,11 @@ function quickSpamCheck(text) {
 }
 
 /* ── Call OpenRouter AI ───────────────────────────────────────── */
-async function callAI(apiKey, prompt, maxTokens) {
+// `systemInstructions` is the task-level instruction string owned by the
+// server. `userBlock` is pre-wrapped user-supplied content (delimited via
+// wrapUserInput). Callers must keep untrusted data inside the delimited
+// block so the model never sees it as an instruction.
+async function callAI(apiKey, systemInstructions, userBlock, maxTokens) {
     maxTokens = maxTokens || 300;
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -112,7 +119,10 @@ async function callAI(apiKey, prompt, maxTokens) {
         },
         body: JSON.stringify({
             model: 'meta-llama/llama-3.1-8b-instruct:free',
-            messages: [{ role: 'user', content: prompt }],
+            messages: [
+                { role: 'system', content: withUserInputDirective(systemInstructions) },
+                { role: 'user', content: userBlock }
+            ],
             max_tokens: maxTokens,
             temperature: 0.3
         })
@@ -169,15 +179,17 @@ async function handleValidate(body, apiKey) {
         return { valid: true, message: '', category: 'other' };
     }
 
-    const prompt = 'You are a job posting content filter for GroupsMix, a social media community platform. Analyze this job posting and determine:\n' +
+    const systemInstructions = 'You are a job posting content filter for GroupsMix, a social media community platform. Analyze the job posting provided inside <user_input> and determine:\n' +
         '1. Is it legitimate (not spam, scam, or fraudulent)?\n' +
         '2. What category best fits: "design", "programming", "marketing", "writing", "community", "other"\n\n' +
-        'Job Title: ' + title + '\n' +
-        'Description: ' + description + '\n\n' +
         'Respond with ONLY a JSON object (no markdown, no extra text):\n' +
         '{"is_valid": true/false, "reason": "brief explanation if invalid", "category": "one of the categories above"}';
 
-    const aiContent = await callAI(apiKey, prompt, 150);
+    const userBlock = wrapUserInput(
+        'Job Title: ' + title + '\nDescription: ' + description
+    );
+
+    const aiContent = await callAI(apiKey, systemInstructions, userBlock, 150);
     const result = parseAIJSON(aiContent);
 
     if (!result) {
@@ -192,7 +204,7 @@ async function handleValidate(body, apiKey) {
 }
 
 /* ── ACTION: enhance (Job Description Generator) ──────────────── */
-async function handleEnhance(body, apiKey) {
+async function handleEnhance(body, apiKey, env) {
     const title = (body.title || '').trim();
     const description = (body.description || '').trim();
 
@@ -204,10 +216,8 @@ async function handleEnhance(body, apiKey) {
         return { enhanced: false, message: 'AI enhancement is temporarily unavailable', description: description };
     }
 
-    const prompt = 'You are a professional job description writer. The user has provided a basic job title/description for their job posting on GroupsMix (a social media community platform).\n\n' +
-        'Original title: ' + title + '\n' +
-        (description ? 'Original description: ' + description + '\n' : '') +
-        '\nTransform this into a professional, compelling job description. Include:\n' +
+    const systemInstructions = 'You are a professional job description writer. The user has provided a basic job title/description (inside <user_input>) for their job posting on GroupsMix (a social media community platform).\n\n' +
+        'Transform this into a professional, compelling job description. Include:\n' +
         '- A brief overview (2-3 sentences)\n' +
         '- Key Responsibilities (3-5 bullet points)\n' +
         '- Required Skills (3-5 bullet points)\n' +
@@ -215,18 +225,35 @@ async function handleEnhance(body, apiKey) {
         'Use markdown formatting (## for headers, - for bullets). Keep it concise but professional. Do NOT include salary or company info.\n' +
         'Write in a warm, professional tone. Maximum 300 words.';
 
-    const aiContent = await callAI(apiKey, prompt, 500);
+    const userBlock = wrapUserInput(
+        'Original title: ' + title + (description ? '\nOriginal description: ' + description : '')
+    );
+
+    const aiContent = await callAI(apiKey, systemInstructions, userBlock, 500);
 
     if (!aiContent) {
         return { enhanced: false, message: 'AI enhancement failed. Please try again.', description: description };
     }
 
-    // Also auto-detect skills from the enhanced description
-    const skillsPrompt = 'From this job description, extract 5-8 key skills as a JSON array of lowercase strings.\n\n' +
-        'Description: ' + aiContent + '\n\n' +
-        'Respond with ONLY a JSON array, e.g.: ["javascript", "react", "ui design"]';
+    // E-3: Moderate the free-form enhanced description before returning it.
+    const verdict = await moderateOutput(env, aiContent, { userText: title + ' ' + description });
+    if (verdict.flagged) {
+        console.warn('jobs-ai enhance: output blocked by moderation', verdict.category);
+        return {
+            enhanced: false,
+            message: 'AI enhancement was blocked by content moderation. Please rewrite your title/description.',
+            description: description
+        };
+    }
 
-    const skillsContent = await callAI(apiKey, skillsPrompt, 100);
+    // Also auto-detect skills from the enhanced description.
+    // The enhanced description is model-generated, but we still wrap it as
+    // untrusted since downstream models should treat it as data too.
+    const skillsSystem = 'From the job description inside <user_input>, extract 5-8 key skills as a JSON array of lowercase strings.\n\n' +
+        'Respond with ONLY a JSON array, e.g.: ["javascript", "react", "ui design"]';
+    const skillsBlock = wrapUserInput(aiContent);
+
+    const skillsContent = await callAI(apiKey, skillsSystem, skillsBlock, 100);
     let skills = [];
     try {
         const parsed = JSON.parse(skillsContent.replace(/```json?\s*/g, '').replace(/```/g, '').trim());
@@ -256,14 +283,16 @@ async function handleCategorize(body, apiKey) {
         return { category: 'other', confidence: 0 };
     }
 
-    const prompt = 'Classify this job posting into exactly ONE category.\n\n' +
+    const systemInstructions = 'Classify the job posting inside <user_input> into exactly ONE category.\n\n' +
         'Categories: design, programming, marketing, writing, community, other\n\n' +
-        'Job Title: ' + title + '\n' +
-        (description ? 'Description: ' + description.substring(0, 200) + '\n' : '') +
-        '\nRespond with ONLY a JSON object:\n' +
+        'Respond with ONLY a JSON object:\n' +
         '{"category": "one_category", "confidence": 0.0-1.0}';
 
-    const aiContent = await callAI(apiKey, prompt, 50);
+    const userBlock = wrapUserInput(
+        'Job Title: ' + title + (description ? '\nDescription: ' + description.substring(0, 200) : '')
+    );
+
+    const aiContent = await callAI(apiKey, systemInstructions, userBlock, 50);
     const result = parseAIJSON(aiContent);
 
     const validCategories = ['design', 'programming', 'marketing', 'writing', 'community', 'other'];
@@ -304,15 +333,18 @@ async function handleMatch(body, apiKey) {
 
     // If we have an API key and the quick score isn't definitive, use AI for better matching
     if (apiKey && quickScore > 0 && quickScore < 100 && jobDescription) {
-        const prompt = 'You are a job matching expert. Rate how well this candidate matches the job.\n\n' +
-            'Candidate Skills: ' + userSkills.join(', ') + '\n' +
-            'Job Title: ' + jobTitle + '\n' +
-            'Job Skills Required: ' + jobSkills.join(', ') + '\n' +
-            'Job Description (first 300 chars): ' + jobDescription.substring(0, 300) + '\n\n' +
+        const systemInstructions = 'You are a job matching expert. Rate how well the candidate matches the job based on the data inside <user_input>.\n\n' +
             'Respond with ONLY a JSON object:\n' +
             '{"score": 0-100, "explanation": "one sentence why"}';
 
-        const aiContent = await callAI(apiKey, prompt, 80);
+        const userBlock = wrapUserInput(
+            'Candidate Skills: ' + userSkills.join(', ') + '\n' +
+            'Job Title: ' + jobTitle + '\n' +
+            'Job Skills Required: ' + jobSkills.join(', ') + '\n' +
+            'Job Description (first 300 chars): ' + jobDescription.substring(0, 300)
+        );
+
+        const aiContent = await callAI(apiKey, systemInstructions, userBlock, 80);
         const result = parseAIJSON(aiContent);
 
         if (result && typeof result.score === 'number') {
@@ -383,7 +415,7 @@ export async function onRequest(context) {
                 result = await handleValidate(body, apiKey);
                 break;
             case 'enhance':
-                result = await handleEnhance(body, apiKey);
+                result = await handleEnhance(body, apiKey, context.env || {});
                 break;
             case 'categorize':
                 result = await handleCategorize(body, apiKey);

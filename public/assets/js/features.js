@@ -12,11 +12,11 @@ const _Newsletter = {
     _subscribedKey: 'gm_newsletter_subscribed',
 
     isSubscribed() {
-        return localStorage.getItem(this._subscribedKey) === '1';
+        return SafeStorage.get(this._subscribedKey) === '1';
     },
 
     markSubscribed() {
-        localStorage.setItem(this._subscribedKey, '1');
+        SafeStorage.set(this._subscribedKey, '1');
     },
 
     async subscribe(email, name, source) {
@@ -66,7 +66,7 @@ const _Newsletter = {
                 .update({ status: 'unsubscribed', unsubscribed_at: new Date().toISOString() })
                 .eq('email', email.toLowerCase().trim());
             if (error) throw error;
-            localStorage.removeItem(_Newsletter._subscribedKey);
+            SafeStorage.remove(_Newsletter._subscribedKey);
             return true;
         } catch (err) {
             console.error('Newsletter.unsubscribe:', err.message);
@@ -107,16 +107,12 @@ const Wishlist = {
     _localKey: 'gm_wishlist',
 
     _getLocal() {
-        try {
-            var raw = localStorage.getItem(this._localKey);
-            return raw ? JSON.parse(raw) : [];
-        } catch (_e) { return []; }
+        var items = SafeStorage.getJSON(this._localKey, []);
+        return Array.isArray(items) ? items : [];
     },
 
     _saveLocal(items) {
-        try {
-            localStorage.setItem(this._localKey, JSON.stringify(items));
-        } catch (e) { console.error('Wishlist._saveLocal:', e.message); }
+        SafeStorage.setJSON(this._localKey, items);
     },
 
     isInWishlist(contentId, contentType) {
@@ -244,7 +240,7 @@ const Referrals = {
         var params = new URLSearchParams(window.location.search);
         var ref = params.get('ref') || params.get('r');
         if (ref) {
-            localStorage.setItem(this._refKey, ref);
+            SafeStorage.set(this._refKey, ref);
             this.trackClick(ref);
             // Clean URL
             var url = new URL(window.location.href);
@@ -255,7 +251,7 @@ const Referrals = {
     },
 
     getStoredCode() {
-        return localStorage.getItem(this._refKey) || '';
+        return SafeStorage.get(this._refKey, '') || '';
     },
 
     async trackClick(code) {
@@ -285,7 +281,7 @@ const Referrals = {
                 event_type: 'signup',
                 referred_uid: referredUid
             });
-            localStorage.removeItem(this._refKey);
+            SafeStorage.remove(this._refKey);
         } catch (err) { console.error('Referrals.trackSignup:', err.message); }
     },
 
@@ -644,11 +640,11 @@ const MultiCurrency = {
     },
 
     getCurrency() {
-        return localStorage.getItem(this._key) || 'USD';
+        return SafeStorage.get(this._key, 'USD') || 'USD';
     },
 
     setCurrency(code) {
-        localStorage.setItem(this._key, code);
+        SafeStorage.set(this._key, code);
         // Dispatch event for UI updates
         window.dispatchEvent(new CustomEvent('currencyChanged', { detail: { currency: code } }));
     },
@@ -661,22 +657,19 @@ const MultiCurrency = {
     async getRates() {
         try {
             // Check cache
-            var cached = localStorage.getItem(this._ratesKey);
-            if (cached) {
-                var parsed = JSON.parse(cached);
-                if (parsed.timestamp && (Date.now() - parsed.timestamp) < this._ratesTTL) {
-                    return parsed.rates;
-                }
+            var parsed = SafeStorage.getJSON(this._ratesKey, null);
+            if (parsed && parsed.timestamp && (Date.now() - parsed.timestamp) < this._ratesTTL) {
+                return parsed.rates;
             }
             // Try fetching from a free API
             var response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
             if (!response.ok) throw new Error('API error');
             var data = await response.json();
             if (data && data.rates) {
-                localStorage.setItem(this._ratesKey, JSON.stringify({
+                SafeStorage.setJSON(this._ratesKey, {
                     rates: data.rates,
                     timestamp: Date.now()
-                }));
+                });
                 return data.rates;
             }
             return this._fallbackRates;
@@ -727,7 +720,7 @@ const MultiCurrency = {
 
     // Auto-detect user's currency based on locale
     autoDetect() {
-        if (localStorage.getItem(this._key)) return; // User already chose
+        if (SafeStorage.get(this._key)) return; // User already chose
         try {
             var locale = navigator.language || navigator.userLanguage || 'en-US';
             var regionMap = {
@@ -753,13 +746,11 @@ const ABTesting = {
 
     init() {
         // Generate or retrieve visitor ID
-        this._visitorId = localStorage.getItem('gm_ab_visitor') || ('v_' + Date.now() + '_' + window.SecureRandom.string(8));
-        localStorage.setItem('gm_ab_visitor', this._visitorId);
+        this._visitorId = SafeStorage.get('gm_ab_visitor') || ('v_' + Date.now() + '_' + window.SecureRandom.string(8));
+        SafeStorage.set('gm_ab_visitor', this._visitorId);
         // Load cached assignments
-        try {
-            var raw = localStorage.getItem(this._assignmentsKey);
-            this._assignments = raw ? JSON.parse(raw) : {};
-        } catch (_e) { this._assignments = {}; }
+        var stored = SafeStorage.getJSON(this._assignmentsKey, {});
+        this._assignments = (stored && typeof stored === 'object') ? stored : {};
     },
 
     async getActiveTests() {
@@ -867,9 +858,7 @@ const ABTesting = {
     },
 
     _saveAssignments() {
-        try {
-            localStorage.setItem(this._assignmentsKey, JSON.stringify(this._assignments));
-        } catch (_e) { /* ignore */ }
+        SafeStorage.setJSON(this._assignmentsKey, this._assignments);
     },
 
     // Admin: get test results
@@ -927,9 +916,14 @@ const _Purchases = {
             if (!Auth.requireAuth()) return [];
             var email = Auth.getEmail();
             var uid = Auth.getAuthId();
+            // F-5: UUID-validate uid and quote email before interpolating into
+            // a PostgREST `.or()` filter. Otherwise a comma in either value
+            // could break out of the predicate.
+            if (!Security.isUuid(uid)) return [];
+            var emailFilter = Security.pgrstQuoteValue(email);
             var { data, error } = await window.supabaseClient.from('purchases')
                 .select('*')
-                .or('uid.eq.' + uid + ',email.eq.' + email)
+                .or('uid.eq.' + uid + ',email.eq.' + emailFilter)
                 .order('created_at', { ascending: false });
             if (error) throw error;
             return data || [];

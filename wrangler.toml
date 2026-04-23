@@ -1,0 +1,154 @@
+# Cloudflare Pages + Cron Triggers configuration for GroupsMix.
+#
+# The site is deployed via Cloudflare Pages Git integration, which reads
+# bindings and scheduled triggers from the Pages dashboard. Pages does
+# parse this file at build time, but it does NOT yet consume KV
+# namespace IDs or Cron Triggers from it — those stanzas live here as
+# commented-out documentation of the expected shape so reviewers can see
+# them in-tree without breaking the build.
+#
+# Tracking issues: H-6 (document bindings/env) and H-7 (move cron-style
+# endpoints to Cloudflare Cron Triggers, require a secret on every cron).
+#
+# When the Pages team GA's native wrangler.toml support this file becomes
+# the authoritative config — until then, mirror any change here into the
+# Pages dashboard (Settings → Functions → KV namespace bindings, and
+# Settings → Functions → Cron Triggers).
+#
+# See also:
+#   - RUNBOOK.md                       — day-to-day operations
+#   - DISASTER_RECOVERY.md             — restore and cutover
+#   - docs/backups.md                  — backup policy
+#   - docs/slos.md                     — SLOs + error budgets
+#   - docs/observability.md            — Sentry + Logpush
+#   - .env.example                     — full env var list with comments
+
+name = "groupsmix"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-11-01"
+
+# ──────────────────────────────────────────────────────────────────────
+# KV namespaces
+# ──────────────────────────────────────────────────────────────────────
+#
+# IDs are environment-specific (prod / preview) and therefore left blank
+# in source — populate them in the Pages dashboard under Settings →
+# Functions → KV namespace bindings. The binding NAMES below must match
+# the strings the code reads from `env` at runtime.
+#
+#   STORE_KV      — caches LemonSqueezy product catalog
+#                   used by functions/api/lemonsqueezy.js
+#   RATE_LIMIT_KV — persistent rate-limit state with in-memory fallback
+#                   used by functions/api/_shared/rate-limit.js
+
+# [[kv_namespaces]]
+# binding    = "STORE_KV"
+# id         = "<set-in-dashboard-prod>"
+# preview_id = "<set-in-dashboard-preview>"
+#
+# [[kv_namespaces]]
+# binding    = "RATE_LIMIT_KV"
+# id         = "<set-in-dashboard-prod>"
+# preview_id = "<set-in-dashboard-preview>"
+#
+# Commented out intentionally: Cloudflare Pages rejects the build when
+# wrangler.toml declares a KV namespace with an empty or placeholder id.
+# Keep the real binding names in sync between this file's comments and
+# the Pages dashboard (Settings → Functions → KV namespace bindings).
+
+# ──────────────────────────────────────────────────────────────────────
+# Environment variables
+# ──────────────────────────────────────────────────────────────────────
+#
+# Secrets MUST be set as encrypted env vars in the Pages dashboard
+# (Settings → Environment variables → Production / Preview), NEVER in
+# this file. They are listed here only so reviewers can see what the
+# code expects at runtime. Any addition/rename in code MUST land in the
+# same PR as an update here.
+#
+# Required:
+#   SUPABASE_URL                  Supabase project URL
+#   SUPABASE_ANON_KEY             Supabase public anon key
+#   SUPABASE_SERVICE_KEY          Supabase service role key (server only)
+#   TURNSTILE_SECRET_KEY          Cloudflare Turnstile secret key
+#   GROQ_API_KEY                  Groq AI endpoints
+#   OPENROUTER_API_KEY            OpenRouter AI endpoints
+#   LEMONSQUEEZY_API_KEY          LemonSqueezy server API
+#   LEMONSQUEEZY_STORE_ID         LemonSqueezy store
+#   LEMONSQUEEZY_WEBHOOK_SECRET   REQUIRED; webhook fails closed without it
+#   CRON_SECRET                   REQUIRED; every cron endpoint fails
+#                                 closed without it (see H-7)
+#
+# Optional:
+#   RESEND_API_KEY                Contact form email delivery
+#   CONTACT_EMAIL_TO              Contact form destination address
+#   SENTRY_DSN_EDGE               Server-side Sentry DSN
+#   SENTRY_ENVIRONMENT            production | preview | development
+#   SENTRY_RELEASE                Matches PUBLIC_SENTRY_RELEASE
+#
+# Build-time (public, exposed to browser — set on the Pages project,
+# consumed by scripts/stamp-supabase-config.js at build):
+#   PUBLIC_SUPABASE_URL
+#   PUBLIC_SUPABASE_ANON_KEY
+#   PUBLIC_SENTRY_DSN
+#   PUBLIC_SENTRY_RELEASE
+#   PUBLIC_ENVIRONMENT
+
+# ──────────────────────────────────────────────────────────────────────
+# Cron triggers (H-7)
+# ──────────────────────────────────────────────────────────────────────
+#
+# Every cron endpoint below is gated on the `X-Cron-Secret` header
+# matching `CRON_SECRET`. The handlers fail closed with HTTP 503 when
+# the env var is unset (tested in tests/compute-feed.test.js,
+# tests/purge-deleted.test.js, tests/newsletter-digest.test.js,
+# tests/article-schedule.test.js). Do NOT add a cron here without
+# confirming the target endpoint enforces the secret.
+#
+# Cron syntax is standard UNIX cron (UTC). Keep schedules staggered so
+# jobs don't all fire on the top of the hour.
+#
+# Endpoints triggered by these crons:
+#
+#   /api/compute-feed     Feed scoring, collaborative filtering, embeddings
+#                         (POST, body `{ "job": "..." }`; secret via
+#                         X-Cron-Secret header)
+#   /api/purge-deleted    Hard-delete soft-deleted users past their
+#                         grace window (POST)
+#   /api/newsletter-digest Weekly digest queueing (GET — H-7 hardened;
+#                         POST is a non-cron preview path and is NOT
+#                         gated by CRON_SECRET)
+#   /api/article-schedule  Publish articles whose scheduled_at has passed
+#                         (GET — H-7 hardened; POST is a non-cron
+#                         scheduling path and is NOT gated by CRON_SECRET)
+#
+# When you add a new cron, also add a stanza to RUNBOOK.md §Manual cron
+# invocation so on-call knows how to trigger it by hand.
+
+# [triggers]
+# crons = [
+#   # Feed algorithm — trending scores, every 30 minutes
+#   "*/30 * * * *",
+#   # Scheduled article publishing — every 5 minutes
+#   "*/5 * * * *",
+#   # Weekly newsletter digest — Mondays at 13:00 UTC
+#   "0 13 * * 1",
+#   # Hard-delete soft-deleted users past their grace window — daily 03:17 UTC
+#   "17 3 * * *"
+# ]
+#
+# Commented out intentionally: Cloudflare Pages does not yet consume
+# `[triggers]` from wrangler.toml for Pages projects, and leaving the
+# stanza active fails the Pages build. The cron schedules above are
+# the CURRENT authoritative schedule — mirror them in the Pages
+# dashboard (Settings → Functions → Cron Triggers) and, when adding
+# or changing a cron, update BOTH this file and the dashboard in the
+# same PR.
+#
+# Cloudflare Pages dispatches cron events to a single internal route
+# (`/__scheduled`) and does not currently route to per-endpoint paths
+# the way Workers does. The project invokes each endpoint from an
+# external scheduler (or a lightweight fan-out function) with the
+# matching `X-Cron-Secret` header. When Pages exposes per-cron routing
+# this file should be updated to pin each schedule to its endpoint
+# and the `[triggers]` stanza can be un-commented.

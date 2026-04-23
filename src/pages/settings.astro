@@ -7,31 +7,78 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   noIndex={true}
 >
 
-        <div class="container" style="max-width:var(--container-sm);padding:var(--space-8) var(--space-4)">
-            <h1 style="margin-bottom:var(--space-6)">⚙️ Settings</h1>
-            <div class="card" style="margin-bottom:var(--space-4)">
-                <div class="card__body" style="padding:var(--space-6)">
-                    <h3 style="margin-bottom:var(--space-4)">Appearance</h3>
+        <div class="container s-f54c24">
+            <h1 class="s-5c5470">⚙️ Settings</h1>
+            <div class="card s-a76134">
+                <div class="card__body s-44d02e">
+                    <h3 class="s-a76134">Appearance</h3>
                     <div class="form-group"><label class="form-label">Theme</label>
-                        <div style="display:flex;gap:var(--space-3)"><button class="btn btn-secondary btn-sm"
+                        <div class="s-6541af"><button class="btn btn-secondary btn-sm"
                                 id="theme-dark">🌙 Dark</button><button class="btn btn-secondary btn-sm"
                                 id="theme-light">☀️ Light</button></div>
                     </div>
                 </div>
             </div>
-            <div class="card" style="margin-bottom:var(--space-4)">
-                <div class="card__body" style="padding:var(--space-6)">
-                    <h3 style="margin-bottom:var(--space-4)">Data</h3>
-                    <div style="display:flex;gap:var(--space-3);flex-wrap:wrap">
+            <div class="card s-a76134">
+                <div class="card__body s-44d02e">
+                    <h3 class="s-a76134">Data</h3>
+                    <div class="s-edf3ec">
                         <button class="btn btn-secondary btn-sm" id="clear-cache">🗑️ Clear Cache</button>
                         <button class="btn btn-secondary btn-sm" id="clear-saved">🗑️ Clear Saved Groups</button>
                         <button class="btn btn-secondary btn-sm" id="clear-recent">🗑️ Clear Recently Viewed</button>
                     </div>
                 </div>
             </div>
+            <div class="card s-a76134" id="privacy-card">
+                <div class="card__body s-44d02e">
+                    <h3 class="s-a76134">🔐 Privacy</h3>
+                    <p class="s-056057">
+                        Control how GroupsMix uses your data. See our
+                        <a href="/data-retention">data-retention schedule</a> for details.
+                    </p>
+                    <div class="form-group s-317a2d">
+                        <label class="s-f7f89f">
+                            <input type="checkbox" id="pref-marketing" disabled>
+                            <span>
+                                <strong>Marketing emails</strong>
+                                <span class="s-dc7d94">
+                                    Opt out of product updates and promotional messages.
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="form-group s-317a2d">
+                        <label class="s-f7f89f">
+                            <input type="checkbox" id="pref-analytics" disabled>
+                            <span>
+                                <strong>Analytics</strong>
+                                <span class="s-dc7d94">
+                                    Opt out of usage analytics used to improve the product.
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="form-group s-a76134">
+                        <label class="s-f7f89f">
+                            <input type="checkbox" id="pref-personalization" disabled>
+                            <span>
+                                <strong>Personalization</strong>
+                                <span class="s-dc7d94">
+                                    Opt out of feed personalization and recommendations.
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="s-edf3ec">
+                        <button class="btn btn-secondary btn-sm" id="export-data-btn">📥 Download my data</button>
+                        <button class="btn btn-secondary btn-sm s-acbb2d" id="delete-account-btn">🗑️ Delete my account</button>
+                    </div>
+                    <p id="privacy-status" class="s-67f362"></p>
+                </div>
+            </div>
             <div class="card">
-                <div class="card__body" style="padding:var(--space-6)">
-                    <h3 style="margin-bottom:var(--space-4);color:var(--error)">Danger Zone</h3>
+                <div class="card__body s-44d02e">
+                    <h3 class="s-4f5f4c">Danger Zone</h3>
                     <button class="btn btn-danger btn-sm" id="sign-out-btn">🚪 Sign Out</button>
                 </div>
             </div>
@@ -52,7 +99,192 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             document.getElementById('sign-out-btn')?.addEventListener('click', () => {
                 UI.confirmModal('Sign Out', 'Are you sure you want to sign out?', async () => { await Auth.signOut(); window.location.href = '/'; });
             });
+
+            // ── Privacy card ────────────────────────────────────────
+            async function getAccessToken() {
+                try {
+                    const { data } = await window.supabaseClient.auth.getSession();
+                    return data?.session?.access_token || null;
+                } catch (_e) { return null; }
+            }
+
+            async function authedFetch(url, init) {
+                const token = await getAccessToken();
+                if (!token) throw new Error('not-authenticated');
+                const headers = Object.assign({ 'Content-Type': 'application/json' }, (init && init.headers) || {});
+                headers['Authorization'] = 'Bearer ' + token;
+                return fetch(url, Object.assign({}, init || {}, { headers }));
+            }
+
+            const prefMap = [
+                ['pref-marketing', 'marketing_opt_out'],
+                ['pref-analytics', 'analytics_opt_out'],
+                ['pref-personalization', 'personalization_opt_out']
+            ];
+
+            async function loadPrefs() {
+                if (!Auth.isLoggedIn()) return;
+                try {
+                    const res = await authedFetch('/api/account/preferences', { method: 'GET' });
+                    if (!res.ok) return;
+                    const body = await res.json();
+                    if (!body || !body.ok) return;
+                    prefMap.forEach(([elId, key]) => {
+                        const el = document.getElementById(elId);
+                        if (el) { el.checked = Boolean(body.preferences?.[key]); el.disabled = false; }
+                    });
+                } catch (_e) { /* silent */ }
+            }
+
+            async function savePref(key, value) {
+                try {
+                    const res = await authedFetch('/api/account/preferences', {
+                        method: 'POST',
+                        body: JSON.stringify({ [key]: value })
+                    });
+                    if (!res.ok) { UI.toast('Failed to update preference', 'error'); return; }
+                    UI.toast('Preference saved', 'success');
+                } catch (_e) { UI.toast('Failed to update preference', 'error'); }
+            }
+
+            prefMap.forEach(([elId, key]) => {
+                const el = document.getElementById(elId);
+                if (el) el.addEventListener('change', () => savePref(key, el.checked));
+            });
+
+            document.getElementById('export-data-btn')?.addEventListener('click', async () => {
+                if (!Auth.isLoggedIn()) { UI.authModal('signin'); return; }
+                const btn = document.getElementById('export-data-btn');
+                const status = document.getElementById('privacy-status');
+                if (btn) { btn.disabled = true; btn.textContent = 'Preparing export…'; }
+                try {
+                    const res = await authedFetch('/api/account/export', { method: 'POST', body: '{}' });
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        UI.toast(err?.error || 'Export failed', 'error');
+                        if (status) status.textContent = '';
+                        return;
+                    }
+                    const blob = await res.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    const disp = res.headers.get('Content-Disposition') || '';
+                    const match = /filename="([^"]+)"/.exec(disp);
+                    a.download = match ? match[1] : 'groupsmix-export.json';
+                    document.body.appendChild(a); a.click();
+                    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+                    UI.toast('Export downloaded', 'success');
+                    if (status) status.textContent = 'Export generated ' + new Date().toLocaleString();
+                } catch (_e) {
+                    UI.toast('Export failed', 'error');
+                } finally {
+                    if (btn) { btn.disabled = false; btn.textContent = '📥 Download my data'; }
+                }
+            });
+
+            document.getElementById('delete-account-btn')?.addEventListener('click', () => {
+                if (!Auth.isLoggedIn()) { UI.authModal('signin'); return; }
+                openDeleteAccountModal();
+            });
+
+            function openDeleteAccountModal() {
+                const siteKey = (typeof CONFIG !== 'undefined' && CONFIG.turnstileSiteKey) ? CONFIG.turnstileSiteKey : '';
+                const body =
+                    '<div style="margin-bottom:var(--space-4);color:var(--text-secondary);font-size:var(--text-sm)">' +
+                        '<p>This will soft-delete your account. All personally identifiable information is scrubbed immediately, and your data is permanently erased after a 30-day grace period.</p>' +
+                        '<p style="margin-top:var(--space-2)">Type <strong>DELETE</strong> below to confirm.</p>' +
+                    '</div>' +
+                    '<form id="delete-account-form">' +
+                        '<div class="form-group"><label class="form-label" for="delete-password">Current password</label>' +
+                        '<input type="password" id="delete-password" class="form-input" autocomplete="current-password" required></div>' +
+                        '<div class="form-group"><label class="form-label" for="delete-confirm">Type DELETE</label>' +
+                        '<input type="text" id="delete-confirm" class="form-input" autocomplete="off" required></div>' +
+                        (siteKey ? '<div class="form-group"><div id="delete-turnstile-widget"></div></div>' : '') +
+                        '<div id="delete-error" class="hidden" style="color:var(--error);font-size:var(--text-sm);margin-bottom:var(--space-3)"></div>' +
+                        '<button type="submit" class="btn btn-danger btn-full" id="delete-submit">Delete my account</button>' +
+                    '</form>';
+                UI.modal({ title: '🗑️ Delete account', body });
+
+                let turnstileToken = null;
+                if (siteKey) {
+                    let attempts = 0;
+                    (function poll() {
+                        if (typeof turnstile !== 'undefined') {
+                            const el = document.getElementById('delete-turnstile-widget');
+                            if (el) {
+                                turnstile.render('#delete-turnstile-widget', {
+                                    sitekey: siteKey,
+                                    callback: (t) => { turnstileToken = t; }
+                                });
+                            }
+                        } else if (++attempts < 50) {
+                            setTimeout(poll, 200);
+                        }
+                    })();
+                }
+
+                document.getElementById('delete-account-form')?.addEventListener('submit', async (ev) => {
+                    ev.preventDefault();
+                    const errEl = document.getElementById('delete-error');
+                    if (errEl) errEl.classList.add('hidden');
+                    const password = document.getElementById('delete-password')?.value || '';
+                    const confirm = document.getElementById('delete-confirm')?.value || '';
+                    if (confirm !== 'DELETE') {
+                        if (errEl) { errEl.textContent = 'Please type DELETE to confirm'; errEl.classList.remove('hidden'); }
+                        return;
+                    }
+                    if (!password) {
+                        if (errEl) { errEl.textContent = 'Password is required'; errEl.classList.remove('hidden'); }
+                        return;
+                    }
+                    if (siteKey && !turnstileToken) {
+                        if (errEl) { errEl.textContent = 'Please complete the CAPTCHA'; errEl.classList.remove('hidden'); }
+                        return;
+                    }
+                    const submitBtn = document.getElementById('delete-submit');
+                    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Deleting…'; }
+                    try {
+                        const res = await authedFetch('/api/account/delete', {
+                            method: 'POST',
+                            body: JSON.stringify({ password, confirm, turnstileToken })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok || !data?.ok) {
+                            if (errEl) { errEl.textContent = data?.error || 'Deletion failed'; errEl.classList.remove('hidden'); }
+                            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Delete my account'; }
+                            return;
+                        }
+                        UI.closeModal();
+                        UI.toast('Account scheduled for deletion. Signing you out…', 'success', 6000);
+                        await Auth.signOut();
+                        window.location.href = '/';
+                    } catch (_e) {
+                        if (errEl) { errEl.textContent = 'Network error'; errEl.classList.remove('hidden'); }
+                        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Delete my account'; }
+                    }
+                });
+            }
+
+            loadPrefs();
         });
     </script>
 </Fragment>
 </BaseLayout>
+
+<style>
+/* inline-styles: migrated */
+.s-056057 { color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-4); }
+.s-317a2d { margin-bottom:var(--space-3); }
+.s-44d02e { padding:var(--space-6); }
+.s-4f5f4c { margin-bottom:var(--space-4);color:var(--error); }
+.s-5c5470 { margin-bottom:var(--space-6); }
+.s-6541af { display:flex;gap:var(--space-3); }
+.s-67f362 { margin-top:var(--space-3);font-size:var(--text-sm);color:var(--text-secondary); }
+.s-a76134 { margin-bottom:var(--space-4); }
+.s-acbb2d { color:var(--error); }
+.s-dc7d94 { display:block;color:var(--text-secondary);font-size:var(--text-xs); }
+.s-edf3ec { display:flex;gap:var(--space-3);flex-wrap:wrap; }
+.s-f54c24 { max-width:var(--container-sm);padding:var(--space-8) var(--space-4); }
+.s-f7f89f { display:flex;align-items:flex-start;gap:var(--space-2);cursor:pointer; }
+</style>

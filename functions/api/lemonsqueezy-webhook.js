@@ -9,6 +9,24 @@
  * Also handles GMX Coin purchases: automatically credits coins to user wallets
  * when a coin package is purchased via LemonSqueezy.
  *
+ * === EPIC B — PAYMENTS INTEGRITY ===
+ * - B-1: Replay-window check via STORE_KV event ledger (keyed by the HMAC
+ *        signature, which is unique per body). Entries are only written after
+ *        a webhook is fully processed so provider retries after a 5xx still
+ *        succeed. The TTL (7 days) is the window inside which duplicate
+ *        deliveries of the same signed body are rejected.
+ * - B-2: syncOrderToSupabase inserts with `resolution=ignore-duplicates` so a
+ *        replayed `order_created` event never overwrites an existing purchase
+ *        row. Duplicate attempts are logged and downstream side-effects
+ *        (referral tracking, coin crediting) are skipped.
+ * - B-3: Coin crediting is a single `credit_coins_from_order(payload)` RPC
+ *        call; the old lookup-user + lookup-package + credit_coins chain is
+ *        gone. The RPC is idempotent on (user, order_id).
+ * - B-4: Any exception during event handling writes the raw payload, event
+ *        name, signature and error to the `webhook_dead_letters` table so
+ *        operators can replay, and releases the replay-ledger entry so
+ *        provider retries can make progress.
+ *
  * Environment variables required:
  *   LEMONSQUEEZY_WEBHOOK_SECRET — Webhook signing secret from LemonSqueezy
  *   STORE_KV                    — Cloudflare KV namespace binding
@@ -20,201 +38,231 @@ import { verifyHmacSignature } from './_shared/webhook-verify.js';
 
 /* ── Constants ───────────────────────────────────────────────── */
 const CACHE_KEY = 'ls_products_cache';
+const REPLAY_KEY_PREFIX = 'ls_webhook_event:';
+const REPLAY_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
-/* ── Sync order to Supabase purchases table ──────────────────── */
-async function syncOrderToSupabase(env, payload) {
+/* ── Replay-window ledger (B-1) ──────────────────────────────── */
+
+/**
+ * Returns true when we have already processed this signature inside the
+ * replay window. When STORE_KV is not bound (local tests, dev) this is a
+ * no-op that treats every event as fresh.
+ */
+async function isReplay(env, signatureHex) {
+    if (!env?.STORE_KV || !signatureHex) return false;
+    try {
+        const seen = await env.STORE_KV.get(REPLAY_KEY_PREFIX + signatureHex);
+        return !!seen;
+    } catch (err) {
+        console.error('Replay ledger read failed:', err);
+        return false;
+    }
+}
+
+/**
+ * Records a signature as processed. Only call this after the handler has
+ * finished successfully so that retries of a half-processed event can still
+ * make progress.
+ */
+async function markProcessed(env, signatureHex, meta) {
+    if (!env?.STORE_KV || !signatureHex) return;
+    try {
+        await env.STORE_KV.put(
+            REPLAY_KEY_PREFIX + signatureHex,
+            JSON.stringify({ at: new Date().toISOString(), ...(meta || {}) }),
+            { expirationTtl: REPLAY_TTL_SECONDS }
+        );
+    } catch (err) {
+        console.error('Replay ledger write failed:', err);
+    }
+}
+
+/**
+ * Clears a replay entry so provider retries after a handler error are not
+ * blocked by the ledger. Best-effort; failures are logged but ignored.
+ */
+async function clearReplay(env, signatureHex) {
+    if (!env?.STORE_KV || !signatureHex) return;
+    try {
+        await env.STORE_KV.delete(REPLAY_KEY_PREFIX + signatureHex);
+    } catch (err) {
+        console.error('Replay ledger clear failed:', err);
+    }
+}
+
+/* ── Dead-letter queue (B-4) ─────────────────────────────────── */
+
+async function writeDeadLetter(env, entry) {
     const supabaseUrl = env?.SUPABASE_URL;
     const supabaseKey = env?.SUPABASE_SERVICE_KEY;
     if (!supabaseUrl || !supabaseKey) {
-        console.warn('Supabase not configured — skipping purchase sync');
+        console.error('webhook_dead_letters not written — Supabase not configured. Entry:', {
+            event_name: entry.event_name,
+            event_id: entry.event_id,
+            error: entry.error
+        });
         return;
     }
-
     try {
-        const attrs = payload.data?.attributes || {};
-        const meta = payload.meta?.custom_data || {};
-
-        const order = {
-            order_id: String(payload.data?.id || ''),
-            email: attrs.user_email || '',
-            uid: meta.uid || null,
-            product_name: attrs.first_order_item?.product_name || meta.product_name || 'Purchase',
-            product_id: String(attrs.first_order_item?.product_id || meta.product_id || ''),
-            variant_id: String(attrs.first_order_item?.variant_id || meta.variant_id || ''),
-            status: attrs.status || 'paid',
-            price: attrs.total || 0,
-            currency: attrs.currency || 'USD',
-            receipt_url: attrs.urls?.receipt || '',
-            order_data: {
-                customer_id: attrs.customer_id,
-                store_id: attrs.store_id,
-                identifier: attrs.identifier,
-                user_name: attrs.user_name,
-                ls_order_id: String(payload.data?.id || '')
-            }
-        };
-
-        const res = await fetch(supabaseUrl + '/rest/v1/purchases', {
+        const res = await fetch(supabaseUrl + '/rest/v1/webhook_dead_letters', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'apikey': supabaseKey,
                 'Authorization': 'Bearer ' + supabaseKey,
-                'Prefer': 'resolution=merge-duplicates'
+                'Prefer': 'return=minimal'
             },
-            body: JSON.stringify(order)
+            body: JSON.stringify({
+                provider: 'lemonsqueezy',
+                event_name: entry.event_name || '',
+                event_id: entry.event_id || '',
+                signature: entry.signature || '',
+                raw_payload: entry.raw_payload || {},
+                error: String(entry.error || '').slice(0, 4000)
+            })
         });
-
         if (!res.ok) {
             const errText = await res.text();
-            console.error('Supabase purchase sync error:', res.status, errText);
-        } else {
-            console.info('Purchase synced to Supabase:', order.order_id);
-        }
-
-        // Track referral purchase if referral code exists
-        if (meta.ref) {
-            await trackReferralPurchase(env, meta.ref, order);
-        }
-
-        // ═══════════════════════════════════════
-        // FUEL THE COMMUNITY: Auto-credit GMX Coins
-        // ═══════════════════════════════════════
-        if (meta.uid && order.status === 'paid') {
-            await creditCoinsForPurchase(env, meta.uid, order);
+            console.error('webhook_dead_letters insert failed:', res.status, errText);
         }
     } catch (err) {
-        console.error('syncOrderToSupabase error:', err);
+        console.error('writeDeadLetter error:', err);
     }
 }
 
-/* ── FUEL: Credit GMX Coins to user wallet after purchase ────── */
+/* ── Sync order to Supabase purchases table (B-2) ────────────── */
+
+/**
+ * Inserts the order into `purchases` using `resolution=ignore-duplicates`.
+ * Returns { inserted: boolean, order }. When `inserted` is false the row
+ * already existed (duplicate order_id) — downstream side-effects (referral,
+ * coin crediting) MUST be skipped so we don't double-pay anything.
+ */
+async function syncOrderToSupabase(env, payload) {
+    const supabaseUrl = env?.SUPABASE_URL;
+    const supabaseKey = env?.SUPABASE_SERVICE_KEY;
+    if (!supabaseUrl || !supabaseKey) {
+        console.warn('Supabase not configured — skipping purchase sync');
+        return { inserted: false, order: null };
+    }
+
+    const attrs = payload.data?.attributes || {};
+    const meta = payload.meta?.custom_data || {};
+
+    const order = {
+        order_id: String(payload.data?.id || ''),
+        email: attrs.user_email || '',
+        uid: meta.uid || null,
+        product_name: attrs.first_order_item?.product_name || meta.product_name || 'Purchase',
+        product_id: String(attrs.first_order_item?.product_id || meta.product_id || ''),
+        variant_id: String(attrs.first_order_item?.variant_id || meta.variant_id || ''),
+        status: attrs.status || 'paid',
+        price: attrs.total || 0,
+        currency: attrs.currency || 'USD',
+        receipt_url: attrs.urls?.receipt || '',
+        order_data: {
+            customer_id: attrs.customer_id,
+            store_id: attrs.store_id,
+            identifier: attrs.identifier,
+            user_name: attrs.user_name,
+            ls_order_id: String(payload.data?.id || '')
+        }
+    };
+
+    const res = await fetch(supabaseUrl + '/rest/v1/purchases', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': 'Bearer ' + supabaseKey,
+            // ignore-duplicates: an existing row with the same `order_id`
+            // (the table's UNIQUE column) is left untouched. Combined with
+            // `return=representation` we get back an empty array for
+            // duplicates and a one-row array for fresh inserts.
+            'Prefer': 'resolution=ignore-duplicates,return=representation'
+        },
+        body: JSON.stringify(order)
+    });
+
+    if (!res.ok) {
+        const errText = await res.text();
+        throw new Error('Supabase purchase sync failed ' + res.status + ': ' + errText);
+    }
+
+    let inserted = true;
+    try {
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows.length === 0) {
+            inserted = false;
+        }
+    } catch (_parseErr) {
+        // No body returned — treat as inserted and let downstream idempotency
+        // guards (credit_coins_from_order) prevent double-crediting.
+        inserted = true;
+    }
+
+    if (inserted) {
+        console.info('Purchase synced to Supabase:', order.order_id);
+    } else {
+        console.warn(
+            'Duplicate order_created webhook — purchase row already exists, skipping side-effects. order_id:',
+            order.order_id,
+            'uid:', order.uid || '(none)'
+        );
+    }
+
+    return { inserted, order };
+}
+
+/* ── FUEL: Credit GMX Coins via single RPC (B-3) ─────────────── */
+
+/**
+ * Single-call replacement for the old lookup-user + lookup-package +
+ * credit_coins flow. Everything the RPC needs travels in `payload` as JSON,
+ * and the RPC is idempotent on (user_id, order_id, 'lemon_order').
+ */
 async function creditCoinsForPurchase(env, userId, order) {
     const supabaseUrl = env?.SUPABASE_URL;
     const supabaseKey = env?.SUPABASE_SERVICE_KEY;
     if (!supabaseUrl || !supabaseKey || !userId) return;
 
-    try {
-        // Look up the coin package by product_id or variant_id
-        let coinsToCredit = 0;
-        let packageName = '';
-
-        // Try to find matching coin package in database
-        const pkgRes = await fetch(
-            supabaseUrl + '/rest/v1/coin_packages?is_active=eq.true&or=(lemon_product_id.eq.' +
-            encodeURIComponent(order.product_id) + ',lemon_variant_id.eq.' +
-            encodeURIComponent(order.variant_id) + ')&limit=1',
-            {
-                headers: {
-                    'apikey': supabaseKey,
-                    'Authorization': 'Bearer ' + supabaseKey
-                }
+    const res = await fetch(supabaseUrl + '/rest/v1/rpc/credit_coins_from_order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': 'Bearer ' + supabaseKey
+        },
+        body: JSON.stringify({
+            payload: {
+                order_id: order.order_id,
+                product_id: order.product_id,
+                variant_id: order.variant_id,
+                auth_id: userId,
+                price: order.price,
+                currency: order.currency
             }
+        })
+    });
+
+    if (!res.ok) {
+        const errText = await res.text();
+        throw new Error('credit_coins_from_order RPC failed ' + res.status + ': ' + errText);
+    }
+
+    const result = await res.json().catch(() => null);
+    if (result && result.status === 'credited') {
+        console.info(
+            'Credited', result.coins, 'GMX Coins to user', result.user_id,
+            'for order', order.order_id
         );
-
-        const packages = await pkgRes.json();
-
-        if (packages && packages.length > 0) {
-            // Found a matching coin package
-            const pkg = packages[0];
-            coinsToCredit = (pkg.coins || 0) + (pkg.bonus_coins || 0);
-            packageName = pkg.name || 'Coin Package';
-        } else {
-            // Fallback: check if product name contains "coin" or "gmx"
-            const prodName = (order.product_name || '').toLowerCase();
-            if (prodName.indexOf('coin') !== -1 || prodName.indexOf('gmx') !== -1) {
-                // Calculate coins from price: $1 = 100 coins base rate
-                const priceInDollars = (order.price || 0) / 100; // price is in cents
-                coinsToCredit = Math.round(priceInDollars * 100);
-                // Apply bonus tiers
-                if (priceInDollars >= 50) coinsToCredit = Math.round(coinsToCredit * 1.6);
-                else if (priceInDollars >= 25) coinsToCredit = Math.round(coinsToCredit * 1.4);
-                else if (priceInDollars >= 10) coinsToCredit = Math.round(coinsToCredit * 1.2);
-                else if (priceInDollars >= 5) coinsToCredit = Math.round(coinsToCredit * 1.1);
-                packageName = order.product_name || 'Coin Purchase';
-            }
-        }
-
-        if (coinsToCredit <= 0) {
-            console.info('Not a coin purchase or zero coins — skipping wallet credit for order:', order.order_id);
-            return;
-        }
-
-        // Find the internal user ID from uid (which is auth_id)
-        const userRes = await fetch(
-            supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(userId) + '&select=id&limit=1',
-            {
-                headers: {
-                    'apikey': supabaseKey,
-                    'Authorization': 'Bearer ' + supabaseKey
-                }
-            }
+    } else if (result && result.status === 'skipped') {
+        console.info(
+            'credit_coins_from_order skipped for order', order.order_id,
+            '— reason:', result.reason
         );
-        const users = await userRes.json();
-        if (!users || !users.length) {
-            console.error('User not found for uid:', userId);
-            return;
-        }
-        const internalUserId = users[0].id;
-
-        // Credit coins via RPC
-        const creditRes = await fetch(supabaseUrl + '/rest/v1/rpc/credit_coins', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': supabaseKey,
-                'Authorization': 'Bearer ' + supabaseKey
-            },
-            body: JSON.stringify({
-                p_user_id: internalUserId,
-                p_amount: coinsToCredit,
-                p_type: 'purchase',
-                p_description: 'Purchased ' + coinsToCredit + ' GMX Coins (' + packageName + ')',
-                p_reference_id: order.order_id,
-                p_reference_type: 'lemon_order',
-                p_metadata: { product_id: order.product_id, variant_id: order.variant_id, price: order.price, currency: order.currency },
-                p_coin_source: 'purchased'
-            })
-        });
-
-        if (!creditRes.ok) {
-            const errText = await creditRes.text();
-            console.error('Failed to credit coins:', creditRes.status, errText);
-            return;
-        }
-
-        console.info('Credited', coinsToCredit, 'GMX Coins to user', internalUserId, 'for order', order.order_id);
-
-        // Send notification to user
-        await fetch(supabaseUrl + '/rest/v1/notifications', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': supabaseKey,
-                'Authorization': 'Bearer ' + supabaseKey
-            },
-            body: JSON.stringify({
-                uid: internalUserId,
-                type: 'gxp_awarded',
-                title: 'Coins Added!',
-                message: coinsToCredit + ' GMX Coins have been added to your wallet. Thank you for your purchase!',
-                link: '/wallet'
-            })
-        });
-
-        // Increment unread notifications
-        await fetch(supabaseUrl + '/rest/v1/rpc/increment_unread_notifications', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': supabaseKey,
-                'Authorization': 'Bearer ' + supabaseKey
-            },
-            body: JSON.stringify({ p_user_id: internalUserId })
-        });
-
-    } catch (err) {
-        console.error('creditCoinsForPurchase error:', err);
+    } else {
+        console.info('credit_coins_from_order returned:', result);
     }
 }
 
@@ -224,77 +272,72 @@ async function handleCoinRefund(env, payload) {
     const supabaseKey = env?.SUPABASE_SERVICE_KEY;
     if (!supabaseUrl || !supabaseKey) return;
 
-    try {
-        const orderId = String(payload.data?.id || '');
-        if (!orderId) return;
+    const orderId = String(payload.data?.id || '');
+    if (!orderId) return;
 
-        // Find the original credit transaction for this order
-        const txnRes = await fetch(
-            supabaseUrl + '/rest/v1/wallet_transactions?reference_id=eq.' + encodeURIComponent(orderId) +
-            '&type=eq.purchase&limit=1',
-            {
-                headers: {
-                    'apikey': supabaseKey,
-                    'Authorization': 'Bearer ' + supabaseKey
-                }
+    // Find the original credit transaction for this order
+    const txnRes = await fetch(
+        supabaseUrl + '/rest/v1/wallet_transactions?reference_id=eq.' + encodeURIComponent(orderId) +
+        '&type=eq.purchase&limit=1',
+        {
+            headers: {
+                'apikey': supabaseKey,
+                'Authorization': 'Bearer ' + supabaseKey
             }
-        );
-        const txns = await txnRes.json();
-        if (!txns || !txns.length) {
-            console.info('No coin purchase transaction found for refunded order:', orderId);
-            return;
         }
-
-        const originalTxn = txns[0];
-        const coinsToDebit = originalTxn.amount; // positive number from original credit
-        const userId = originalTxn.user_id;
-
-        if (coinsToDebit <= 0) return;
-
-        // Debit coins via RPC
-        const debitRes = await fetch(supabaseUrl + '/rest/v1/rpc/debit_coins', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': supabaseKey,
-                'Authorization': 'Bearer ' + supabaseKey
-            },
-            body: JSON.stringify({
-                p_user_id: userId,
-                p_amount: coinsToDebit,
-                p_type: 'refund',
-                p_description: 'Refund for order ' + orderId,
-                p_reference_id: orderId,
-                p_reference_type: 'lemon_refund'
-            })
-        });
-
-        if (!debitRes.ok) {
-            console.error('Failed to debit coins for refund:', await debitRes.text());
-        } else {
-            console.info('Debited', coinsToDebit, 'coins from user', userId, 'for refund on order', orderId);
-        }
-
-        // Notify user
-        await fetch(supabaseUrl + '/rest/v1/notifications', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': supabaseKey,
-                'Authorization': 'Bearer ' + supabaseKey
-            },
-            body: JSON.stringify({
-                uid: userId,
-                type: 'system',
-                title: 'Purchase Refunded',
-                message: coinsToDebit + ' GMX Coins have been removed from your wallet due to a refund.',
-                link: '/wallet'
-            })
-        });
-
-    } catch (err) {
-        console.error('handleCoinRefund error:', err);
+    );
+    const txns = await txnRes.json();
+    if (!txns || !txns.length) {
+        console.info('No coin purchase transaction found for refunded order:', orderId);
+        return;
     }
+
+    const originalTxn = txns[0];
+    const coinsToDebit = originalTxn.amount; // positive number from original credit
+    const userId = originalTxn.user_id;
+
+    if (coinsToDebit <= 0) return;
+
+    // Debit coins via RPC
+    const debitRes = await fetch(supabaseUrl + '/rest/v1/rpc/debit_coins', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': 'Bearer ' + supabaseKey
+        },
+        body: JSON.stringify({
+            p_user_id: userId,
+            p_amount: coinsToDebit,
+            p_type: 'refund',
+            p_description: 'Refund for order ' + orderId,
+            p_reference_id: orderId,
+            p_reference_type: 'lemon_refund'
+        })
+    });
+
+    if (!debitRes.ok) {
+        console.error('Failed to debit coins for refund:', await debitRes.text());
+    } else {
+        console.info('Debited', coinsToDebit, 'coins from user', userId, 'for refund on order', orderId);
+    }
+
+    // Notify user
+    await fetch(supabaseUrl + '/rest/v1/notifications', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': 'Bearer ' + supabaseKey
+        },
+        body: JSON.stringify({
+            uid: userId,
+            type: 'system',
+            title: 'Purchase Refunded',
+            message: coinsToDebit + ' GMX Coins have been removed from your wallet due to a refund.',
+            link: '/wallet'
+        })
+    });
 }
 
 /* ── Track referral purchase ─────────────────────────────────── */
@@ -352,37 +395,120 @@ async function syncSubscriptionEvent(env, eventName, payload) {
     const supabaseKey = env?.SUPABASE_SERVICE_KEY;
     if (!supabaseUrl || !supabaseKey) return;
 
-    try {
-        const _attrs = payload.data?.attributes || {};
-        const orderId = String(payload.data?.id || '');
-        let status = 'active';
+    const _attrs = payload.data?.attributes || {};
+    const orderId = String(payload.data?.id || '');
+    let status = 'active';
 
-        if (eventName === 'subscription_cancelled' || eventName === 'subscription_expired') {
-            status = 'cancelled';
-        } else if (eventName === 'subscription_paused') {
-            status = 'paused';
-        } else if (eventName === 'subscription_resumed' || eventName === 'subscription_unpaused') {
-            status = 'active';
-        }
-
-        // Update the purchase status
-        await fetch(supabaseUrl + '/rest/v1/purchases?order_id=eq.' + encodeURIComponent(orderId), {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': supabaseKey,
-                'Authorization': 'Bearer ' + supabaseKey
-            },
-            body: JSON.stringify({ status: status })
-        });
-
-        console.info('Subscription status updated:', orderId, '->', status);
-    } catch (err) {
-        console.error('syncSubscriptionEvent error:', err);
+    if (eventName === 'subscription_cancelled' || eventName === 'subscription_expired') {
+        status = 'cancelled';
+    } else if (eventName === 'subscription_paused') {
+        status = 'paused';
+    } else if (eventName === 'subscription_resumed' || eventName === 'subscription_unpaused') {
+        status = 'active';
     }
+
+    // Update the purchase status
+    await fetch(supabaseUrl + '/rest/v1/purchases?order_id=eq.' + encodeURIComponent(orderId), {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': 'Bearer ' + supabaseKey
+        },
+        body: JSON.stringify({ status: status })
+    });
+
+    console.info('Subscription status updated:', orderId, '->', status);
 }
 
 /* ── Main handler ────────────────────────────────────────────── */
+
+const CACHE_INVALIDATION_EVENTS = [
+    'product_created',
+    'product_updated',
+    'variant_created',
+    'variant_updated'
+];
+
+const ORDER_EVENTS = ['order_created', 'order_refunded'];
+
+const SUBSCRIPTION_EVENTS = [
+    'subscription_created',
+    'subscription_updated',
+    'subscription_cancelled',
+    'subscription_expired',
+    'subscription_paused',
+    'subscription_resumed',
+    'subscription_unpaused'
+];
+
+/**
+ * Dispatch the already-verified, already-parsed payload. Any error thrown
+ * here is caught by the outer handler, written to the dead-letter queue,
+ * and returned as a 5xx so the provider retries.
+ */
+async function processEvent(env, eventName, payload) {
+    let cacheCleared = false;
+    let orderInserted = false;
+    let refundProcessed = false;
+
+    if (CACHE_INVALIDATION_EVENTS.includes(eventName) && env?.STORE_KV) {
+        await env.STORE_KV.delete(CACHE_KEY);
+        cacheCleared = true;
+        console.info('KV cache invalidated for event:', eventName);
+    }
+
+    if (ORDER_EVENTS.includes(eventName)) {
+        const syncResult = await syncOrderToSupabase(env, payload);
+        orderInserted = syncResult.inserted;
+
+        // Only run downstream side-effects when we actually inserted a new
+        // purchase row. A duplicate delivery that made it past the KV
+        // replay window must not double-credit coins or re-track referrals.
+        if (syncResult.inserted && syncResult.order) {
+            const meta = payload.meta?.custom_data || {};
+            if (meta.ref) {
+                await trackReferralPurchase(env, meta.ref, syncResult.order);
+            }
+            if (meta.uid && syncResult.order.status === 'paid') {
+                await creditCoinsForPurchase(env, meta.uid, syncResult.order);
+            }
+        }
+
+        if (eventName === 'order_refunded') {
+            const supabaseUrl = env?.SUPABASE_URL;
+            const supabaseKey = env?.SUPABASE_SERVICE_KEY;
+            if (supabaseUrl && supabaseKey) {
+                const orderId = String(payload.data?.id || '');
+                await fetch(supabaseUrl + '/rest/v1/purchases?order_id=eq.' + encodeURIComponent(orderId), {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': supabaseKey,
+                        'Authorization': 'Bearer ' + supabaseKey
+                    },
+                    body: JSON.stringify({ status: 'refunded' })
+                });
+            }
+            await handleCoinRefund(env, payload);
+            refundProcessed = true;
+        }
+    }
+
+    if (SUBSCRIPTION_EVENTS.includes(eventName)) {
+        await syncSubscriptionEvent(env, eventName, payload);
+    }
+
+    return { cacheCleared, orderInserted, refundProcessed };
+}
+
+function jsonResponse(body, status) {
+    return new Response(JSON.stringify(body), {
+        status: status,
+        headers: { 'Content-Type': 'application/json' }
+    });
+}
+
 export async function onRequest(context) {
     const { request, env } = context;
 
@@ -399,23 +525,17 @@ export async function onRequest(context) {
     // trigger purchase syncs, coin credits, or subscription state changes.
     if (!webhookSecret) {
         console.error('LEMONSQUEEZY_WEBHOOK_SECRET is not configured — refusing webhook');
-        return new Response(
-            JSON.stringify({ ok: false, error: 'Webhook signing secret not configured' }),
-            { status: 503, headers: { 'Content-Type': 'application/json' } }
-        );
+        return jsonResponse({ ok: false, error: 'Webhook signing secret not configured' }, 503);
     }
 
     // Read raw body for signature verification
     const rawBody = await request.text();
 
-    const signature = request.headers.get('X-Signature') || '';
+    const signature = String(request.headers.get('X-Signature') || '').toLowerCase();
     const valid = await verifyHmacSignature(webhookSecret, signature, rawBody);
     if (!valid) {
         console.error('Invalid webhook signature');
-        return new Response(JSON.stringify({ ok: false, error: 'Invalid signature' }), {
-            status: 401,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        return jsonResponse({ ok: false, error: 'Invalid signature' }, 401);
     }
 
     // Parse the webhook payload
@@ -423,91 +543,66 @@ export async function onRequest(context) {
     try {
         payload = JSON.parse(rawBody);
     } catch (_e) {
-        return new Response(JSON.stringify({ ok: false, error: 'Invalid JSON' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        return jsonResponse({ ok: false, error: 'Invalid JSON' }, 400);
     }
 
     const eventName = request.headers.get('X-Event-Name') || payload.meta?.event_name || 'unknown';
-    console.info('LemonSqueezy webhook received:', eventName);
+    const eventId = String(
+        payload.meta?.webhook_id
+        || payload.meta?.event_id
+        || payload.data?.id
+        || ''
+    );
+    console.info('LemonSqueezy webhook received:', eventName, 'event_id:', eventId || '(none)');
 
-    // Events that should trigger cache invalidation
-    const cacheInvalidationEvents = [
-        'product_created',
-        'product_updated',
-        'variant_created',
-        'variant_updated'
-    ];
-
-    // Events that create/update purchases
-    const orderEvents = [
-        'order_created',
-        'order_refunded'
-    ];
-
-    // Subscription events
-    const subscriptionEvents = [
-        'subscription_created',
-        'subscription_updated',
-        'subscription_cancelled',
-        'subscription_expired',
-        'subscription_paused',
-        'subscription_resumed',
-        'subscription_unpaused'
-    ];
-
-    // Handle cache invalidation
-    if (cacheInvalidationEvents.includes(eventName)) {
-        if (env?.STORE_KV) {
-            try {
-                await env.STORE_KV.delete(CACHE_KEY);
-                console.info('KV cache invalidated for event:', eventName);
-            } catch (kvErr) {
-                console.error('KV delete error:', kvErr);
-            }
-        }
+    // B-1: replay-window check. We key on the HMAC signature because it's
+    // unique per raw body, so every distinct event has a distinct key. An
+    // entry only exists when a prior delivery completed successfully.
+    if (await isReplay(env, signature)) {
+        console.warn('Replay of already-processed webhook ignored. event:', eventName, 'event_id:', eventId);
+        return jsonResponse(
+            { ok: true, replay: true, event: eventName, event_id: eventId },
+            200
+        );
     }
 
-    // Handle order events — sync to Supabase
-    if (orderEvents.includes(eventName)) {
-        await syncOrderToSupabase(env, payload);
-        if (eventName === 'order_refunded') {
-            // Update purchase status to refunded
-            const supabaseUrl = env?.SUPABASE_URL;
-            const supabaseKey = env?.SUPABASE_SERVICE_KEY;
-            if (supabaseUrl && supabaseKey) {
-                const orderId = String(payload.data?.id || '');
-                await fetch(supabaseUrl + '/rest/v1/purchases?order_id=eq.' + encodeURIComponent(orderId), {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': supabaseKey,
-                        'Authorization': 'Bearer ' + supabaseKey
-                    },
-                    body: JSON.stringify({ status: 'refunded' })
-                });
-            }
-            // FUEL: Handle coin refund
-            await handleCoinRefund(env, payload);
-        }
+    let result;
+    try {
+        result = await processEvent(env, eventName, payload);
+    } catch (err) {
+        console.error('Webhook processing failed:', err);
+
+        // B-4: persist the failure for operator replay and release the
+        // replay ledger so the provider's automatic retry is not blocked
+        // by a partially-processed event.
+        await writeDeadLetter(env, {
+            event_name: eventName,
+            event_id: eventId,
+            signature: signature,
+            raw_payload: payload,
+            error: err?.stack || err?.message || String(err)
+        });
+        await clearReplay(env, signature);
+
+        return jsonResponse(
+            { ok: false, error: 'Webhook processing failed, recorded to dead-letter queue' },
+            500
+        );
     }
 
-    // Handle subscription events
-    if (subscriptionEvents.includes(eventName)) {
-        await syncSubscriptionEvent(env, eventName, payload);
-    }
+    // Only mark the signature as processed AFTER success. A prior error
+    // path will have cleared any stray entry already.
+    await markProcessed(env, signature, { event_name: eventName, event_id: eventId });
 
-    return new Response(
-        JSON.stringify({
+    return jsonResponse(
+        {
             ok: true,
             event: eventName,
-            cache_cleared: cacheInvalidationEvents.includes(eventName),
-            purchase_synced: orderEvents.includes(eventName)
-        }),
-        {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-        }
+            event_id: eventId,
+            cache_cleared: result.cacheCleared,
+            purchase_synced: result.orderInserted,
+            refund_processed: result.refundProcessed
+        },
+        200
     );
 }

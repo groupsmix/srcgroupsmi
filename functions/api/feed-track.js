@@ -75,11 +75,11 @@ export async function onRequest(context) {
         return jsonResponse({ ok: false, error: 'Method not allowed' }, 405, origin);
     }
 
-    const supabaseUrl = env?.SUPABASE_URL || 'https://hmlqppacanpxmrfdlkec.supabase.co';
+    const supabaseUrl = env?.SUPABASE_URL;
     const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
 
-    if (!supabaseKey) {
-        return jsonResponse({ ok: false, error: 'Server not configured' }, 500, origin);
+    if (!supabaseUrl || !supabaseKey) {
+        return jsonResponse({ ok: false, error: 'Server not configured' }, 503, origin);
     }
 
     let body;

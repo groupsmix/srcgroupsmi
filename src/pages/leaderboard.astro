@@ -9,32 +9,32 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   includeFuelComponents={true}
 >
 
-        <div class="container" style="max-width:var(--container-md);padding:var(--space-8) var(--space-4)">
-            <h1 style="text-align:center;margin-bottom:var(--space-2)">Leaderboard</h1>
-            <p style="text-align:center;color:var(--text-secondary);margin-bottom:var(--space-6)">Top contributors
+        <div class="container s-c8ac4d">
+            <h1 class="s-7bfe81">Leaderboard</h1>
+            <p class="s-8e0887">Top contributors
                 ranked by GXP</p>
 
             <!-- Leaderboard Type Tabs -->
-            <div style="display:flex;justify-content:center;gap:var(--space-2);margin-bottom:var(--space-6);flex-wrap:wrap">
+            <div class="s-f80c56">
                 <button class="btn btn-sm btn-primary lb-tab" data-type="xp">By XP</button>
                 <button class="btn btn-sm btn-ghost lb-tab" data-type="tips">Top Fueled</button>
                 <button class="btn btn-sm btn-ghost lb-tab" data-type="articles">Most Articles</button>
             </div>
 
             <div class="card">
-                <div class="card__body" style="padding:0">
+                <div class="card__body s-a2e94d">
                     <div id="leaderboard-list">
-                        <div class="skeleton" style="height:400px"></div>
+                        <div class="skeleton s-932ea1"></div>
                     </div>
                 </div>
             </div>
 
             <!-- Top Fueled Authors Section -->
-            <div style="margin-top:var(--space-8)">
-                <h2 style="text-align:center;margin-bottom:var(--space-4);font-size:var(--text-lg)">Top Fueled Authors</h2>
-                <p style="text-align:center;color:var(--text-secondary);margin-bottom:var(--space-6);font-size:var(--text-sm)">Writers who received the most tips from the community</p>
+            <div class="s-d16db5">
+                <h2 class="s-e72fac">Top Fueled Authors</h2>
+                <p class="s-548e0c">Writers who received the most tips from the community</p>
                 <div id="top-fueled-list">
-                    <div class="skeleton" style="height:200px;border-radius:var(--radius-lg)"></div>
+                    <div class="skeleton s-61356f"></div>
                 </div>
             </div>
         </div>
@@ -119,3 +119,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </script>
 </Fragment>
 </BaseLayout>
+
+<style>
+/* inline-styles: migrated */
+.s-548e0c { text-align:center;color:var(--text-secondary);margin-bottom:var(--space-6);font-size:var(--text-sm); }
+.s-61356f { height:200px;border-radius:var(--radius-lg); }
+.s-7bfe81 { text-align:center;margin-bottom:var(--space-2); }
+.s-8e0887 { text-align:center;color:var(--text-secondary);margin-bottom:var(--space-6); }
+.s-932ea1 { height:400px; }
+.s-a2e94d { padding:0; }
+.s-c8ac4d { max-width:var(--container-md);padding:var(--space-8) var(--space-4); }
+.s-d16db5 { margin-top:var(--space-8); }
+.s-e72fac { text-align:center;margin-bottom:var(--space-4);font-size:var(--text-lg); }
+.s-f80c56 { display:flex;justify-content:center;gap:var(--space-2);margin-bottom:var(--space-6);flex-wrap:wrap; }
+</style>
