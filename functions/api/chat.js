@@ -17,6 +17,8 @@
 
 import { corsHeaders, handlePreflight } from './_shared/cors.js';
 import { requireAuth } from './_shared/auth.js';
+import { consumeAIQuota, resolveDailyQuota, weightForTool } from './_shared/ai-quota.js';
+import { logAIInvocation } from './_shared/ai-log.js';
 
 /* ── OpenRouter free models (fallback chain) ─────────────────── */
 const OPENROUTER_MODELS = [
@@ -99,6 +101,7 @@ export async function onRequest(context) {
     // Verify JWT authentication
     const authResult = await requireAuth(request, env, corsHeaders(origin));
     if (authResult instanceof Response) return authResult;
+    const authedUser = authResult.user;
 
     if (!groqKey && !openrouterKey) {
         return new Response(
@@ -128,6 +131,58 @@ export async function onRequest(context) {
         return new Response(
             JSON.stringify({ ok: false, error: 'At least one message is required' }),
             { status: 422, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+        );
+    }
+
+    // ── Per-user daily AI quota (Epic E-4 / F-017) ─────────────
+    const quotaWeight = weightForTool('chat');
+    const dailyQuota = resolveDailyQuota(env);
+    const quota = await consumeAIQuota({
+        userId: authedUser?.id,
+        weight: quotaWeight,
+        limit:  dailyQuota,
+        kv:     env?.RATE_LIMIT_KV
+    });
+
+    // Join the trimmed turns into a single string for hash+length
+    // accounting. We deliberately do not preserve role markers — the
+    // point of the hash is to detect repeated payloads, and roles are
+    // noise for that purpose.
+    const promptForLog = trimmedMessages.map(m => m.content).join('\n\n');
+    const clientIp = request.headers.get('CF-Connecting-IP') || null;
+
+    if (!quota.allowed) {
+        context.waitUntil?.(logAIInvocation(env, {
+            userAuthId: authedUser?.id,
+            tool:       'chat',
+            prompt:     promptForLog,
+            response:   '',
+            status:     'quota_exceeded',
+            weight:     quotaWeight,
+            ip:         clientIp,
+            metadata:   { limit: quota.limit, used: quota.used }
+        }));
+        return new Response(
+            JSON.stringify({
+                ok: false,
+                error: 'Daily AI quota exceeded. Try again tomorrow.',
+                quota: {
+                    limit:     quota.limit,
+                    used:      quota.used,
+                    remaining: quota.remaining,
+                    resets_at: new Date(quota.resetsAt).toISOString()
+                }
+            }),
+            {
+                status: 429,
+                headers: {
+                    ...corsHeaders(origin),
+                    'Content-Type': 'application/json',
+                    'X-AI-Quota-Limit':     String(quota.limit),
+                    'X-AI-Quota-Remaining': String(quota.remaining),
+                    'X-AI-Quota-Reset':     new Date(quota.resetsAt).toISOString()
+                }
+            }
         );
     }
 
@@ -230,6 +285,15 @@ export async function onRequest(context) {
 
     // ── All APIs failed ────────────────────────────────────────
     if (!aiRes) {
+        context.waitUntil?.(logAIInvocation(env, {
+            userAuthId: authedUser?.id,
+            tool:       'chat',
+            prompt:     promptForLog,
+            response:   '',
+            status:     'upstream_error',
+            weight:     quotaWeight,
+            ip:         clientIp
+        }));
         return new Response(
             JSON.stringify({ ok: false, error: 'AI service temporarily unavailable. Please try again.' }),
             { status: 503, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
@@ -237,6 +301,9 @@ export async function onRequest(context) {
     }
 
     // ── Stream the SSE response back to the client ──────────────
+    // Accumulate the streamed deltas so we can hash the full response
+    // text for abuse logging (Epic E-5). Logging runs in `waitUntil`
+    // so a DB hiccup can never stall the last SSE byte to the client.
     try {
         const { readable, writable } = new TransformStream();
         const writer = writable.getWriter();
@@ -246,6 +313,7 @@ export async function onRequest(context) {
             const reader = aiRes.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
+            let accumulated = '';
 
             try {
                 while (true) {
@@ -268,6 +336,7 @@ export async function onRequest(context) {
                             const parsed = JSON.parse(data);
                             const content = parsed.choices?.[0]?.delta?.content;
                             if (content) {
+                                accumulated += content;
                                 await writer.write(encoder.encode('data: ' + JSON.stringify({ text: content }) + '\n\n'));
                             }
                         } catch (_e) {
@@ -279,6 +348,15 @@ export async function onRequest(context) {
                 console.error('Stream processing error:', e);
             } finally {
                 await writer.close();
+                context.waitUntil?.(logAIInvocation(env, {
+                    userAuthId: authedUser?.id,
+                    tool:       'chat',
+                    prompt:     promptForLog,
+                    response:   accumulated,
+                    status:     'ok',
+                    weight:     quotaWeight,
+                    ip:         clientIp
+                }));
             }
         })();
 

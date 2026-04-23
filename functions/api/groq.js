@@ -15,6 +15,8 @@
 
 import { corsHeaders, handlePreflight } from './_shared/cors.js';
 import { requireAuth } from './_shared/auth.js';
+import { consumeAIQuota, resolveDailyQuota, weightForTool } from './_shared/ai-quota.js';
+import { logAIInvocation } from './_shared/ai-log.js';
 
 /* ── Supported languages ─────────────────────────────────────── */
 const SUPPORTED_LANGUAGES = {
@@ -302,7 +304,13 @@ async function callOpenRouter(apiKey, messages, maxTokens, temperature, category
 }
 
 /* ── Stream SSE response to client ───────────────────────────── */
-function streamToClient(aiRes, hdrs) {
+/**
+ * Proxies an upstream chat-completions SSE stream to the client while
+ * tapping each delta so we can record a SHA-256 digest of the full
+ * response after the stream terminates. `onComplete` is invoked
+ * exactly once with the accumulated text (empty string on error).
+ */
+function streamToClient(aiRes, hdrs, onComplete) {
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
@@ -311,6 +319,7 @@ function streamToClient(aiRes, hdrs) {
         const reader = aiRes.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let accumulated = '';
 
         try {
             while (true) {
@@ -333,6 +342,7 @@ function streamToClient(aiRes, hdrs) {
                         const parsed = JSON.parse(data);
                         const content = parsed.choices?.[0]?.delta?.content;
                         if (content) {
+                            accumulated += content;
                             await writer.write(encoder.encode('data: ' + JSON.stringify({ text: content }) + '\n\n'));
                         }
                     } catch (_e) {
@@ -344,6 +354,9 @@ function streamToClient(aiRes, hdrs) {
             console.error('Stream processing error:', e);
         } finally {
             await writer.close();
+            if (typeof onComplete === 'function') {
+                try { onComplete(accumulated); } catch (_e) { /* best-effort */ }
+            }
         }
     })();
 
@@ -377,6 +390,7 @@ export async function onRequest(context) {
     // Verify JWT authentication
     const authResult = await requireAuth(request, env, corsHeaders(origin));
     if (authResult instanceof Response) return authResult;
+    const authedUser = authResult.user;
 
     // Get available API keys
     const groqKey = env?.GROQ_API_KEY;
@@ -437,6 +451,57 @@ export async function onRequest(context) {
         );
     }
 
+    // ── Per-user daily AI quota (Epic E-4 / F-017) ─────────────
+    // Charge the weighted budget *before* calling any upstream AI
+    // provider so that quota-exceeded requests never burn tokens.
+    const quotaWeight = weightForTool(toolId);
+    const dailyQuota = resolveDailyQuota(env);
+    const quota = await consumeAIQuota({
+        userId: authedUser?.id,
+        weight: quotaWeight,
+        limit:  dailyQuota,
+        kv:     env?.RATE_LIMIT_KV
+    });
+    if (!quota.allowed) {
+        // Log the quota-exceeded attempt so that abuse investigators can
+        // see spikes of blocked calls, not just successful ones.
+        const clientIp = request.headers.get('CF-Connecting-IP') || null;
+        context.waitUntil?.(logAIInvocation(env, {
+            userAuthId: authedUser?.id,
+            tool:       toolId || 'legacy',
+            lang:       langCode,
+            prompt:     prompt,
+            response:   '',
+            status:     'quota_exceeded',
+            weight:     quotaWeight,
+            ip:         clientIp,
+            metadata:   { limit: quota.limit, used: quota.used }
+        }));
+
+        return new Response(
+            JSON.stringify({
+                ok: false,
+                error: 'Daily AI quota exceeded. Try again tomorrow.',
+                quota: {
+                    limit:     quota.limit,
+                    used:      quota.used,
+                    remaining: quota.remaining,
+                    resets_at: new Date(quota.resetsAt).toISOString()
+                }
+            }),
+            {
+                status: 429,
+                headers: {
+                    ...corsHeaders(origin),
+                    'Content-Type': 'application/json',
+                    'X-AI-Quota-Limit':     String(quota.limit),
+                    'X-AI-Quota-Remaining': String(quota.remaining),
+                    'X-AI-Quota-Reset':     new Date(quota.resetsAt).toISOString()
+                }
+            }
+        );
+    }
+
     const messages = [
         { role: 'system', content: system },
         { role: 'user', content: prompt }
@@ -451,33 +516,54 @@ export async function onRequest(context) {
         : { primary: 'groq', category: 'precision' };
 
     let aiRes = null;
+    let usedProvider = null;
 
     try {
         if (routing.primary === 'openrouter') {
             // ── Creative tools: OpenRouter first, Groq fallback ──
             if (openrouterKey) {
                 aiRes = await callOpenRouter(openrouterKey, messages, maxTokens, temperature, routing.category);
+                if (aiRes) usedProvider = 'openrouter';
             }
             if (!aiRes && groqKey) {
                 console.warn('OpenRouter unavailable for ' + (toolId || 'request') + ', falling back to Groq');
                 aiRes = await callGroq(groqKey, messages, maxTokens, temperature);
+                if (aiRes) usedProvider = 'groq';
             }
         } else {
             // ── Precision/analytical tools: Groq first, OpenRouter fallback ──
             if (groqKey) {
                 aiRes = await callGroq(groqKey, messages, maxTokens, temperature);
+                if (aiRes) usedProvider = 'groq';
             }
             if (!aiRes && openrouterKey) {
                 console.warn('Groq unavailable for ' + (toolId || 'request') + ', falling back to OpenRouter');
                 aiRes = await callOpenRouter(openrouterKey, messages, maxTokens, temperature, routing.category);
+                if (aiRes) usedProvider = 'openrouter';
             }
         }
     } catch (err) {
         console.error('AI routing error:', err);
     }
 
+    const clientIp = request.headers.get('CF-Connecting-IP') || null;
+
     // ── All APIs failed ────────────────────────────────────────
     if (!aiRes) {
+        // Still log the attempt so that repeated upstream failures for
+        // one user (potential quota-probing) are visible to operators.
+        context.waitUntil?.(logAIInvocation(env, {
+            userAuthId: authedUser?.id,
+            tool:       toolId || 'legacy',
+            lang:       langCode,
+            prompt:     prompt,
+            response:   '',
+            status:     'upstream_error',
+            weight:     quotaWeight,
+            ip:         clientIp,
+            metadata:   { primary: routing.primary }
+        }));
+
         return new Response(
             JSON.stringify({ ok: false, error: 'AI service temporarily unavailable. Please try again.' }),
             { status: 503, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
@@ -485,8 +571,27 @@ export async function onRequest(context) {
     }
 
     // ── Stream the SSE response back to the client ──────────────
+    // The onComplete callback runs after the stream closes; we log the
+    // resulting response hash via ctx.waitUntil so the DB insert never
+    // blocks the client from receiving the last SSE byte.
     try {
-        return streamToClient(aiRes, corsHeaders(origin));
+        return streamToClient(aiRes, corsHeaders(origin), (accumulated) => {
+            context.waitUntil?.(logAIInvocation(env, {
+                userAuthId: authedUser?.id,
+                tool:       toolId || 'legacy',
+                lang:       langCode,
+                prompt:     prompt,
+                response:   accumulated,
+                status:     'ok',
+                weight:     quotaWeight,
+                ip:         clientIp,
+                metadata:   {
+                    primary:  routing.primary,
+                    provider: usedProvider,
+                    category: routing.category
+                }
+            }));
+        });
     } catch (err) {
         console.error('Stream proxy error:', err);
         return new Response(

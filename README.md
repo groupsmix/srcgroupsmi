@@ -84,6 +84,7 @@ Set the following in your Cloudflare Pages dashboard:
 - `TURNSTILE_SECRET_KEY` — Cloudflare Turnstile secret key
 - `GROQ_API_KEY` — Groq API key (AI features)
 - `OPENROUTER_API_KEY` — OpenRouter API key (AI features)
+- `AI_DAILY_QUOTA` — _optional_; per-user daily quota for `/api/groq` and `/api/chat` (defaults to `100`). Weighted per-tool — see `functions/api/_shared/ai-quota.js`.
 - `LEMONSQUEEZY_WEBHOOK_SECRET` — **required** for `/api/lemonsqueezy-webhook`; the handler refuses all requests when unset
 - `CRON_SECRET` — **required** for every cron-triggered endpoint (`/api/compute-feed`, `/api/purge-deleted`, `/api/newsletter-digest`, `/api/article-schedule`); each handler refuses to run when unset and returns 401 on a mismatched `X-Cron-Secret` header
 

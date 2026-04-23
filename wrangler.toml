@@ -39,7 +39,9 @@ compatibility_date = "2024-11-01"
 #   STORE_KV      — caches LemonSqueezy product catalog
 #                   used by functions/api/lemonsqueezy.js
 #   RATE_LIMIT_KV — persistent rate-limit state with in-memory fallback
-#                   used by functions/api/_shared/rate-limit.js
+#                   used by functions/api/_shared/rate-limit.js (prefix `rl:`)
+#                   and by functions/api/_shared/ai-quota.js for the
+#                   per-user daily AI quota counter (prefix `aiq:`).
 
 # [[kv_namespaces]]
 # binding    = "STORE_KV"
@@ -80,6 +82,10 @@ compatibility_date = "2024-11-01"
 #                                 closed without it (see H-7)
 #
 # Optional:
+#   AI_DAILY_QUOTA                Per-user per-day budget for /api/groq
+#                                 and /api/chat (default 100). Consumed
+#                                 with per-tool weights defined in
+#                                 functions/api/_shared/ai-quota.js.
 #   RESEND_API_KEY                Contact form email delivery
 #   CONTACT_EMAIL_TO              Contact form destination address
 #   SENTRY_DSN_EDGE               Server-side Sentry DSN
