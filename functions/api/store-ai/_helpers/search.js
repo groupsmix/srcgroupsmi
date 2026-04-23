@@ -2,6 +2,7 @@
  * Action: Smart Search — AI-powered product search (AR/EN)
  */
 import { callAI } from './ai-providers.js';
+import { wrapUserInput, withUserInputDirective } from '../../_shared/prompt-safety.js';
 
 export async function handleSearch(env, body) {
     const query = (body.query || '').substring(0, 500).trim();
@@ -12,14 +13,13 @@ export async function handleSearch(env, body) {
         `${i + 1}. "${p.name}" - ${p.description?.substring(0, 100) || 'No description'} - Type: ${p.product_type} - Price: ${p.price_formatted}`
     ).join('\n');
 
+    const systemPrompt = `You are a product search assistant for GroupsMix Store. The user's search query is inside <user_input>. Your job is to return the indices (1-based) of the most relevant products from the product list. Output ONLY a JSON object with key "matches" containing an array of product indices (numbers), ordered by relevance. Maximum 10 matches. If nothing matches well, return {"matches":[]}.`;
+
     const messages = [
-        {
-            role: 'system',
-            content: `You are a product search assistant for GroupsMix Store. The user will search for products in Arabic or English. Your job is to return the indices (1-based) of the most relevant products from the product list. Output ONLY a JSON object with key "matches" containing an array of product indices (numbers), ordered by relevance. Maximum 10 matches. If nothing matches well, return {"matches":[]}.`
-        },
+        { role: 'system', content: withUserInputDirective(systemPrompt) },
         {
             role: 'user',
-            content: `Product catalog:\n${productList}\n\nUser search: "${query}"\n\nReturn matching product indices as JSON.`
+            content: `Product catalog:\n${productList}\n\nUser search: ${wrapUserInput(query, { maxLength: 500 })}\n\nReturn matching product indices as JSON.`
         }
     ];
 
