@@ -14,15 +14,15 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
                     flowType: 'pkce',
                     storage: {
                         getItem: function(key) {
-                            return localStorage.getItem(key);
+                            return SafeStorage.get(key);
                         },
                         setItem: function(key, value) {
-                            localStorage.setItem(key, value);
+                            SafeStorage.set(key, value);
                             // Also set as cookie for server-side middleware
                             document.cookie = key + '=' + encodeURIComponent(value) + ';path=/;max-age=604800;SameSite=Lax;Secure';
                         },
                         removeItem: function(key) {
-                            localStorage.removeItem(key);
+                            SafeStorage.remove(key);
                             document.cookie = key + '=;path=/;max-age=0';
                         }
                     }

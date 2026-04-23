@@ -18,7 +18,7 @@
     // ─── Utility: Safe localStorage ────────────────────────────
     function getStoredArray(key, maxItems) {
         try {
-            var data = JSON.parse(localStorage.getItem(key) || '[]');
+            var data = SafeStorage.getJSON(key, []);
             if (!Array.isArray(data)) return [];
             return data.slice(-(maxItems || 50));
         } catch (_e) { return []; }
@@ -30,7 +30,7 @@
         arr = arr.filter(function (x) { return x.id !== item.id; });
         arr.push(item);
         if (arr.length > (maxItems || 50)) arr = arr.slice(-(maxItems || 50));
-        try { localStorage.setItem(key, JSON.stringify(arr)); } catch (_e) { /* quota */ }
+        SafeStorage.setJSON(key, arr);
     }
 
     // ═══════════════════════════════════════
@@ -524,7 +524,7 @@
                 var existing = cats.filter(function (c) { return c !== product.product_type; });
                 existing.unshift(product.product_type);
                 if (existing.length > 20) existing = existing.slice(0, 20);
-                try { localStorage.setItem(AI_FEATURES_STORAGE.viewedProductCategories, JSON.stringify(existing)); } catch (_e) { /* quota */ }
+                SafeStorage.setJSON(AI_FEATURES_STORAGE.viewedProductCategories, existing);
             }
         },
 
@@ -556,10 +556,8 @@
 
         /** Get viewed product categories */
         getViewedCategories: function () {
-            try {
-                var data = JSON.parse(localStorage.getItem(AI_FEATURES_STORAGE.viewedProductCategories) || '[]');
-                return Array.isArray(data) ? data : [];
-            } catch (_e) { return []; }
+            var data = SafeStorage.getJSON(AI_FEATURES_STORAGE.viewedProductCategories, []);
+            return Array.isArray(data) ? data : [];
         }
     };
 

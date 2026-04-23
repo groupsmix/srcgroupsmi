@@ -118,16 +118,11 @@
 
     /* ── Utility: Local Storage helpers ───── */
     function getStored(key) {
-        try {
-            var data = localStorage.getItem(key);
-            return data ? JSON.parse(data) : null;
-        } catch (_e) { return null; }
+        return SafeStorage.getJSON(key, null);
     }
 
     function setStored(key, value) {
-        try {
-            localStorage.setItem(key, JSON.stringify(value));
-        } catch (_e) { /* quota exceeded — ignore */ }
+        SafeStorage.setJSON(key, value);
     }
 
     /* ── Track viewed product ─────────────── */

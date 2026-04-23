@@ -136,13 +136,12 @@ const _Security = {
         const l = limits[action];
         if (!l) return true;
         const key = 'gm_rl_' + action;
-        let timestamps = [];
-        try { const raw = localStorage.getItem(key); timestamps = raw ? JSON.parse(raw) : []; } catch (err) { console.error('Security.checkRateLimit:', err.message); timestamps = []; }
+        const timestamps = SafeStorage.getJSON(key, []);
         const now = Date.now();
-        const recent = timestamps.filter(t => now - t < l.window);
+        const recent = Array.isArray(timestamps) ? timestamps.filter(t => now - t < l.window) : [];
         if (recent.length >= l.max) return false;
         recent.push(now);
-        localStorage.setItem(key, JSON.stringify(recent));
+        SafeStorage.setJSON(key, recent);
         return true;
     },
 

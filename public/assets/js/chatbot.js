@@ -206,18 +206,13 @@
 
     /* ── Load/Save History ────────────────── */
     function loadHistory() {
-        try {
-            var data = localStorage.getItem(STORAGE_KEY);
-            if (data) chatHistory = JSON.parse(data);
-        } catch (_e) { chatHistory = []; }
+        var data = SafeStorage.getJSON(STORAGE_KEY, null);
+        chatHistory = Array.isArray(data) ? data : [];
     }
 
     function saveHistory() {
-        try {
-            // Keep only last MAX_HISTORY messages
-            var toSave = chatHistory.slice(-MAX_HISTORY);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-        } catch (_e) { /* quota exceeded etc */ }
+        // Keep only last MAX_HISTORY messages
+        SafeStorage.setJSON(STORAGE_KEY, chatHistory.slice(-MAX_HISTORY));
     }
 
     /* ── Build DOM ────────────────────────── */

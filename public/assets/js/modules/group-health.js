@@ -11,14 +11,12 @@ const GroupHealth = {
     _cacheDuration: 3600000 * 6, // 6 hours
 
     _getCache() {
-        try {
-            const raw = localStorage.getItem(this._storageKey);
-            return raw ? JSON.parse(raw) : {};
-        } catch { return {}; }
+        const cache = SafeStorage.getJSON(this._storageKey, {});
+        return cache && typeof cache === 'object' ? cache : {};
     },
 
     _setCache(cache) {
-        try { localStorage.setItem(this._storageKey, JSON.stringify(cache)); } catch {}
+        SafeStorage.setJSON(this._storageKey, cache);
     },
 
     getCachedStatus(groupId) {
