@@ -20,6 +20,7 @@ import { moderateOutput, moderationBlockedEvent } from './_shared/moderation.js'
 import { STREAM_IDLE_TIMEOUT_MS, capMaxTokens } from './_shared/ai-limits.js';
 import { shouldAttempt, recordSuccess, recordFailure } from './_shared/circuit-breaker.js';
 import { logAiAudit } from './_shared/ai-audit.js';
+import { checkAndConsumeQuota, quotaExceededResponse } from './_shared/ai-quota.js';
 
 /* ── Supported languages ─────────────────────────────────────── */
 const SUPPORTED_LANGUAGES = {
@@ -538,6 +539,21 @@ export async function onRequest(context) {
         { role: 'system', content: system },
         { role: 'user', content: wrapUserInput(prompt) }
     ];
+
+    // E-4 / F-017: Per-user daily AI quota with per-tool weighting.
+    // Enforced after input validation so malformed requests don't
+    // burn quota, and before the upstream AI call so denied users
+    // never cost Groq/OpenRouter tokens.
+    const quotaToolId = toolId || 'chat';
+    const quotaStatus = await checkAndConsumeQuota(
+        authResult.user.id,
+        quotaToolId,
+        env,
+        env?.RATE_LIMIT_KV
+    );
+    if (!quotaStatus.allowed) {
+        return quotaExceededResponse(quotaStatus, corsHeaders(origin));
+    }
 
     // ── Smart Task Routing ──────────────────────────────────────
     // Route based on tool type: creative tools → OpenRouter first,

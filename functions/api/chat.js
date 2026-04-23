@@ -22,6 +22,7 @@ import { moderateOutput, moderationBlockedEvent } from './_shared/moderation.js'
 import { STREAM_IDLE_TIMEOUT_MS, capMaxTokens } from './_shared/ai-limits.js';
 import { shouldAttempt, recordSuccess, recordFailure } from './_shared/circuit-breaker.js';
 import { logAiAudit } from './_shared/ai-audit.js';
+import { checkAndConsumeQuota, quotaExceededResponse } from './_shared/ai-quota.js';
 
 /* ── OpenRouter free models (fallback chain) ─────────────────── */
 const OPENROUTER_MODELS = [
@@ -144,6 +145,18 @@ export async function onRequest(context) {
         { role: 'system', content: withUserInputDirective(SYSTEM_PROMPT) },
         ...trimmedMessages
     ];
+
+    // E-4 / F-017: Per-user daily AI quota with per-tool weighting.
+    // Chatbot turns use the "chat" weight; see ai-quota.js TOOL_WEIGHTS.
+    const quotaStatus = await checkAndConsumeQuota(
+        authResult.user.id,
+        'chat',
+        env,
+        env?.RATE_LIMIT_KV
+    );
+    if (!quotaStatus.allowed) {
+        return quotaExceededResponse(quotaStatus, corsHeaders(origin));
+    }
 
     // ── Smart Load Balancing ───────────────────────────────────
     // Alternate primary provider using time-based rotation (seconds).
