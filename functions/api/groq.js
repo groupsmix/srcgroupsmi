@@ -17,6 +17,8 @@ import { corsHeaders, handlePreflight } from './_shared/cors.js';
 import { requireAuth } from './_shared/auth.js';
 import { wrapUserInput, withUserInputDirective } from './_shared/prompt-safety.js';
 import { moderateOutput, moderationBlockedEvent } from './_shared/moderation.js';
+import { capMaxTokens, readWithIdleTimeout } from './_shared/ai-limits.js';
+import { shouldSkipProvider, recordSuccess, recordFailure } from './_shared/circuit-breaker.js';
 
 /* ── Supported languages ─────────────────────────────────────── */
 const SUPPORTED_LANGUAGES = {
@@ -243,7 +245,7 @@ function sanitizeInput(str) {
 }
 
 /* ── Call Groq API ───────────────────────────────────────────── */
-async function callGroq(apiKey, messages, maxTokens, temperature) {
+async function callGroq(apiKey, messages, maxTokens, temperature, kv) {
     try {
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -254,25 +256,29 @@ async function callGroq(apiKey, messages, maxTokens, temperature) {
             body: JSON.stringify({
                 model: 'llama-3.3-70b-versatile',
                 messages: messages,
-                max_tokens: maxTokens,
+                max_tokens: capMaxTokens(maxTokens),
                 temperature: temperature,
                 stream: true
             })
         });
         if (!res.ok) {
             console.error('Groq API error:', res.status);
+            await recordFailure(kv, 'groq');
             return null;
         }
+        await recordSuccess(kv, 'groq');
         return res;
     } catch (err) {
         console.error('Groq fetch error:', err);
+        await recordFailure(kv, 'groq');
         return null;
     }
 }
 
 /* ── Call OpenRouter API (tries multiple models in chain) ───── */
-async function callOpenRouter(apiKey, messages, maxTokens, temperature, category) {
+async function callOpenRouter(apiKey, messages, maxTokens, temperature, category, kv) {
     const models = OPENROUTER_MODELS[category] || OPENROUTER_MODELS.creative;
+    let anyAttemptFailed = false;
     for (const model of models) {
         try {
             const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -286,19 +292,25 @@ async function callOpenRouter(apiKey, messages, maxTokens, temperature, category
                 body: JSON.stringify({
                     model: model,
                     messages: messages,
-                    max_tokens: maxTokens,
+                    max_tokens: capMaxTokens(maxTokens),
                     temperature: temperature,
                     stream: true
                 })
             });
             if (res.ok) {
                 console.info('OpenRouter success with model:', model);
+                await recordSuccess(kv, 'openrouter');
                 return res;
             }
+            anyAttemptFailed = true;
             console.error('OpenRouter error (' + model + '):', res.status);
         } catch (err) {
+            anyAttemptFailed = true;
             console.error('OpenRouter fetch error (' + model + '):', err);
         }
+    }
+    if (anyAttemptFailed) {
+        await recordFailure(kv, 'openrouter');
     }
     return null;
 }
@@ -317,7 +329,12 @@ function streamToClient(aiRes, hdrs, moderationCtx) {
 
         try {
             while (true) {
-                const { done, value } = await reader.read();
+                const { done, value, timedOut } = await readWithIdleTimeout(reader);
+                if (timedOut) {
+                    console.warn('groq.js: upstream stream idle timeout');
+                    await writer.write(encoder.encode('data: ' + JSON.stringify({ error: 'stream_idle_timeout' }) + '\n\n'));
+                    break;
+                }
                 if (done) break;
 
                 buffer += decoder.decode(value, { stream: true });
@@ -396,6 +413,7 @@ export async function onRequest(context) {
     // Get available API keys
     const groqKey = env?.GROQ_API_KEY;
     const openrouterKey = env?.OPENROUTER_API_KEY;
+    const breakerKv = env?.RATE_LIMIT_KV || null;
 
     if (!groqKey && !openrouterKey) {
         return new Response(
@@ -447,7 +465,7 @@ export async function onRequest(context) {
         temperature = toolConfig.temperature;
     } else {
         system = 'You are a helpful assistant for GroupsMix, a social media group directory. Be concise and professional.';
-        maxTokens = Math.min(Math.max(parseInt(body.max_tokens, 10) || 500, 50), 2000);
+        maxTokens = capMaxTokens(body.max_tokens, 500);
         temperature = 0.7;
     }
 
@@ -478,24 +496,33 @@ export async function onRequest(context) {
 
     let aiRes = null;
 
+    // F-049: skip the primary provider entirely while its breaker is open
+    // so a sustained outage does not cost every request an extra timeout.
+    const groqOpen = await shouldSkipProvider(breakerKv, 'groq');
+    const openrouterOpen = await shouldSkipProvider(breakerKv, 'openrouter');
+
     try {
         if (routing.primary === 'openrouter') {
             // ── Creative tools: OpenRouter first, Groq fallback ──
-            if (openrouterKey) {
-                aiRes = await callOpenRouter(openrouterKey, messages, maxTokens, temperature, routing.category);
+            if (openrouterKey && !openrouterOpen) {
+                aiRes = await callOpenRouter(openrouterKey, messages, maxTokens, temperature, routing.category, breakerKv);
+            } else if (openrouterOpen) {
+                console.warn('OpenRouter circuit open, skipping primary for ' + (toolId || 'request'));
             }
-            if (!aiRes && groqKey) {
+            if (!aiRes && groqKey && !groqOpen) {
                 console.warn('OpenRouter unavailable for ' + (toolId || 'request') + ', falling back to Groq');
-                aiRes = await callGroq(groqKey, messages, maxTokens, temperature);
+                aiRes = await callGroq(groqKey, messages, maxTokens, temperature, breakerKv);
             }
         } else {
             // ── Precision/analytical tools: Groq first, OpenRouter fallback ──
-            if (groqKey) {
-                aiRes = await callGroq(groqKey, messages, maxTokens, temperature);
+            if (groqKey && !groqOpen) {
+                aiRes = await callGroq(groqKey, messages, maxTokens, temperature, breakerKv);
+            } else if (groqOpen) {
+                console.warn('Groq circuit open, skipping primary for ' + (toolId || 'request'));
             }
-            if (!aiRes && openrouterKey) {
+            if (!aiRes && openrouterKey && !openrouterOpen) {
                 console.warn('Groq unavailable for ' + (toolId || 'request') + ', falling back to OpenRouter');
-                aiRes = await callOpenRouter(openrouterKey, messages, maxTokens, temperature, routing.category);
+                aiRes = await callOpenRouter(openrouterKey, messages, maxTokens, temperature, routing.category, breakerKv);
             }
         }
     } catch (err) {

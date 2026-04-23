@@ -19,6 +19,7 @@
 
 import { wrapUserInput, withUserInputDirective } from './_shared/prompt-safety.js';
 import { moderateOutput } from './_shared/moderation.js';
+import { capMaxTokens } from './_shared/ai-limits.js';
 
 /* ── Allowed origins for CORS ───────────────────────────────────── */
 const ALLOWED_ORIGINS = [
@@ -108,7 +109,7 @@ function quickSpamCheck(text) {
 // wrapUserInput). Callers must keep untrusted data inside the delimited
 // block so the model never sees it as an instruction.
 async function callAI(apiKey, systemInstructions, userBlock, maxTokens) {
-    maxTokens = maxTokens || 300;
+    maxTokens = capMaxTokens(maxTokens, 300);
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {

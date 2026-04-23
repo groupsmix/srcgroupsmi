@@ -8,6 +8,7 @@
 
 import { wrapUserInput, withUserInputDirective } from './_shared/prompt-safety.js';
 import { moderateOutput } from './_shared/moderation.js';
+import { capMaxTokens } from './_shared/ai-limits.js';
 
 export async function onRequestPost(context) {
     const { request, env } = context;
@@ -202,7 +203,7 @@ export async function onRequestPost(context) {
                     { role: 'system', content: withUserInputDirective(systemPrompts[task] || 'You are a helpful assistant.') },
                     { role: 'user', content: wrapUserInput(prompt, { maxLength: 4000 }) }
                 ],
-                max_tokens: maxTokens[task] || 300,
+                max_tokens: capMaxTokens(maxTokens[task], 300),
                 temperature: task === 'article-moderate' ? 0.1 : 0.7,
                 top_p: 1,
                 stream: false

@@ -16,6 +16,7 @@
 
 import { secureRandomUpperAlnum } from './_shared/secure-random.js';
 import { requireAuthWithProfile } from './_shared/auth.js';
+import { capMaxTokens } from './_shared/ai-limits.js';
 
 const ALLOWED_ORIGINS = [
     'https://groupsmix.com',
@@ -73,7 +74,7 @@ function supaFetch(supabaseUrl, supabaseKey, path, options) {
 
 /* ── AI helper ────────────────────────────────────────────────── */
 async function callAI(apiKey, prompt, maxTokens) {
-    maxTokens = maxTokens || 500;
+    maxTokens = capMaxTokens(maxTokens, 500);
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {

@@ -10,6 +10,8 @@
  * whole AI surface down; call sites log when this happens.
  */
 
+import { capMaxTokens } from './ai-limits.js';
+
 const DEFAULT_MODEL = 'meta-llama/llama-guard-4-12b';
 const MODERATION_TIMEOUT_MS = 4000;
 
@@ -47,7 +49,7 @@ async function callGroqGuard(apiKey, model, messages) {
             body: JSON.stringify({
                 model: model,
                 messages: messages,
-                max_tokens: 50,
+                max_tokens: capMaxTokens(50),
                 temperature: 0,
                 stream: false
             }),

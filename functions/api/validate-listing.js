@@ -16,6 +16,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { capMaxTokens } from './_shared/ai-limits.js';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -200,7 +201,7 @@ Respond with ONLY a JSON object (no markdown, no extra text):
             body: JSON.stringify({
                 model: 'meta-llama/llama-3.1-8b-instruct:free',
                 messages: [{ role: 'user', content: prompt }],
-                max_tokens: 100,
+                max_tokens: capMaxTokens(100),
                 temperature: 0.1
             })
         });
