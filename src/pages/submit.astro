@@ -94,8 +94,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 
         <div class="submit-page">
-            <h1 style="text-align:center;margin-bottom:var(--space-2)"><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1.2em;height:1.2em;vertical-align:-0.125em"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Submit Your Group</h1>
-            <p style="text-align:center;color:var(--text-secondary);margin-bottom:var(--space-8)">Share your community
+            <h1 class="s-7bfe81"><svg class="svg-icon s-823645" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Submit Your Group</h1>
+            <p class="s-ab7fc9">Share your community
                 with the world — it's fast, free, and easy</p>
             <div class="submit-steps" id="submit-steps">
                 <div class="submit-step submit-step--active" id="step-1-indicator">1. Details</div>
@@ -106,13 +106,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <form id="submit-form">
                     <div id="step-1">
                         <div class="form-row">
-                            <div class="form-group" style="flex:1"><label class="form-label"
+                            <div class="form-group s-7623f0"><label class="form-label"
                                     for="group-platform">Platform *</label>
                                 <select class="form-select" id="group-platform" required>
                                     <option value="">Select Platform</option>
                                 </select>
                             </div>
-                            <div class="form-group" style="flex:1"><label class="form-label" for="group-type">Type
+                            <div class="form-group s-7623f0"><label class="form-label" for="group-type">Type
                                     *</label>
                                 <select class="form-select" id="group-type" required>
                                     <option value="">Select Type</option>
@@ -136,13 +136,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                             <div class="form-help"><span id="desc-count">0</span>/500 characters</div>
                         </div>
                         <div class="form-row">
-                            <div class="form-group" style="flex:1"><label class="form-label"
+                            <div class="form-group s-7623f0"><label class="form-label"
                                     for="group-category">Category *</label>
                                 <select class="form-select" id="group-category" required>
                                     <option value="">Select Category</option>
                                 </select>
                             </div>
-                            <div class="form-group" style="flex:1"><label class="form-label"
+                            <div class="form-group s-7623f0"><label class="form-label"
                                     for="group-country">Country</label>
                                 <select class="form-select" id="group-country">
                                     <option value="GLOBAL">Global</option>
@@ -150,13 +150,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                             </div>
                         </div>
                         <div class="form-row">
-                            <div class="form-group" style="flex:1"><label class="form-label"
+                            <div class="form-group s-7623f0"><label class="form-label"
                                     for="group-language">Language</label>
                                 <select class="form-select" id="group-language">
                                     <option value="English">English</option>
                                 </select>
                             </div>
-                            <div class="form-group" style="flex:1"><label class="form-label" for="group-city">City
+                            <div class="form-group s-7623f0"><label class="form-label" for="group-city">City
                                     (optional)</label>
                                 <input type="text" class="form-input" id="group-city" placeholder="e.g. New York"
                                     maxlength="50">
@@ -168,27 +168,27 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                             <div class="form-help"><span id="tag-count">0</span>/5 tags</div>
                         </div>
                         <input type="text" name="website_url" class="honeypot" tabindex="-1" autocomplete="off">
-                        <div class="form-group" id="turnstile-wrapper" style="display:none"><div id="turnstile-widget"></div></div>
+                        <div class="form-group s-c8be1c" id="turnstile-wrapper"><div id="turnstile-widget"></div></div>
                         <button type="button" class="btn btn-primary btn-full" id="next-step-btn">Preview →</button>
                     </div>
                     <div id="step-2" class="hidden">
                         <div class="submit-preview" id="preview-content"></div>
                         <!-- Issue #17 fix: added margin fallback for inline gap -->
-                        <div class="step2-actions" style="display:flex;gap:var(--space-3);margin-top:var(--space-6)">
-                            <button type="button" class="btn btn-secondary" id="back-btn" style="flex:1;margin-right:var(--space-3)">← Back</button>
-                                                        <button type="submit" class="btn btn-primary" id="submit-btn" style="flex:2"><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Submit
+                        <div class="step2-actions s-0d5ac5">
+                            <button type="button" class="btn btn-secondary s-c6ab74" id="back-btn">← Back</button>
+                                                        <button type="submit" class="btn btn-primary s-331e92" id="submit-btn"><svg class="svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Submit
                                                             Group</button>
                         </div>
                     </div>
                     <div id="step-3" class="hidden">
-                        <div style="text-align:center;padding:var(--space-8) 0">
-                            <div style="font-size:var(--text-4xl);margin-bottom:var(--space-4)"><svg class="svg-icon svg-icon--xl" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:2em;height:2em"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+                        <div class="s-8b5eee">
+                            <div class="s-776d9b"><svg class="svg-icon svg-icon--xl s-b8efc7" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
                             <h2>Group Submitted!</h2>
-                            <p style="color:var(--text-secondary);margin:var(--space-4) 0">Your group is under review.
+                            <p class="s-ba6794">Your group is under review.
                                 You'll be notified once approved.</p>
                             <!-- Issue #17 fix: added margin fallback for inline gap -->
                             <div
-                                style="display:flex;gap:var(--space-3);justify-content:center;margin-top:var(--space-6)">
+ class="s-1f9cdf">
                                 <a href="/submit" class="btn btn-secondary">Submit Another</a>
                                 <a href="/my-groups" class="btn btn-primary">View My Groups</a>
                             </div>
@@ -385,3 +385,20 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </script>
 </Fragment>
 </BaseLayout>
+
+<style>
+/* inline-styles: migrated */
+.s-0d5ac5 { display:flex;gap:var(--space-3);margin-top:var(--space-6); }
+.s-1f9cdf { display:flex;gap:var(--space-3);justify-content:center;margin-top:var(--space-6); }
+.s-331e92 { flex:2; }
+.s-7623f0 { flex:1; }
+.s-776d9b { font-size:var(--text-4xl);margin-bottom:var(--space-4); }
+.s-7bfe81 { text-align:center;margin-bottom:var(--space-2); }
+.s-823645 { width:1.2em;height:1.2em;vertical-align:-0.125em; }
+.s-8b5eee { text-align:center;padding:var(--space-8) 0; }
+.s-ab7fc9 { text-align:center;color:var(--text-secondary);margin-bottom:var(--space-8); }
+.s-b8efc7 { width:2em;height:2em; }
+.s-ba6794 { color:var(--text-secondary);margin:var(--space-4) 0; }
+.s-c6ab74 { flex:1;margin-right:var(--space-3); }
+.s-c8be1c { display:none; }
+</style>

@@ -17,7 +17,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <!-- Hero Section -->
             <section class="jobs-hero">
                 <span class="jobs-hero__badge">
-                    <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <svg class="s-427a56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     AI-Powered Jobs Board
                 </span>
                 <h1 class="jobs-hero__title">Community Jobs</h1>
@@ -48,15 +48,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     <input type="search" id="jobs-search" class="jobs-search-bar__input"
                         placeholder="Search jobs (e.g., Discord Mod, React Developer...)" autocomplete="off">
                     <span class="jobs-search-bar__ai-badge" title="AI-Powered Search">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-427a56"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                         AI
                     </span>
                 </div>
 
                 <!-- AI Suggestions -->
-                <div class="jobs-ai-suggestions" id="ai-suggestions" style="display:none">
+                <div class="jobs-ai-suggestions s-c8be1c" id="ai-suggestions">
                     <span class="jobs-ai-suggestions__label">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-0a4e53"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                         Suggested for you:
                     </span>
                     <div class="jobs-ai-suggestions__list" id="ai-suggestions-list"></div>
@@ -70,23 +70,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                             <div class="jobs-filter-group__chips" id="category-chips">
                                 <button class="jobs-chip jobs-chip--active" data-filter="category" data-value="">All</button>
                                 <button class="jobs-chip" data-filter="category" data-value="design">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 011.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-427a56"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 011.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
                                     Design
                                 </button>
                                 <button class="jobs-chip" data-filter="category" data-value="programming">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-427a56"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                                     Programming
                                 </button>
                                 <button class="jobs-chip" data-filter="category" data-value="marketing">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-427a56"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
                                     Marketing
                                 </button>
                                 <button class="jobs-chip" data-filter="category" data-value="writing">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-427a56"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                                     Writing
                                 </button>
                                 <button class="jobs-chip" data-filter="category" data-value="community">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-427a56"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
                                     Community
                                 </button>
                                 <button class="jobs-chip" data-filter="category" data-value="other">Other</button>
@@ -108,19 +108,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                         <!-- Toggle button for extra filters -->
                         <div class="jobs-filter-toggle-row">
                             <button class="jobs-filter-toggle" id="btn-toggle-filters" type="button">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-427a56"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
                                 <span id="toggle-filters-label">More Filters</span>
-                                <span class="jobs-filter-toggle__count" id="extra-filter-count" style="display:none">0</span>
-                                <svg class="jobs-filter-toggle__arrow" id="toggle-filters-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="6 9 12 15 18 9"/></svg>
+                                <span class="jobs-filter-toggle__count s-c8be1c" id="extra-filter-count">0</span>
+                                <svg class="jobs-filter-toggle__arrow s-427a56" id="toggle-filters-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                             </button>
-                            <button class="jobs-filter-clear" id="btn-clear-filters" type="button" style="display:none">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            <button class="jobs-filter-clear s-c8be1c" id="btn-clear-filters" type="button">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-0a4e53"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                 Clear All
                             </button>
                         </div>
 
                         <!-- Extra filters: collapsible -->
-                        <div class="jobs-extra-filters" id="extra-filters" style="display:none">
+                        <div class="jobs-extra-filters s-c8be1c" id="extra-filters">
                             <div class="jobs-filter-group">
                                 <span class="jobs-filter-group__label">Location</span>
                                 <div class="jobs-filter-group__chips" id="location-chips">
@@ -131,7 +131,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                                 </div>
                             </div>
 
-                            <div class="jobs-filter-group" id="region-filter-row" style="display:none">
+                            <div class="jobs-filter-group s-c8be1c" id="region-filter-row">
                                 <span class="jobs-filter-group__label">Region</span>
                                 <div class="jobs-filter-group__chips" id="region-chips">
                                     <button class="jobs-chip jobs-chip--active" data-filter="region" data-value="">All</button>
@@ -195,26 +195,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                         </div>
 
                         <button class="btn btn-primary jobs-filter-chips__post-btn" id="btn-post-job">
-                            <svg style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            <svg class="s-8583a7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             Post a Job
                         </button>
                     </div>
             </div>
 
             <!-- Job Alerts Banner -->
-            <div id="job-alerts-banner" style="display:none"></div>
+            <div id="job-alerts-banner" class="s-c8be1c"></div>
 
             <!-- Salary Insights Banner -->
-            <div id="salary-insights-banner" style="display:none"></div>
+            <div id="salary-insights-banner" class="s-c8be1c"></div>
 
             <!-- Smart Match Banner (shown when user has skills) -->
-            <div id="match-banner" style="display:none"></div>
+            <div id="match-banner" class="s-c8be1c"></div>
 
             <!-- Skills Banner (shown when user doesn't have skills) -->
-            <div id="skills-banner" style="display:none"></div>
+            <div id="skills-banner" class="s-c8be1c"></div>
 
             <!-- Resume Parser Banner -->
-            <div id="resume-parser-banner" style="display:none"></div>
+            <div id="resume-parser-banner" class="s-c8be1c"></div>
 
             <!-- Job List -->
             <div class="job-list" id="job-list">
@@ -227,10 +227,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             </div>
 
             <!-- Salary Insights Section -->
-            <div class="jobs-salary-insights" id="salary-insights-section" style="display:none">
+            <div class="jobs-salary-insights s-c8be1c" id="salary-insights-section">
                 <div class="jobs-salary-insights__header">
                     <div class="jobs-salary-insights__icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-9992e1"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
                     </div>
                     <div>
                         <h3 class="jobs-salary-insights__title">Salary Insights</h3>
@@ -243,9 +243,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             </div>
 
             <!-- Referral Bounties CTA -->
-            <div class="jobs-referral-cta" id="referral-cta" style="display:none">
+            <div class="jobs-referral-cta s-c8be1c" id="referral-cta">
                 <div class="jobs-referral-cta__icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-9992e1"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
                 </div>
                 <div class="jobs-referral-cta__text">
                     <strong>Earn GMX Coins by Referring Friends</strong>
@@ -255,17 +255,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             </div>
 
             <!-- Employer Dashboard Link -->
-            <div class="jobs-employer-link" style="text-align:center;padding:var(--space-4) 0">
+            <div class="jobs-employer-link s-57c536">
                 <a href="/employer-dashboard" class="btn btn-secondary">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-8583a7"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                     Employer Dashboard
                 </a>
             </div>
 
             <!-- Minimal CTA: link to promote page -->
-            <div class="jobs-promote-link" style="text-align:center;padding:var(--space-6) 0">
+            <div class="jobs-promote-link s-9e4e8b">
                 <a href="/promote" class="btn btn-secondary">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-8583a7"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
                     Promote Your Job Listing
                 </a>
             </div>
@@ -317,3 +317,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </script>
 </Fragment>
 </BaseLayout>
+
+<style>
+/* inline-styles: migrated */
+.s-0a4e53 { width:12px;height:12px; }
+.s-427a56 { width:14px;height:14px; }
+.s-57c536 { text-align:center;padding:var(--space-4) 0; }
+.s-8583a7 { width:16px;height:16px; }
+.s-9992e1 { width:24px;height:24px; }
+.s-9e4e8b { text-align:center;padding:var(--space-6) 0; }
+.s-c8be1c { display:none; }
+</style>
