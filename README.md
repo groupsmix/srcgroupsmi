@@ -86,6 +86,7 @@ Set the following in your Cloudflare Pages dashboard:
 - `OPENROUTER_API_KEY` — OpenRouter API key (AI features)
 - `LEMONSQUEEZY_WEBHOOK_SECRET` — **required** for `/api/lemonsqueezy-webhook`; the handler refuses all requests when unset
 - `CRON_SECRET` — **required** for every cron-triggered endpoint (`/api/compute-feed`, `/api/purge-deleted`, `/api/newsletter-digest`, `/api/article-schedule`); each handler refuses to run when unset and returns 401 on a mismatched `X-Cron-Secret` header
+- `AI_QUOTA_DAILY_LIMIT` — optional integer override for the per-user daily AI quota (default: `100` units). Each AI tool has a weight (see `functions/api/_shared/ai-quota.js` `TOOL_WEIGHTS`); the counter is keyed `aiq:{userId}:{YYYY-MM-DD}` in `RATE_LIMIT_KV` and resets at UTC midnight.
 
 See [`.env.example`](.env.example) for the full list and [`wrangler.toml`](wrangler.toml) for the expected KV namespaces, env vars, and cron triggers.
 

@@ -85,6 +85,13 @@ compatibility_date = "2024-11-01"
 #   SENTRY_DSN_EDGE               Server-side Sentry DSN
 #   SENTRY_ENVIRONMENT            production | preview | development
 #   SENTRY_RELEASE                Matches PUBLIC_SENTRY_RELEASE
+#   AI_QUOTA_DAILY_LIMIT          Integer override for the per-user daily
+#                                 AI quota (F-017 / E-4). Defaults to 100
+#                                 units; each tool has a weight — see
+#                                 functions/api/_shared/ai-quota.js. The
+#                                 counter is stored in RATE_LIMIT_KV under
+#                                 `aiq:{userId}:{YYYY-MM-DD}` and resets
+#                                 at UTC midnight.
 #
 # Build-time (public, exposed to browser — set on the Pages project,
 # consumed by scripts/stamp-supabase-config.js at build):
