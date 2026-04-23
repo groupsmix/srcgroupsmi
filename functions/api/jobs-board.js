@@ -14,6 +14,7 @@
  * 10. Interview Scheduling
  */
 
+import { checkRateLimit as sharedCheckRateLimit } from './_shared/rate-limit.js';
 import { secureRandomUpperAlnum } from './_shared/secure-random.js';
 import { requireAuthWithProfile } from './_shared/auth.js';
 
@@ -33,26 +34,14 @@ function corsHeaders(origin) {
 }
 
 /* ── Rate limiter ─────────────────────────────────────────────── */
-const ipBuckets = new Map();
-function checkRateLimit(ip, action) {
-    const now = Date.now();
-    const window = 60000;
-    const max = 15;
-    const key = ip + ':jobs-board:' + action;
-    let bucket = ipBuckets.get(key);
-    if (!bucket) { bucket = []; ipBuckets.set(key, bucket); }
-    const recent = bucket.filter((t) => { return now - t < window; });
-    if (recent.length >= max) { ipBuckets.set(key, recent); return false; }
-    recent.push(now);
-    ipBuckets.set(key, recent);
-    if (ipBuckets.size > 2000) {
-        for (const [k, v] of ipBuckets) {
-            const f = v.filter((t) => { return now - t < 120000; });
-            if (f.length === 0) ipBuckets.delete(k);
-            else ipBuckets.set(k, f);
-        }
-    }
-    return true;
+// 15 requests / 60 s / (ip, action) pair. Persisted in Cloudflare KV via the
+// RATE_LIMIT_KV binding so the limit survives isolate cold starts — a pure
+// in-memory Map was trivially bypassable by forcing new isolates (each new
+// isolate boots with a fresh empty bucket).
+const RATE_LIMIT = { window: 60_000, max: 15 };
+async function checkRateLimit(env, ip, action) {
+    const kv = env?.RATE_LIMIT_KV || null;
+    return sharedCheckRateLimit(ip, 'jobs-board:' + action, RATE_LIMIT, kv);
 }
 
 /* ── Supabase helper ──────────────────────────────────────────── */
@@ -797,7 +786,7 @@ export async function onRequest(context) {
 
     const action = (body.action || '').trim();
 
-    if (!checkRateLimit(ip, action)) {
+    if (!(await checkRateLimit(env, ip, action))) {
         return new Response(JSON.stringify({ error: 'Too many requests. Please try again later.' }),
             { status: 429, headers: corsHeaders(origin) });
     }
