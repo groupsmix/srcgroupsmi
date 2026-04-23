@@ -74,3 +74,17 @@ jobs:
             exit 1
           fi
           echo "No console.log found in functions/"
+
+  # ── Custom: every SECURITY DEFINER function must pin search_path ─
+  # SECURITY DEFINER bodies run as the function owner. If search_path
+  # is not pinned, a caller can plant shadow objects in another schema
+  # and hijack unqualified references. Enforcing `SET search_path = ...`
+  # on every definer function is part of Epic F (F-1 / F-029).
+  security-definer-search-path:
+    name: SECURITY DEFINER must pin search_path
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Lint supabase/migrations/**.sql
+        run: node scripts/lint-security-definer.mjs
