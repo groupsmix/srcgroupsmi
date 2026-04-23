@@ -85,9 +85,17 @@ Set the following in your Cloudflare Pages dashboard:
 - `GROQ_API_KEY` — Groq API key (AI features)
 - `OPENROUTER_API_KEY` — OpenRouter API key (AI features)
 - `LEMONSQUEEZY_WEBHOOK_SECRET` — **required** for `/api/lemonsqueezy-webhook`; the handler refuses all requests when unset
-- `CRON_SECRET` — **required** for `/api/compute-feed`; the handler refuses to run when unset
+- `CRON_SECRET` — **required** for every cron-triggered endpoint (`/api/compute-feed`, `/api/purge-deleted`, `/api/newsletter-digest`, `/api/article-schedule`); each handler refuses to run when unset and returns 401 on a mismatched `X-Cron-Secret` header
 
-See `.env.example` for the full list and `wrangler.toml` for the expected KV + cron bindings.
+See [`.env.example`](.env.example) for the full list and [`wrangler.toml`](wrangler.toml) for the expected KV namespaces, env vars, and cron triggers.
+
+### Operations
+
+- [`RUNBOOK.md`](RUNBOOK.md) — on-call playbooks, manual cron invocation, secret rotation, deploy / rollback.
+- [`DISASTER_RECOVERY.md`](DISASTER_RECOVERY.md) — RTO / RPO, recovery procedures, Supabase cutover.
+- [`docs/backups.md`](docs/backups.md) — Supabase PITR, logical dump, KV and Storage backup policy.
+- [`docs/slos.md`](docs/slos.md) — SLOs, error budgets, uptime tracking.
+- [`docs/observability.md`](docs/observability.md) — Sentry + Cloudflare Logpush scaffolding.
 
 ## Security
 
