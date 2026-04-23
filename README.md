@@ -84,18 +84,28 @@ Set the following in your Cloudflare Pages dashboard:
 - `TURNSTILE_SECRET_KEY` — Cloudflare Turnstile secret key
 - `GROQ_API_KEY` — Groq API key (AI features)
 - `OPENROUTER_API_KEY` — OpenRouter API key (AI features)
+- `LEMONSQUEEZY_WEBHOOK_SECRET` — **required** for `/api/lemonsqueezy-webhook`; the handler refuses all requests when unset
+- `CRON_SECRET` — **required** for `/api/compute-feed`; the handler refuses to run when unset
+
+See `.env.example` for the full list and `wrangler.toml` for the expected KV + cron bindings.
 
 ## Security
 
 - **Row Level Security (RLS)** on all Supabase tables
 - **RBAC** with DB-level triggers preventing self-role-elevation
+- `credit_coins` / `debit_coins` RPCs have `EXECUTE` revoked from `anon` and `authenticated` — only the service-role key (via server Functions) and other `SECURITY DEFINER` functions may invoke them
 - **Turnstile CAPTCHA** on auth flows (client + server verification)
-- **Rate limiting** at both client and server levels
-- **CSP, HSTS, X-Frame-Options** and other security headers
-- **Input sanitization** and URL validation
-- **Webhook signature verification** (HMAC-SHA256) on payment webhooks
+- **Rate limiting** at both client and server levels (KV-backed with in-memory fallback on KV failure)
+- **HSTS, X-Frame-Options, frame-ancestors, COOP, CORP** security headers; CSP is enforced but still permits `'unsafe-inline'` pending a separate hardening pass tracked in `public/_headers`
+- **Webhook signature verification** (HMAC-SHA256, constant-time via `crypto.subtle.verify`) on payment webhooks — handler **fails closed** when the signing secret is not configured
 - **Session inactivity timeout** (30-minute auto-logout)
 - **Disposable email blocking** on signup
+
+### Known hardening TODOs
+
+- Drop `'unsafe-inline'` from CSP once inline `<script>` blocks and `style="..."` attributes are moved to external files / nonce-based CSP.
+- `functions/api/groq.js` `sanitizeInput()` is a length cap, not prompt-injection defense. A separate pass should validate model output shape for tool-driven prompts.
+- No centralized error tracking yet. `public/assets/js/head-scripts.js` has a placeholder Sentry / GA4 block that is inert until a DSN / measurement ID is provided.
 
 ## Contributing
 

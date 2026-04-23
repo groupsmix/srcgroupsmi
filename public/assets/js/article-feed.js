@@ -356,13 +356,15 @@ const _ArticleFeed = {
             return ArticleAI.smartSearch(query, this._perPage);
         }
 
-        // Basic search
+        // Basic search.
+        // F-5: escape user-supplied query for PostgREST + LIKE patterns.
+        const ilikeTerm = Security.pgrstIlikeContains(query);
         let q = window.supabaseClient
             .from('articles')
             .select('*')
             .eq('status', 'published')
             .eq('moderation_status', 'approved')
-            .or('title.ilike.%' + query + '%,excerpt.ilike.%' + query + '%')
+            .or('title.ilike.' + ilikeTerm + ',excerpt.ilike.' + ilikeTerm)
             .order('published_at', { ascending: false })
             .limit(this._perPage);
 

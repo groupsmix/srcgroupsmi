@@ -61,12 +61,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     <div id="review-results"></div>
 
-    <div id="review-detail" style="display:none">
+    <div id="review-detail" class="s-c8be1c">
         <div id="review-group-detail"></div>
 
         <div class="write-review-box" id="write-review-box">
-            <h3 style="margin-bottom:var(--space-4)">Write a Review</h3>
-            <div style="margin-bottom:var(--space-3)">
+            <h3 class="s-a76134">Write a Review</h3>
+            <div class="s-317a2d">
                 <label class="form-label">Your Rating</label>
                 <div class="star-input" id="star-input">
                     <span data-star="1" onclick="setRating(1)">&#9733;</span>
@@ -83,16 +83,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <button class="btn btn-primary" id="submit-review-btn" onclick="submitReview()">Submit Review</button>
         </div>
 
-        <div style="margin-top:var(--space-6)">
-            <h3 style="margin-bottom:var(--space-4)">Reviews</h3>
+        <div class="s-2f0fae">
+            <h3 class="s-a76134">Reviews</h3>
             <div id="reviews-list"></div>
         </div>
     </div>
 
     <div id="reviews-landing">
-        <h2 style="margin-bottom:var(--space-4)">Recently Reviewed Groups</h2>
+        <h2 class="s-a76134">Recently Reviewed Groups</h2>
         <div class="featured-reviews" id="featured-reviews">
-            <div style="text-align:center;padding:var(--space-8);color:var(--text-tertiary);grid-column:1/-1">Loading reviews...</div>
+            <div class="s-759c71">Loading reviews...</div>
         </div>
     </div>
 </div>
@@ -327,3 +327,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </script>
 </Fragment>
 </BaseLayout>
+
+<style>
+/* inline-styles: migrated */
+.s-2f0fae { margin-top:var(--space-6); }
+.s-317a2d { margin-bottom:var(--space-3); }
+.s-759c71 { text-align:center;padding:var(--space-8);color:var(--text-tertiary);grid-column:1/-1; }
+.s-a76134 { margin-bottom:var(--space-4); }
+.s-c8be1c { display:none; }
+</style>

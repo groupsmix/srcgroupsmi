@@ -8,11 +8,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 >
 
 <div class="event-detail" id="event-detail">
-    <div class="event-detail__loading" style="max-width:var(--container-md);margin:0 auto;padding:var(--space-8) var(--space-4)">
-        <div class="skeleton" style="height:200px;border-radius:var(--radius-xl);margin-bottom:var(--space-6)"></div>
-        <div class="skeleton" style="width:60%;height:36px;margin-bottom:var(--space-3)"></div>
-        <div class="skeleton" style="width:40%;height:24px;margin-bottom:var(--space-6)"></div>
-        <div class="skeleton" style="height:120px;border-radius:var(--radius-lg)"></div>
+    <div class="event-detail__loading s-98ccf4">
+        <div class="skeleton s-d63dca"></div>
+        <div class="skeleton s-bc0fad"></div>
+        <div class="skeleton s-84d2d1"></div>
+        <div class="skeleton s-2088eb"></div>
     </div>
 </div>
 
@@ -192,3 +192,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 </script>
 </Fragment>
 </BaseLayout>
+
+<style>
+/* inline-styles: migrated */
+.s-2088eb { height:120px;border-radius:var(--radius-lg); }
+.s-84d2d1 { width:40%;height:24px;margin-bottom:var(--space-6); }
+.s-98ccf4 { max-width:var(--container-md);margin:0 auto;padding:var(--space-8) var(--space-4); }
+.s-bc0fad { width:60%;height:36px;margin-bottom:var(--space-3); }
+.s-d63dca { height:200px;border-radius:var(--radius-xl);margin-bottom:var(--space-6); }
+</style>

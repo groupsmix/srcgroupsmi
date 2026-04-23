@@ -583,6 +583,8 @@ const _Marketplace = {
         try {
             if (!Auth.requireAuth()) return [];
             var userId = Auth.getUserId();
+            // F-5: UUID-validate before interpolating into a PostgREST filter.
+            if (!Security.isUuid(userId)) return [];
             var { data, error } = await window.supabaseClient
                 .from('marketplace_escrow').select('*, marketplace_listings(title, description)')
                 .or('buyer_id.eq.' + userId + ',seller_id.eq.' + userId)
@@ -631,6 +633,8 @@ const _Marketplace = {
         try {
             if (!Auth.requireAuth()) return [];
             var userId = Auth.getUserId();
+            // F-5: UUID-validate before interpolating into a PostgREST filter.
+            if (!Security.isUuid(userId)) return [];
             var { data, error } = await window.supabaseClient
                 .from('marketplace_disputes').select('*, marketplace_listings(title)')
                 .or('buyer_id.eq.' + userId + ',seller_id.eq.' + userId)
@@ -982,6 +986,8 @@ const _Marketplace = {
         try {
             if (!Auth.requireAuth()) return [];
             var userId = Auth.getUserId();
+            // F-5: UUID-validate before interpolating into a PostgREST filter.
+            if (!Security.isUuid(userId)) return [];
             var { data, error } = await window.supabaseClient
                 .from('marketplace_offers').select('*, marketplace_listings(title, price)')
                 .or('buyer_id.eq.' + userId + ',seller_id.eq.' + userId)

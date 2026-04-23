@@ -10,6 +10,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { secureRandomString } from './_shared/secure-random.js';
 
 /** CORS headers with Content-Type for JSON responses */
 function corsHeaders(origin) {
@@ -92,8 +93,10 @@ export async function onRequest(context) {
     }
 
     if (!sessionId) {
-        // Generate a random session ID if not provided
-        sessionId = 'anon_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+        // Generate a random session ID if not provided. Uses crypto RNG so
+        // an attacker cannot predict another anonymous visitor's ID and
+        // impersonate their A/B assignment.
+        sessionId = 'anon_' + Date.now() + '_' + secureRandomString(8);
     }
 
     try {

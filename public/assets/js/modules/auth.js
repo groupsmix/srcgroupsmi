@@ -84,10 +84,10 @@ const _Auth = {
                     try {
                         let savedName = _Auth._pendingDisplayName || '';
                         if (!savedName) {
-                            try { savedName = localStorage.getItem('gm_pending_display_name') || ''; } catch (_e) { /* private browsing */ }
+                            savedName = SafeStorage.get('gm_pending_display_name', '') || '';
                         }
                         if (!savedName) { savedName = 'User'; }
-                        try { localStorage.removeItem('gm_pending_display_name'); } catch (_e) { /* ok */ }
+                        SafeStorage.remove('gm_pending_display_name');
                         const newProfile = await DB.user.createProfile({
                             auth_id: currentSession.user.id,
                             email: currentSession.user.email,
@@ -160,7 +160,7 @@ const _Auth = {
         // in storage, this is likely a false SIGNED_OUT event.
         try {
             const projectRef = (window.SUPABASE_URL || '').replace('https://', '').split('.')[0] || 'sb';
-            const storedRaw = localStorage.getItem('sb-' + projectRef + '-auth-token');
+            const storedRaw = SafeStorage.get('sb-' + projectRef + '-auth-token');
             if (storedRaw) {
                 const storedData = JSON.parse(storedRaw);
                 if (storedData && (storedData.access_token || (storedData.currentSession && storedData.currentSession.access_token))) {
@@ -241,7 +241,7 @@ const _Auth = {
             // Store display name for _initListener to use when creating profile
             _Auth._pendingDisplayName = Security.sanitize(displayName);
             // Also persist to localStorage so it survives the email-verification redirect
-            try { localStorage.setItem('gm_pending_display_name', _Auth._pendingDisplayName); } catch (_e) { /* private browsing */ }
+            SafeStorage.set('gm_pending_display_name', _Auth._pendingDisplayName);
             const { data, error } = await window.supabaseClient.auth.signUp({
                 email,
                 password,
@@ -249,7 +249,7 @@ const _Auth = {
             });
             if (error) {
                 _Auth._pendingDisplayName = null;
-                try { localStorage.removeItem('gm_pending_display_name'); } catch (_e) { /* ok */ }
+                SafeStorage.remove('gm_pending_display_name');
                 UI.toast(_Auth._handleAuthError(error), 'error');
                 return null;
             }
@@ -263,7 +263,7 @@ const _Auth = {
                 return 'email_verification_pending';
             }
             // Instant-login: clean up localStorage since we don't need it
-            try { localStorage.removeItem('gm_pending_display_name'); } catch (_e) { /* ok */ }
+            SafeStorage.remove('gm_pending_display_name');
             // ── Instant-login path (email confirmation disabled) ─────
             _Auth._isCreatingProfile = true;
             const profilePromise = new Promise(resolve => { _Auth._profileReadyResolve = resolve; });

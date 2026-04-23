@@ -7,7 +7,7 @@
 const _Theme = {
     _current: 'dark',
     init() {
-        const saved = localStorage.getItem('gm_theme');
+        const saved = SafeStorage.get('gm_theme');
         this._current = saved === 'light' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', this._current);
     },
@@ -15,7 +15,7 @@ const _Theme = {
         if (theme !== 'dark' && theme !== 'light') return;
         this._current = theme;
         document.documentElement.setAttribute('data-theme', this._current);
-        localStorage.setItem('gm_theme', this._current);
+        SafeStorage.set('gm_theme', this._current);
         const btn = document.getElementById('theme-toggle');
         if (btn) btn.innerHTML = this._current === 'dark' ? ICONS.moon : ICONS.sun;
     },
@@ -24,7 +24,7 @@ const _Theme = {
         document.documentElement.classList.add('theme-transitioning');
         this._current = this._current === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', this._current);
-        localStorage.setItem('gm_theme', this._current);
+        SafeStorage.set('gm_theme', this._current);
         // Animate all theme toggle icons (header, dropdown, drawer)
         document.querySelectorAll('.theme-toggle-icon').forEach(function(icon) {
             icon.classList.add('theme-toggle-icon--spin');

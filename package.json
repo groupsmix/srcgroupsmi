@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node scripts/stamp-sw.js",
+    "build": "astro build && node scripts/stamp-sw.js && node scripts/stamp-supabase-config.js",
     "preview": "astro preview",
     "astro": "astro",
     "test": "vitest run",
