@@ -80,8 +80,12 @@ const _DB = {
         async getSimilar(group) {
             try {
                 if (!group) return [];
+                // F-5: escape .or() values so a malicious category/platform
+                // string cannot inject extra PostgREST predicates.
+                const orFilter = 'category.eq.' + Security.pgrstQuoteValue(group.category) +
+                    ',platform.eq.' + Security.pgrstQuoteValue(group.platform);
                 const { data, error } = await window.supabaseClient.from('groups').select('*').eq('status', 'approved')
-                    .neq('id', group.id).or('category.eq.' + group.category + ',platform.eq.' + group.platform)
+                    .neq('id', group.id).or(orFilter)
                     .order('ranking_score', { ascending: false }).limit(6);
                 if (error) throw error;
                 return data || [];
