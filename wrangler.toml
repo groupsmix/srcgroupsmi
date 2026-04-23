@@ -16,8 +16,8 @@
 # Settings → Functions → Cron Triggers).
 #
 # See also:
-#   - docs/runbook/runbook.md          — day-to-day operations
-#   - docs/runbook/disaster_recovery.md — restore and cutover
+#   - RUNBOOK.md                       — day-to-day operations
+#   - DISASTER_RECOVERY.md             — restore and cutover
 #   - docs/backups.md                  — backup policy
 #   - docs/slos.md                     — SLOs + error budgets
 #   - docs/observability.md            — Sentry + Logpush
@@ -115,9 +115,12 @@ compatibility_date = "2024-11-01"
 #                         X-Cron-Secret header)
 #   /api/purge-deleted    Hard-delete soft-deleted users past their
 #                         grace window (POST)
-#   /api/newsletter-digest Weekly digest queueing (POST — H-7 hardened)
+#   /api/newsletter-digest Weekly digest queueing (GET — H-7 hardened;
+#                         POST is a non-cron preview path and is NOT
+#                         gated by CRON_SECRET)
 #   /api/article-schedule  Publish articles whose scheduled_at has passed
-#                         (POST — H-7 hardened)
+#                         (GET — H-7 hardened; POST is a non-cron
+#                         scheduling path and is NOT gated by CRON_SECRET)
 #
 # When you add a new cron, also add a stanza to RUNBOOK.md §Manual cron
 # invocation so on-call knows how to trigger it by hand.
