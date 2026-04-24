@@ -1,70 +1,90 @@
-# Cloudflare Pages + Cron Triggers configuration for GroupsMix.
+# Cloudflare Worker + Static Assets configuration for GroupsMix.
 #
-# The site is deployed via Cloudflare Pages Git integration, which reads
-# bindings and scheduled triggers from the Pages dashboard. Pages does
-# parse this file at build time, but it does NOT yet consume KV
-# namespace IDs or Cron Triggers from it — those stanzas live here as
-# commented-out documentation of the expected shape so reviewers can see
-# them in-tree without breaking the build.
+# Deployment target: Cloudflare Workers with Static Assets.
 #
-# Tracking issues: H-6 (document bindings/env) and H-7 (move cron-style
-# endpoints to Cloudflare Cron Triggers, require a secret on every cron).
-#
-# When the Pages team GA's native wrangler.toml support this file becomes
-# the authoritative config — until then, mirror any change here into the
-# Pages dashboard (Settings → Functions → KV namespace bindings, and
-# Settings → Functions → Cron Triggers).
+# This file is the AUTHORITATIVE config for bindings, cron triggers,
+# and compatibility flags — unlike the previous Pages setup, Workers
+# fully consumes `wrangler.toml`. KV namespace IDs are still left
+# blank in source (they are environment-specific); populate them via
+# the Cloudflare dashboard (Workers & Pages → groupsmix → Settings →
+# Variables → KV namespace bindings) or via `wrangler kv namespace`.
 #
 # See also:
+#   - src/worker.js                    — Worker entry point + route table
 #   - RUNBOOK.md                       — day-to-day operations
 #   - DISASTER_RECOVERY.md             — restore and cutover
 #   - docs/backups.md                  — backup policy
 #   - docs/slos.md                     — SLOs + error budgets
 #   - docs/observability.md            — Sentry + Logpush
 #   - .env.example                     — full env var list with comments
+#
+# Migration history: this project was migrated from Cloudflare Pages
+# (pages_build_output_dir + functions/ directory routing) to Cloudflare
+# Workers + Static Assets while the site was pre-launch. The handler
+# modules under `functions/` are kept intact; `src/worker.js` adapts
+# their Pages-style context object to the Worker runtime.
 
 name = "groupsmix"
-pages_build_output_dir = "dist"
+main = "src/worker.js"
 compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ──────────────────────────────────────────────────────────────────────
+# Static assets
+# ──────────────────────────────────────────────────────────────────────
+#
+# `astro build` emits the site to ./dist. The Workers runtime serves
+# any matching file directly and only invokes the Worker for paths
+# that don't match a static asset, which is exactly the behaviour we
+# want — static HTML/CSS/JS/sw.js go straight to the edge, and the
+# Worker takes over for `/api/*`, `/gm-ctrl-x7`, `/sitemap.xml`, and
+# any unmatched path.
+#
+# `not_found_handling = "404-page"` tells the Assets runtime to return
+# the Astro-generated dist/404.html for unmatched paths (with status
+# 404), which is identical to Pages' default behaviour.
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "404-page"
 
 # ──────────────────────────────────────────────────────────────────────
 # KV namespaces
 # ──────────────────────────────────────────────────────────────────────
 #
-# IDs are environment-specific (prod / preview) and therefore left blank
-# in source — populate them in the Pages dashboard under Settings →
-# Functions → KV namespace bindings. The binding NAMES below must match
+# IDs are environment-specific (prod / preview) and therefore left
+# blank in source — populate them via the Cloudflare dashboard or
+# `wrangler kv namespace create`. The binding NAMES below must match
 # the strings the code reads from `env` at runtime.
 #
 #   STORE_KV      — caches LemonSqueezy product catalog
 #                   used by functions/api/lemonsqueezy.js
 #   RATE_LIMIT_KV — persistent rate-limit state with in-memory fallback
 #                   used by functions/api/_shared/rate-limit.js
+#
+# After creating the namespaces, uncomment the blocks below and fill
+# in the `id` / `preview_id` fields with the generated IDs.
 
 # [[kv_namespaces]]
 # binding    = "STORE_KV"
-# id         = "<set-in-dashboard-prod>"
-# preview_id = "<set-in-dashboard-preview>"
+# id         = "<prod-namespace-id>"
+# preview_id = "<preview-namespace-id>"
 #
 # [[kv_namespaces]]
 # binding    = "RATE_LIMIT_KV"
-# id         = "<set-in-dashboard-prod>"
-# preview_id = "<set-in-dashboard-preview>"
-#
-# Commented out intentionally: Cloudflare Pages rejects the build when
-# wrangler.toml declares a KV namespace with an empty or placeholder id.
-# Keep the real binding names in sync between this file's comments and
-# the Pages dashboard (Settings → Functions → KV namespace bindings).
+# id         = "<prod-namespace-id>"
+# preview_id = "<preview-namespace-id>"
 
 # ──────────────────────────────────────────────────────────────────────
 # Environment variables
 # ──────────────────────────────────────────────────────────────────────
 #
-# Secrets MUST be set as encrypted env vars in the Pages dashboard
-# (Settings → Environment variables → Production / Preview), NEVER in
-# this file. They are listed here only so reviewers can see what the
-# code expects at runtime. Any addition/rename in code MUST land in the
-# same PR as an update here.
+# Secrets MUST be set via `wrangler secret put <NAME>` (or the
+# dashboard: Workers & Pages → groupsmix → Settings → Variables →
+# Secrets), NEVER in this file. They are listed here only so
+# reviewers can see what the code expects at runtime. Any
+# addition/rename in code MUST land in the same PR as an update here.
 #
 # Required:
 #   SUPABASE_URL                  Supabase project URL
@@ -93,8 +113,9 @@ compatibility_date = "2024-11-01"
 #                                 `aiq:{userId}:{YYYY-MM-DD}` and resets
 #                                 at UTC midnight.
 #
-# Build-time (public, exposed to browser — set on the Pages project,
-# consumed by scripts/stamp-supabase-config.js at build):
+# Build-time (public, exposed to browser — set as a build-time env
+# var on the Workers Build pipeline or in CI, consumed by
+# scripts/stamp-supabase-config.js at build):
 #   PUBLIC_SUPABASE_URL
 #   PUBLIC_SUPABASE_ANON_KEY
 #   PUBLIC_SENTRY_DSN
@@ -105,57 +126,57 @@ compatibility_date = "2024-11-01"
 # Cron triggers (H-7)
 # ──────────────────────────────────────────────────────────────────────
 #
-# Every cron endpoint below is gated on the `X-Cron-Secret` header
-# matching `CRON_SECRET`. The handlers fail closed with HTTP 503 when
-# the env var is unset (tested in tests/compute-feed.test.js,
+# Every cron endpoint is gated on the `X-Cron-Secret` header matching
+# `CRON_SECRET`. The handlers fail closed with HTTP 503 when the env
+# var is unset (tested in tests/compute-feed.test.js,
 # tests/purge-deleted.test.js, tests/newsletter-digest.test.js,
 # tests/article-schedule.test.js). Do NOT add a cron here without
 # confirming the target endpoint enforces the secret.
 #
-# Cron syntax is standard UNIX cron (UTC). Keep schedules staggered so
-# jobs don't all fire on the top of the hour.
+# Cron syntax is standard UNIX cron (UTC). Keep schedules staggered
+# so jobs don't all fire on the top of the hour.
+#
+# The `scheduled` handler in src/worker.js fans each cron out to the
+# matching endpoint using an internal `Request` with the
+# `X-Cron-Secret` header populated from `env.CRON_SECRET`. Keep the
+# CRON_DISPATCH table in src/worker.js aligned with this list and the
+# §Manual cron invocation section of RUNBOOK.md.
 #
 # Endpoints triggered by these crons:
 #
-#   /api/compute-feed     Feed scoring, collaborative filtering, embeddings
-#                         (POST, body `{ "job": "..." }`; secret via
-#                         X-Cron-Secret header)
-#   /api/purge-deleted    Hard-delete soft-deleted users past their
-#                         grace window (POST)
-#   /api/newsletter-digest Weekly digest queueing (GET — H-7 hardened;
-#                         POST is a non-cron preview path and is NOT
-#                         gated by CRON_SECRET)
-#   /api/article-schedule  Publish articles whose scheduled_at has passed
-#                         (GET — H-7 hardened; POST is a non-cron
-#                         scheduling path and is NOT gated by CRON_SECRET)
+#   /api/compute-feed       Feed scoring, collaborative filtering,
+#                           embeddings (POST, body `{}`)
+#   /api/article-schedule   Publish articles whose scheduled_at has
+#                           passed (GET)
+#   /api/newsletter-digest  Weekly digest queueing (GET)
+#   /api/purge-deleted      Hard-delete soft-deleted users past their
+#                           grace window (POST)
 #
-# When you add a new cron, also add a stanza to RUNBOOK.md §Manual cron
-# invocation so on-call knows how to trigger it by hand.
+# When you add a new cron, also add a stanza to RUNBOOK.md §Manual
+# cron invocation so on-call knows how to trigger it by hand, and
+# extend CRON_DISPATCH in src/worker.js.
 
-# [triggers]
-# crons = [
-#   # Feed algorithm — trending scores, every 30 minutes
-#   "*/30 * * * *",
-#   # Scheduled article publishing — every 5 minutes
-#   "*/5 * * * *",
-#   # Weekly newsletter digest — Mondays at 13:00 UTC
-#   "0 13 * * 1",
-#   # Hard-delete soft-deleted users past their grace window — daily 03:17 UTC
-#   "17 3 * * *"
-# ]
+[triggers]
+crons = [
+    # Feed algorithm — trending scores, every 30 minutes
+    "*/30 * * * *",
+    # Scheduled article publishing — every 5 minutes
+    "*/5 * * * *",
+    # Weekly newsletter digest — Mondays at 13:00 UTC
+    "0 13 * * 1",
+    # Hard-delete soft-deleted users past their grace window — daily 03:17 UTC
+    "17 3 * * *"
+]
+
+# ──────────────────────────────────────────────────────────────────────
+# Observability
+# ──────────────────────────────────────────────────────────────────────
 #
-# Commented out intentionally: Cloudflare Pages does not yet consume
-# `[triggers]` from wrangler.toml for Pages projects, and leaving the
-# stanza active fails the Pages build. The cron schedules above are
-# the CURRENT authoritative schedule — mirror them in the Pages
-# dashboard (Settings → Functions → Cron Triggers) and, when adding
-# or changing a cron, update BOTH this file and the dashboard in the
-# same PR.
-#
-# Cloudflare Pages dispatches cron events to a single internal route
-# (`/__scheduled`) and does not currently route to per-endpoint paths
-# the way Workers does. The project invokes each endpoint from an
-# external scheduler (or a lightweight fan-out function) with the
-# matching `X-Cron-Secret` header. When Pages exposes per-cron routing
-# this file should be updated to pin each schedule to its endpoint
-# and the `[triggers]` stanza can be un-commented.
+# Capture request/invocation logs so Logpush (docs/observability.md)
+# and `wrangler tail` see the full handler activity. Head-sampling at
+# 100% is fine at current traffic levels — revisit after launch if
+# log volume becomes a cost concern.
+
+[observability]
+enabled = true
+head_sampling_rate = 1

@@ -10,7 +10,10 @@
     "test": "vitest run",
     "lint": "biome check . --error-on-warnings",
     "lint:fix": "biome check --write .",
-    "check": "astro check"
+    "check": "astro check",
+    "worker:dev": "wrangler dev",
+    "worker:deploy": "npm run build && wrangler deploy",
+    "worker:tail": "wrangler tail"
   },
   "dependencies": {
     "@astrojs/preact": "^5.1.2",
@@ -30,6 +33,7 @@
     "@types/node": "^25.6.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.4",
+    "wrangler": "^4.0.0"
   }
 }

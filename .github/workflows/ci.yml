@@ -57,23 +57,23 @@ jobs:
     with:
       use-default-config: true
 
-  # ── Custom: reject console.log in Cloudflare Functions ───────────
+  # ── Custom: reject console.log in Cloudflare server code ─────────
   no-console-log:
     name: Reject console.log
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Check for console.log in functions/
+      - name: Check for console.log in functions/ and src/worker.js
         run: |
-          echo "Checking for console.log usage in functions/ ..."
-          files=$(grep -r "console\.log" functions/ --include="*.js" -l || true)
+          echo "Checking for console.log usage in server code ..."
+          files=$(grep -r "console\.log" functions/ src/worker.js --include="*.js" -l 2>/dev/null || true)
           if [ -n "$files" ]; then
-            echo "::error::console.log found in server functions — use console.error/warn instead:"
+            echo "::error::console.log found in server code — use console.error/warn instead:"
             echo "$files"
             exit 1
           fi
-          echo "No console.log found in functions/"
+          echo "No console.log found in server code"
 
   # ── Custom: every SECURITY DEFINER function must pin search_path ─
   # SECURITY DEFINER bodies run as the function owner. If search_path

@@ -7,7 +7,7 @@
 ## Tech Stack
 
 - **[Astro](https://astro.build/)** — Static Site Generation (SSG)
-- **[Cloudflare Pages](https://pages.cloudflare.com/)** — Hosting + Edge Functions (API)
+- **[Cloudflare Workers](https://workers.cloudflare.com/)** — Hosting via Static Assets + API handlers + Cron Triggers
 - **[Supabase](https://supabase.com/)** — Database, Auth, Row Level Security
 - **Vanilla JavaScript** — Frontend (no framework)
 - **[LemonSqueezy](https://www.lemonsqueezy.com/)** — Payments
@@ -39,12 +39,15 @@ npm run dev
 
 ### Scripts
 
-| Command         | Description                              |
-|-----------------|------------------------------------------|
-| `npm run dev`   | Start the Astro dev server               |
-| `npm run build` | Build for production (Astro + SW stamp)  |
-| `npm run preview` | Preview the production build locally   |
-| `npm test`      | Run tests with Vitest                    |
+| Command               | Description                                             |
+|-----------------------|---------------------------------------------------------|
+| `npm run dev`         | Start the Astro dev server                              |
+| `npm run build`       | Build for production (Astro + SW stamp)                 |
+| `npm run preview`     | Preview the production build locally                    |
+| `npm test`            | Run tests with Vitest                                   |
+| `npm run worker:dev`  | Run the Worker locally with `wrangler dev` (needs build)|
+| `npm run worker:deploy` | Build + `wrangler deploy` the Worker                  |
+| `npm run worker:tail` | `wrangler tail` — stream live Worker logs               |
 
 ## Project Structure
 
@@ -52,9 +55,10 @@ npm run dev
 srcgroupsmi/
 ├── src/
 │   ├── layouts/          # Astro layouts (BaseLayout)
-│   └── pages/            # Astro pages (routes)
+│   ├── pages/            # Astro pages (routes)
+│   └── worker.js         # Cloudflare Worker entry — routes /api/* and crons
 ├── functions/
-│   ├── api/              # Cloudflare Pages Functions (API endpoints)
+│   ├── api/              # API handlers (invoked from src/worker.js)
 │   │   └── _shared/      # Shared utilities (auth, cors)
 │   └── gm-ctrl-x7.js    # Admin panel server-side gate
 ├── public/
@@ -67,16 +71,40 @@ srcgroupsmi/
 │   └── migrations/       # Database migrations (001–028, plus 017b / 020b)
 ├── tests/                # Test files (Vitest)
 ├── scripts/              # Build scripts (SW stamping)
+├── wrangler.toml         # Cloudflare Worker config (bindings, crons, assets)
 └── .github/workflows/    # CI pipeline
 ```
 
+The handler files under `functions/` keep their original Cloudflare Pages
+Function signature (`export async function onRequest(context)` etc.). The
+Worker entry in `src/worker.js` imports each one, maps it to a path in a
+central route table, and reconstructs the Pages-style `context` object
+(`{ request, env, waitUntil, ctx, params, data }`) so the handlers did not
+need to be rewritten during the Pages → Workers migration.
+
 ## Deployment
 
-The site is deployed on **Cloudflare Pages** with Git integration. Pushing to `main` triggers an automatic deployment.
+The site is deployed as a single **Cloudflare Worker** that serves
+`astro build`'s static output via the [Static Assets](https://developers.cloudflare.com/workers/static-assets/)
+binding and dispatches `/api/*`, `/gm-ctrl-x7`, and `/sitemap.xml` to
+the handlers in [`functions/`](functions/) via [`src/worker.js`](src/worker.js).
+Cron Triggers run the `scheduled` handler, which fans each cron out to
+the matching endpoint with the required `X-Cron-Secret` header.
+
+Deploy options:
+
+- **Workers Builds (recommended)** — connect the GitHub repo under
+  Workers & Pages → groupsmix → Settings → Builds. Pushing to `main`
+  triggers a build; PRs get per-preview URLs.
+- **Manual** — `npm run worker:deploy` (runs `astro build` + `wrangler deploy`).
+
+See [`wrangler.toml`](wrangler.toml) for the authoritative list of
+bindings, cron schedules, and compatibility flags.
 
 ### Environment Variables
 
-Set the following in your Cloudflare Pages dashboard:
+Set the following on the Worker (Cloudflare dashboard → Workers & Pages
+→ groupsmix → Settings → Variables, or `wrangler secret put <NAME>`):
 
 - `SUPABASE_URL` — Supabase project URL
 - `SUPABASE_ANON_KEY` — Supabase public anon key
@@ -88,7 +116,7 @@ Set the following in your Cloudflare Pages dashboard:
 - `CRON_SECRET` — **required** for every cron-triggered endpoint (`/api/compute-feed`, `/api/purge-deleted`, `/api/newsletter-digest`, `/api/article-schedule`); each handler refuses to run when unset and returns 401 on a mismatched `X-Cron-Secret` header
 - `AI_QUOTA_DAILY_LIMIT` — optional integer override for the per-user daily AI quota (default: `100` units). Each AI tool has a weight (see `functions/api/_shared/ai-quota.js` `TOOL_WEIGHTS`); the counter is keyed `aiq:{userId}:{YYYY-MM-DD}` in `RATE_LIMIT_KV` and resets at UTC midnight.
 
-See [`.env.example`](.env.example) for the full list and [`wrangler.toml`](wrangler.toml) for the expected KV namespaces, env vars, and cron triggers.
+See [`.env.example`](.env.example) for the full list and [`wrangler.toml`](wrangler.toml) for the authoritative KV namespace bindings, env vars, and cron triggers.
 
 ### Operations
 
