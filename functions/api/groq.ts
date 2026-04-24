@@ -13,14 +13,14 @@
  * Response: Server-Sent Events (SSE) stream of text chunks
  */
 
-import { corsHeaders, handlePreflight } from './_shared/cors.js';
-import { requireAuth } from './_shared/auth.js';
-import { wrapUserInput, withUserInputDirective } from './_shared/prompt-safety.js';
-import { moderateOutput, moderationBlockedEvent } from './_shared/moderation.js';
-import { STREAM_IDLE_TIMEOUT_MS, capMaxTokens } from './_shared/ai-limits.js';
-import { shouldAttempt, recordSuccess, recordFailure } from './_shared/circuit-breaker.js';
-import { logAiAudit } from './_shared/ai-audit.js';
-import { checkAndConsumeQuota, quotaExceededResponse } from './_shared/ai-quota.js';
+import { corsHeaders, handlePreflight } from './_shared/cors';
+import { requireAuth } from './_shared/auth';
+import { wrapUserInput, withUserInputDirective } from './_shared/prompt-safety';
+import { moderateOutput, moderationBlockedEvent } from './_shared/moderation';
+import { STREAM_IDLE_TIMEOUT_MS, capMaxTokens } from './_shared/ai-limits';
+import { shouldAttempt, recordSuccess, recordFailure } from './_shared/circuit-breaker';
+import { logAiAudit } from './_shared/ai-audit';
+import { checkAndConsumeQuota, quotaExceededResponse } from './_shared/ai-quota';
 
 /* ── Supported languages ─────────────────────────────────────── */
 const SUPPORTED_LANGUAGES = {
@@ -241,13 +241,13 @@ Strict Output Rules:
 };
 
 /* ── Input validation ────────────────────────────────────────── */
-function sanitizeInput(str) {
+function sanitizeInput(str: any): string {
     if (typeof str !== 'string') return '';
     return str.substring(0, 2000).trim();
 }
 
 /* ── Call Groq API ───────────────────────────────────────────── */
-async function callGroq(env, apiKey, messages, maxTokens, temperature) {
+async function callGroq(env: any, apiKey: string, messages: any[], maxTokens: number, temperature: number): Promise<{ res: Response | null, model: string, skipped: boolean }> {
     const allowed = await shouldAttempt(env, 'groq');
     if (!allowed) {
         console.warn('Groq breaker open, skipping primary call');
@@ -283,7 +283,7 @@ async function callGroq(env, apiKey, messages, maxTokens, temperature) {
 }
 
 /* ── Call OpenRouter API (tries multiple models in chain) ───── */
-async function callOpenRouter(env, apiKey, messages, maxTokens, temperature, category) {
+async function callOpenRouter(env: any, apiKey: string, messages: any[], maxTokens: number, temperature: number, category: string): Promise<{ res: Response | null, model: string, skipped: boolean }> {
     const allowed = await shouldAttempt(env, 'openrouter');
     if (!allowed) {
         console.warn('OpenRouter breaker open, skipping');
@@ -326,7 +326,7 @@ async function callOpenRouter(env, apiKey, messages, maxTokens, temperature, cat
 }
 
 /* ── Stream SSE response to client ───────────────────────────── */
-function streamToClient(aiRes, hdrs, moderationCtx) {
+function streamToClient(aiRes: Response, hdrs: Record<string, string>, moderationCtx: any): Response {
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
@@ -441,9 +441,9 @@ function streamToClient(aiRes, hdrs, moderationCtx) {
 }
 
 /* ── Main handler ────────────────────────────────────────────── */
-export async function onRequest(context) {
+export async function onRequest(context: any): Promise<Response> {
     const { request, env } = context;
-    const origin = request.headers.get('Origin') || '';
+    const origin = request.headers.get('Origin') || null;
 
     if (request.method === 'OPTIONS') {
         return handlePreflight(origin);
@@ -471,7 +471,7 @@ export async function onRequest(context) {
         );
     }
 
-    let body;
+    let body: any;
     try {
         body = await request.json();
     } catch {
@@ -494,16 +494,16 @@ export async function onRequest(context) {
 
     const prompt = sanitizeInput(body.prompt);
     const toolId = (typeof body.tool === 'string') ? body.tool.trim() : '';
-    const toolConfig = toolId ? TOOL_PROMPTS[toolId] : null;
+    const toolConfig: any = toolId ? (TOOL_PROMPTS as any)[toolId] : null;
 
     // Language support: validate and resolve language
     const langCode = (typeof body.lang === 'string') ? body.lang.trim().toLowerCase() : 'en';
-    const langName = SUPPORTED_LANGUAGES[langCode] || 'English';
+    const langName = (SUPPORTED_LANGUAGES as any)[langCode] || 'English';
 
     // Build system prompt from the server-owned tool catalog.
-    let system;
-    let maxTokens;
-    let temperature;
+    let system: string;
+    let maxTokens: number;
+    let temperature: number;
     if (toolConfig) {
         system = toolConfig.system;
         // Inject language directive into the system prompt
@@ -559,11 +559,11 @@ export async function onRequest(context) {
     // Route based on tool type: creative tools → OpenRouter first,
     // precision/analytical tools → Groq first.
     // Each route falls back to the other provider if primary fails.
-    const routing = toolId
-        ? (TASK_ROUTING[toolId] || { primary: 'groq', category: 'precision' })
+    const routing: any = toolId
+        ? ((TASK_ROUTING as any)[toolId] || { primary: 'groq', category: 'precision' })
         : { primary: 'groq', category: 'precision' };
 
-    let aiRes = null;
+    let aiRes: Response | null = null;
     let providerUsed = '';
     let modelUsed = '';
 
@@ -603,9 +603,9 @@ export async function onRequest(context) {
         );
     }
 
-    // ── Stream the SSE response back to the client ──────────────
+        // ── Stream the SSE response back to the client ──────────────
     try {
-        const authUser = (authResult && authResult.user) ? authResult.user : null;
+        const authUser: any = (authResult && (authResult as any).user) ? (authResult as any).user : null;
         const clientIp = request.headers.get('CF-Connecting-IP')
             || request.headers.get('X-Forwarded-For') || '';
         return streamToClient(aiRes, corsHeaders(origin), {

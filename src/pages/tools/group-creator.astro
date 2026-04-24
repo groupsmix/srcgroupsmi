@@ -164,9 +164,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
         // Language persistence
         var langSel = document.getElementById('lang-select');
-        var savedLang = localStorage.getItem('gm_tool_lang');
+        var savedLang = SafeStorage.get('gm_tool_lang');
         if (savedLang && langSel.querySelector('option[value="' + savedLang + '"]')) langSel.value = savedLang;
-        langSel.addEventListener('change', function() { localStorage.setItem('gm_tool_lang', this.value); });
+        langSel.addEventListener('change', function() { SafeStorage.set('gm_tool_lang', this.value); });
 
         document.getElementById('spark-btn').addEventListener('click', generate);
         document.getElementById('more-btn').addEventListener('click', generate);

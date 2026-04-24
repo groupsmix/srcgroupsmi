@@ -30,33 +30,24 @@ const _Auth = {
         _Auth._authReadyPromise = new Promise(function (resolve) {
             _Auth._authReadyResolve = resolve;
         });
-        // IMPORTANT: The callback must NOT be async to avoid a deadlock
-        // in Supabase JS v2. The client holds an internal lock while
-        // calling onAuthStateChange listeners. If the callback awaits
-        // any Supabase REST/RPC call, that call needs the same lock
-        // → deadlock. We set only synchronous state here and defer
-        // all async work (profile fetch, etc.) via setTimeout(fn, 0).
-        window.supabaseClient.auth.onAuthStateChange((event, session) => {
+        window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
             if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
                 _Auth._processingAuthEvent = true;
                 if (_Auth._signOutRedirectTimer) { clearTimeout(_Auth._signOutRedirectTimer); _Auth._signOutRedirectTimer = null; }
                 // Store session synchronously so isLoggedIn() works immediately
                 if (session) { _Auth._session = session; }
-                // Defer heavy async work to next tick to release the Supabase internal lock
-                setTimeout(function () { _Auth._processSignIn(event, session); }, 0);
+                await _Auth._processSignIn(event, session);
 
             } else if (event === 'SIGNED_OUT') {
                 // Guard: if we are currently processing INITIAL_SESSION or
                 // SIGNED_IN, this SIGNED_OUT is a spurious race. Ignore it.
                 if (_Auth._processingAuthEvent) { return; }
-                // Defer async recovery check to next tick
-                setTimeout(function () { _Auth._processSignOut(event); }, 0);
+                await _Auth._processSignOut(event);
             }
         });
     },
 
-    // Deferred handler for SIGNED_IN / INITIAL_SESSION / TOKEN_REFRESHED.
-    // Runs outside the Supabase internal lock so REST/RPC calls work.
+    // Handler for SIGNED_IN / INITIAL_SESSION / TOKEN_REFRESHED.
     async _processSignIn(event, session) {
         try {
             let currentSession = session;
@@ -230,6 +221,13 @@ const _Auth = {
             // Security: enforce strong password on client side before server call
             const pwCheck = Security.validatePassword(password);
             if (!pwCheck.valid) { UI.toast(pwCheck.errors[0], 'error'); return null; }
+            
+            // Security: HIBP compromised password check
+            const isCompromised = await Security.checkPwnedPassword(password);
+            if (isCompromised) {
+                UI.toast('This password has appeared in a data breach. Please choose a different one.', 'error');
+                return null;
+            }
             // ── Server-side validation (rate limit + email + Turnstile + password) ──
             // Only send turnstileToken if it is a real token (not the bypass placeholder)
             // Audit fix #20: do NOT send password to server-side validation — keep strength check client-side only

@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { handleListingQuality } from '../functions/api/store-ai/_helpers/listing-quality.js';
-import { handleSmartPricing } from '../functions/api/store-ai/_helpers/smart-pricing.js';
+import { handleListingQuality, handleSmartPricing } from '../functions/api/store-ai/_helpers/seller-tools.js';
 
 /**
  * Tests for store-ai helper modules that can run without Supabase.

@@ -736,7 +736,9 @@ const _DB = {
                     unseenAds = qualityAds;
                 }
                 for (var i = unseenAds.length - 1; i > 0; i--) {
-                    var j = Math.floor(Math.random() * (i + 1));
+                    var bytes = new Uint8Array(1);
+                    (window.crypto || window.msCrypto).getRandomValues(bytes);
+                    var j = bytes[0] % (i + 1);
                     var temp = unseenAds[i];
                     unseenAds[i] = unseenAds[j];
                     unseenAds[j] = temp;

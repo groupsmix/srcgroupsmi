@@ -11,18 +11,24 @@
  *   { ok: true, status: "active"|"dead"|"uncertain", httpStatus: 200, checkedAt: "..." }
  */
 
-import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
-import { checkRateLimit } from './_shared/rate-limit.js';
+import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors';
+import { checkRateLimit, RateLimitConfig } from './_shared/rate-limit';
 
-function corsHeaders(origin) {
+function corsHeaders(origin: string | null): Record<string, string> {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
 }
 
 /* ── Rate limit config ── */
-const HEALTH_CHECK_LIMIT = { window: 60000, max: 10 }; // 10 checks per minute
+const HEALTH_CHECK_LIMIT: RateLimitConfig = { window: 60000, max: 10 }; // 10 checks per minute
 
 /* ── Known invite link hostname allowlist ── */
-const INVITE_ALLOWLIST = [
+interface AllowlistEntry {
+    hostname: string;
+    pathPrefix: string;
+    platform: string;
+}
+
+const INVITE_ALLOWLIST: AllowlistEntry[] = [
     { hostname: 'chat.whatsapp.com', pathPrefix: '/', platform: 'whatsapp' },
     { hostname: 'wa.me', pathPrefix: '/', platform: 'whatsapp' },
     { hostname: 't.me', pathPrefix: '/', platform: 'telegram' },
@@ -46,7 +52,7 @@ const MAX_REDIRECTS = 3;
  * Detect platform by strict parsed-hostname matching.
  * Returns 'unknown' if the URL does not match the allowlist.
  */
-export function detectPlatform(parsedUrl) {
+export function detectPlatform(parsedUrl: URL): string {
     const hostname = parsedUrl.hostname.toLowerCase();
     const pathname = parsedUrl.pathname.toLowerCase();
 
@@ -62,7 +68,7 @@ export function detectPlatform(parsedUrl) {
  * Reject IP literals (v4 and v6) and private/reserved ranges.
  * Returns true if the hostname is safe (a public domain name).
  */
-export function isSafeHostname(hostname) {
+export function isSafeHostname(hostname: string): boolean {
     // Reject IPv6 literals like [::1]
     if (hostname.startsWith('[')) return false;
 
@@ -92,7 +98,7 @@ const DEAD_INDICATORS = [
     'link has been reset',
 ];
 
-function analyzeResponse(httpStatus, body, platform) {
+function analyzeResponse(httpStatus: number, body: string, platform: string): string {
     // HTTP-level checks
     if (httpStatus === 404 || httpStatus === 410) return 'dead';
     if (httpStatus >= 500) return 'uncertain';
@@ -113,9 +119,9 @@ function analyzeResponse(httpStatus, body, platform) {
 }
 
 /* ── Main handler ── */
-export async function onRequest(context) {
+export async function onRequest(context: any): Promise<Response> {
     const { request } = context;
-    const origin = request.headers.get('Origin') || '';
+    const origin = request.headers.get('Origin') || null;
 
     if (request.method === 'OPTIONS') {
         return handlePreflight(origin);
@@ -139,7 +145,7 @@ export async function onRequest(context) {
         );
     }
 
-    let body;
+    let body: any;
     try {
         body = await request.json();
     } catch {
@@ -158,7 +164,7 @@ export async function onRequest(context) {
     }
 
     // Validate URL format
-    let parsedUrl;
+    let parsedUrl: URL;
     try {
         parsedUrl = new URL(url);
         if (!['http:', 'https:'].includes(parsedUrl.protocol)) throw new Error('bad protocol');
@@ -190,7 +196,7 @@ export async function onRequest(context) {
 
     try {
         let currentUrl = url;
-        let lastRes;
+        let lastRes: Response | undefined;
 
         for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
             const controller = new AbortController();
@@ -213,7 +219,7 @@ export async function onRequest(context) {
             const location = lastRes.headers.get('Location');
             if (!location) break;
 
-            let redirectUrl;
+            let redirectUrl: URL;
             try {
                 redirectUrl = new URL(location, currentUrl);
             } catch {
@@ -226,6 +232,7 @@ export async function onRequest(context) {
             currentUrl = redirectUrl.href;
         }
 
+        if (!lastRes) throw new Error('No response');
         const bodyText = await lastRes.text().then(t => t.slice(0, 5000)).catch(() => '');
         const status = analyzeResponse(lastRes.status, bodyText, platform);
 
@@ -239,7 +246,7 @@ export async function onRequest(context) {
             }),
             { status: 200, headers: corsHeaders(origin) }
         );
-    } catch (err) {
+    } catch (err: any) {
         const isAbort = err.name === 'AbortError';
         return new Response(
             JSON.stringify({

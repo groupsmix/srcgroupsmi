@@ -1,75 +1,84 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.8/schema.json",
-  "vcs": {
-    "enabled": true,
-    "clientKind": "git",
-    "useIgnoreFile": true
-  },
-  "files": {
-    "ignoreUnknown": true,
-    "includes": ["**/*.js", "**/*.mjs", "**/*.ts", "**/*.astro", "**/*.json"]
-  },
-  "formatter": {
-    "enabled": false
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "complexity": {
-        "noForEach": "off",
-        "useOptionalChain": "off",
-        "useArrowFunction": "off",
-        "noCommaOperator": "warn",
-        "useLiteralKeys": "warn",
-        "noUselessEscapeInRegex": "warn",
-        "noUselessThisAlias": "warn",
-        "noUselessTernary": "warn",
-        "noArguments": "warn"
-      },
-      "style": {
-        "useTemplate": "off",
-        "useDefaultParameterLast": "off",
-        "noParameterAssign": "off",
-        "useConst": "warn",
-        "useExponentiationOperator": "off"
-      },
-      "correctness": {
-        "noInnerDeclarations": "off",
-        "noUnusedVariables": "warn",
-        "noUnusedFunctionParameters": "off",
-        "noUnusedImports": "warn",
-        "useParseIntRadix": "warn"
-      },
-      "performance": {
-        "noDelete": "off"
-      },
-      "suspicious": {
-        "noRedeclare": "off",
-        "noGlobalAssign": "off",
-        "noAssignInExpressions": "off",
-        "noDoubleEquals": "off",
-        "noFallthroughSwitchClause": "off",
-        "noRedundantUseStrict": "off",
-        "noGlobalIsNan": "warn",
-        "noDocumentCookie": "off",
-        "noPrototypeBuiltins": "off",
-        "noDuplicateObjectKeys": "error",
-        "noDuplicateElseIf": "warn",
-        "useIterableCallbackReturn": "warn"
-      }
-    }
-  },
-  "javascript": {
-    "formatter": {
-      "quoteStyle": "single"
-    },
-    "globals": [
-      "CONFIG", "ICONS", "UI", "DB", "Auth", "Security", "Algorithms",
-      "Marketplace", "SafeStorage", "supabase", "turnstile"
-    ]
-  },
-  "assist": {
-    "enabled": false
-  }
+	"$schema": "https://biomejs.dev/schemas/2.4.12/schema.json",
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"files": {
+		"ignoreUnknown": true,
+		"includes": ["**/*.js", "**/*.mjs", "**/*.ts", "**/*.json", "!**/node_modules", "!**/dist", "!**/*.astro"]
+	},
+	"formatter": {
+		"enabled": false
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"complexity": {
+				"noForEach": "off",
+				"useOptionalChain": "off",
+				"useArrowFunction": "off",
+				"noCommaOperator": "warn",
+				"useLiteralKeys": "warn",
+				"noUselessEscapeInRegex": "warn",
+				"noUselessThisAlias": "warn",
+				"noUselessTernary": "warn",
+				"noArguments": "warn"
+			},
+			"style": {
+				"useTemplate": "off",
+				"useDefaultParameterLast": "off",
+				"noParameterAssign": "off",
+				"useConst": "warn",
+				"useExponentiationOperator": "off"
+			},
+			"correctness": {
+				"noInnerDeclarations": "off",
+				"noUnusedVariables": "warn",
+				"noUnusedFunctionParameters": "off",
+				"noUnusedImports": "warn",
+				"useParseIntRadix": "warn"
+			},
+			"performance": {
+				"noDelete": "off"
+			},
+			"suspicious": {
+				"noRedeclare": "off",
+				"noGlobalAssign": "off",
+				"noAssignInExpressions": "off",
+				"noDoubleEquals": "off",
+				"noFallthroughSwitchClause": "off",
+				"noRedundantUseStrict": "off",
+				"noGlobalIsNan": "warn",
+				"noDocumentCookie": "off",
+				"noPrototypeBuiltins": "off",
+				"noDuplicateObjectKeys": "error",
+				"noDuplicateElseIf": "warn",
+				"useIterableCallbackReturn": "warn"
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "single"
+		},
+		"globals": [
+			"CONFIG",
+			"ICONS",
+			"UI",
+			"DB",
+			"Auth",
+			"Security",
+			"Algorithms",
+			"Marketplace",
+			"SafeStorage",
+			"supabase",
+			"turnstile"
+		]
+	},
+	"assist": {
+		"enabled": false
+	}
 }

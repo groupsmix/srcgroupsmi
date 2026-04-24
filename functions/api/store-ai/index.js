@@ -30,18 +30,9 @@ import { corsHeaders as _corsHeaders, handlePreflight } from '../_shared/cors.js
 import { errorResponse } from '../_shared/response.js';
 import { handleSearch } from './_helpers/search.js';
 import { handleRecommend } from './_helpers/recommend.js';
-import { handleEnhanceDesc } from './_helpers/enhance-desc.js';
-import { handleBundles } from './_helpers/bundles.js';
-import { handleSellerTrust } from './_helpers/seller-trust.js';
-import { handleSmartPricing } from './_helpers/smart-pricing.js';
-import { handleListingQuality } from './_helpers/listing-quality.js';
-import { handlePurchaseRecommendations } from './_helpers/purchase-recommendations.js';
-import { handleOffers } from './_helpers/offers.js';
-import { handleDispute } from './_helpers/dispute.js';
-import { handleFlashSales } from './_helpers/flash-sales.js';
-import { handleReviewVerification } from './_helpers/review-verification.js';
-import { handleFrequentlyBought } from './_helpers/frequently-bought.js';
-import { handleWishlistAlerts } from './_helpers/wishlist-alerts.js';
+import { handleEnhanceDesc, handleListingQuality, handleSmartPricing } from './_helpers/seller-tools.js';
+import { handleBundles, handleFrequentlyBought, handlePurchaseRecommendations } from './_helpers/cross-sell.js';
+import { handleDispute, handleFlashSales, handleOffers, handleReviewVerification, handleSellerTrust, handleWishlistAlerts } from './_helpers/marketplace-ops.js';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin);

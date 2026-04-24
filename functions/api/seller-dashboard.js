@@ -14,13 +14,11 @@
  *   SUPABASE_SERVICE_KEY — Supabase service role key
  */
 
-import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { handlePreflight } from './_shared/cors.js';
 import { errorResponse, successResponse } from './_shared/response.js';
 import { requireAuthWithProfile } from './_shared/auth.js';
 
-function corsHeaders(origin) {
-    return _corsHeaders(origin, { 'Content-Type': 'application/json' });
-}
+
 
 /* ── Verify auth and get internal user ID ──────────────────── */
 /* Thin wrapper around the shared requireAuthWithProfile so this endpoint */

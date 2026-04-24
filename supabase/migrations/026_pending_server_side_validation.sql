@@ -21,11 +21,12 @@ BEGIN
     END IF;
 
     -- Strip HTML tags from name and description to prevent stored XSS
-    NEW.name := regexp_replace(NEW.name, '<[^>]+>', '', 'g');
-    NEW.description := regexp_replace(COALESCE(NEW.description, ''), '<[^>]+>', '', 'g');
+    -- Using a stricter approach than just naive regex
+    NEW.name := regexp_replace(regexp_replace(NEW.name, '<[^>]+>', '', 'gi'), '&[a-zA-Z]+;', '', 'g');
+    NEW.description := regexp_replace(regexp_replace(COALESCE(NEW.description, ''), '<[^>]+>', '', 'gi'), '&[a-zA-Z]+;', '', 'g');
 
     -- Strip HTML from city if present
-    NEW.city := regexp_replace(COALESCE(NEW.city, ''), '<[^>]+>', '', 'g');
+    NEW.city := regexp_replace(regexp_replace(COALESCE(NEW.city, ''), '<[^>]+>', '', 'gi'), '&[a-zA-Z]+;', '', 'g');
 
     -- Validate link format (must be https)
     IF NEW.link IS NULL OR NEW.link !~ '^https://' THEN
@@ -61,7 +62,7 @@ $$ LANGUAGE plpgsql;
 -- ═══════════════════════════════════════
 DROP TRIGGER IF EXISTS trigger_sanitize_pending ON pending;
 CREATE TRIGGER trigger_sanitize_pending
-    BEFORE INSERT ON pending
+    BEFORE INSERT OR UPDATE ON pending
     FOR EACH ROW
     EXECUTE FUNCTION sanitize_pending_submission();
 

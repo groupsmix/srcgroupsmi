@@ -176,7 +176,9 @@ function applyExploration(rankedItems, allItems, epsilon) {
         );
     }
     for (let i = exploreCandidates.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const bytes = new Uint8Array(1);
+        crypto.getRandomValues(bytes);
+        const j = bytes[0] % (i + 1);
         const temp = exploreCandidates[i];
         exploreCandidates[i] = exploreCandidates[j];
         exploreCandidates[j] = temp;

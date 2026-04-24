@@ -19,6 +19,7 @@
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
 import { checkRateLimit } from './_shared/rate-limit.js';
 import { verifyTurnstile } from './_shared/turnstile.js';
+import { validateEmail } from './_shared/email-validator.js';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -34,6 +35,9 @@ async function persistSubmission(env, payload) {
     if (!supabaseUrl || !supabaseKey) return { ok: false, id: null, err: 'not_configured' };
 
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
         const res = await fetch(supabaseUrl + '/rest/v1/contact_submissions', {
             method: 'POST',
             headers: {
@@ -42,8 +46,10 @@ async function persistSubmission(env, payload) {
                 'Authorization': 'Bearer ' + supabaseKey,
                 'Prefer': 'return=representation'
             },
-            body: JSON.stringify([payload])
+            body: JSON.stringify([payload]),
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
         if (!res.ok) {
             const errText = await res.text();
             console.error('contact-notify: persist failed', res.status, errText);
@@ -115,7 +121,7 @@ export async function onRequest(context) {
     }
 
     // Turnstile CAPTCHA verification
-    const turnstileToken = body['cf-turnstile-response'] || body.turnstileToken || '';
+    const turnstileToken = body?.['cf-turnstile-response'] || body?.turnstileToken || '';
     const turnstileResult = await verifyTurnstile(turnstileToken, env?.TURNSTILE_SECRET_KEY, ip);
     if (!turnstileResult.success) {
         return new Response(
@@ -132,6 +138,14 @@ export async function onRequest(context) {
     if (!name || !email || !message) {
         return new Response(
             JSON.stringify({ ok: false, error: 'Missing required fields' }),
+            { status: 422, headers: corsHeaders(origin) }
+        );
+    }
+
+    const emailError = validateEmail(email);
+    if (emailError) {
+        return new Response(
+            JSON.stringify({ ok: false, error: emailError }),
             { status: 422, headers: corsHeaders(origin) }
         );
     }
@@ -214,6 +228,9 @@ export async function onRequest(context) {
     let emailOk = false;
     let emailErr = '';
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
         const res = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: {
@@ -226,8 +243,10 @@ export async function onRequest(context) {
                 subject: '[GroupsMix Contact] ' + subjectLabel + ' - ' + name,
                 html: htmlBody,
                 reply_to: email
-            })
+            }),
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
         if (res.ok) {
             emailOk = true;
         } else {

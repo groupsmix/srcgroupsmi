@@ -624,12 +624,13 @@ const _ArticleAI = {
             console.error('ArticleAI.smartSearch:', err.message);
             // Fallback to basic search
             try {
+                const _ilikeFallback = Security.pgrstIlikeContains(query);
                 const { data } = await window.supabaseClient
                     .from('articles')
                     .select('*')
                     .eq('status', 'published')
                     .eq('moderation_status', 'approved')
-                    .ilike('title', '%' + query + '%')
+                    .ilike('title', '%' + query.replace(/[%_\\]/g, '\\$&') + '%')
                     .limit(limit);
                 return data || [];
             } catch (_e) {

@@ -8,17 +8,22 @@
 
 import { wrapUserInput, withUserInputDirective } from './_shared/prompt-safety.js';
 import { moderateOutput } from './_shared/moderation.js';
+import { requireAuth } from './_shared/auth.js';
+import { checkRateLimit } from './_shared/rate-limit.js';
+import { corsHeaders as _corsHeaders, } from './_shared/cors.js';
+import { capMaxTokens } from './_shared/ai-limits.js';
+import { shouldAttempt, recordSuccess, recordFailure } from './_shared/circuit-breaker.js';
 
 export async function onRequestPost(context) {
     const { request, env } = context;
+    const origin = request.headers.get('Origin') || '';
 
     // CORS headers
-    const corsHeaders = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-Type': 'application/json'
-    };
+    const corsHeaders = _corsHeaders(origin, { 'Content-Type': 'application/json' });
+
+    // Enforce Auth
+    const authResult = await requireAuth(request, env, corsHeaders);
+    if (authResult instanceof Response) return authResult;
 
     try {
         const body = await request.json();
@@ -60,6 +65,13 @@ export async function onRequestPost(context) {
         // Rate limiting via CF
         const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
         const _rateLimitKey = `article-ai:${clientIP}:${task}`;
+        const isAllowed = await checkRateLimit(clientIP, `article-ai:${task}`, { window: 60000, max: 10 }, env.STORE_KV);
+        if (!isAllowed) {
+            return new Response(JSON.stringify({ error: 'Too many requests' }), {
+                status: 429,
+                headers: corsHeaders
+            });
+        }
 
         // Get API key from environment
         const apiKey = env.GROQ_API_KEY;
@@ -190,6 +202,14 @@ export async function onRequestPost(context) {
         }
 
         // Call Groq API
+        const providerName = 'groq';
+        if (!await shouldAttempt(env, providerName)) {
+            return new Response(JSON.stringify({ error: 'AI service temporarily unavailable (circuit open)' }), {
+                status: 503,
+                headers: corsHeaders
+            });
+        }
+
         const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -202,7 +222,7 @@ export async function onRequestPost(context) {
                     { role: 'system', content: withUserInputDirective(systemPrompts[task] || 'You are a helpful assistant.') },
                     { role: 'user', content: wrapUserInput(prompt, { maxLength: 4000 }) }
                 ],
-                max_tokens: maxTokens[task] || 300,
+                max_tokens: capMaxTokens(maxTokens[task] || 300),
                 temperature: task === 'article-moderate' ? 0.1 : 0.7,
                 top_p: 1,
                 stream: false
@@ -210,6 +230,7 @@ export async function onRequestPost(context) {
         });
 
         if (!groqResponse.ok) {
+            await recordFailure(env, providerName);
             const errText = await groqResponse.text();
             console.error('Groq API error:', groqResponse.status, errText);
             return new Response(JSON.stringify({ error: 'AI service error', details: groqResponse.status }), {
@@ -217,6 +238,7 @@ export async function onRequestPost(context) {
                 headers: corsHeaders
             });
         }
+        await recordSuccess(env, providerName);
 
         const groqData = await groqResponse.json();
         const result = groqData.choices?.[0]?.message?.content || null;

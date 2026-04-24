@@ -19,7 +19,7 @@
         document.head.appendChild(gtagScript);
 
         window.dataLayer = window.dataLayer || [];
-        function gtag() { window.dataLayer.push(arguments); }
+        function gtag(...args) { window.dataLayer.push(args); }
         window.gtag = gtag;
         gtag('js', new Date());
         gtag('config', GA4_ID, {

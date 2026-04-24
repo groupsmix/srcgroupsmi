@@ -362,7 +362,9 @@
                         if (d === '[DONE]') continue;
                         try {
                             var parsed = JSON.parse(d);
-                            if (parsed.text) fullText += parsed.text;
+                            if (parsed.error === 'stream_idle_timeout') {
+                                fullText += '\n\n⚠ Response timed out — retry?';
+                            } else if (parsed.text) fullText += parsed.text;
                         } catch (_e) { /* skip */ }
                     }
                 }
@@ -434,7 +436,9 @@
                         if (d === '[DONE]') continue;
                         try {
                             var parsed = JSON.parse(d);
-                            if (parsed.text) fullText += parsed.text;
+                            if (parsed.error === 'stream_idle_timeout') {
+                                fullText += '\n\n⚠ Response timed out — retry?';
+                            } else if (parsed.text) fullText += parsed.text;
                         } catch (_e) { /* skip */ }
                     }
                 }

@@ -1003,7 +1003,7 @@ const _ReadingLists = {
                     await window.supabaseClient.rpc('update_reading_list_count', { p_list_id: listId });
                 } catch (_rpcErr) {
                     // Fallback: count items manually
-                    var { data: countData } = await window.supabaseClient
+                    await window.supabaseClient
                         .from('reading_list_items')
                         .select('id', { count: 'exact', head: true })
                         .eq('list_id', listId);

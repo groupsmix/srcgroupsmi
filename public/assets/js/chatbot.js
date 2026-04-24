@@ -490,7 +490,11 @@
                         if (data === '[DONE]') continue;
                         try {
                             var parsed = JSON.parse(data);
-                            if (parsed.text) {
+                            if (parsed.error === 'stream_idle_timeout') {
+                                fullText += '\n\n**⚠ Response timed out — retry?**';
+                                botDiv.innerHTML = parseMarkdown(fullText);
+                                scrollToBottom();
+                            } else if (parsed.text) {
                                 fullText += parsed.text;
                                 // Update bubble with raw text during streaming
                                 botDiv.innerHTML = parseMarkdown(fullText) + '<span class="chatbot-cursor">|</span>';

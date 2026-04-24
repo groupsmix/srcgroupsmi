@@ -5,13 +5,19 @@
  * that implements round-robin failover between Groq and OpenRouter.
  */
 
+import { capMaxTokens } from '../../_shared/ai-limits.js';
+import { shouldAttempt, recordSuccess, recordFailure } from '../../_shared/circuit-breaker.js';
+
 const OPENROUTER_MODELS = [
     'google/gemma-3-27b-it:free',
     'meta-llama/llama-3.3-70b-instruct:free',
     'mistralai/mistral-small-3.1-24b-instruct:free'
 ];
 
-async function callGroq(apiKey, messages, maxTokens, temperature) {
+async function callGroq(apiKey, messages, maxTokens, temperature, env) {
+    const providerName = 'groq';
+    if (env && !await shouldAttempt(env, providerName)) return null;
+
     try {
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -22,21 +28,29 @@ async function callGroq(apiKey, messages, maxTokens, temperature) {
             body: JSON.stringify({
                 model: 'llama-3.3-70b-versatile',
                 messages: messages,
-                max_tokens: maxTokens || 500,
+                max_tokens: capMaxTokens(maxTokens || 500),
                 temperature: temperature || 0.4,
                 stream: false
             })
         });
-        if (!res.ok) return null;
+        if (!res.ok) {
+            if (env) await recordFailure(env, providerName);
+            return null;
+        }
+        if (env) await recordSuccess(env, providerName);
         const json = await res.json();
         return json.choices?.[0]?.message?.content || null;
     } catch (err) {
+        if (env) await recordFailure(env, providerName);
         console.error('Groq error:', err);
         return null;
     }
 }
 
-async function callOpenRouter(apiKey, messages, maxTokens, temperature) {
+async function callOpenRouter(apiKey, messages, maxTokens, temperature, env) {
+    const providerName = 'openrouter';
+    if (env && !await shouldAttempt(env, providerName)) return null;
+
     for (const model of OPENROUTER_MODELS) {
         try {
             const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -50,16 +64,21 @@ async function callOpenRouter(apiKey, messages, maxTokens, temperature) {
                 body: JSON.stringify({
                     model: model,
                     messages: messages,
-                    max_tokens: maxTokens || 500,
+                    max_tokens: capMaxTokens(maxTokens || 500),
                     temperature: temperature || 0.4,
                     stream: false
                 })
             });
-            if (!res.ok) continue;
+            if (!res.ok) {
+                if (env) await recordFailure(env, providerName);
+                continue;
+            }
+            if (env) await recordSuccess(env, providerName);
             const json = await res.json();
             const content = json.choices?.[0]?.message?.content;
             if (content) return content;
         } catch (err) {
+            if (env) await recordFailure(env, providerName);
             console.error('OpenRouter error (' + model + '):', err);
         }
     }
@@ -76,16 +95,16 @@ async function callAI(env, messages, maxTokens, temperature) {
 
     if (groqKey && orKey) {
         if (useGroqFirst) {
-            return await callGroq(groqKey, messages, maxTokens, temperature)
-                || await callOpenRouter(orKey, messages, maxTokens, temperature);
+            return await callGroq(groqKey, messages, maxTokens, temperature, env)
+                || await callOpenRouter(orKey, messages, maxTokens, temperature, env);
         } else {
-            return await callOpenRouter(orKey, messages, maxTokens, temperature)
-                || await callGroq(groqKey, messages, maxTokens, temperature);
+            return await callOpenRouter(orKey, messages, maxTokens, temperature, env)
+                || await callGroq(groqKey, messages, maxTokens, temperature, env);
         }
     } else if (groqKey) {
-        return await callGroq(groqKey, messages, maxTokens, temperature);
+        return await callGroq(groqKey, messages, maxTokens, temperature, env);
     } else if (orKey) {
-        return await callOpenRouter(orKey, messages, maxTokens, temperature);
+        return await callOpenRouter(orKey, messages, maxTokens, temperature, env);
     }
     return null;
 }

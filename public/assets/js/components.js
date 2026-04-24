@@ -1175,7 +1175,7 @@ const _UI = {
     async _loadComments(contentId, contentType) {
         const list = document.getElementById('comments-list');
         if (!list) return;
-        const { data, count } = await Comments.getByContent(contentId, contentType, 20, 0);
+        const { data } = await Comments.getByContent(contentId, contentType, 20, 0);
         if (!data || data.length === 0) {
             list.innerHTML = `<div class="comments-panel__empty">No comments yet. Be the first!</div>`;
             return;
