@@ -11,14 +11,14 @@ import { corsHeaders } from './cors.js';
  * Return a JSON error response.
  * @param {string} message - Human-readable error description.
  * @param {number} status  - HTTP status code (default 400).
- * @param {string} origin  - Request Origin header for CORS.
+ * @param {string | null} origin  - Request Origin header for CORS.
  * @returns {Response}
  */
-export function errorResponse(message, status, origin) {
+export function errorResponse(message: string, status: number = 400, origin: string | null): Response {
     return new Response(
         JSON.stringify({ ok: false, error: message }),
         {
-            status: status || 400,
+            status: status,
             headers: corsHeaders(origin, { 'Content-Type': 'application/json' })
         }
     );
@@ -26,11 +26,11 @@ export function errorResponse(message, status, origin) {
 
 /**
  * Return a JSON success response.
- * @param {object} data   - Payload fields merged into the response body.
- * @param {string} origin - Request Origin header for CORS.
+ * @param {Record<string, any>} data   - Payload fields merged into the response body.
+ * @param {string | null} origin - Request Origin header for CORS.
  * @returns {Response}
  */
-export function successResponse(data, origin) {
+export function successResponse(data: Record<string, any>, origin: string | null): Response {
     return new Response(
         JSON.stringify({ ok: true, ...data }),
         {

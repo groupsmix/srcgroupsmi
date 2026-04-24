@@ -11,18 +11,23 @@
  */
 
 /* ── In-memory fallback (per isolate, resets on cold start) ── */
-const ipBuckets = new Map();
+const ipBuckets = new Map<string, number[]>();
+
+export interface RateLimitConfig {
+    window: number;
+    max: number;
+}
 
 /**
  * Check and update rate limit for an IP + action pair.
  *
  * @param {string} ip       - Client IP address
  * @param {string} action   - Action identifier (e.g. 'signup', 'health')
- * @param {object} limit    - { window: ms, max: number }
- * @param {object} [kvStore] - Cloudflare KV namespace binding (optional)
+ * @param {RateLimitConfig} limit    - { window: ms, max: number }
+ * @param {KVNamespace} [kvStore] - Cloudflare KV namespace binding (optional)
  * @returns {Promise<boolean>} true if allowed, false if rate-limited
  */
-export async function checkRateLimit(ip, action, limit, kvStore) {
+export async function checkRateLimit(ip: string, action: string, limit: RateLimitConfig, kvStore?: KVNamespace): Promise<boolean> {
     if (kvStore) {
         return checkRateLimitKV(ip, action, limit, kvStore);
     }
@@ -30,11 +35,11 @@ export async function checkRateLimit(ip, action, limit, kvStore) {
 }
 
 /* ── KV-backed rate limiter (persistent across cold starts) ── */
-async function checkRateLimitKV(ip, action, limit, kv) {
+async function checkRateLimitKV(ip: string, action: string, limit: RateLimitConfig, kv: KVNamespace): Promise<boolean> {
     const key = 'rl:' + ip + ':' + action;
     const now = Date.now();
 
-    let timestamps = [];
+    let timestamps: number[] = [];
     try {
         const raw = await kv.get(key);
         if (raw) timestamps = JSON.parse(raw);
@@ -65,7 +70,7 @@ async function checkRateLimitKV(ip, action, limit, kv) {
 }
 
 /* ── In-memory rate limiter (fallback, resets on isolate recycle) ── */
-function checkRateLimitMemory(ip, action, limit) {
+function checkRateLimitMemory(ip: string, action: string, limit: RateLimitConfig): boolean {
     const key = ip + ':' + action;
     const now = Date.now();
 

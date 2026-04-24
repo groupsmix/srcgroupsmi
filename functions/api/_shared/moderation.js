@@ -10,6 +10,9 @@
  * whole AI surface down; call sites log when this happens.
  */
 
+import { capMaxTokens } from './ai-limits.js';
+import { shouldAttempt, recordSuccess, recordFailure } from './circuit-breaker.js';
+
 const DEFAULT_MODEL = 'meta-llama/llama-guard-4-12b';
 const MODERATION_TIMEOUT_MS = 4000;
 
@@ -32,9 +35,16 @@ const MODERATION_TIMEOUT_MS = 4000;
  * @param {string} apiKey
  * @param {string} model
  * @param {Array<{role:string,content:string}>} messages
+ * @param {object} env
  * @returns {Promise<ModerationResult|null>}
  */
-async function callGroqGuard(apiKey, model, messages) {
+async function callGroqGuard(apiKey, model, messages, env) {
+    const providerName = 'groq';
+    if (!await shouldAttempt(env, providerName)) {
+        console.warn('moderation: Groq circuit breaker open');
+        return null;
+    }
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), MODERATION_TIMEOUT_MS);
     try {
@@ -47,16 +57,18 @@ async function callGroqGuard(apiKey, model, messages) {
             body: JSON.stringify({
                 model: model,
                 messages: messages,
-                max_tokens: 50,
+                max_tokens: capMaxTokens(50),
                 temperature: 0,
                 stream: false
             }),
             signal: controller.signal
         });
         if (!res.ok) {
+            await recordFailure(env, providerName);
             console.warn('Llama Guard returned', res.status);
             return null;
         }
+        await recordSuccess(env, providerName);
         const json = await res.json();
         const raw = (json.choices?.[0]?.message?.content || '').trim().toLowerCase();
         if (!raw) return null;
@@ -121,7 +133,7 @@ export async function moderateOutput(env, assistantText, opts) {
     }
     messages.push({ role: 'assistant', content: text.slice(0, 8000) });
 
-    const result = await callGroqGuard(apiKey, model, messages);
+    const result = await callGroqGuard(apiKey, model, messages, env);
     if (!result) {
         return { flagged: false, category: '', checked: false };
     }

@@ -11,6 +11,7 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { extractToken, verifyToken } from './_shared/auth.js';
 
 /** CORS headers with Content-Type for JSON responses */
 function corsHeaders(origin) {
@@ -95,7 +96,7 @@ export async function onRequest(context) {
         );
     }
 
-    const { url, alias, userId } = body;
+    const { url, alias } = body;
 
     // Validate URL
     if (!url || !isValidUrl(url)) {
@@ -117,10 +118,7 @@ export async function onRequest(context) {
     let code = alias ? alias.replace(/[^a-zA-Z0-9_-]/g, '').substring(0, 30) : generateCode();
     if (!code) code = generateCode();
 
-    // Use Supabase REST API to insert the short link. Both values must come
-    // from the environment — we no longer fall back to a hardcoded project
-    // URL because a stale fallback would silently point writes at whatever
-    // Supabase project that ref happens to resolve to.
+    // Use Supabase REST API to insert the short link.
     const supabaseUrl = env?.SUPABASE_URL;
     const supabaseKey = env?.SUPABASE_SERVICE_KEY || env?.SUPABASE_ANON_KEY || '';
 
@@ -131,52 +129,79 @@ export async function onRequest(context) {
         );
     }
 
+    // Derive user identity server-side
+    let creator_uid = null;
+    const token = extractToken(request);
+    if (token) {
+        const authUser = await verifyToken(token, env);
+        if (authUser && authUser.id && env?.SUPABASE_SERVICE_KEY) {
+            const serviceKey = env.SUPABASE_SERVICE_KEY;
+            try {
+                const profileRes = await fetch(
+                    supabaseUrl + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authUser.id) + '&select=id&limit=1',
+                    { headers: { 'apikey': serviceKey, 'Authorization': 'Bearer ' + serviceKey } }
+                );
+                if (profileRes.ok) {
+                    const profiles = await profileRes.json();
+                    if (profiles && profiles.length > 0) {
+                        creator_uid = profiles[0].id;
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to fetch user profile:', err);
+            }
+        }
+    }
+
+    let retries = 3;
+    let finalCode = code;
+    let record = null;
+
     try {
-        // Check if code already exists
-        const checkRes = await fetch(
-            supabaseUrl + '/rest/v1/short_links?code=eq.' + encodeURIComponent(code) + '&select=id',
-            { headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + supabaseKey } }
-        );
-        const existing = await checkRes.json();
-        if (Array.isArray(existing) && existing.length > 0) {
-            // Code taken — generate a new unpredictable one. We keep the
-            // tie-breaker in the same 36-char alphabet as `generateCode()`
-            // rather than a 2-digit decimal suffix so the resulting space is
-            // 36^8 (~2.8e12) instead of 36^6 * 100 (~2.2e11).
-            code = generateCode() + generateCode().slice(0, 2);
+        while (retries > 0) {
+            const insertRes = await fetch(supabaseUrl + '/rest/v1/short_links', {
+                method: 'POST',
+                headers: {
+                    'apikey': supabaseKey,
+                    'Authorization': 'Bearer ' + supabaseKey,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=representation'
+                },
+                body: JSON.stringify({
+                    code: finalCode,
+                    long_url: url,
+                    creator_uid
+                })
+            });
+
+            if (insertRes.ok) {
+                [record] = await insertRes.json();
+                break;
+            } else if (insertRes.status === 409 || insertRes.status === 400) {
+                // Conflict - generate new code and retry
+                finalCode = generateCode() + generateCode().slice(0, 2);
+                retries--;
+                if (retries === 0) {
+                    return new Response(
+                        JSON.stringify({ ok: false, errors: ['Failed to generate unique short code. Please try again.'] }),
+                        { status: 500, headers: corsHeaders(origin) }
+                    );
+                }
+            } else {
+                const err = await insertRes.text();
+                console.error('Supabase insert error:', err);
+                return new Response(
+                    JSON.stringify({ ok: false, errors: ['Failed to create short link. Please try again.'] }),
+                    { status: 500, headers: corsHeaders(origin) }
+                );
+            }
         }
 
-        // Insert the short link
-        const insertRes = await fetch(supabaseUrl + '/rest/v1/short_links', {
-            method: 'POST',
-            headers: {
-                'apikey': supabaseKey,
-                'Authorization': 'Bearer ' + supabaseKey,
-                'Content-Type': 'application/json',
-                'Prefer': 'return=representation'
-            },
-            body: JSON.stringify({
-                code,
-                long_url: url,
-                creator_uid: userId || null
-            })
-        });
-
-        if (!insertRes.ok) {
-            const err = await insertRes.text();
-            console.error('Supabase insert error:', err);
-            return new Response(
-                JSON.stringify({ ok: false, errors: ['Failed to create short link. Please try again.'] }),
-                { status: 500, headers: corsHeaders(origin) }
-            );
-        }
-
-        const [record] = await insertRes.json();
         return new Response(
             JSON.stringify({
                 ok: true,
-                code,
-                shortUrl: 'https://groupsmix.com/go?code=' + code,
+                code: finalCode,
+                shortUrl: 'https://groupsmix.com/go?code=' + finalCode,
                 id: record?.id || null,
                 persisted: true
             }),

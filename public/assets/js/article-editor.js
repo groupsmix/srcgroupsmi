@@ -122,7 +122,7 @@ const _ArticleEditor = {
             try {
                 const ext = file.name.split('.').pop();
                 const path = 'articles/' + Auth.getUserId() + '/' + Date.now() + '.' + ext;
-                const { data, error } = await window.supabaseClient.storage
+                const { error } = await window.supabaseClient.storage
                     .from('uploads')
                     .upload(path, file, { cacheControl: '3600', upsert: false });
 
@@ -244,7 +244,7 @@ const _ArticleEditor = {
         if (!container) return;
 
         // Remove existing tag elements
-        container.querySelectorAll('.tags-input__tag').forEach(el => el.remove());
+        container.querySelectorAll('.tags-input__tag').forEach(el => { el.remove(); });
 
         // Add tags before input
         this._tags.forEach((tag, i) => {
@@ -716,7 +716,7 @@ const _ArticleEditor = {
             const tags = await ArticleAI.suggestTags(title, content);
 
             if (tags && tags.length > 0) {
-                tags.forEach(t => this._addTag(t));
+                tags.forEach(t => { this._addTag(t); });
                 UI.toast('Tags suggested!', 'success');
             }
             if (btn) { btn.disabled = false; btn.textContent = 'Auto Tags'; }

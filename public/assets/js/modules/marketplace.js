@@ -184,7 +184,9 @@ const _Marketplace = {
             }
             var score = (clickScore + impressionScore + 1) * recencyBonus;
             // Add randomness: multiply by random factor 0.5-1.5
-            var randomFactor = 0.5 + Math.random();
+            var bytes = new Uint8Array(1);
+            (window.crypto || window.msCrypto).getRandomValues(bytes);
+            var randomFactor = 0.5 + (bytes[0] / 255);
             return { item: item, weight: score * randomFactor };
         });
 
@@ -582,9 +584,7 @@ const _Marketplace = {
     async getMyEscrows() {
         try {
             if (!Auth.requireAuth()) return [];
-            var userId = Auth.getUserId();
-            // F-5: UUID-validate before interpolating into a PostgREST filter.
-            if (!Security.isUuid(userId)) return [];
+            var userId = Security.pgrstQuoteValue(Auth.getUserId());
             var { data, error } = await window.supabaseClient
                 .from('marketplace_escrow').select('*, marketplace_listings(title, description)')
                 .or('buyer_id.eq.' + userId + ',seller_id.eq.' + userId)
@@ -632,9 +632,7 @@ const _Marketplace = {
     async getMyDisputes() {
         try {
             if (!Auth.requireAuth()) return [];
-            var userId = Auth.getUserId();
-            // F-5: UUID-validate before interpolating into a PostgREST filter.
-            if (!Security.isUuid(userId)) return [];
+            var userId = Security.pgrstQuoteValue(Auth.getUserId());
             var { data, error } = await window.supabaseClient
                 .from('marketplace_disputes').select('*, marketplace_listings(title)')
                 .or('buyer_id.eq.' + userId + ',seller_id.eq.' + userId)
@@ -985,9 +983,7 @@ const _Marketplace = {
     async getMyOffers() {
         try {
             if (!Auth.requireAuth()) return [];
-            var userId = Auth.getUserId();
-            // F-5: UUID-validate before interpolating into a PostgREST filter.
-            if (!Security.isUuid(userId)) return [];
+            var userId = Security.pgrstQuoteValue(Auth.getUserId());
             var { data, error } = await window.supabaseClient
                 .from('marketplace_offers').select('*, marketplace_listings(title, price)')
                 .or('buyer_id.eq.' + userId + ',seller_id.eq.' + userId)

@@ -50,7 +50,7 @@ const _Algorithms = {
         const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'is', 'it', 'this', 'that', 'are', 'was', 'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'shall', 'can', 'need', 'must', 'not', 'no', 'nor', 'so', 'if', 'then', 'than', 'too', 'very', 'just', 'about', 'above', 'after', 'again', 'all', 'also', 'any', 'because', 'before', 'between', 'both', 'each', 'few', 'how', 'into', 'more', 'most', 'other', 'out', 'over', 'own', 'same', 'some', 'such', 'their', 'them', 'these', 'those', 'through', 'under', 'until', 'up', 'what', 'when', 'where', 'which', 'while', 'who', 'whom', 'why', 'you', 'your']);
         (name || '').toLowerCase().split(/\s+/).forEach(w => { const c = w.replace(/[^a-z0-9]/g, ''); if (c.length >= 2) terms.add(c); });
         (description || '').toLowerCase().split(/\s+/).forEach(w => { const c = w.replace(/[^a-z0-9]/g, ''); if (c.length >= 3 && !stopWords.has(c)) terms.add(c); });
-        if (Array.isArray(tags)) tags.forEach(t => t.toLowerCase().split(/\s+/).forEach(w => { if (w.length >= 2) terms.add(w); }));
+        if (Array.isArray(tags)) tags.forEach(t => { t.toLowerCase().split(/\s+/).forEach(w => { if (w.length >= 2) terms.add(w); }); });
         if (category) terms.add(category.toLowerCase().replace(/[^a-z0-9]/g, ''));
         if (platform) terms.add(platform.toLowerCase());
         return Array.from(terms).slice(0, 40);
@@ -230,7 +230,11 @@ const _Algorithms = {
         // 2. Sort by score (highest first) with randomization for equal scores
         scored.sort(function(a, b) {
             var diff = b.score - a.score;
-            if (Math.abs(diff) < 5) return Math.random() - 0.5;
+            if (Math.abs(diff) < 5) {
+                var bytes = new Uint8Array(1);
+                (window.crypto || window.msCrypto).getRandomValues(bytes);
+                return (bytes[0] / 255) - 0.5;
+            }
             return diff;
         });
 

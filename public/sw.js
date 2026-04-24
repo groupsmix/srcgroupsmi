@@ -76,7 +76,7 @@ self.addEventListener('push', (e) => {
     let data;
     try {
         data = e.data.json();
-    } catch (err) {
+    } catch (_err) {
         data = {
             title: 'GroupsMix',
             body: e.data.text(),

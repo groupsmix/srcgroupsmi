@@ -94,8 +94,7 @@
     /* ── Utility: Debounce ────────────────── */
     function debounce(fn, delay) {
         var timer;
-        return function () {
-            var args = arguments;
+        return function (...args) {
             var ctx = this;
             clearTimeout(timer);
             timer = setTimeout(function () { fn.apply(ctx, args); }, delay);

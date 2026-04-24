@@ -40,13 +40,18 @@ async function fetchLemonSqueezyProducts(apiKey, storeId) {
 
     while (hasMore) {
         const url = `${LS_API_BASE}/products?filter[store_id]=${storeId}&page[number]=${page}&page[size]=50&include=variants`;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
         const res = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
                 'Accept': 'application/vnd.api+json',
                 'Content-Type': 'application/vnd.api+json'
-            }
+            },
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (!res.ok) {
             console.error('LemonSqueezy API error:', res.status, await res.text());
@@ -188,7 +193,7 @@ function rankPersonalized(products, viewedTypes, viewedIds, groupCategories, pas
     const boostedTypes = new Set();
     groupCategories.forEach(cat => {
         const mapped = categoryTypeMap[cat.toLowerCase()] || [];
-        mapped.forEach(t => boostedTypes.add(t));
+        mapped.forEach(t => { boostedTypes.add(t); });
     });
 
     const scored = products.map(p => {

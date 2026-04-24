@@ -790,7 +790,9 @@ const ABTesting = {
 
             var variants = typeof test.variants === 'string' ? JSON.parse(test.variants) : test.variants;
             var totalWeight = variants.reduce(function(sum, v) { return sum + (v.weight || 50); }, 0);
-            var rand = Math.random() * totalWeight;
+            var bytes = new Uint32Array(1);
+            (window.crypto || window.msCrypto).getRandomValues(bytes);
+            var rand = (bytes[0] / 4294967296) * totalWeight;
             var cumulative = 0;
             var assigned = 'control';
             for (var i = 0; i < variants.length; i++) {

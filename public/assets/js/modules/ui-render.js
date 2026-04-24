@@ -47,12 +47,7 @@ function renderHeader() {
         // ── Right: Login / User Actions ──
         '<div class="site-header__right">' +
         (isLoggedIn ?
-            '<div id="notification-wrapper" class="header-notification" style="position:relative">' +
-            '<button id="notification-btn" class="header-notification__btn" aria-label="Notifications">' +
-            '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' +
-            (unread > 0 ? '<span class="header-notification__dot"></span>' : '') +
-            '</button>' +
-            '</div>' +
+            // The notification dropdown has been migrated to Preact component in BaseLayout.astro
             '<div id="user-menu-wrapper" style="position:relative">' +
             '<button id="user-menu-btn" class="header-user-link" title="Account menu" aria-label="Account menu" type="button">' +
             '<div class="header-avatar">' + avatarHtml + '</div>' +
@@ -221,7 +216,7 @@ function toggleUserDropdown() {
 }
 
 function closeAllDropdowns() {
-    document.querySelectorAll('.notification-dropdown, .user-dropdown, .magic-plus-dropdown, .subnav__more-dropdown').forEach(d => d.remove());
+    document.querySelectorAll('.notification-dropdown, .user-dropdown, .magic-plus-dropdown, .subnav__more-dropdown').forEach(d => { d.remove(); });
 }
 
 document.addEventListener('click', (e) => {
@@ -308,52 +303,8 @@ function renderAnnouncement() {
 // MODULE 12: renderFooter
 // ═══════════════════════════════════════
 function _renderFooter() {
-    const footer = document.getElementById('site-footer');
-    if (!footer) return;
-    footer.innerHTML = '<div class="site-footer">' +
-        '<div class="site-footer__grid">' +
-        // Column 1: Explore
-        '<div class="site-footer__column">' +
-            '<div class="site-footer__heading">EXPLORE</div>' +
-            '<a href="/search" class="site-footer__link">Search</a>' +
-            '<a href="/browse" class="site-footer__link">Groups</a>' +
-            '<a href="/articles" class="site-footer__link">Articles</a>' +
-            '<a href="/stats" class="site-footer__link">Stats</a>' +
-            '<a href="/scam-wall" class="site-footer__link">Scam Wall</a>' +
-            '<a href="/tools" class="site-footer__link">Free Tools</a>' +
-        '</div>' +
-        // Column 2: Grow
-        '<div class="site-footer__column">' +
-            '<div class="site-footer__heading">GROW</div>' +
-            '<a href="/promote" class="site-footer__link">Promote</a>' +
-            '<a href="/advertise" class="site-footer__link">Advertise</a>' +
-            '<a href="/store" class="site-footer__link">Store</a>' +
-            '<a href="/marketplace" class="site-footer__link">Marketplace</a>' +
-            '<a href="/jobs" class="site-footer__link">Jobs</a>' +
-        '</div>' +
-        // Column 3: Community
-        '<div class="site-footer__column">' +
-            '<div class="site-footer__heading">COMMUNITY</div>' +
-            '<a href="/fuel" class="site-footer__link">Fuel the Community</a>' +
-            '<a href="/leaderboard" class="site-footer__link">Leaderboard</a>' +
-            '<a href="/submit" class="site-footer__link">Submit Group</a>' +
-        '</div>' +
-        // Column 4: Company
-        '<div class="site-footer__column">' +
-            '<div class="site-footer__heading">COMPANY</div>' +
-            '<a href="/about" class="site-footer__link">About</a>' +
-            '<a href="/contact" class="site-footer__link">Contact Us</a>' +
-            '<a href="/faq" class="site-footer__link">FAQ</a>' +
-            '<a href="/support" class="site-footer__link">Support Center</a>' +
-            '<a href="/privacy" class="site-footer__link">Privacy</a>' +
-            '<a href="/terms" class="site-footer__link">Terms</a>' +
-        '</div>' +
-        '</div>' +
-        '<div class="site-footer__cta">' +
-            '<a href="/fuel" class="site-footer__cta-link">' + ICONS.zap + ' Did GroupsMix help you? Help us keep going &amp; growing</a>' +
-        '</div>' +
-        '<div class="site-footer__bottom">&copy; ' + new Date().getFullYear() + ' GroupsMix.com. All rights reserved.</div>' +
-        '</div>';
+    // Footer is now rendered server-side via Astro component (src/components/Footer.astro)
+    return;
 }
 
 // ═══════════════════════════════════════

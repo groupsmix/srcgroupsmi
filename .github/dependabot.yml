@@ -1,26 +1,19 @@
 version: 2
 updates:
+  # Maintain dependencies for npm
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 10
-    reviewers:
-      - "groupsmix"
-    labels:
-      - "dependencies"
-    groups:
-      minor-and-patch:
-        update-types:
-          - "minor"
-          - "patch"
-
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    ignore:
+      - dependency-name: "astro" # Handle Astro manually due to breaking changes
+  # Maintain github actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    labels:
-      - "ci"
+      interval: "monthly"
+    commit-message:
+      prefix: "ci"

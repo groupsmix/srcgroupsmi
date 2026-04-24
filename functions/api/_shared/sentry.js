@@ -142,6 +142,8 @@ export async function captureEdgeException(env, err, context) {
                 body: envelope,
                 signal: controller.signal
             });
+        } catch (_fetchErr) {
+            // Ignore fetch/abort errors
         } finally {
             clearTimeout(timer);
         }

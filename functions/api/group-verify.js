@@ -75,28 +75,38 @@ async function handleGet(request, supabaseUrl, supabaseKey, origin) {
     }
 
     if (action === 'status') {
-        const res = await fetch(
-            supabaseUrl + '/rest/v1/rpc/get_verification_status',
-            {
-                method: 'POST',
-                headers: {
-                    'apikey': supabaseKey,
-                    'Authorization': 'Bearer ' + supabaseKey,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ p_group_id: groupId })
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        try {
+            const res = await fetch(
+                supabaseUrl + '/rest/v1/rpc/get_verification_status',
+                {
+                    method: 'POST',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': 'Bearer ' + supabaseKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ p_group_id: groupId }),
+                    signal: controller.signal
+                }
+            );
+            clearTimeout(timeoutId);
+            const data = await res.json();
+            if (!res.ok) {
+                return new Response(JSON.stringify({ ok: false, error: data.message || 'Failed to get status' }), {
+                    status: 400, headers: corsHeaders(origin)
+                });
             }
-        );
-        const data = await res.json();
-        if (!res.ok) {
-            return new Response(JSON.stringify({ ok: false, error: data.message || 'Failed to get status' }), {
-                status: 400, headers: corsHeaders(origin)
+            const status = Array.isArray(data) ? data[0] : data;
+            return new Response(JSON.stringify({ ok: true, data: status || { is_verified: false } }), {
+                status: 200, headers: corsHeaders(origin)
             });
+        } catch (err) {
+            clearTimeout(timeoutId);
+            throw err;
         }
-        const status = Array.isArray(data) ? data[0] : data;
-        return new Response(JSON.stringify({ ok: true, data: status || { is_verified: false } }), {
-            status: 200, headers: corsHeaders(origin)
-        });
     }
 
     return new Response(JSON.stringify({ ok: false, error: 'Unknown action' }), {
@@ -124,33 +134,42 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
     }
 
     if (action === 'generate') {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
         // Generate a verification code via RPC
-        const res = await fetch(
-            supabaseUrl + '/rest/v1/rpc/generate_verification_code',
-            {
-                method: 'POST',
-                headers: {
-                    'apikey': supabaseKey,
-                    'Authorization': 'Bearer ' + supabaseKey,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ p_group_id: groupId, p_uid: user.id })
+        try {
+            const res = await fetch(
+                supabaseUrl + '/rest/v1/rpc/generate_verification_code',
+                {
+                    method: 'POST',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': 'Bearer ' + supabaseKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ p_group_id: groupId, p_uid: user.id }),
+                    signal: controller.signal
+                }
+            );
+            clearTimeout(timeoutId);
+            const data = await res.json();
+            if (!res.ok) {
+                let errMsg = (data && data.message) ? data.message : 'Failed to generate code';
+                // Clean up common DB errors for user-friendly messages
+                if (errMsg.includes('already verified')) errMsg = 'This group is already verified.';
+                if (errMsg.includes('Not the group owner')) errMsg = 'You can only verify groups you submitted.';
+                return new Response(JSON.stringify({ ok: false, error: errMsg }), {
+                    status: 400, headers: corsHeaders(origin)
+                });
             }
-        );
-        const data = await res.json();
-        if (!res.ok) {
-            let errMsg = (data && data.message) ? data.message : 'Failed to generate code';
-            // Clean up common DB errors for user-friendly messages
-            if (errMsg.includes('already verified')) errMsg = 'This group is already verified.';
-            if (errMsg.includes('Not the group owner')) errMsg = 'You can only verify groups you submitted.';
-            return new Response(JSON.stringify({ ok: false, error: errMsg }), {
-                status: 400, headers: corsHeaders(origin)
+            const result = Array.isArray(data) ? data[0] : data;
+            return new Response(JSON.stringify({ ok: true, data: result }), {
+                status: 200, headers: corsHeaders(origin)
             });
+        } catch (err) {
+            clearTimeout(timeoutId);
+            throw err;
         }
-        const result = Array.isArray(data) ? data[0] : data;
-        return new Response(JSON.stringify({ ok: true, data: result }), {
-            status: 200, headers: corsHeaders(origin)
-        });
     }
 
     if (action === 'confirm') {
@@ -161,33 +180,43 @@ async function handlePost(request, user, supabaseUrl, supabaseKey, origin) {
             });
         }
 
-        const res = await fetch(
-            supabaseUrl + '/rest/v1/rpc/confirm_group_verification',
-            {
-                method: 'POST',
-                headers: {
-                    'apikey': supabaseKey,
-                    'Authorization': 'Bearer ' + supabaseKey,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ p_group_id: groupId, p_uid: user.id, p_code: code })
-            }
-        );
-        const data = await res.json();
-        if (!res.ok) {
-            return new Response(JSON.stringify({ ok: false, error: (data && data.message) || 'Verification failed' }), {
-                status: 400, headers: corsHeaders(origin)
-            });
-        }
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        if (data === true) {
-            return new Response(JSON.stringify({ ok: true, verified: true, message: 'Group verified successfully!' }), {
-                status: 200, headers: corsHeaders(origin)
-            });
-        } else {
-            return new Response(JSON.stringify({ ok: false, error: 'Verification code not found, expired, or does not match. Please generate a new code.' }), {
-                status: 400, headers: corsHeaders(origin)
-            });
+        try {
+            const res = await fetch(
+                supabaseUrl + '/rest/v1/rpc/confirm_group_verification',
+                {
+                    method: 'POST',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': 'Bearer ' + supabaseKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ p_group_id: groupId, p_uid: user.id, p_code: code }),
+                    signal: controller.signal
+                }
+            );
+            clearTimeout(timeoutId);
+            const data = await res.json();
+            if (!res.ok) {
+                return new Response(JSON.stringify({ ok: false, error: (data && data.message) || 'Verification failed' }), {
+                    status: 400, headers: corsHeaders(origin)
+                });
+            }
+
+            if (data === true) {
+                return new Response(JSON.stringify({ ok: true, verified: true, message: 'Group verified successfully!' }), {
+                    status: 200, headers: corsHeaders(origin)
+                });
+            } else {
+                return new Response(JSON.stringify({ ok: false, error: 'Verification code not found, expired, or does not match. Please generate a new code.' }), {
+                    status: 400, headers: corsHeaders(origin)
+                });
+            }
+        } catch (err) {
+            clearTimeout(timeoutId);
+            throw err;
         }
     }
 
