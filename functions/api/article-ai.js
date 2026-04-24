@@ -65,7 +65,7 @@ export async function onRequestPost(context) {
         // Rate limiting via CF
         const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
         const _rateLimitKey = `article-ai:${clientIP}:${task}`;
-        const isAllowed = await checkRateLimit(clientIP, `article-ai:${task}`, { window: 60000, max: 10 }, env.STORE_KV);
+        const isAllowed = await checkRateLimit(clientIP, `article-ai:${task}`, { window: 60000, max: 10 }, env.RATE_LIMIT_KV);
         if (!isAllowed) {
             return new Response(JSON.stringify({ error: 'Too many requests' }), {
                 status: 429,
