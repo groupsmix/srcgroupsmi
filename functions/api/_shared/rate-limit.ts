@@ -83,7 +83,12 @@ async function checkRateLimitKV(ip: string, action: string, limit: RateLimitConf
     // Note: We already added 1 to the local bucket, which is fine since the request
     // was actually made, and keeping it throttled locally is correct.
     if (recent.length >= limit.max) {
+        // Roll back the eagerly-added local entry since this request is rejected
+        const rollbackIdx = localBucket.lastIndexOf(now);
+        if (rollbackIdx !== -1) localBucket.splice(rollbackIdx, 1);
+        ipBuckets.set(localKey, localBucket);
         return false;
+    }
     }
 
     recent.push(now);
