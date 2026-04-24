@@ -9,9 +9,27 @@ error budgets see [`docs/slos.md`](./docs/slos.md); for the expected
 Cloudflare bindings and env vars see [`wrangler.toml`](./wrangler.toml)
 and [`.env.example`](./.env.example).
 
-All commands below assume `gm-prod` is the prod Cloudflare Pages
-project and `gm-prod-supabase` is the prod Supabase project. Substitute
-the real slugs from your 1Password / ops vault if they differ.
+> **Platform migration note (pre-launch):** GroupsMix was migrated from
+> Cloudflare **Pages** to Cloudflare **Workers + Static Assets** while
+> still pre-launch. The authoritative edge config is now
+> [`wrangler.toml`](./wrangler.toml) and the Worker entry is
+> [`src/worker.js`](./src/worker.js). Wherever the text below says
+> "Cloudflare Pages → `gm-prod`", read it as "Cloudflare **Workers &
+> Pages** → `groupsmix` Worker". Wherever it says "Functions
+> invocation logs" / "Functions → Invocation logs", read it as the
+> Worker's **Logs** tab (or `wrangler tail` from a shell). Secret and
+> environment-variable management moved from the Pages project's
+> Settings → Environment variables into the Worker's Settings →
+> Variables (or `wrangler secret put <NAME>`). Cron Triggers moved
+> from the Pages dashboard into `wrangler.toml` `[triggers].crons`
+> and are dispatched by the Worker's `scheduled` handler. A follow-up
+> pass to rewrite the dashboard paths throughout this file is
+> tracked; the procedures themselves are unchanged.
+
+All commands below assume `gm-prod` is the prod Cloudflare project
+(now a Worker, previously a Pages project) and `gm-prod-supabase` is
+the prod Supabase project. Substitute the real slugs from your
+1Password / ops vault if they differ.
 
 ---
 

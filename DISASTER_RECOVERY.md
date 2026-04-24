@@ -6,6 +6,18 @@ Companion to [`RUNBOOK.md`](./RUNBOOK.md) (day-to-day ops) and
 [`docs/backups.md`](./docs/backups.md) (backup policy). This document
 covers **recovery** — what to do when something is already lost.
 
+> **Platform migration note (pre-launch):** The site moved from
+> Cloudflare **Pages** to Cloudflare **Workers + Static Assets**
+> pre-launch. Where the recovery procedures below reference "Cloudflare
+> Pages → `gm-prod`", substitute "Cloudflare Workers & Pages →
+> `groupsmix` Worker". The edge-recovery steps are otherwise
+> unchanged: the build artifact is still `dist/`, bindings are still
+> `STORE_KV` and `RATE_LIMIT_KV`, and the cron schedules listed in
+> [`wrangler.toml`](./wrangler.toml) are the authoritative source of
+> truth. To rebuild the edge from scratch: `npm install && npm run
+> worker:deploy` with the required secrets set via
+> `wrangler secret put`.
+
 Scope:
 
 1. RTO / RPO targets.

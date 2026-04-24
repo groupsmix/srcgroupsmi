@@ -10,7 +10,10 @@
     "test": "vitest run",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "check": "astro check"
+    "check": "astro check",
+    "worker:dev": "wrangler dev",
+    "worker:deploy": "npm run build && wrangler deploy",
+    "worker:tail": "wrangler tail"
   },
   "dependencies": {
     "astro": "^6.1.8"
@@ -22,6 +25,7 @@
     "@astrojs/check": "^0.9.4",
     "@biomejs/biome": "^2.4.12",
     "typescript": "^5.8.3",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.4",
+    "wrangler": "^4.0.0"
   }
 }
