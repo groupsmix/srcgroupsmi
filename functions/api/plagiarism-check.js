@@ -12,6 +12,12 @@
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
 import { requireAuth } from './_shared/auth.js';
+import { z } from 'zod';
+
+const plagiarismSchema = z.object({
+    content: z.string().min(50, "Content too short for plagiarism check").max(50000),
+    article_id: z.string().uuid().optional()
+}).passthrough();
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -102,15 +108,25 @@ export async function onRequest(context) {
     if (authResult instanceof Response) return authResult;
 
     try {
-        const body = await request.json();
-        const { content, article_id } = body;
-
-        if (!content || content.length < 50) {
+        let body;
+        try {
+            const rawBody = await request.json();
+            const validation = plagiarismSchema.safeParse(rawBody);
+            if (!validation.success) {
+                return new Response(
+                    JSON.stringify({ ok: false, error: validation.error.errors[0].message }),
+                    { status: 400, headers: corsHeaders(origin) }
+                );
+            }
+            body = validation.data;
+        } catch {
             return new Response(
-                JSON.stringify({ ok: false, error: 'Content too short for plagiarism check' }),
+                JSON.stringify({ ok: false, error: 'Invalid JSON body' }),
                 { status: 400, headers: corsHeaders(origin) }
             );
         }
+
+        const { content, article_id } = body;
 
         // Generate shingles for the new content
         const plainText = stripHtml(content);

@@ -20,6 +20,8 @@
  * quota enforcement.
  */
 
+import { WorkerEnv } from './types';
+
 /* ── Default daily quota (override with env.AI_QUOTA_DAILY_LIMIT) ── */
 export const DEFAULT_DAILY_QUOTA = 100;
 
@@ -102,7 +104,7 @@ export function getToolWeight(toolId) {
  * compile-time default. Non-positive or non-numeric values are
  * ignored so a misconfigured env var cannot accidentally disable
  * enforcement.
- * @param {object} [env]
+ * @param {WorkerEnv} [env]
  * @returns {number}
  */
 export function resolveDailyQuota(env) {
@@ -255,8 +257,8 @@ async function checkAndConsumeKV(userId, weight, limit, kv, nowMs) {
  *
  * @param {string} userId   - Stable user identifier (e.g. Supabase auth user id)
  * @param {string} toolId   - Tool / action id used to look up the weight
- * @param {object} env      - Cloudflare Pages env (for AI_QUOTA_DAILY_LIMIT override)
- * @param {object} [kv]     - Cloudflare KV namespace binding (RATE_LIMIT_KV)
+ * @param {WorkerEnv} env      - Cloudflare Pages env (for AI_QUOTA_DAILY_LIMIT override)
+ * @param {any} [kv]     - Cloudflare KV namespace binding (RATE_LIMIT_KV)
  * @param {object} [opts]
  * @param {number} [opts.weight]  - Override weight (bypasses TOOL_WEIGHTS lookup)
  * @param {number} [opts.nowMs]   - Injected clock for deterministic testing
@@ -295,8 +297,8 @@ export async function checkAndConsumeQuota(userId, toolId, env, kv, opts) {
  * consuming any units. Intended for status/header endpoints.
  *
  * @param {string} userId
- * @param {object} env
- * @param {object} [kv]
+ * @param {WorkerEnv} env
+ * @param {any} [kv]
  * @param {object} [opts]
  * @param {number} [opts.nowMs]
  * @returns {Promise<{used: number, remaining: number, limit: number, resetAt: string}>}

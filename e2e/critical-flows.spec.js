@@ -52,4 +52,66 @@ test.describe('Critical User Flows', () => {
       await expect(groupsLink).toBeVisible();
     }
   });
+
+  test('Cloudflare Pages _headers migration hygiene (CSP and HSTS)', async ({ request }) => {
+    // 2.3 Pages -> Workers migration hygiene: verify that Cloudflare Workers + Static Assets
+    // correctly applies the public/_headers file.
+    const response = await request.get('/');
+    
+    const headers = response.headers();
+    
+    // Strict-Transport-Security must be present
+    expect(headers['strict-transport-security']).toBeDefined();
+    expect(headers['strict-transport-security']).toContain('max-age=');
+
+    // Content-Security-Policy must be present
+    expect(headers['content-security-policy']).toBeDefined();
+  });
+
+  test('rate limiter enforces max requests on /api/contact-notify', async ({ request }) => {
+    // Hit contact-notify 4 times (limit is 3 per minute)
+    // Rate limit is evaluated before body validation or Turnstile
+    let status429Seen = false;
+    for (let i = 0; i < 5; i++) {
+      const res = await request.post('/api/contact-notify', {
+        data: {}
+      });
+      if (res.status() === 429) {
+        status429Seen = true;
+        break;
+      }
+      // Wait a tiny bit just in case
+      await new Promise(r => setTimeout(r, 50));
+    }
+    
+    expect(status429Seen).toBe(true);
+  });
+
+  test('auth modal allows switching between login and signup', async ({ page }) => {
+    await page.goto('/');
+    
+    // Open auth modal
+    const loginBtn = page.locator('#auth-btn');
+    if (!(await loginBtn.isVisible())) {
+      test.skip(); // skip if auth button is not present (e.g., already logged in)
+    }
+    await loginBtn.click();
+    
+    // Ensure modal is visible
+    const modalContent = page.locator('.modal-content').first();
+    await expect(modalContent).toBeVisible();
+    
+    // Check for email input
+    const emailInput = page.locator('input[type="email"]');
+    await expect(emailInput).toBeVisible();
+
+    // Find and click the toggle link to switch to signup
+    const toggleLink = page.locator('.auth-toggle-link');
+    if (await toggleLink.isVisible()) {
+        const initialText = await toggleLink.textContent();
+        await toggleLink.click();
+        // The text should change (e.g. from "Sign Up" to "Log In")
+        await expect(toggleLink).not.toHaveText(initialText || '');
+    }
+  });
 });

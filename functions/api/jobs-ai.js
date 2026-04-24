@@ -21,6 +21,7 @@ import { wrapUserInput, withUserInputDirective } from './_shared/prompt-safety.j
 import { moderateOutput } from './_shared/moderation.js';
 import { capMaxTokens } from './_shared/ai-limits.js';
 import { shouldAttempt, recordSuccess, recordFailure } from './_shared/circuit-breaker.js';
+import { z } from 'zod';
 
 /* ── Allowed origins for CORS ───────────────────────────────────── */
 const ALLOWED_ORIGINS = [
@@ -166,6 +167,17 @@ function parseAIJSON(content) {
         return null;
     }
 }
+
+/* ── Input validation ────────────────────────────────────────── */
+const jobsAiSchema = z.object({
+    action: z.enum(['validate', 'enhance', 'categorize', 'match']),
+    title: z.string().max(200).optional(),
+    description: z.string().max(5000).optional(),
+    job_title: z.string().max(200).optional(),
+    job_description: z.string().max(5000).optional(),
+    skills: z.array(z.string().max(50)).optional(),
+    job_skills: z.array(z.string().max(50)).optional()
+}).strict();
 
 /* ── ACTION: validate (AI Gatekeeper) ─────────────────────────── */
 async function handleValidate(body, apiKey, env) {
@@ -399,15 +411,17 @@ export async function onRequest(context) {
         );
     }
 
-    const action = (body.action || '').trim();
-    const validActions = ['validate', 'enhance', 'categorize', 'match'];
-
-    if (validActions.indexOf(action) === -1) {
+    const validation = jobsAiSchema.safeParse(body);
+    if (!validation.success) {
+        const errors = validation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`);
         return new Response(
-            JSON.stringify({ error: 'Invalid action. Use: ' + validActions.join(', ') }),
+            JSON.stringify({ ok: false, error: 'Validation failed', details: errors }),
             { status: 400, headers: corsHeaders(origin) }
         );
     }
+    body = validation.data;
+
+    const action = body.action;
 
     if (!checkRateLimit(ip, action)) {
         return new Response(

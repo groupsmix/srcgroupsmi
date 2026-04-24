@@ -20,6 +20,7 @@ import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js'
 import { checkRateLimit } from './_shared/rate-limit.js';
 import { verifyTurnstile } from './_shared/turnstile.js';
 import { validateEmail } from './_shared/email-validator.js';
+import { z } from 'zod';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -27,6 +28,16 @@ function corsHeaders(origin) {
 
 /* ── Rate limit config ── */
 const CONTACT_LIMIT = { window: 60000, max: 3 };
+
+/* ── Input validation ── */
+const contactSchema = z.object({
+    name: z.string().min(1).max(200),
+    email: z.string().email().max(320),
+    subject: z.string().min(1).max(100),
+    message: z.string().min(1).max(5000),
+    'cf-turnstile-response': z.string().optional(),
+    turnstileToken: z.string().optional()
+}).passthrough();
 
 /* ── Persist submission to Supabase ─────────────────────────────── */
 async function persistSubmission(env, payload) {
@@ -119,6 +130,15 @@ export async function onRequest(context) {
             { status: 400, headers: corsHeaders(origin) }
         );
     }
+
+    const validation = contactSchema.safeParse(body);
+    if (!validation.success) {
+        return new Response(
+            JSON.stringify({ ok: false, error: 'Validation failed', details: validation.error.errors }),
+            { status: 400, headers: corsHeaders(origin) }
+        );
+    }
+    body = validation.data;
 
     // Turnstile CAPTCHA verification
     const turnstileToken = body?.['cf-turnstile-response'] || body?.turnstileToken || '';

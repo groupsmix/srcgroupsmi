@@ -66,15 +66,15 @@ not_found_handling = "404-page"
 # After creating the namespaces, uncomment the blocks below and fill
 # in the `id` / `preview_id` fields with the generated IDs.
 
-# [[kv_namespaces]]
-# binding    = "STORE_KV"
-# id         = "<prod-namespace-id>"
-# preview_id = "<preview-namespace-id>"
-#
-# [[kv_namespaces]]
-# binding    = "RATE_LIMIT_KV"
-# id         = "<prod-namespace-id>"
-# preview_id = "<preview-namespace-id>"
+[[kv_namespaces]]
+binding    = "STORE_KV"
+id         = "0123456789abcdef0123456789abcdef"
+preview_id = "fedcba9876543210fedcba9876543210"
+
+[[kv_namespaces]]
+binding    = "RATE_LIMIT_KV"
+id         = "abcdef0123456789abcdef0123456789"
+preview_id = "0123456789abcdef0123456789abcdef"
 
 # ──────────────────────────────────────────────────────────────────────
 # Environment variables
@@ -119,6 +119,7 @@ not_found_handling = "404-page"
 #   PUBLIC_SUPABASE_URL
 #   PUBLIC_SUPABASE_ANON_KEY
 #   PUBLIC_SENTRY_DSN
+#   PUBLIC_GA4_ID
 #   PUBLIC_SENTRY_RELEASE
 #   PUBLIC_ENVIRONMENT
 

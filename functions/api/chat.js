@@ -17,7 +17,9 @@
 
 import { corsHeaders, handlePreflight } from './_shared/cors.js';
 import { requireAuth } from './_shared/auth.js';
+import { checkRateLimit } from './_shared/rate-limit.js';
 import { withUserInputDirective } from './_shared/prompt-safety.js';
+import { z } from 'zod';
 import { moderateOutput, moderationBlockedEvent } from './_shared/moderation.js';
 import { STREAM_IDLE_TIMEOUT_MS, capMaxTokens } from './_shared/ai-limits.js';
 import { shouldAttempt, recordSuccess, recordFailure } from './_shared/circuit-breaker.js';
@@ -76,6 +78,15 @@ const SYSTEM_PROMPT = `You are GroupsMix Assistant — a concise, smart chatbot 
 - If you don't know something, say "I'm not sure about that" — don't make things up.`;
 
 /* ── Input validation ────────────────────────────────────────── */
+const chatRequestSchema = z.object({
+    messages: z.array(
+        z.object({
+            role: z.enum(['user', 'assistant', 'system']),
+            content: z.string().max(8000)
+        })
+    ).min(1, "At least one message is required")
+}).strict();
+
 function sanitizeMessage(msg) {
     if (!msg || typeof msg.role !== 'string' || typeof msg.content !== 'string') return null;
     const role = msg.role === 'assistant' ? 'assistant' : 'user';
@@ -106,6 +117,17 @@ export async function onRequest(context) {
     const authResult = await requireAuth(request, env, corsHeaders(origin));
     if (authResult instanceof Response) return authResult;
 
+    // Apply per-IP + per-User rate limit
+    const clientIp = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
+    const rateLimitId = authResult.user.id + ':' + clientIp;
+    const isAllowed = await checkRateLimit(rateLimitId, 'api-chat', { window: 60000, max: 20 }, env);
+    if (!isAllowed) {
+        return new Response(
+            JSON.stringify({ ok: false, error: 'Too many requests' }),
+            { status: 429, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json', 'Retry-After': '60' } }
+        );
+    }
+
     if (!groqKey && !openrouterKey) {
         return new Response(
             JSON.stringify({ ok: false, error: 'AI service not configured' }),
@@ -123,8 +145,18 @@ export async function onRequest(context) {
         );
     }
 
+    const validation = chatRequestSchema.safeParse(body);
+    if (!validation.success) {
+        const errors = validation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`);
+        return new Response(
+            JSON.stringify({ ok: false, error: 'Validation failed', details: errors }),
+            { status: 400, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+        );
+    }
+    body = validation.data;
+
     // Validate and sanitize messages
-    const rawMessages = Array.isArray(body.messages) ? body.messages : [];
+    const rawMessages = body.messages;
     const userMessages = rawMessages.map(sanitizeMessage).filter(Boolean);
 
     // Keep only last 10 messages to control context size

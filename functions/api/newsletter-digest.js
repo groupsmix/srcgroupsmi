@@ -17,6 +17,13 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { timingSafeEqualHex } from './_shared/webhook-verify.js';
+import { captureEdgeException } from './_shared/sentry.js';
+import { z } from 'zod';
+
+const previewSchema = z.object({
+    email: z.string().email("Invalid email format for preview").max(320)
+}).passthrough();
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -69,7 +76,7 @@ export async function onRequest(context) {
             );
         }
         const presented = request.headers.get('X-Cron-Secret') || '';
-        if (presented !== cronSecret) {
+        if (!timingSafeEqualHex(presented, cronSecret)) {
             return new Response(
                 JSON.stringify({ ok: false, error: 'Unauthorized' }),
                 { status: 401, headers: corsHeaders(origin) }
@@ -123,8 +130,25 @@ export async function onRequest(context) {
 
         if (request.method === 'POST') {
             // Preview mode: return digest HTML for a specific email
-            const body = await request.json();
-            const html = buildDigestHtml(topArticles, body.email || '');
+            let body;
+            try {
+                const rawBody = await request.json();
+                const validation = previewSchema.safeParse(rawBody);
+                if (!validation.success) {
+                    return new Response(
+                        JSON.stringify({ ok: false, error: 'Validation failed', details: validation.error.errors }),
+                        { status: 400, headers: corsHeaders(origin) }
+                    );
+                }
+                body = validation.data;
+            } catch {
+                return new Response(
+                    JSON.stringify({ ok: false, error: 'Invalid JSON body' }),
+                    { status: 400, headers: corsHeaders(origin) }
+                );
+            }
+
+            const html = buildDigestHtml(topArticles, body.email);
             return new Response(
                 JSON.stringify({ ok: true, html, article_count: topArticles.length }),
                 { status: 200, headers: corsHeaders(origin) }
@@ -179,6 +203,10 @@ export async function onRequest(context) {
 
     } catch (err) {
         console.error('newsletter-digest error:', err);
+        context.waitUntil(captureEdgeException(env, err, {
+            request: request,
+            tags: { endpoint: 'newsletter-digest', method: request.method }
+        }));
         return new Response(
             JSON.stringify({ ok: false, error: 'Internal server error' }),
             { status: 500, headers: corsHeaders(origin) }

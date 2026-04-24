@@ -13,6 +13,40 @@ import { checkRateLimit } from './_shared/rate-limit.js';
 import { corsHeaders as _corsHeaders, } from './_shared/cors.js';
 import { capMaxTokens } from './_shared/ai-limits.js';
 import { shouldAttempt, recordSuccess, recordFailure } from './_shared/circuit-breaker.js';
+import { z } from 'zod';
+
+const allowedTasks = [
+    'article-suggest-titles',
+    'article-suggest-tags',
+    'article-generate-excerpt',
+    'article-suggest-category',
+    'article-improve-writing',
+    'article-grammar-check',
+    'article-seo',
+    'article-moderate',
+    'article-summary',
+    'article-translate',
+    'article-to-thread',
+    'article-smart-search',
+    'article-trending-topics',
+    'article-reading-stats',
+    'article-related'
+];
+
+/* ── Input validation ────────────────────────────────────────── */
+const articleAiSchema = z.object({
+    task: z.enum(allowedTasks),
+    prompt: z.string().min(1).max(8000),
+    group_engagement: z.object({
+        top_categories: z.array(z.string()).optional(),
+        trending_tags: z.array(z.string()).optional(),
+        active_groups: z.number().optional(),
+        popular_topics: z.array(z.string()).optional(),
+        interest_signals: z.array(z.string()).optional()
+    }).optional(),
+    source_tags: z.array(z.string()).optional(),
+    source_category: z.string().optional()
+}).strict();
 
 export async function onRequestPost(context) {
     const { request, env } = context;
@@ -26,41 +60,26 @@ export async function onRequestPost(context) {
     if (authResult instanceof Response) return authResult;
 
     try {
-        const body = await request.json();
+        let body;
+        try {
+            body = await request.json();
+        } catch (_e) {
+            return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+                status: 400,
+                headers: corsHeaders
+            });
+        }
+
+        const validation = articleAiSchema.safeParse(body);
+        if (!validation.success) {
+            const errors = validation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`);
+            return new Response(JSON.stringify({ error: 'Validation failed', details: errors }), {
+                status: 400,
+                headers: corsHeaders
+            });
+        }
+        body = validation.data;
         const { task, prompt } = body;
-
-        if (!task || !prompt) {
-            return new Response(JSON.stringify({ error: 'Missing task or prompt' }), {
-                status: 400,
-                headers: corsHeaders
-            });
-        }
-
-        // Validate task type
-        const allowedTasks = [
-            'article-suggest-titles',
-            'article-suggest-tags',
-            'article-generate-excerpt',
-            'article-suggest-category',
-            'article-improve-writing',
-            'article-grammar-check',
-            'article-seo',
-            'article-moderate',
-            'article-summary',
-            'article-translate',
-            'article-to-thread',
-            'article-smart-search',
-            'article-trending-topics',
-            'article-reading-stats',
-            'article-related'
-        ];
-
-        if (!allowedTasks.includes(task)) {
-            return new Response(JSON.stringify({ error: 'Invalid task type' }), {
-                status: 400,
-                headers: corsHeaders
-            });
-        }
 
         // Rate limiting via CF
         const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';

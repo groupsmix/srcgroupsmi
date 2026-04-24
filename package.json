@@ -4,15 +4,18 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node scripts/stamp-sw.js && node scripts/stamp-supabase-config.js && node scripts/stamp-analytics-config.js",
+    "build": "astro build && node scripts/stamp-sw.js && node scripts/stamp-supabase-config.js && node scripts/stamp-analytics-config.js && node scripts/stamp-head-scripts.js",
     "preview": "astro preview",
     "astro": "astro",
     "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:mutate": "stryker run",
     "lint": "biome check . --error-on-warnings",
     "lint:fix": "biome check --write .",
     "check": "astro check",
     "worker:dev": "wrangler dev",
-    "worker:deploy": "npm run build && wrangler deploy",
+    "worker:deploy": "npm run build && node scripts/verify-stamped-config.js && wrangler deploy",
     "worker:tail": "wrangler tail"
   },
   "dependencies": {
@@ -34,6 +37,11 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.1.4",
-    "wrangler": "^4.0.0"
+    "wrangler": "^4.0.0",
+    "@stryker-mutator/core": "^8.2.6",
+    "@stryker-mutator/vitest-runner": "^8.2.6"
+  },
+  "overrides": {
+    "postcss": ">=8.5.10"
   }
 }

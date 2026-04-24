@@ -21,6 +21,7 @@ import { checkRateLimit, RateLimitConfig } from './_shared/rate-limit';
 import { validateEmail } from './_shared/email-validator';
 import { verifyTurnstile } from './_shared/turnstile';
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors';
+import { PagesContext } from './_shared/types';
 
 function corsHeaders(origin: string | null): Record<string, string> {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -48,7 +49,7 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
 };
 
 /* ── Main handler ───────────────────────────────────────────────── */
-export async function onRequest(context: any): Promise<Response> {
+export async function onRequest(context: PagesContext): Promise<Response> {
     const { request, env } = context;
     const origin = request.headers.get('Origin') || null;
 

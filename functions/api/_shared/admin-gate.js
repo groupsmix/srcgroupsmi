@@ -1,5 +1,5 @@
 /**
- * Cloudflare Pages Function — Server-side admin gate for /gm-ctrl-x7
+ * Cloudflare Pages Function — Server-side admin gate for /admin/*
  *
  * This middleware intercepts requests to the admin panel and verifies:
  * 1. A valid Supabase auth token exists in the request cookies
@@ -115,7 +115,8 @@ async function verifyAdmin(accessToken, supabaseUrl, supabaseAnonKey) {
 }
 
 function redirectHome(request) {
-    return Response.redirect(new URL('/', request.url).toString(), 302);
+    // Return 403 Forbidden instead of redirect to satisfy M1 compliance
+    return new Response('Forbidden', { status: 403 });
 }
 
 export async function onRequest(context) {
@@ -132,13 +133,13 @@ export async function onRequest(context) {
     // Fail closed: without Supabase config we cannot verify anything,
     // so refuse to serve the admin page.
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-        console.error('gm-ctrl-x7: SUPABASE_URL or SUPABASE_ANON_KEY not configured — refusing to serve admin page');
+        console.error('admin-gate: SUPABASE_URL or SUPABASE_ANON_KEY not configured — refusing to serve admin page');
         return redirectHome(request);
     }
 
     const projectRef = getProjectRef(SUPABASE_URL);
     if (!projectRef) {
-        console.error('gm-ctrl-x7: could not derive Supabase project ref from SUPABASE_URL');
+        console.error('admin-gate: could not derive Supabase project ref from SUPABASE_URL');
         return redirectHome(request);
     }
 
@@ -159,7 +160,7 @@ export async function onRequest(context) {
         }
     } catch (err) {
         // Verification error → fail closed rather than leaking the page.
-        console.error('gm-ctrl-x7: admin verification error (' + (err.message || 'unknown') + ') — denying access');
+        console.error('admin-gate: admin verification error (' + (err.message || 'unknown') + ') — denying access');
         return redirectHome(request);
     }
 

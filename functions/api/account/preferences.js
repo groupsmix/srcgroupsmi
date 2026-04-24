@@ -15,12 +15,19 @@ import { requireAuth } from '../_shared/auth.js';
 import { corsHeaders, handlePreflight } from '../_shared/cors.js';
 import { errorResponse, successResponse } from '../_shared/response.js';
 import { getSupabaseConfig } from '../_shared/config.js';
+import { z } from 'zod';
 
 const ALLOWED_PREFS = [
     'marketing_opt_out',
     'analytics_opt_out',
     'personalization_opt_out'
 ];
+
+const prefsSchema = z.object({
+    marketing_opt_out: z.boolean().optional(),
+    analytics_opt_out: z.boolean().optional(),
+    personalization_opt_out: z.boolean().optional()
+}).strict();
 
 async function fetchProfile(url, serviceKey, authId) {
     const res = await fetch(
@@ -117,6 +124,12 @@ export async function onRequest(context) {
     } catch {
         return errorResponse('Invalid JSON body', 400, origin);
     }
+
+    const validation = prefsSchema.safeParse(body);
+    if (!validation.success) {
+        return errorResponse('Validation failed: ' + validation.error.errors.map(e => e.message).join(', '), 400, origin);
+    }
+    body = validation.data;
 
     const patch = {};
     const before = pickPrefs(profile);
