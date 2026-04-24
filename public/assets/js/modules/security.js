@@ -15,7 +15,7 @@ const _Security = {
     sanitize(str) {
         if (typeof str !== 'string') return '';
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g, '&#x2F;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#x27;')
             .trim().replace(/\s+/g, ' ');
     },
 
@@ -116,6 +116,40 @@ const _Security = {
             { label: 'Very strong', color: 'var(--success)' }
         ];
         return { score: score, label: labels[score].label, color: labels[score].color };
+    },
+
+    /**
+     * Check if password has been compromised using Have I Been Pwned API (k-Anonymity)
+     */
+    async checkPwnedPassword(password) {
+        if (!password) return false;
+        try {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+            
+            const prefix = hashHex.slice(0, 5);
+            const suffix = hashHex.slice(5);
+            
+            const response = await fetch('https://api.pwnedpasswords.com/range/' + prefix);
+            if (!response.ok) return false; // Fail open
+            
+            const text = await response.text();
+            const hashes = text.split('\n');
+            
+            for (let i = 0; i < hashes.length; i++) {
+                const line = hashes[i].trim();
+                if (line.startsWith(suffix)) {
+                    return true; // Password is compromised
+                }
+            }
+            return false;
+        } catch (e) {
+            console.warn('HIBP check failed:', e);
+            return false; // Fail open if API is unreachable
+        }
     },
 
     /**

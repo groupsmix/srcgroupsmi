@@ -18,7 +18,7 @@ const TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/sit
  * @param {string} [ip]      - Optional client IP for additional validation.
  * @returns {Promise<{ success: boolean, error?: string }>}
  */
-export async function verifyTurnstile(token, secretKey, ip) {
+export async function verifyTurnstile(token: string | undefined | null, secretKey: string | undefined | null, ip?: string | null): Promise<{ success: boolean, error?: string }> {
     if (!token || typeof token !== 'string') {
         return { success: false, error: 'Missing CAPTCHA token' };
     }
@@ -33,18 +33,23 @@ export async function verifyTurnstile(token, secretKey, ip) {
     if (ip) formData.append('remoteip', ip);
 
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
         const res = await fetch(TURNSTILE_VERIFY_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: formData.toString()
+            body: formData.toString(),
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (!res.ok) {
             console.error('Turnstile API returned HTTP', res.status);
             return { success: false, error: 'CAPTCHA verification failed' };
         }
 
-        const data = await res.json();
+        const data: any = await res.json();
 
         if (!data.success) {
             const codes = (data['error-codes'] || []).join(', ');
@@ -53,7 +58,7 @@ export async function verifyTurnstile(token, secretKey, ip) {
         }
 
         return { success: true };
-    } catch (err) {
+    } catch (err: any) {
         console.error('Turnstile verification error:', err.message || err);
         return { success: false, error: 'CAPTCHA verification failed' };
     }

@@ -4,6 +4,16 @@
 // ═══════════════════════════════════════
 // MODULE 15: Global Init
 // ═══════════════════════════════════════
+(function setupConsoleGate() {
+    // Disable console.log in production to prevent leaking state/data
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        var noop = function() {};
+        console.log = noop;
+        console.info = noop;
+        // We keep console.warn and console.error active for Sentry / debugging
+    }
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
     Theme.init();
     Security.init();

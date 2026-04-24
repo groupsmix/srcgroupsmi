@@ -12,6 +12,7 @@
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
 import { checkRateLimit } from './_shared/rate-limit.js';
 import { verifyTurnstile } from './_shared/turnstile.js';
+import { validateEmail } from './_shared/email-validator.js';
 
 /** CORS headers with Content-Type for JSON responses */
 function corsHeaders(origin) {
@@ -20,12 +21,6 @@ function corsHeaders(origin) {
 
 /* ── Rate limit config ── */
 const SUBSCRIBE_LIMIT = { window: 60000, max: 5 };
-
-/* ── Email validation ────────────────────────────────────────────── */
-function isValidEmail(email) {
-    if (!email || typeof email !== 'string') return false;
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-}
 
 /* ── Sanitize input ──────────────────────────────────────────────── */
 function sanitize(str) {
@@ -83,7 +78,7 @@ export async function onRequest(context) {
     }
 
     // Turnstile CAPTCHA verification
-    const turnstileToken = body['cf-turnstile-response'] || body.turnstileToken || '';
+    const turnstileToken = body?.['cf-turnstile-response'] || body?.turnstileToken || '';
     const turnstileResult = await verifyTurnstile(turnstileToken, env?.TURNSTILE_SECRET_KEY, ip);
     if (!turnstileResult.success) {
         return new Response(
@@ -97,10 +92,10 @@ export async function onRequest(context) {
     const name = sanitize(body.name || '');
     const source = sanitize(body.source || 'website');
 
-    // Validate email
-    if (!isValidEmail(email)) {
+    const emailError = validateEmail(email);
+    if (emailError) {
         return new Response(
-            JSON.stringify({ ok: false, error: 'Invalid email address' }),
+            JSON.stringify({ ok: false, error: emailError }),
             { status: 422, headers: corsHeaders(origin) }
         );
     }

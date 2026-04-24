@@ -19,6 +19,8 @@
 
 import { wrapUserInput, withUserInputDirective } from './_shared/prompt-safety.js';
 import { moderateOutput } from './_shared/moderation.js';
+import { capMaxTokens } from './_shared/ai-limits.js';
+import { shouldAttempt, recordSuccess, recordFailure } from './_shared/circuit-breaker.js';
 
 /* ── Allowed origins for CORS ───────────────────────────────────── */
 const ALLOWED_ORIGINS = [
@@ -107,8 +109,14 @@ function quickSpamCheck(text) {
 // server. `userBlock` is pre-wrapped user-supplied content (delimited via
 // wrapUserInput). Callers must keep untrusted data inside the delimited
 // block so the model never sees it as an instruction.
-async function callAI(apiKey, systemInstructions, userBlock, maxTokens) {
+async function callAI(apiKey, systemInstructions, userBlock, maxTokens, env) {
     maxTokens = maxTokens || 300;
+    const providerName = 'openrouter';
+    if (!await shouldAttempt(env, providerName)) {
+        console.warn('jobs-ai: OpenRouter circuit breaker open');
+        return null;
+    }
+
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -123,16 +131,18 @@ async function callAI(apiKey, systemInstructions, userBlock, maxTokens) {
                 { role: 'system', content: withUserInputDirective(systemInstructions) },
                 { role: 'user', content: userBlock }
             ],
-            max_tokens: maxTokens,
+            max_tokens: capMaxTokens(maxTokens),
             temperature: 0.3
         })
     });
 
     if (!res.ok) {
+        await recordFailure(env, providerName);
         console.warn('OpenRouter API returned', res.status);
         return null;
     }
 
+    await recordSuccess(env, providerName);
     const data = await res.json();
     const content = data.choices && data.choices[0] && data.choices[0].message
         ? data.choices[0].message.content
@@ -158,7 +168,7 @@ function parseAIJSON(content) {
 }
 
 /* ── ACTION: validate (AI Gatekeeper) ─────────────────────────── */
-async function handleValidate(body, apiKey) {
+async function handleValidate(body, apiKey, env) {
     const title = (body.title || '').trim();
     const description = (body.description || '').trim();
 
@@ -189,7 +199,7 @@ async function handleValidate(body, apiKey) {
         'Job Title: ' + title + '\nDescription: ' + description
     );
 
-    const aiContent = await callAI(apiKey, systemInstructions, userBlock, 150);
+    const aiContent = await callAI(apiKey, systemInstructions, userBlock, 150, env);
     const result = parseAIJSON(aiContent);
 
     if (!result) {
@@ -229,7 +239,7 @@ async function handleEnhance(body, apiKey, env) {
         'Original title: ' + title + (description ? '\nOriginal description: ' + description : '')
     );
 
-    const aiContent = await callAI(apiKey, systemInstructions, userBlock, 500);
+    const aiContent = await callAI(apiKey, systemInstructions, userBlock, 500, env);
 
     if (!aiContent) {
         return { enhanced: false, message: 'AI enhancement failed. Please try again.', description: description };
@@ -253,7 +263,7 @@ async function handleEnhance(body, apiKey, env) {
         'Respond with ONLY a JSON array, e.g.: ["javascript", "react", "ui design"]';
     const skillsBlock = wrapUserInput(aiContent);
 
-    const skillsContent = await callAI(apiKey, skillsSystem, skillsBlock, 100);
+    const skillsContent = await callAI(apiKey, skillsSystem, skillsBlock, 100, env);
     let skills = [];
     try {
         const parsed = JSON.parse(skillsContent.replace(/```json?\s*/g, '').replace(/```/g, '').trim());
@@ -271,7 +281,7 @@ async function handleEnhance(body, apiKey, env) {
 }
 
 /* ── ACTION: categorize (Auto-classification) ─────────────────── */
-async function handleCategorize(body, apiKey) {
+async function handleCategorize(body, apiKey, env) {
     const title = (body.title || '').trim();
     const description = (body.description || '').trim();
 
@@ -292,7 +302,7 @@ async function handleCategorize(body, apiKey) {
         'Job Title: ' + title + (description ? '\nDescription: ' + description.substring(0, 200) : '')
     );
 
-    const aiContent = await callAI(apiKey, systemInstructions, userBlock, 50);
+    const aiContent = await callAI(apiKey, systemInstructions, userBlock, 50, env);
     const result = parseAIJSON(aiContent);
 
     const validCategories = ['design', 'programming', 'marketing', 'writing', 'community', 'other'];
@@ -304,7 +314,7 @@ async function handleCategorize(body, apiKey) {
 }
 
 /* ── ACTION: match (Smart Matching) ───────────────────────────── */
-async function handleMatch(body, apiKey) {
+async function handleMatch(body, apiKey, env) {
     const userSkills = body.skills || [];
     const jobTitle = (body.job_title || '').trim();
     const jobDescription = (body.job_description || '').trim();
@@ -344,7 +354,7 @@ async function handleMatch(body, apiKey) {
             'Job Description (first 300 chars): ' + jobDescription.substring(0, 300)
         );
 
-        const aiContent = await callAI(apiKey, systemInstructions, userBlock, 80);
+        const aiContent = await callAI(apiKey, systemInstructions, userBlock, 80, env);
         const result = parseAIJSON(aiContent);
 
         if (result && typeof result.score === 'number') {
@@ -412,16 +422,16 @@ export async function onRequest(context) {
         let result;
         switch (action) {
             case 'validate':
-                result = await handleValidate(body, apiKey);
+                result = await handleValidate(body, apiKey, context.env || {});
                 break;
             case 'enhance':
                 result = await handleEnhance(body, apiKey, context.env || {});
                 break;
             case 'categorize':
-                result = await handleCategorize(body, apiKey);
+                result = await handleCategorize(body, apiKey, context.env || {});
                 break;
             case 'match':
-                result = await handleMatch(body, apiKey);
+                result = await handleMatch(body, apiKey, context.env || {});
                 break;
             default:
                 result = { error: 'Unknown action' };

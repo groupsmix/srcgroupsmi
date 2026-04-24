@@ -29,30 +29,29 @@ const OPEN_COOLDOWN_MS = 30_000;
 /** KV TTL — longer than cooldown so half-open probes can read state. */
 const KV_TTL_SECONDS = 300;
 
+export interface BreakerState {
+    state: 'closed' | 'open' | 'half';
+    failures: number[];
+    openedAt: number;
+    nextTry: number;
+}
+
 /* ── In-memory fallback (per isolate) ──────────────────────────── */
-const memState = new Map();
+const memState = new Map<string, BreakerState>();
 
-/**
- * @typedef {object} BreakerState
- * @property {'closed'|'open'|'half'} state
- * @property {number[]} failures   - Timestamps (ms) of recent failures.
- * @property {number} openedAt     - When state became `open`.
- * @property {number} nextTry      - Earliest ms a probe is allowed.
- */
-
-function emptyState() {
+function emptyState(): BreakerState {
     return { state: 'closed', failures: [], openedAt: 0, nextTry: 0 };
 }
 
-function pruneFailures(arr, now) {
+function pruneFailures(arr: number[] | undefined, now: number): number[] {
     return (arr || []).filter((t) => now - t < FAILURE_WINDOW_MS);
 }
 
-function kvKey(provider) {
+function kvKey(provider: string): string {
     return 'cb:' + provider;
 }
 
-async function readState(kv, provider) {
+async function readState(kv: KVNamespace | null, provider: string): Promise<BreakerState> {
     if (!kv) {
         return memState.get(provider) || emptyState();
     }
@@ -72,7 +71,7 @@ async function readState(kv, provider) {
     }
 }
 
-async function writeState(kv, provider, state) {
+async function writeState(kv: KVNamespace | null, provider: string, state: BreakerState): Promise<void> {
     memState.set(provider, state);
     if (!kv) return;
     try {
@@ -82,7 +81,7 @@ async function writeState(kv, provider, state) {
     }
 }
 
-function getKv(env) {
+function getKv(env: any): KVNamespace | null {
     return env && env.RATE_LIMIT_KV ? env.RATE_LIMIT_KV : null;
 }
 
@@ -94,11 +93,11 @@ function getKv(env) {
  * (fail-safe). Returns `false` only when the breaker is open and the
  * cooldown has not elapsed.
  *
- * @param {object} env
+ * @param {any} env
  * @param {string} provider  e.g. 'groq', 'openrouter'
  * @returns {Promise<boolean>}
  */
-export async function shouldAttempt(env, provider) {
+export async function shouldAttempt(env: any, provider: string): Promise<boolean> {
     const kv = getKv(env);
     const state = await readState(kv, provider);
     const now = Date.now();
@@ -119,10 +118,10 @@ export async function shouldAttempt(env, provider) {
  * Record a successful call. Clears the failure history and closes the
  * breaker (half-open → closed).
  *
- * @param {object} env
+ * @param {any} env
  * @param {string} provider
  */
-export async function recordSuccess(env, provider) {
+export async function recordSuccess(env: any, provider: string): Promise<void> {
     const kv = getKv(env);
     const prev = await readState(kv, provider);
     if (prev.state === 'closed' && (!prev.failures || prev.failures.length === 0)) {
@@ -136,10 +135,10 @@ export async function recordSuccess(env, provider) {
  * failures have occurred within `FAILURE_WINDOW_MS`, or immediately
  * re-opens it from half-open.
  *
- * @param {object} env
+ * @param {any} env
  * @param {string} provider
  */
-export async function recordFailure(env, provider) {
+export async function recordFailure(env: any, provider: string): Promise<void> {
     const kv = getKv(env);
     const prev = await readState(kv, provider);
     const now = Date.now();
@@ -174,16 +173,16 @@ export async function recordFailure(env, provider) {
 
 /**
  * Expose current state (for observability / tests). Never throws.
- * @param {object} env
+ * @param {any} env
  * @param {string} provider
  * @returns {Promise<BreakerState>}
  */
-export async function inspectBreaker(env, provider) {
+export async function inspectBreaker(env: any, provider: string): Promise<BreakerState> {
     return await readState(getKv(env), provider);
 }
 
 /** Test-only: reset the in-memory fallback state. */
-export function __resetForTests() {
+export function __resetForTests(): void {
     memState.clear();
 }
 

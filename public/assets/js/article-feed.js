@@ -118,7 +118,7 @@ const _ArticleFeed = {
             bar.querySelectorAll('.category-chip').forEach(chip => {
                 chip.addEventListener('click', () => {
                     if (this._loading) return;
-                    bar.querySelectorAll('.category-chip').forEach(c => c.classList.remove('category-chip--active'));
+                    bar.querySelectorAll('.category-chip').forEach(c => { c.classList.remove('category-chip--active'); });
                     chip.classList.add('category-chip--active');
                     this._currentCategory = chip.dataset.category || null;
                     this._page = 0;
@@ -359,6 +359,7 @@ const _ArticleFeed = {
         // Basic search.
         // F-5: escape user-supplied query for PostgREST + LIKE patterns.
         const ilikeTerm = Security.pgrstIlikeContains(query);
+        const offset = this._page * this._perPage;
         let q = window.supabaseClient
             .from('articles')
             .select('*')
@@ -366,7 +367,7 @@ const _ArticleFeed = {
             .eq('moderation_status', 'approved')
             .or('title.ilike.' + ilikeTerm + ',excerpt.ilike.' + ilikeTerm)
             .order('published_at', { ascending: false })
-            .limit(this._perPage);
+            .range(offset, offset + this._perPage - 1);
 
         if (this._currentCategory) {
             q = q.eq('category', this._currentCategory);

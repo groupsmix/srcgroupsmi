@@ -24,7 +24,7 @@ function makeMockKV() {
 }
 
 function userId(tag) {
-    return 'user-' + tag + '-' + Math.random().toString(36).slice(2, 8);
+    return `user-${tag}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 beforeEach(() => {

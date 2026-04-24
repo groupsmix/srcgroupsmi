@@ -16,6 +16,8 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
+import { capMaxTokens } from './_shared/ai-limits.js';
+import { shouldAttempt, recordSuccess, recordFailure } from './_shared/circuit-breaker.js';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -171,6 +173,15 @@ export async function onRequest(context) {
     }
 
     try {
+        const providerName = 'openrouter';
+        if (!await shouldAttempt(context.env, providerName)) {
+            console.warn('validate-listing: OpenRouter circuit breaker open');
+            return new Response(
+                JSON.stringify({ valid: false, flagged: true, message: 'AI validation temporarily unavailable. Listing queued for manual review.' }),
+                { status: 200, headers: corsHeaders(origin) }
+            );
+        }
+
         const prompt = `You are a content filter for a trusted digital products marketplace. We ONLY allow these product types: templates, bots, scripts, design assets, guides, and tools.
 
 We strictly PROHIBIT:
@@ -200,12 +211,13 @@ Respond with ONLY a JSON object (no markdown, no extra text):
             body: JSON.stringify({
                 model: 'meta-llama/llama-3.1-8b-instruct:free',
                 messages: [{ role: 'user', content: prompt }],
-                max_tokens: 100,
+                max_tokens: capMaxTokens(100),
                 temperature: 0.1
             })
         });
 
         if (!res.ok) {
+            await recordFailure(context.env, providerName);
             console.warn('OpenRouter API returned', res.status);
             // On API error, flag for manual review instead of auto-approving
             return new Response(
@@ -213,6 +225,7 @@ Respond with ONLY a JSON object (no markdown, no extra text):
                 { status: 200, headers: corsHeaders(origin) }
             );
         }
+        await recordSuccess(context.env, providerName);
 
         const data = await res.json();
         const content = data.choices?.[0]?.message?.content || '';

@@ -132,7 +132,9 @@ var _Jobs = (function () {
     function shuffleArray(arr) {
         var shuffled = arr.slice();
         for (var i = shuffled.length - 1; i > 0; i--) {
-            var j = Math.floor(Math.random() * (i + 1));
+            var bytes = new Uint8Array(1);
+            (window.crypto || window.msCrypto).getRandomValues(bytes);
+            var j = bytes[0] % (i + 1);
             var temp = shuffled[i];
             shuffled[i] = shuffled[j];
             shuffled[j] = temp;
@@ -265,10 +267,6 @@ var _Jobs = (function () {
             }
         } else if (job.location_type === 'hybrid') {
             locTag = '<span class="job-card__tag job-card__tag--hybrid">\uD83C\uDFE2 Hybrid</span>';
-        } else if (job.location_type === 'onsite') {
-            locTag = '<span class="job-card__tag job-card__tag--onsite">\uD83D\uDCCD On-Site</span>';
-        } else if (job.is_remote) {
-            locTag = '<span class="job-card__tag job-card__tag--remote">\uD83C\uDF0D Remote</span>';
         }
         if (job.location && (job.location_type === 'onsite' || job.location_type === 'hybrid')) {
             locTag += '<span class="job-card__tag">' + Security.sanitize(job.location) + '</span>';

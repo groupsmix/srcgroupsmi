@@ -92,7 +92,7 @@ export async function onRequest(context) {
         });
     }
 
-    const { action, user_id, article_id, metadata } = body;
+    const { action, user_id, article_id } = body;
 
     // Validate action
     if (!action || !ALLOWED_ACTIONS.includes(action)) {

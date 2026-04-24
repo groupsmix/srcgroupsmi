@@ -60,8 +60,17 @@ function supaFetch(supabaseUrl, supabaseKey, path, options) {
     });
 }
 
+import { capMaxTokens } from './_shared/ai-limits.js';
+import { shouldAttempt, recordSuccess, recordFailure } from './_shared/circuit-breaker.js';
+
 /* ── AI helper ────────────────────────────────────────────────── */
-async function callAI(apiKey, prompt, maxTokens) {
+async function callAI(apiKey, prompt, maxTokens, env) {
+    const providerName = 'openrouter';
+    if (env && !await shouldAttempt(env, providerName)) {
+        console.warn('jobs-board: OpenRouter circuit breaker open');
+        return null;
+    }
+
     maxTokens = maxTokens || 500;
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -74,11 +83,15 @@ async function callAI(apiKey, prompt, maxTokens) {
         body: JSON.stringify({
             model: 'meta-llama/llama-3.1-8b-instruct:free',
             messages: [{ role: 'user', content: prompt }],
-            max_tokens: maxTokens,
+            max_tokens: capMaxTokens(maxTokens),
             temperature: 0.3
         })
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+        if (env) await recordFailure(env, providerName);
+        return null;
+    }
+    if (env) await recordSuccess(env, providerName);
     const data = await res.json();
     const content = data.choices && data.choices[0] && data.choices[0].message
         ? data.choices[0].message.content : '';
@@ -312,7 +325,7 @@ async function handleResumeParser(env, body) {
         '  "summary": "1-2 sentence professional summary"\n' +
         '}';
 
-    const aiContent = await callAI(apiKey, prompt, 800);
+    const aiContent = await callAI(apiKey, prompt, 800, env);
     const parsed = parseAIJSON(aiContent);
 
     if (!parsed) {
@@ -590,7 +603,7 @@ async function handleSkillGap(env, body) {
             'Respond with ONLY a JSON array:\n' +
             '[{"skill": "...", "suggestions": ["suggestion 1", "suggestion 2"]}]';
 
-        const aiContent = await callAI(apiKey, prompt, 400);
+        const aiContent = await callAI(apiKey, prompt, 400, env);
         const parsed = parseAIJSON(aiContent);
         if (parsed && Array.isArray(parsed)) {
             result.suggestions = parsed;

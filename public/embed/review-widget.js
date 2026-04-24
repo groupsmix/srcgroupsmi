@@ -73,7 +73,7 @@
         try {
             var d = new Date(dateStr);
             return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        } catch (e) { return ''; }
+        } catch (_e) { return ''; }
     }
 
     // Avatar color based on name
@@ -94,7 +94,7 @@
                 var parsed = JSON.parse(cached);
                 if (Date.now() - parsed.ts < CACHE_TTL) { callback(null, parsed.data); return; }
             }
-        } catch (e) {}
+        } catch (_e) {}
 
         var xhr = new XMLHttpRequest();
         xhr.open('GET', API_GROUP + '?id=' + encodeURIComponent(groupId));
@@ -103,10 +103,10 @@
                 try {
                     var data = JSON.parse(xhr.responseText);
                     if (data.ok && data.group) {
-                        try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: data.group })); } catch (e) {}
+                        try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: data.group })); } catch (_e) {}
                         callback(null, data.group);
                     } else { callback('Group not found'); }
-                } catch (e) { callback('Parse error'); }
+                } catch (_e) { callback('Parse error'); }
             } else { callback('Fetch error'); }
         };
         xhr.onerror = function() { callback('Network error'); };
@@ -122,7 +122,7 @@
                 var parsed = JSON.parse(cached);
                 if (Date.now() - parsed.ts < CACHE_TTL) { callback(null, parsed.data); return; }
             }
-        } catch (e) {}
+        } catch (_e) {}
 
         var xhr = new XMLHttpRequest();
         xhr.open('GET', BASE + '/embed/reviews-data?id=' + encodeURIComponent(groupId) + '&limit=' + (limit || 5));
@@ -131,10 +131,10 @@
                 try {
                     var data = JSON.parse(xhr.responseText);
                     if (data.ok) {
-                        try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: data })); } catch (e) {}
+                        try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: data })); } catch (_e) {}
                         callback(null, data);
                     } else { callback('No reviews'); }
-                } catch (e) { callback('Parse error'); }
+                } catch (_e) { callback('Parse error'); }
             } else { callback('Fetch error'); }
         };
         xhr.onerror = function() { callback('Network error'); };
@@ -147,7 +147,7 @@
         if (!groupId) return;
 
         var theme = el.getAttribute('data-theme') || 'dark';
-        var maxReviews = parseInt(el.getAttribute('data-max')) || 5;
+        var maxReviews = parseInt(el.getAttribute('data-max'), 10) || 5;
 
         // Show loading state
         el.innerHTML = '<div class="gmx-reviews gmx-reviews--' + esc(theme) + '"><div class="gmx-reviews__loading">Loading reviews...</div></div>';
@@ -182,7 +182,7 @@
         var reviewCount = group.review_count || reviews.length || 0;
         var groupUrl = BASE + '/group?id=' + encodeURIComponent(group.id);
         var reviewUrl = BASE + '/group-reviews?group=' + encodeURIComponent(group.id);
-        var isDark = theme === 'dark';
+        var _isDark = theme === 'dark';
         var accent = '#6366f1';
 
         var html = '<div class="gmx-reviews gmx-reviews--' + esc(theme) + '">';
@@ -246,7 +246,7 @@
         try {
             var img = new Image();
             img.src = BASE + '/api/analytics-event?t=review_widget_impression&gid=' + encodeURIComponent(group.id) + '&r=' + encodeURIComponent(window.location.hostname);
-        } catch (e) {}
+        } catch (_e) {}
     }
 
     // Initialize all review widgets on page

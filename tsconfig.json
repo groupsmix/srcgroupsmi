@@ -1,3 +1,31 @@
 {
-  "extends": "astro/tsconfigs/strict"
+  "compilerOptions": {
+    "types": ["@cloudflare/workers-types"],
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "allowJs": true,
+    "checkJs": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["src/*"]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "functions/api/**/*",
+    "public/assets/js/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

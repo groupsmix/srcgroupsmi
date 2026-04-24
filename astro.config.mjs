@@ -1,8 +1,10 @@
 import { defineConfig } from 'astro/config';
+import preact from '@astrojs/preact';
 
 export default defineConfig({
   site: 'https://groupsmix.com',
   output: 'static',
+  integrations: [preact()],
   build: {
     format: 'directory',
     // Emit every bundled <style> block as an external <link rel="stylesheet">

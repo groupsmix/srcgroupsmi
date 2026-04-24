@@ -1,4 +1,6 @@
 ---
+import Footer from '../components/Footer.astro';
+import NotificationsDropdown from '../components/NotificationsDropdown.jsx';
 interface Props {
   title: string;
   description?: string;
@@ -99,10 +101,15 @@ const {
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <header id="site-header"></header>
     <div id="announcement-bar"></div>
+    <div style="position: absolute; right: 20px; top: 15px; z-index: 1000;">
+        <NotificationsDropdown client:only="preact" />
+    </div>
     <main id="main-content" class={mainClass || undefined} style={mainStyle || undefined}>
         <slot />
     </main>
-    <footer id="site-footer"></footer>
+    <footer id="site-footer">
+        <Footer />
+    </footer>
     <div id="toast-container" class="toast-container" aria-live="polite"></div>
     <div id="modal-container"></div>
     <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>

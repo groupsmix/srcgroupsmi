@@ -33,7 +33,13 @@ export async function handleRecommend(env, body) {
     const result = await callAI(env, messages, 200, 0.3);
     if (!result) {
         // Fallback: return random products
-        const shuffled = [...products].sort(() => Math.random() - 0.5);
+        const shuffled = [...products];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const bytes = new Uint8Array(1);
+            crypto.getRandomValues(bytes);
+            const j = bytes[0] % (i + 1);
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
         return { ok: true, recommended: shuffled.slice(0, 4).map(p => p.id) };
     }
 

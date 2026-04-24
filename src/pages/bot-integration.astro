@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import BotIntegrationsList from '../components/BotIntegrationsList.jsx';
 ---
 <BaseLayout
   title="Bot Integration — GroupsMix"
@@ -268,15 +269,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </div>
     </div>
 
-    <div class="bot-my-integrations" id="my-integrations-section" style="display:none">
-        <h2 style="font-size:var(--text-xl);font-weight:var(--font-bold);margin-bottom:var(--space-4)">Your Integrations</h2>
-        <div id="my-integrations-list"></div>
-    </div>
+    <BotIntegrationsList client:only="preact" />
 </div>
 
 <Fragment slot="scripts">
 <script is:inline>
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', function() {
     // WhatsApp notify button
     document.getElementById('wa-notify-btn').addEventListener('click', function() {
         var email = document.getElementById('wa-notify-email').value.trim();
@@ -287,42 +285,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         UI.toast('You will be notified when WhatsApp integration launches!', 'success');
         document.getElementById('wa-notify-email').value = '';
     });
-
-    // Load user's integrations
-    await Auth.waitForAuth();
-    if (Auth.isLoggedIn()) {
-        loadMyIntegrations();
-    }
-
-    async function loadMyIntegrations() {
-        try {
-            var uid = Auth.getUserId();
-            if (!uid) return;
-            var { data, error } = await window.supabaseClient
-                .from('bot_integrations')
-                .select('*')
-                .eq('owner_uid', uid)
-                .order('created_at', { ascending: false });
-            if (error || !data || !data.length) return;
-
-            document.getElementById('my-integrations-section').style.display = 'block';
-            var list = document.getElementById('my-integrations-list');
-            list.innerHTML = data.map(function(bot) {
-                var platformIcon = bot.platform === 'telegram' ? '&#128172;' : '&#128242;';
-                var statusClass = bot.status === 'active' ? 'background:var(--success);color:#fff' : 'background:var(--warning);color:#000';
-                return '<div class="integration-item">' +
-                    '<span class="integration-item__platform">' + platformIcon + '</span>' +
-                    '<div class="integration-item__info">' +
-                    '<div class="integration-item__name">' + Security.sanitize(bot.platform) + ' Integration</div>' +
-                    '<div class="integration-item__meta">Members: ' + UI.formatNumber(bot.member_count || 0) + ' &middot; Last sync: ' + (bot.last_sync_at ? UI.formatDate(bot.last_sync_at) : 'Never') + '</div>' +
-                    '</div>' +
-                    '<span class="integration-item__status" style="' + statusClass + '">' + Security.sanitize(bot.status) + '</span>' +
-                    '</div>';
-            }).join('');
-        } catch (err) {
-            console.error('loadMyIntegrations:', err);
-        }
-    }
 });
 </script>
 </Fragment>
