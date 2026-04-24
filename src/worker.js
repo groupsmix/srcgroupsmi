@@ -138,6 +138,19 @@ const ROUTES = {
 };
 
 /**
+ * Map an HTTP method onto the name of the corresponding Pages Function
+ * export (e.g. `POST` → `onRequestPost`).
+ */
+const METHOD_EXPORTS = {
+    GET: 'onRequestGet',
+    POST: 'onRequestPost',
+    PUT: 'onRequestPut',
+    DELETE: 'onRequestDelete',
+    PATCH: 'onRequestPatch',
+    OPTIONS: 'onRequestOptions'
+};
+
+/**
  * Map a `Request` + handler module onto the Pages Function export that
  * should serve it. Preserves the Pages behaviour where method-specific
  * exports (`onRequestPost` / `onRequestGet` / `onRequestOptions`) take
@@ -145,28 +158,73 @@ const ROUTES = {
  * produces a 405 when no matching export exists.
  */
 function pickHandler(module, method) {
-    if (method === 'OPTIONS' && typeof module.onRequestOptions === 'function') {
-        return module.onRequestOptions;
-    }
-    if (method === 'GET' && typeof module.onRequestGet === 'function') {
-        return module.onRequestGet;
-    }
-    if (method === 'POST' && typeof module.onRequestPost === 'function') {
-        return module.onRequestPost;
-    }
-    if (method === 'PUT' && typeof module.onRequestPut === 'function') {
-        return module.onRequestPut;
-    }
-    if (method === 'DELETE' && typeof module.onRequestDelete === 'function') {
-        return module.onRequestDelete;
-    }
-    if (method === 'PATCH' && typeof module.onRequestPatch === 'function') {
-        return module.onRequestPatch;
+    const name = METHOD_EXPORTS[method];
+    if (name && typeof module[name] === 'function') {
+        return module[name];
     }
     if (typeof module.onRequest === 'function') {
         return module.onRequest;
     }
     return null;
+}
+
+/**
+ * Compute an accurate `Allow` header value for a module, based on which
+ * method-specific exports (and/or the catch-all `onRequest`) it actually
+ * provides. Required by RFC 7231 §6.5.5 when returning 405.
+ *
+ * If the module exports `onRequest`, the set of accepted methods is
+ * undefined at the Worker layer, so we advertise the common set that the
+ * handlers in this repo honour (`GET, POST, OPTIONS`).
+ */
+function allowedMethods(module) {
+    const methods = new Set();
+    for (const [method, name] of Object.entries(METHOD_EXPORTS)) {
+        if (typeof module[name] === 'function') methods.add(method);
+    }
+    if (typeof module.onRequest === 'function') {
+        methods.add('GET');
+        methods.add('POST');
+        methods.add('OPTIONS');
+    }
+    return Array.from(methods).join(', ');
+}
+
+/**
+ * Security headers that the old `public/_headers` file applied to every
+ * response under the Pages deployment. Workers' Static Assets binding
+ * still honours `_headers` for the assets it serves, but handler
+ * responses (returned by the Worker directly) bypass that pipeline and
+ * must have these merged in explicitly. See `public/_headers:118-135`.
+ *
+ * Handlers are allowed to override any of these (e.g. `Cache-Control`
+ * on `recommendations.js`) by setting the header themselves — this
+ * function only fills in values the handler did NOT already set.
+ */
+const API_SECURITY_HEADERS = {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+    'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+    'Cross-Origin-Resource-Policy': 'same-origin',
+    'Cache-Control': 'no-store'
+};
+
+function withSecurityHeaders(response) {
+    if (!response || typeof response.headers?.set !== 'function') return response;
+    // Clone headers onto a new Response so we don't mutate an immutable
+    // `Response.headers` (e.g. when handlers return a cached response).
+    const headers = new Headers(response.headers);
+    for (const [name, value] of Object.entries(API_SECURITY_HEADERS)) {
+        if (!headers.has(name)) headers.set(name, value);
+    }
+    return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers
+    });
 }
 
 /**
@@ -202,8 +260,11 @@ function buildPagesContext(request, env, ctx) {
  * wrangler.toml and the §Manual cron invocation section of RUNBOOK.md.
  */
 const CRON_DISPATCH = {
-    // Feed algorithm — trending scores, every 30 minutes
-    '*/30 * * * *': { path: '/api/compute-feed', method: 'POST', body: '{}' },
+    // Feed algorithm — trending scores, every 30 minutes. Pinned to the
+    // `trending` job so we don't also fan out to collaborative /
+    // embeddings / decay / cleanup on every tick (those have different
+    // recommended cadences — see compute-feed.js docstring).
+    '*/30 * * * *': { path: '/api/compute-feed', method: 'POST', body: '{"job":"trending"}' },
     // Scheduled article publishing — every 5 minutes
     '*/5 * * * *':  { path: '/api/article-schedule', method: 'GET' },
     // Weekly newsletter digest — Mondays at 13:00 UTC
@@ -262,18 +323,19 @@ export default {
         if (module) {
             const handler = pickHandler(module, request.method);
             if (!handler) {
-                return new Response('Method Not Allowed', {
+                return withSecurityHeaders(new Response('Method Not Allowed', {
                     status: 405,
-                    headers: { Allow: 'GET, POST, OPTIONS' }
-                });
+                    headers: { Allow: allowedMethods(module) }
+                }));
             }
 
             const context = buildPagesContext(request, env, ctx);
             try {
-                return await handler(context);
+                const response = await handler(context);
+                return withSecurityHeaders(response);
             } catch (err) {
                 console.error('worker fetch error:', url.pathname, err && err.stack ? err.stack : err);
-                return new Response('Internal Server Error', { status: 500 });
+                return withSecurityHeaders(new Response('Internal Server Error', { status: 500 }));
             }
         }
 
