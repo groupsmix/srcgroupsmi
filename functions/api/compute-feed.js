@@ -23,6 +23,17 @@
  */
 
 import { corsHeaders as _sharedCorsHeaders, } from './_shared/cors.js';
+import { timingSafeEqualHex } from './_shared/webhook-verify.js';
+import { captureEdgeException } from './_shared/sentry.js';
+import { z } from 'zod';
+
+const computeSchema = z.object({
+    job: z.enum(['trending', 'collaborative', 'decay', 'embeddings', 're-engagement', 'cleanup', 'all']).optional().default('all'),
+    hours: z.number().int().positive().optional().default(6),
+    min_co_occurrence: z.number().int().positive().optional().default(2),
+    decay_factor: z.number().positive().max(1).optional().default(0.95),
+    inactive_days: z.number().int().positive().optional().default(7)
+}).passthrough();
 
 function corsHeaders(origin) {
     return _sharedCorsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -196,22 +207,27 @@ export async function onRequest(context) {
         return jsonResponse({ ok: false, error: 'Service not configured' }, 503, origin);
     }
     const providedSecret = request.headers.get('X-Cron-Secret') || '';
-    if (providedSecret !== cronSecret) {
+    if (!timingSafeEqualHex(providedSecret, cronSecret)) {
         return jsonResponse({ ok: false, error: 'Unauthorized' }, 401, origin);
     }
 
     let body;
     try {
-        body = await request.json();
+        const rawBody = await request.json();
+        const validation = computeSchema.safeParse(rawBody);
+        if (!validation.success) {
+            return jsonResponse({ ok: false, error: 'Validation failed' }, 400, origin);
+        }
+        body = validation.data;
     } catch (_e) {
-        body = {};
+        body = computeSchema.parse({});
     }
 
-    const job = body.job || 'all';
-    const hours = parseInt(body.hours, 10) || 6;
-    const minCoOccurrence = parseInt(body.min_co_occurrence, 10) || 2;
-    const decayFactor = parseFloat(body.decay_factor) || 0.95;
-    const inactiveDays = parseInt(body.inactive_days, 10) || 7;
+    const job = body.job;
+    const hours = body.hours;
+    const minCoOccurrence = body.min_co_occurrence;
+    const decayFactor = body.decay_factor;
+    const inactiveDays = body.inactive_days;
 
     try {
         const results = [];
@@ -257,6 +273,10 @@ export async function onRequest(context) {
 
     } catch (err) {
         console.error('compute-feed error:', err);
+        context.waitUntil(captureEdgeException(env, err, {
+            request: request,
+            tags: { endpoint: 'compute-feed', job: body?.job || 'unknown' }
+        }));
         return jsonResponse({ ok: false, error: 'Internal error' }, 500, origin);
     }
 }

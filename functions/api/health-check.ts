@@ -13,6 +13,12 @@
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors';
 import { checkRateLimit, RateLimitConfig } from './_shared/rate-limit';
+import { PagesContext } from './_shared/types';
+import { z } from 'zod';
+
+const healthCheckSchema = z.object({
+    url: z.string().url("Invalid URL format").min(1)
+}).passthrough();
 
 function corsHeaders(origin: string | null): Record<string, string> {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -119,7 +125,7 @@ function analyzeResponse(httpStatus: number, body: string, platform: string): st
 }
 
 /* ── Main handler ── */
-export async function onRequest(context: any): Promise<Response> {
+export async function onRequest(context: PagesContext): Promise<Response> {
     const { request } = context;
     const origin = request.headers.get('Origin') || null;
 
@@ -147,7 +153,15 @@ export async function onRequest(context: any): Promise<Response> {
 
     let body: any;
     try {
-        body = await request.json();
+        const rawBody = await request.json();
+        const validation = healthCheckSchema.safeParse(rawBody);
+        if (!validation.success) {
+            return new Response(
+                JSON.stringify({ ok: false, error: validation.error.errors[0].message }),
+                { status: 400, headers: corsHeaders(origin) }
+            );
+        }
+        body = validation.data;
     } catch {
         return new Response(
             JSON.stringify({ ok: false, error: 'Invalid JSON' }),
@@ -156,12 +170,6 @@ export async function onRequest(context: any): Promise<Response> {
     }
 
     const url = body.url;
-    if (!url || typeof url !== 'string') {
-        return new Response(
-            JSON.stringify({ ok: false, error: 'Missing url field' }),
-            { status: 400, headers: corsHeaders(origin) }
-        );
-    }
 
     // Validate URL format
     let parsedUrl: URL;

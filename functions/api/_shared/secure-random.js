@@ -85,3 +85,21 @@ export function secureRandomHex(length) {
     }
     return out.slice(0, n);
 }
+
+/**
+ * Constant-time equality check for two strings of equal length.
+ * Falls back to `false` for length mismatches without leaking which side differs.
+ *
+ * @param {string} a
+ * @param {string} b
+ * @returns {boolean}
+ */
+export function timingSafeEqual(a, b) {
+    if (typeof a !== 'string' || typeof b !== 'string') return false;
+    if (a.length !== b.length) return false;
+    let diff = 0;
+    for (let i = 0; i < a.length; i++) {
+        diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return diff === 0;
+}

@@ -20,6 +20,13 @@
 import { handlePreflight } from './_shared/cors.js';
 import { errorResponse, successResponse } from './_shared/response.js';
 import { getSupabaseConfig } from './_shared/config.js';
+import { timingSafeEqualHex } from './_shared/webhook-verify.js';
+import { captureEdgeException } from './_shared/sentry.js';
+import { z } from 'zod';
+
+const purgeSchema = z.object({
+    limit: z.number().int().min(1).max(5000).optional()
+}).passthrough();
 
 async function callRpc(url, serviceKey, fnName, params) {
     const res = await fetch(url + '/rest/v1/rpc/' + fnName, {
@@ -80,7 +87,7 @@ export async function onRequest(context) {
     }
 
     const presented = request.headers.get('X-Cron-Secret') || '';
-    if (presented !== cronSecret) {
+    if (!timingSafeEqualHex(presented, cronSecret)) {
         return errorResponse('Unauthorized', 401, origin);
     }
 
@@ -95,16 +102,21 @@ export async function onRequest(context) {
     let limit = 500;
     try {
         const body = await request.json();
-        if (body && Number.isFinite(body.limit)) {
-            limit = Math.max(1, Math.min(5000, Math.floor(body.limit)));
+        const validation = purgeSchema.safeParse(body);
+        if (validation.success && validation.data.limit) {
+            limit = validation.data.limit;
         }
     } catch {
-        // No body is fine — use the default.
+        // No body or invalid JSON is fine — use the default limit of 500.
     }
 
     const started = Date.now();
     const rpc = await callRpc(cfg.url, cfg.serviceKey, 'purge_soft_deleted_users', { p_limit: limit });
     if (!rpc.ok) {
+        context.waitUntil(captureEdgeException(env, new Error('purge_soft_deleted_users failed: ' + rpc.error), {
+            request: request,
+            tags: { endpoint: 'purge-deleted' }
+        }));
         return errorResponse('Purge failed', 500, origin);
     }
 

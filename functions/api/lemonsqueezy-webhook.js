@@ -35,6 +35,19 @@
  */
 
 import { verifyHmacSignature } from './_shared/webhook-verify.js';
+import { z } from 'zod';
+
+const lsWebhookSchema = z.object({
+    meta: z.object({
+        event_name: z.string(),
+        custom_data: z.record(z.any()).optional()
+    }).passthrough(),
+    data: z.object({
+        id: z.string().or(z.number()).transform(String),
+        type: z.string(),
+        attributes: z.record(z.any())
+    }).passthrough()
+}).passthrough();
 
 /* ── Constants ───────────────────────────────────────────────── */
 const CACHE_KEY = 'ls_products_cache';
@@ -541,7 +554,13 @@ export async function onRequest(context) {
     // Parse the webhook payload
     let payload;
     try {
-        payload = JSON.parse(rawBody);
+        const rawJson = JSON.parse(rawBody);
+        const validation = lsWebhookSchema.safeParse(rawJson);
+        if (!validation.success) {
+            console.error('Invalid LemonSqueezy payload schema:', validation.error);
+            return jsonResponse({ ok: false, error: 'Validation failed' }, 400);
+        }
+        payload = validation.data;
     } catch (_e) {
         return jsonResponse({ ok: false, error: 'Invalid JSON' }, 400);
     }

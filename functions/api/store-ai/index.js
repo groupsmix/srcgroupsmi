@@ -33,10 +33,22 @@ import { handleRecommend } from './_helpers/recommend.js';
 import { handleEnhanceDesc, handleListingQuality, handleSmartPricing } from './_helpers/seller-tools.js';
 import { handleBundles, handleFrequentlyBought, handlePurchaseRecommendations } from './_helpers/cross-sell.js';
 import { handleDispute, handleFlashSales, handleOffers, handleReviewVerification, handleSellerTrust, handleWishlistAlerts } from './_helpers/marketplace-ops.js';
+import { z } from 'zod';
 
 function corsHeaders(origin) {
     return _corsHeaders(origin);
 }
+
+/* ── Input validation ────────────────────────────────────────── */
+const storeAiSchema = z.object({
+    action: z.enum([
+        'search', 'recommend', 'enhance-desc', 'bundles',
+        'seller-trust', 'smart-pricing', 'listing-quality',
+        'purchase-recommendations', 'offers', 'dispute',
+        'flash-sales', 'review-verification', 'frequently-bought',
+        'wishlist-alerts'
+    ])
+}).passthrough(); // pass through because each helper expects varying body parameters
 
 export async function onRequest(context) {
     const { request, env } = context;
@@ -61,7 +73,13 @@ export async function onRequest(context) {
         return errorResponse('Invalid JSON', 400, origin);
     }
 
-    const action = (body.action || '').trim();
+    const validation = storeAiSchema.safeParse(body);
+    if (!validation.success) {
+        return errorResponse('Validation failed: ' + validation.error.errors.map(e => e.message).join(', '), 400, origin);
+    }
+    body = validation.data;
+
+    const action = body.action;
     let result;
 
     switch (action) {

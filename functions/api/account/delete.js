@@ -20,6 +20,13 @@ import { errorResponse, successResponse } from '../_shared/response.js';
 import { getSupabaseConfig } from '../_shared/config.js';
 import { checkRateLimit } from '../_shared/rate-limit.js';
 import { verifyTurnstile } from '../_shared/turnstile.js';
+import { z } from 'zod';
+
+const deleteSchema = z.object({
+    password: z.string().min(1, "Password is required"),
+    turnstileToken: z.string().optional(),
+    confirm: z.literal("DELETE", { errorMap: () => ({ message: 'Confirmation phrase must be "DELETE"' }) })
+}).passthrough();
 
 async function reauthenticate(url, anonKey, email, password) {
     try {
@@ -136,16 +143,16 @@ export async function onRequest(context) {
         return errorResponse('Invalid JSON body', 400, origin);
     }
 
-    const password = typeof body?.password === 'string' ? body.password : '';
-    const turnstileToken = typeof body?.turnstileToken === 'string' ? body.turnstileToken : '';
-    const confirm = typeof body?.confirm === 'string' ? body.confirm : '';
+    const validation = deleteSchema.safeParse(body);
+    if (!validation.success) {
+        const errorMsg = validation.error.errors.map(e => e.message).join(', ');
+        return errorResponse(errorMsg, 400, origin);
+    }
+    body = validation.data;
 
-    if (confirm !== 'DELETE') {
-        return errorResponse('Confirmation phrase must be "DELETE"', 400, origin);
-    }
-    if (!password) {
-        return errorResponse('Password is required to delete your account', 400, origin);
-    }
+    const password = body.password;
+    const turnstileToken = body.turnstileToken || '';
+    const confirm = body.confirm;
 
     const captcha = await verifyTurnstile(turnstileToken, env?.TURNSTILE_SECRET_KEY, ip);
     if (!captcha.success) {

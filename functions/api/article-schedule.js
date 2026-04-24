@@ -19,6 +19,13 @@
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors.js';
 import { requireAuth } from './_shared/auth.js';
 import { timingSafeEqualHex } from './_shared/webhook-verify.js';
+import { captureEdgeException } from './_shared/sentry.js';
+import { z } from 'zod';
+
+const scheduleSchema = z.object({
+    article_id: z.string().min(1),
+    scheduled_at: z.string().datetime()
+}).passthrough();
 
 function corsHeaders(origin) {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
@@ -45,7 +52,7 @@ export async function onRequest(context) {
             );
         }
         const presented = request.headers.get('X-Cron-Secret') || '';
-        if (presented !== cronSecret) {
+        if (!timingSafeEqualHex(presented, cronSecret)) {
             return new Response(
                 JSON.stringify({ ok: false, error: 'Unauthorized' }),
                 { status: 401, headers: corsHeaders(origin) }
@@ -96,6 +103,10 @@ export async function onRequest(context) {
             if (!res.ok) {
                 const errText = await res.text();
                 console.error('publish_scheduled_articles error:', res.status, errText);
+                context.waitUntil(captureEdgeException(env, new Error('publish_scheduled_articles RPC failed: ' + errText), {
+                    request: request,
+                    tags: { endpoint: 'article-schedule', mode: 'cron' }
+                }));
                 return new Response(
                     JSON.stringify({ ok: false, error: 'Failed to publish scheduled articles' }),
                     { status: 500, headers: corsHeaders(origin) }
@@ -113,15 +124,25 @@ export async function onRequest(context) {
             const authResult = await requireAuth(request, env, corsHeaders(origin));
             if (authResult instanceof Response) return authResult;
 
-            const body = await request.json();
-            const { article_id, scheduled_at } = body;
-
-            if (!article_id || !scheduled_at) {
+            let body;
+            try {
+                const rawBody = await request.json();
+                const validation = scheduleSchema.safeParse(rawBody);
+                if (!validation.success) {
+                    return new Response(
+                        JSON.stringify({ ok: false, error: 'Validation failed', details: validation.error.errors }),
+                        { status: 400, headers: corsHeaders(origin) }
+                    );
+                }
+                body = validation.data;
+            } catch {
                 return new Response(
-                    JSON.stringify({ ok: false, error: 'Missing article_id or scheduled_at' }),
+                    JSON.stringify({ ok: false, error: 'Invalid JSON body' }),
                     { status: 400, headers: corsHeaders(origin) }
                 );
             }
+
+            const { article_id, scheduled_at } = body;
 
             // Validate scheduled_at is in the future
             const schedDate = new Date(scheduled_at);
@@ -187,6 +208,10 @@ export async function onRequest(context) {
 
     } catch (err) {
         console.error('article-schedule error:', err);
+        context.waitUntil(captureEdgeException(env, err, {
+            request: request,
+            tags: { endpoint: 'article-schedule', method: request.method }
+        }));
         return new Response(
             JSON.stringify({ ok: false, error: 'Internal server error' }),
             { status: 500, headers: corsHeaders(origin) }

@@ -75,8 +75,10 @@ import * as accountExport from '../functions/api/account/export.js';
 import * as accountPreferences from '../functions/api/account/preferences.js';
 
 // ── Non-/api handlers ──────────────────────────────────────────────
-import * as gmCtrlX7 from '../functions/gm-ctrl-x7.js';
 import * as sitemap from '../functions/sitemap.xml.js';
+
+// ── Middleware ─────────────────────────────────────────────────────
+import * as adminGate from '../functions/api/_shared/admin-gate.js';
 
 /**
  * Route table: pathname → handler module.
@@ -133,7 +135,6 @@ const ROUTES = {
     '/api/account/export': accountExport,
     '/api/account/preferences': accountPreferences,
 
-    '/gm-ctrl-x7': gmCtrlX7,
     '/sitemap.xml': sitemap
 };
 
@@ -167,6 +168,24 @@ function pickHandler(module, method) {
         return module.onRequest;
     }
     return null;
+}
+
+/**
+ * Compute the allowed methods for a handler module to correctly populate
+ * the Allow header on a 405 response (RFC 7231 §6.5.5).
+ */
+function getAllowedMethods(module) {
+    if (typeof module.onRequest === 'function') {
+        return 'GET, POST, PUT, DELETE, PATCH, OPTIONS';
+    }
+    const allowed = [];
+    if (typeof module.onRequestGet === 'function') allowed.push('GET');
+    if (typeof module.onRequestPost === 'function') allowed.push('POST');
+    if (typeof module.onRequestPut === 'function') allowed.push('PUT');
+    if (typeof module.onRequestDelete === 'function') allowed.push('DELETE');
+    if (typeof module.onRequestPatch === 'function') allowed.push('PATCH');
+    if (typeof module.onRequestOptions === 'function') allowed.push('OPTIONS');
+    return allowed.length > 0 ? allowed.join(', ') : 'GET, POST, OPTIONS';
 }
 
 /**
@@ -257,14 +276,30 @@ async function runCron(cronSpec, env, ctx) {
 export default {
     async fetch(request, env, ctx) {
         const url = new URL(request.url);
+        
+        // C2, H1, M1: Intercept /admin/* requests with the server-side admin gate
+        if (url.pathname.startsWith('/admin/') || url.pathname === '/admin') {
+            const context = buildPagesContext(request, env, ctx);
+            // Change next() so that on success, we proxy to the static asset
+            context.next = () => env.ASSETS.fetch(request);
+            
+            try {
+                return await adminGate.onRequest(context);
+            } catch (err) {
+                console.error('admin-gate middleware error:', url.pathname, err && err.stack ? err.stack : err);
+                return new Response('Internal Server Error', { status: 500 });
+            }
+        }
+
         const module = ROUTES[url.pathname];
 
         if (module) {
             const handler = pickHandler(module, request.method);
             if (!handler) {
+                const allow = getAllowedMethods(module);
                 return new Response('Method Not Allowed', {
                     status: 405,
-                    headers: { Allow: 'GET, POST, OPTIONS' }
+                    headers: { Allow: allow }
                 });
             }
 

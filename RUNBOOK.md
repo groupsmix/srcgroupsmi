@@ -52,6 +52,7 @@ the prod Supabase project. Substitute the real slugs from your
 
 - **Cloudflare Pages** → `gm-prod` project: deploys, Functions
   invocation logs, error rate.
+- `gm-ctrl-x7` endpoint and `functions/gm-ctrl-x7.js` have been retired and replaced by `/admin/*`. The server-side admin gate logic now protects `/admin/*` directly via `src/worker.js`.
 - **Cloudflare Analytics** → zone `groupsmix.com`: edge status codes,
   cache hit ratio, bot score distribution.
 - **Supabase** → `gm-prod-supabase`: Database → Reports (connections,

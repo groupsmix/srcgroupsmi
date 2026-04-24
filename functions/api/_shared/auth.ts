@@ -5,8 +5,10 @@
  * Returns the authenticated user object or null if verification fails.
  */
 
+import { WorkerEnv, SupabaseUser, SupabaseProfile } from './types';
+
 export interface AuthResult {
-    user: any;
+    user: SupabaseUser;
     token: string;
 }
 
@@ -18,9 +20,10 @@ export interface AuthWithOwnershipResult extends AuthResult {
  * Extract the Bearer token from the Authorization header.
  * Also checks for the token in cookies (sb-access-token) as a fallback.
  * @param {Request} request
+ * @param {WorkerEnv} [env]
  * @returns {string|null}
  */
-export function extractToken(request: Request): string | null {
+export function extractToken(request: Request, env?: WorkerEnv): string | null {
     const authHeader = request.headers.get('Authorization');
     if (authHeader && authHeader.startsWith('Bearer ')) {
         return authHeader.slice(7).trim();
@@ -28,7 +31,22 @@ export function extractToken(request: Request): string | null {
 
     // Fallback: check cookies for Supabase session token
     const cookies = request.headers.get('Cookie') || '';
-    const match = cookies.match(/sb-[^=]+-auth-token=([^;]+)/);
+    let cookieNameRegex = /sb-[^=]+-auth-token(?:[.=0-9]*)?=([^;]+)/;
+
+    // Defence-in-depth: match the exact cookie name based on SUPABASE_URL
+    if (env?.SUPABASE_URL) {
+        try {
+            const host = new URL(env.SUPABASE_URL).hostname;
+            const ref = host.split('.')[0];
+            if (ref) {
+                cookieNameRegex = new RegExp(`sb-${ref}-auth-token(?:[.=0-9]*)?=([^;]+)`);
+            }
+        } catch (_e) {
+            // Fallback to wildcard if URL parsing fails
+        }
+    }
+
+    const match = cookies.match(cookieNameRegex);
     if (match) {
         try {
             const parsed = JSON.parse(decodeURIComponent(match[1]));
@@ -46,10 +64,10 @@ export function extractToken(request: Request): string | null {
 /**
  * Verify a Supabase JWT access token by calling the Auth /user endpoint.
  * @param {string | null} accessToken
- * @param {any} [env] - Environment variables (optional, for custom Supabase URL/key)
- * @returns {Promise<any|null>} The user object if valid, null otherwise.
+ * @param {WorkerEnv} [env] - Environment variables (optional, for custom Supabase URL/key)
+ * @returns {Promise<SupabaseUser|null>} The user object if valid, null otherwise.
  */
-export async function verifyToken(accessToken: string | null, env?: any): Promise<any | null> {
+export async function verifyToken(accessToken: string | null, env?: WorkerEnv): Promise<SupabaseUser | null> {
     if (!accessToken) return null;
 
     const url = env && env.SUPABASE_URL;
@@ -90,12 +108,12 @@ export async function verifyToken(accessToken: string | null, env?: any): Promis
  *   const { user, token } = authResult;
  *
  * @param {Request} request
- * @param {any} env
+ * @param {WorkerEnv} env
  * @param {Record<string, string>} headers - CORS headers to include in 401 response
  * @returns {Promise<Response | AuthResult>}
  */
-export async function requireAuth(request: Request, env: any, headers: Record<string, string>): Promise<Response | AuthResult> {
-    const token = extractToken(request);
+export async function requireAuth(request: Request, env: WorkerEnv, headers: Record<string, string>): Promise<Response | AuthResult> {
+    const token = extractToken(request, env);
     if (!token) {
         return new Response(
             JSON.stringify({ ok: false, error: 'Authentication required' }),
@@ -119,12 +137,12 @@ export async function requireAuth(request: Request, env: any, headers: Record<st
  * Combines JWT verification with profile lookup and ownership check in one call.
  *
  * @param {Request} request
- * @param {any} env
+ * @param {WorkerEnv} env
  * @param {Record<string, string>} headers - CORS headers
  * @param {string} claimedUserId - The user_id from the request body/params to verify ownership of
  * @returns {Promise<Response | AuthWithOwnershipResult>}
  */
-export async function requireAuthWithOwnership(request: Request, env: any, headers: Record<string, string>, claimedUserId: string): Promise<Response | AuthWithOwnershipResult> {
+export async function requireAuthWithOwnership(request: Request, env: WorkerEnv, headers: Record<string, string>, claimedUserId: string): Promise<Response | AuthWithOwnershipResult> {
     const authResult = await requireAuth(request, env, headers);
     if (authResult instanceof Response) return authResult;
 
@@ -152,8 +170,8 @@ export async function requireAuthWithOwnership(request: Request, env: any, heade
             url + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authId) + '&select=id&limit=1',
             { headers: { 'apikey': serviceKey, 'Authorization': 'Bearer ' + serviceKey } }
         );
-        const profiles: any = await profileRes.json();
-        if (profiles?.length) {
+        const profiles: SupabaseProfile[] = await profileRes.json();
+        if (profiles && profiles.length > 0) {
             internalUserId = profiles[0].id;
             if (env?.STORE_KV) {
                 // Cache for 300 seconds (5 minutes)
@@ -177,33 +195,33 @@ export async function requireAuthWithOwnership(request: Request, env: any, heade
  * Used by endpoints that need the internal user ID and profile data (e.g., seller-dashboard, coins-wallet).
  *
  * @param {Request} request
- * @param {any} env
+ * @param {WorkerEnv} env
  * @param {string} [selectFields] - Comma-separated fields to select from the users table (default: 'id,role')
- * @returns {Promise<{authId: string, userId: string, profile: any}>}
+ * @returns {Promise<{authId: string, userId: string, profile: SupabaseProfile}>}
  * @throws {Error} On auth failure or missing user
  */
-export async function requireAuthWithProfile(request: Request, env: any, selectFields?: string): Promise<{ authId: string, userId: string, profile: any }> {
+export async function requireAuthWithProfile(request: Request, env: WorkerEnv, selectFields?: string): Promise<{ authId: string, userId: string, profile: SupabaseProfile }> {
     const url = env?.SUPABASE_URL;
     const serviceKey = env?.SUPABASE_SERVICE_KEY;
     if (!url || !serviceKey) throw new Error('Server not configured');
 
     // Reuse extractToken() instead of duplicating token extraction logic
-    const token = extractToken(request);
+    const token = extractToken(request, env);
     if (!token) throw new Error('Unauthorized');
 
     const userRes = await fetch(url + '/auth/v1/user', {
         headers: { 'Authorization': 'Bearer ' + token, 'apikey': serviceKey }
     });
     if (!userRes.ok) throw new Error('Invalid token');
-    const authUser: any = await userRes.json();
+    const authUser: SupabaseUser = await userRes.json();
 
     const fields = selectFields || 'id,role';
     const profileRes = await fetch(
         url + '/rest/v1/users?auth_id=eq.' + encodeURIComponent(authUser.id) + '&select=' + fields + '&limit=1',
         { headers: { 'apikey': serviceKey, 'Authorization': 'Bearer ' + serviceKey } }
     );
-    const profiles: any = await profileRes.json();
-    if (!profiles || !profiles.length) throw new Error('User not found');
+    const profiles: SupabaseProfile[] = await profileRes.json();
+    if (!profiles || profiles.length === 0) throw new Error('User not found');
 
     return { authId: authUser.id, userId: profiles[0].id, profile: profiles[0] };
 }
@@ -213,11 +231,11 @@ export async function requireAuthWithProfile(request: Request, env: any, selectF
  * Verifies JWT, fetches internal profile, and checks for admin role.
  *
  * @param {Request} request
- * @param {any} env
+ * @param {WorkerEnv} env
  * @returns {Promise<{authId: string, userId: string, role: string}>}
  * @throws {Error} On auth failure, missing user, or non-admin role
  */
-export async function requireAdmin(request: Request, env: any): Promise<{ authId: string, userId: string, role: string }> {
+export async function requireAdmin(request: Request, env: WorkerEnv): Promise<{ authId: string, userId: string, role: string }> {
     const result = await requireAuthWithProfile(request, env, 'id,role');
     if (result.profile.role !== 'admin') throw new Error('Admin access required');
     return { authId: result.authId, userId: result.userId, role: result.profile.role };

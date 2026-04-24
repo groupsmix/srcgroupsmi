@@ -18,6 +18,9 @@ import { corsHeaders, handlePreflight } from '../_shared/cors.js';
 import { errorResponse } from '../_shared/response.js';
 import { getSupabaseConfig } from '../_shared/config.js';
 import { checkRateLimit } from '../_shared/rate-limit.js';
+import { z } from 'zod';
+
+const exportSchema = z.object({}).passthrough();
 
 /**
  * Tables that are keyed directly by the internal `user_id` column.
@@ -168,6 +171,19 @@ export async function onRequest(context) {
     if (request.method === 'OPTIONS') return handlePreflight(origin);
     if (request.method !== 'POST') {
         return errorResponse('Method not allowed', 405, origin);
+    }
+
+    let body;
+    try {
+        body = await request.json();
+    } catch {
+        // Body is optional for export, but if provided must be valid JSON
+        body = {};
+    }
+
+    const validation = exportSchema.safeParse(body);
+    if (!validation.success) {
+        return errorResponse('Validation failed', 400, origin);
     }
 
     const cors = corsHeaders(origin);

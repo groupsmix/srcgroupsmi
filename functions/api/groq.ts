@@ -15,12 +15,15 @@
 
 import { corsHeaders, handlePreflight } from './_shared/cors';
 import { requireAuth } from './_shared/auth';
+import { z } from 'zod';
 import { wrapUserInput, withUserInputDirective } from './_shared/prompt-safety';
 import { moderateOutput, moderationBlockedEvent } from './_shared/moderation';
 import { STREAM_IDLE_TIMEOUT_MS, capMaxTokens } from './_shared/ai-limits';
 import { shouldAttempt, recordSuccess, recordFailure } from './_shared/circuit-breaker';
 import { logAiAudit } from './_shared/ai-audit';
 import { checkAndConsumeQuota, quotaExceededResponse } from './_shared/ai-quota';
+
+import { WorkerEnv, PagesContext } from './_shared/types';
 
 /* ── Supported languages ─────────────────────────────────────── */
 const SUPPORTED_LANGUAGES = {
@@ -241,13 +244,20 @@ Strict Output Rules:
 };
 
 /* ── Input validation ────────────────────────────────────────── */
+const groqRequestSchema = z.object({
+    prompt: z.string().min(1, "Prompt is required").max(8000),
+    tool: z.string().optional(),
+    lang: z.string().optional(),
+    max_tokens: z.number().int().positive().optional(),
+}).strict();
+
 function sanitizeInput(str: any): string {
     if (typeof str !== 'string') return '';
     return str.substring(0, 2000).trim();
 }
 
 /* ── Call Groq API ───────────────────────────────────────────── */
-async function callGroq(env: any, apiKey: string, messages: any[], maxTokens: number, temperature: number): Promise<{ res: Response | null, model: string, skipped: boolean }> {
+async function callGroq(env: WorkerEnv, apiKey: string, messages: any[], maxTokens: number, temperature: number): Promise<{ res: Response | null, model: string, skipped: boolean }> {
     const allowed = await shouldAttempt(env, 'groq');
     if (!allowed) {
         console.warn('Groq breaker open, skipping primary call');
@@ -283,7 +293,7 @@ async function callGroq(env: any, apiKey: string, messages: any[], maxTokens: nu
 }
 
 /* ── Call OpenRouter API (tries multiple models in chain) ───── */
-async function callOpenRouter(env: any, apiKey: string, messages: any[], maxTokens: number, temperature: number, category: string): Promise<{ res: Response | null, model: string, skipped: boolean }> {
+async function callOpenRouter(env: WorkerEnv, apiKey: string, messages: any[], maxTokens: number, temperature: number, category: string): Promise<{ res: Response | null, model: string, skipped: boolean }> {
     const allowed = await shouldAttempt(env, 'openrouter');
     if (!allowed) {
         console.warn('OpenRouter breaker open, skipping');
@@ -323,6 +333,85 @@ async function callOpenRouter(env: any, apiKey: string, messages: any[], maxToke
     }
     if (anyFailure) await recordFailure(env, 'openrouter');
     return { res: null, model: '', skipped: false };
+}
+
+/* ── Call Paid AI Fallback (Anthropic / OpenAI) ──────────────── */
+async function callPaidFallback(env: WorkerEnv, messages: any[], maxTokens: number, temperature: number): Promise<{ res: Response | null, model: string, skipped: boolean }> {
+    const anthropicKey = env?.ANTHROPIC_API_KEY;
+    const openaiKey = env?.OPENAI_API_KEY;
+
+    if (anthropicKey) {
+        try {
+            // Anthropic Claude 3.5 Haiku as a fast/cheap paid fallback
+            const systemMsg = messages.find(m => m.role === 'system')?.content || '';
+            const userMsgs = messages.filter(m => m.role !== 'system');
+            
+            const res = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'x-api-key': anthropicKey,
+                    'anthropic-version': '2023-06-01',
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'claude-3-5-haiku-latest',
+                    max_tokens: capMaxTokens(maxTokens),
+                    temperature: temperature,
+                    system: systemMsg,
+                    messages: userMsgs,
+                    stream: false
+                })
+            });
+            if (res.ok) {
+                // Anthropic's SSE format is incompatible with streamToClient
+                // (which expects OpenAI `choices[0].delta.content`). Do a
+                // non-streaming call and synthesize an OpenAI-style SSE stream
+                // so the existing client pipeline works unchanged.
+                const json: any = await res.json();
+                const text = json?.content?.[0]?.text || '';
+                const sse =
+                    'data: ' + JSON.stringify({ choices: [{ delta: { content: text } }] }) + '\n\n' +
+                    'data: [DONE]\n\n';
+                const synthetic = new Response(sse, {
+                    status: 200,
+                    headers: { 'Content-Type': 'text/event-stream' }
+                });
+                console.info('Anthropic fallback success');
+                return { res: synthetic, model: 'claude-3-5-haiku-latest', skipped: false };
+            }
+            console.error('Anthropic fallback error:', res.status, await res.text());
+        } catch (err) {
+            console.error('Anthropic fetch error:', err);
+        }
+    }
+    if (openaiKey) {
+        try {
+            // OpenAI GPT-4o-mini as a fast/cheap paid fallback
+            const res = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + openaiKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'gpt-4o-mini',
+                    messages: messages,
+                    max_tokens: capMaxTokens(maxTokens),
+                    temperature: temperature,
+                    stream: true
+                })
+            });
+            if (res.ok) {
+                console.info('OpenAI fallback success');
+                return { res, model: 'gpt-4o-mini', skipped: false };
+            }
+            console.error('OpenAI fallback error:', res.status, await res.text());
+        } catch (err) {
+            console.error('OpenAI fetch error:', err);
+        }
+    }
+
+    return { res: null, model: '', skipped: true };
 }
 
 /* ── Stream SSE response to client ───────────────────────────── */
@@ -441,7 +530,7 @@ function streamToClient(aiRes: Response, hdrs: Record<string, string>, moderatio
 }
 
 /* ── Main handler ────────────────────────────────────────────── */
-export async function onRequest(context: any): Promise<Response> {
+export async function onRequest(context: PagesContext): Promise<Response> {
     const { request, env } = context;
     const origin = request.headers.get('Origin') || null;
 
@@ -463,8 +552,10 @@ export async function onRequest(context: any): Promise<Response> {
     // Get available API keys
     const groqKey = env?.GROQ_API_KEY;
     const openrouterKey = env?.OPENROUTER_API_KEY;
+    const anthropicKey = env?.ANTHROPIC_API_KEY;
+    const openaiKey = env?.OPENAI_API_KEY;
 
-    if (!groqKey && !openrouterKey) {
+    if (!groqKey && !openrouterKey && !anthropicKey && !openaiKey) {
         return new Response(
             JSON.stringify({ ok: false, error: 'AI service not configured' }),
             { status: 503, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
@@ -481,16 +572,17 @@ export async function onRequest(context: any): Promise<Response> {
         );
     }
 
-    // ── E-1: Reject client-supplied system prompts ─────────────
-    // The server owns the system prompt. Clients that pass `body.system`
-    // are rejected outright; the only legal way to influence the system
-    // prompt is to pick a registered `tool` id.
-    if (body.system !== undefined) {
+    const validation = groqRequestSchema.safeParse(body);
+    if (!validation.success) {
+        const errors = validation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`);
         return new Response(
-            JSON.stringify({ ok: false, error: 'Client-supplied "system" is not allowed. Use the "tool" field.' }),
+            JSON.stringify({ ok: false, error: 'Validation failed', details: errors }),
             { status: 400, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
         );
     }
+    
+    // E-1 is handled implicitly by zod .strict() which rejects unknown keys like "system"
+    body = validation.data;
 
     const prompt = sanitizeInput(body.prompt);
     const toolId = (typeof body.tool === 'string') ? body.tool.trim() : '';
@@ -593,6 +685,15 @@ export async function onRequest(context: any): Promise<Response> {
         }
     } catch (err) {
         console.error('AI routing error:', err);
+    }
+
+    // ── Paid Fallback ───────────────────────────────────────────
+    // If both free tier primary providers failed (or breakers open),
+    // and a paid key is configured, use the paid fallback.
+    if (!aiRes && (env?.ANTHROPIC_API_KEY || env?.OPENAI_API_KEY)) {
+        console.warn('Free tier AI providers failed, attempting paid fallback...');
+        const r = await callPaidFallback(env, messages, maxTokens, temperature);
+        if (r.res) { aiRes = r.res; providerUsed = 'paid-fallback'; modelUsed = r.model; }
     }
 
     // ── All APIs failed ────────────────────────────────────────

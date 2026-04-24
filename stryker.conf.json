@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "packageManager": "npm",
+  "reporters": [
+    "html",
+    "clear-text",
+    "progress"
+  ],
+  "testRunner": "vitest",
+  "testRunner_comment": "Take a look at https://stryker-mutator.io/docs/stryker-js/vitest-runner for information about the vitest plugin.",
+  "coverageAnalysis": "perTest",
+  "mutate": [
+    "functions/api/**/*.js",
+    "functions/api/**/*.ts",
+    "!functions/api/**/*.test.js",
+    "!functions/api/**/*.test.ts"
+  ]
+}

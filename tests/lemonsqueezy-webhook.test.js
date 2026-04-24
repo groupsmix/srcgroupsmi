@@ -328,14 +328,18 @@ describe('B-3 single-RPC coin credit flow', () => {
         const rpc = fetchMock.calls.find(c => c.url.includes('/rest/v1/rpc/credit_coins_from_order'));
         expect(rpc).toBeDefined();
         const parsed = JSON.parse(rpc.body);
-        expect(parsed.payload).toMatchObject({
+
+        // Golden fixture test: enforce exact strict payload matching
+        const expectedGoldenFixture = {
             order_id: '999',
             product_id: '42',
             variant_id: '7',
             auth_id: 'auth-123',
             price: 500,
             currency: 'USD'
-        });
+        };
+        
+        expect(parsed.payload).toStrictEqual(expectedGoldenFixture);
     });
 });
 

@@ -17,6 +17,8 @@
  * back to an isolate-local state so a KV outage never blocks AI calls.
  */
 
+import { WorkerEnv } from './types';
+
 /** Consecutive failures (within a rolling window) before the breaker opens. */
 const FAILURE_THRESHOLD = 5;
 
@@ -81,7 +83,7 @@ async function writeState(kv: KVNamespace | null, provider: string, state: Break
     }
 }
 
-function getKv(env: any): KVNamespace | null {
+function getKv(env: WorkerEnv | null | undefined): KVNamespace | null {
     return env && env.RATE_LIMIT_KV ? env.RATE_LIMIT_KV : null;
 }
 
@@ -93,11 +95,11 @@ function getKv(env: any): KVNamespace | null {
  * (fail-safe). Returns `false` only when the breaker is open and the
  * cooldown has not elapsed.
  *
- * @param {any} env
+ * @param {WorkerEnv} env
  * @param {string} provider  e.g. 'groq', 'openrouter'
  * @returns {Promise<boolean>}
  */
-export async function shouldAttempt(env: any, provider: string): Promise<boolean> {
+export async function shouldAttempt(env: WorkerEnv, provider: string): Promise<boolean> {
     const kv = getKv(env);
     const state = await readState(kv, provider);
     const now = Date.now();
@@ -118,10 +120,10 @@ export async function shouldAttempt(env: any, provider: string): Promise<boolean
  * Record a successful call. Clears the failure history and closes the
  * breaker (half-open → closed).
  *
- * @param {any} env
+ * @param {WorkerEnv} env
  * @param {string} provider
  */
-export async function recordSuccess(env: any, provider: string): Promise<void> {
+export async function recordSuccess(env: WorkerEnv, provider: string): Promise<void> {
     const kv = getKv(env);
     const prev = await readState(kv, provider);
     if (prev.state === 'closed' && (!prev.failures || prev.failures.length === 0)) {
@@ -135,10 +137,10 @@ export async function recordSuccess(env: any, provider: string): Promise<void> {
  * failures have occurred within `FAILURE_WINDOW_MS`, or immediately
  * re-opens it from half-open.
  *
- * @param {any} env
+ * @param {WorkerEnv} env
  * @param {string} provider
  */
-export async function recordFailure(env: any, provider: string): Promise<void> {
+export async function recordFailure(env: WorkerEnv, provider: string): Promise<void> {
     const kv = getKv(env);
     const prev = await readState(kv, provider);
     const now = Date.now();
@@ -173,11 +175,11 @@ export async function recordFailure(env: any, provider: string): Promise<void> {
 
 /**
  * Expose current state (for observability / tests). Never throws.
- * @param {any} env
+ * @param {WorkerEnv} env
  * @param {string} provider
  * @returns {Promise<BreakerState>}
  */
-export async function inspectBreaker(env: any, provider: string): Promise<BreakerState> {
+export async function inspectBreaker(env: WorkerEnv, provider: string): Promise<BreakerState> {
     return await readState(getKv(env), provider);
 }
 

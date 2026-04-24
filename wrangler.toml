@@ -66,6 +66,12 @@ not_found_handling = "404-page"
 # After creating the namespaces, uncomment the blocks below and fill
 # in the `id` / `preview_id` fields with the generated IDs.
 
+# KV namespace IDs are environment-specific and MUST be populated via
+# `wrangler kv namespace create` (or the Cloudflare dashboard) and then
+# committed as real IDs, or injected at deploy time. Do NOT commit
+# placeholder IDs here — `wrangler deploy` validates them against the
+# account and will fail the Cloudflare Pages / Workers build.
+#
 # [[kv_namespaces]]
 # binding    = "STORE_KV"
 # id         = "<prod-namespace-id>"
@@ -119,6 +125,7 @@ not_found_handling = "404-page"
 #   PUBLIC_SUPABASE_URL
 #   PUBLIC_SUPABASE_ANON_KEY
 #   PUBLIC_SENTRY_DSN
+#   PUBLIC_GA4_ID
 #   PUBLIC_SENTRY_RELEASE
 #   PUBLIC_ENVIRONMENT
 
