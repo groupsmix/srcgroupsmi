@@ -75,6 +75,9 @@ export function detectPlatform(parsedUrl: URL): string {
  * Returns true if the hostname is safe (a public domain name).
  */
 export function isSafeHostname(hostname: string): boolean {
+    // Reject trailing dots which bypass simple DNS resolution logic
+    if (hostname.endsWith('.')) return false;
+
     // Reject IPv6 literals (bracketed or bare)
     if (hostname.includes(':') || hostname.startsWith('[')) return false;
 

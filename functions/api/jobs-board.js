@@ -40,6 +40,36 @@ function corsHeaders(origin) {
 // isolate boots with a fresh empty bucket).
 const RATE_LIMIT = { window: 60_000, max: 15 };
 async function checkRateLimit(env, ip, action) {
+    // If the action involves spending coins, use the DB-backed rate limiter
+    // to prevent KV-based fan-out race conditions.
+    if (action === 'job-boost' || action === 'referrals') {
+        const supabaseUrl = env.SUPABASE_URL;
+        const supabaseKey = env.SUPABASE_SERVICE_KEY;
+        if (supabaseUrl && supabaseKey) {
+            try {
+                const res = await fetch(supabaseUrl + '/rest/v1/rpc/check_db_rate_limit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': supabaseKey,
+                        'Authorization': 'Bearer ' + supabaseKey
+                    },
+                    body: JSON.stringify({
+                        p_key: `rl:jobs:${ip}:${action}`,
+                        p_max_tokens: 15,
+                        p_window_seconds: 60
+                    })
+                });
+                if (res.ok) {
+                    const allowed = await res.json();
+                    return allowed === true;
+                }
+            } catch (e) {
+                console.error('DB rate limit failed, falling back to KV:', e);
+            }
+        }
+    }
+
     const kv = env?.RATE_LIMIT_KV || null;
     return sharedCheckRateLimit(ip, 'jobs-board:' + action, RATE_LIMIT, kv);
 }
