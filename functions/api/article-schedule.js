@@ -43,7 +43,7 @@ export async function onRequest(context) {
     // the service-role key and must never be reachable without the
     // shared CRON_SECRET. Fail closed when the env var is unset.
     if (request.method === 'GET') {
-        const cronSecret = env?.CRON_SECRET;
+        const cronSecret = env?.CRON_SECRET_SCHEDULE || env?.CRON_SECRET;
         if (!cronSecret) {
             console.error('article-schedule: CRON_SECRET not configured');
             return new Response(
@@ -86,7 +86,7 @@ export async function onRequest(context) {
     try {
         if (request.method === 'GET') {
             // Cron: publish scheduled articles. Fail closed — require CRON_SECRET.
-            const cronSecret = env?.CRON_SECRET;
+            const cronSecret = env?.CRON_SECRET_SCHEDULE || env?.CRON_SECRET;
             if (!cronSecret) {
                 return new Response(
                     JSON.stringify({ ok: false, error: 'Cron secret not configured' }),

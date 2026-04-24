@@ -50,6 +50,27 @@ jobs:
       run-codeql: true
       severity-threshold: high
 
+  # ── E2E Staging Gate ──────────────────────────────────────────────
+  e2e:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+      - name: Run Playwright tests
+        run: npx playwright test
+        env:
+          BASE_URL: https://staging.groupsmix.com
+          CI: true
+
   # ── Auto-label PRs (shared) ─────────────────────────────────────
   label:
     if: github.event_name == 'pull_request'
