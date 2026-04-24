@@ -91,6 +91,12 @@ export async function onRequest(context) {
         return errorResponse('Unauthorized', 401, origin);
     }
 
+    // Ensure request is internal via src/worker.js dispatcher
+    if (request.headers.get('X-Cron-Internal') !== 'true') {
+        console.error('Refused external call to cron endpoint');
+        return errorResponse('Unauthorized origin', 401, origin);
+    }
+
     let cfg;
     try {
         cfg = getSupabaseConfig(env);

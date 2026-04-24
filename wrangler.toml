@@ -161,8 +161,8 @@ preview_id = "0123456789abcdef0123456789abcdef"
 crons = [
     # Feed algorithm — trending scores, every 30 minutes
     "*/30 * * * *",
-    # Scheduled article publishing — every 5 minutes
-    "*/5 * * * *",
+    # Scheduled article publishing — every 15 minutes (was 5m, reduced to save costs)
+    "*/15 * * * *",
     # Weekly newsletter digest — Mondays at 13:00 UTC
     "0 13 * * 1",
     # Hard-delete soft-deleted users past their grace window — daily 03:17 UTC
@@ -175,9 +175,20 @@ crons = [
 #
 # Capture request/invocation logs so Logpush (docs/observability.md)
 # and `wrangler tail` see the full handler activity. Head-sampling at
-# 100% is fine at current traffic levels — revisit after launch if
-# log volume becomes a cost concern.
+# 10% to prevent cost explosion at scale.
 
 [observability]
 enabled = true
-head_sampling_rate = 1
+head_sampling_rate = 0.1
+
+[env.staging]
+name = "groupsmix-staging"
+route = { pattern = "staging.groupsmix.com/*", zone_name = "groupsmix.com" }
+
+[[env.staging.kv_namespaces]]
+binding    = "STORE_KV"
+id         = "staging_store_kv_id"
+
+[[env.staging.kv_namespaces]]
+binding    = "RATE_LIMIT_KV"
+id         = "staging_rate_limit_kv_id"

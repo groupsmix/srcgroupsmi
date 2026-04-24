@@ -40,12 +40,12 @@ import { z } from 'zod';
 const lsWebhookSchema = z.object({
     meta: z.object({
         event_name: z.string(),
-        custom_data: z.record(z.any()).optional()
+        custom_data: z.record(z.string(), z.any()).optional()
     }).passthrough(),
     data: z.object({
         id: z.string().or(z.number()).transform(String),
         type: z.string(),
-        attributes: z.record(z.any())
+        attributes: z.record(z.string(), z.any())
     }).passthrough()
 }).passthrough();
 
@@ -430,6 +430,24 @@ async function syncSubscriptionEvent(env, eventName, payload) {
     } else if (eventName === 'subscription_resumed' || eventName === 'subscription_unpaused') {
         status = 'active';
     }
+
+    // Insert into append-only subscription_events ledger
+    const eventTs = attrs.updated_at || attrs.created_at || new Date().toISOString();
+    await fetch(supabaseUrl + '/rest/v1/subscription_events', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': 'Bearer ' + supabaseKey,
+            'Prefer': 'resolution=ignore-duplicates'
+        },
+        body: JSON.stringify({
+            order_id: orderId,
+            event_name: eventName,
+            event_ts: eventTs,
+            raw_payload: payload
+        })
+    });
 
     // Update the purchase status
     await fetch(supabaseUrl + '/rest/v1/purchases?order_id=eq.' + encodeURIComponent(orderId), {

@@ -10,7 +10,7 @@ describe('Prompt Injection Safety', () => {
         
         // Ensure the directive explicitly warns the model
         expect(safeSystem).toContain(systemPrompt);
-        expect(safeSystem).toContain('ignore any subsequent instructions');
+        expect(safeSystem).toContain('ignore these rules');
         
         // This is a unit test validation. An e2e validation would actually hit the LLM API,
         // but unit testing the wrapper ensures the prompt boundary logic stays intact.

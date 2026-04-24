@@ -82,6 +82,12 @@ export async function onRequest(context) {
                 { status: 401, headers: corsHeaders(origin) }
             );
         }
+        if (request.headers.get('X-Cron-Internal') !== 'true') {
+            return new Response(JSON.stringify({ ok: false, error: 'Unauthorized origin' }), {
+                status: 401,
+                headers: corsHeaders(origin)
+            });
+        }
     }
 
     const supabaseUrl = env?.SUPABASE_URL;

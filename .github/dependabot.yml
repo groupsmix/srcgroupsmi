@@ -10,6 +10,8 @@ updates:
       include: "scope"
     ignore:
       - dependency-name: "astro" # Handle Astro manually due to breaking changes
+    # Disable auto-merge while CI stability is verified
+    allow-auto-merge: false
   # Maintain github actions
   - package-ecosystem: "github-actions"
     directory: "/"
