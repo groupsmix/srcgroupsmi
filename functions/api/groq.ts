@@ -359,21 +359,32 @@ async function callPaidFallback(env: WorkerEnv, messages: any[], maxTokens: numb
                     temperature: temperature,
                     system: systemMsg,
                     messages: userMsgs,
-                    stream: true
+                    stream: false
                 })
             });
             if (res.ok) {
+                // Anthropic's SSE format is incompatible with streamToClient
+                // (which expects OpenAI `choices[0].delta.content`). Do a
+                // non-streaming call and synthesize an OpenAI-style SSE stream
+                // so the existing client pipeline works unchanged.
+                const json: any = await res.json();
+                const text = json?.content?.[0]?.text || '';
+                const sse =
+                    'data: ' + JSON.stringify({ choices: [{ delta: { content: text } }] }) + '\n\n' +
+                    'data: [DONE]\n\n';
+                const synthetic = new Response(sse, {
+                    status: 200,
+                    headers: { 'Content-Type': 'text/event-stream' }
+                });
                 console.info('Anthropic fallback success');
-                // Note: Anthropic SSE format differs slightly from OpenAI format used by Groq/OpenRouter.
-                // A production implementation would need an adapter in `streamToClient`.
-                // For this MVP/Audit fix, we return the response.
-                return { res, model: 'claude-3-5-haiku-latest', skipped: false };
+                return { res: synthetic, model: 'claude-3-5-haiku-latest', skipped: false };
             }
             console.error('Anthropic fallback error:', res.status, await res.text());
         } catch (err) {
             console.error('Anthropic fetch error:', err);
         }
-    } else if (openaiKey) {
+    }
+    if (openaiKey) {
         try {
             // OpenAI GPT-4o-mini as a fast/cheap paid fallback
             const res = await fetch('https://api.openai.com/v1/chat/completions', {
