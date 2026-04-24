@@ -114,7 +114,7 @@ export async function onRequest(context) {
             const validation = plagiarismSchema.safeParse(rawBody);
             if (!validation.success) {
                 return new Response(
-                    JSON.stringify({ ok: false, error: validation.error.errors[0].message }),
+                    JSON.stringify({ ok: false, error: validation.error.issues[0].message }),
                     { status: 400, headers: corsHeaders(origin) }
                 );
             }

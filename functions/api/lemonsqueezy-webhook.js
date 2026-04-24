@@ -311,7 +311,9 @@ async function handleCoinRefund(env, payload) {
 
     if (coinsToDebit <= 0) return;
 
-    // Debit coins via RPC
+    // Debit coins via RPC. If this fails (e.g. negative balance constraint),
+    // it will throw an error, which will be caught by the outer handler,
+    // written to the dead-letter queue, and return a 500 so LemonSqueezy retries.
     const debitRes = await fetch(supabaseUrl + '/rest/v1/rpc/debit_coins', {
         method: 'POST',
         headers: {
@@ -330,7 +332,9 @@ async function handleCoinRefund(env, payload) {
     });
 
     if (!debitRes.ok) {
-        console.error('Failed to debit coins for refund:', await debitRes.text());
+        const errText = await debitRes.text();
+        console.error('Failed to debit coins for refund:', errText);
+        throw new Error(`Refund failed: unable to debit ${coinsToDebit} coins from user ${userId}. Reason: ${errText}`);
     } else {
         console.info('Debited', coinsToDebit, 'coins from user', userId, 'for refund on order', orderId);
     }
@@ -380,7 +384,8 @@ async function trackReferralPurchase(env, refCode, order) {
                 referral_code: refCode,
                 event_type: 'purchase',
                 referred_uid: order.uid || null,
-                commission: Math.round((order.price || 0) * 0.10) / 100, // 10% commission in dollars
+                commission_amount: Math.round((order.price || 0) * 0.10), // 10% commission in cents/smallest unit
+                commission_currency: order.currency || 'USD',
                 metadata: { order_id: order.order_id, product_name: order.product_name }
             })
         });
@@ -408,8 +413,14 @@ async function syncSubscriptionEvent(env, eventName, payload) {
     const supabaseKey = env?.SUPABASE_SERVICE_KEY;
     if (!supabaseUrl || !supabaseKey) return;
 
-    const _attrs = payload.data?.attributes || {};
-    const orderId = String(payload.data?.id || '');
+    const attrs = payload.data?.attributes || {};
+    // Subscription events map the original order_id in attributes
+    const orderId = String(attrs.order_id || '');
+    if (!orderId) {
+        console.warn('Subscription event missing order_id in attributes');
+        return;
+    }
+    
     let status = 'active';
 
     if (eventName === 'subscription_cancelled' || eventName === 'subscription_expired') {

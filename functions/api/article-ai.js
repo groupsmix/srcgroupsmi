@@ -72,7 +72,7 @@ export async function onRequestPost(context) {
 
         const validation = articleAiSchema.safeParse(body);
         if (!validation.success) {
-            const errors = validation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`);
+            const errors = validation.error.issues.map(e => `${e.path.join('.')}: ${e.message}`);
             return new Response(JSON.stringify({ error: 'Validation failed', details: errors }), {
                 status: 400,
                 headers: corsHeaders

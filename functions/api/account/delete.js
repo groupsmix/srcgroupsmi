@@ -145,7 +145,7 @@ export async function onRequest(context) {
 
     const validation = deleteSchema.safeParse(body);
     if (!validation.success) {
-        const errorMsg = validation.error.errors.map(e => e.message).join(', ');
+        const errorMsg = validation.error.issues.map(e => e.message).join(', ');
         return errorResponse(errorMsg, 400, origin);
     }
     body = validation.data;

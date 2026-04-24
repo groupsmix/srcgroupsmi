@@ -122,11 +122,6 @@ function redirectHome(request) {
 export async function onRequest(context) {
     const { request, next, env } = context;
 
-    // Only gate GET requests to the admin page
-    if (request.method !== 'GET') {
-        return next();
-    }
-
     const SUPABASE_URL = env && env.SUPABASE_URL;
     const SUPABASE_ANON_KEY = env && env.SUPABASE_ANON_KEY;
 

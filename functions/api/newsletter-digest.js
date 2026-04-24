@@ -136,7 +136,7 @@ export async function onRequest(context) {
                 const validation = previewSchema.safeParse(rawBody);
                 if (!validation.success) {
                     return new Response(
-                        JSON.stringify({ ok: false, error: 'Validation failed', details: validation.error.errors }),
+                        JSON.stringify({ ok: false, error: 'Validation failed', details: validation.error.issues }),
                         { status: 400, headers: corsHeaders(origin) }
                     );
                 }

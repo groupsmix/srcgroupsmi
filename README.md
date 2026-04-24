@@ -49,6 +49,21 @@ npm run dev
 | `npm run worker:deploy` | Build + `wrangler deploy` the Worker                  |
 | `npm run worker:tail` | `wrangler tail` — stream live Worker logs               |
 
+## CI & Branch Protection
+
+This repository relies on automated GitHub Actions to enforce code quality, security, and test correctness.
+
+**Important:** To prevent unverified code from reaching production, you **must** configure Branch Protection rules on the `main` branch. 
+Go to **Settings** > **Branches** > **Add branch protection rule**, target `main`, and check **Require status checks to pass before merging**.
+
+Add the following required status checks:
+- `ci` (Runs Vitest unit and integration tests)
+- `quality` (Runs Biome linting and strict TypeScript checking)
+- `build` (Ensures Astro and the Cloudflare Worker bundle successfully)
+- `security` (Runs CodeQL SAST scanning)
+
+Without this rule, GitHub will allow PRs to merge even if the tests or build fail.
+
 ## Project Structure
 
 ```
