@@ -20,7 +20,7 @@
  * quota enforcement.
  */
 
-import { WorkerEnv } from './types';
+/** @typedef {import('./types').WorkerEnv} WorkerEnv */
 
 /* ── Default daily quota (override with env.AI_QUOTA_DAILY_LIMIT) ── */
 export const DEFAULT_DAILY_QUOTA = 100;

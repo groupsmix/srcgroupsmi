@@ -89,7 +89,6 @@ async function checkRateLimitKV(ip: string, action: string, limit: RateLimitConf
         ipBuckets.set(localKey, localBucket);
         return false;
     }
-    }
 
     recent.push(now);
 
