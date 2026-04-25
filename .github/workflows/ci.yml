@@ -148,10 +148,12 @@ jobs:
       - name: Test /api/contact-notify rate limiting
         run: |
           # limit is 3, so 4th request should fail with 429
-          curl -s -o /dev/null -w "%{http_code}" -X POST http://127.0.0.1:8787/api/contact-notify -d '{}'
-          curl -s -o /dev/null -w "%{http_code}" -X POST http://127.0.0.1:8787/api/contact-notify -d '{}'
-          curl -s -o /dev/null -w "%{http_code}" -X POST http://127.0.0.1:8787/api/contact-notify -d '{}'
-          status=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://127.0.0.1:8787/api/contact-notify -d '{}')
+          H='Content-Type: application/json'
+          U=http://127.0.0.1:8787/api/contact-notify
+          curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "$H" "$U" -d '{}'
+          curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "$H" "$U" -d '{}'
+          curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "$H" "$U" -d '{}'
+          status=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "$H" "$U" -d '{}')
           if [ "$status" != "429" ]; then
             echo "::error::Expected 429, got $status"
             exit 1
