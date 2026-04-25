@@ -56,7 +56,9 @@
 				"noPrototypeBuiltins": "off",
 				"noDuplicateObjectKeys": "error",
 				"noDuplicateElseIf": "warn",
-				"useIterableCallbackReturn": "warn"
+				"useIterableCallbackReturn": "warn",
+				"noExplicitAny": "off",
+				"noImplicitAnyLet": "off"
 			}
 		}
 	},

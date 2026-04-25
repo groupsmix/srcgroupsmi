@@ -18,25 +18,25 @@ const BASE_URL = __ENV.API_URL || 'http://localhost:8787';
 
 export default function () {
     // 1. Health check
-    let res1 = http.get(`${BASE_URL}/api/health-check`);
+    const res1 = http.get(`${BASE_URL}/api/health-check`);
     check(res1, { 'health check status is 200': (r) => r.status === 200 });
     sleep(1);
 
     // 2. Chat endpoint (without auth token, expects 401/403)
-    let payload = JSON.stringify({
+    const payload = JSON.stringify({
         messages: [{ role: 'user', content: 'What is GroupsMix?' }]
     });
-    let params = { headers: { 'Content-Type': 'application/json' } };
-    let res2 = http.post(`${BASE_URL}/api/chat`, payload, params);
+    const params = { headers: { 'Content-Type': 'application/json' } };
+    const res2 = http.post(`${BASE_URL}/api/chat`, payload, params);
     // We expect a 401 since k6 isn't sending a valid JWT
     check(res2, { 'chat rejects unauthenticated': (r) => r.status === 401 });
     sleep(1);
 
     // 3. Contact notify (Rate limited, expect 200 or 429)
-    let contactPayload = JSON.stringify({
+    const contactPayload = JSON.stringify({
         data: { name: 'Load Test', email: 'test@example.com', message: 'Hello from k6' }
     });
-    let res3 = http.post(`${BASE_URL}/api/contact-notify`, contactPayload, params);
+    const res3 = http.post(`${BASE_URL}/api/contact-notify`, contactPayload, params);
     check(res3, { 'contact-notify responds': (r) => r.status === 200 || r.status === 429 });
     sleep(1);
 }

@@ -93,7 +93,7 @@ RETURNS TABLE (
     user_id               UUID,
     deletion_scheduled_at TIMESTAMPTZ
 )
-LANGUAGE plpgsql SECURITY DEFINER AS $$
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 DECLARE
     v_user_id     UUID;
     v_scheduled   TIMESTAMPTZ := now() + INTERVAL '30 days';
@@ -146,7 +146,7 @@ RETURNS TABLE (
     user_id UUID,
     auth_id UUID
 )
-LANGUAGE plpgsql SECURITY DEFINER AS $$
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 DECLARE
     v_auth_id UUID;
 BEGIN
@@ -198,7 +198,7 @@ RETURNS TABLE (
     user_id UUID,
     auth_id UUID
 )
-LANGUAGE plpgsql SECURITY DEFINER AS $$
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 DECLARE
     r RECORD;
     v_deleted RECORD;

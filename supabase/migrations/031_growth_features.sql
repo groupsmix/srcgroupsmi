@@ -21,14 +21,14 @@ CREATE POLICY "Anyone can read widget embeds" ON widget_embeds FOR SELECT USING 
 CREATE POLICY "Auth users can create widget embeds" ON widget_embeds FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 CREATE OR REPLACE FUNCTION increment_widget_impressions(p_group_id UUID)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 BEGIN
     UPDATE widget_embeds SET impressions = impressions + 1 WHERE group_id = p_group_id;
 END;
 $$;
 
 CREATE OR REPLACE FUNCTION increment_widget_clicks(p_group_id UUID)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 BEGIN
     UPDATE widget_embeds SET clicks = clicks + 1 WHERE group_id = p_group_id;
 END;
@@ -98,7 +98,7 @@ CREATE POLICY "Admins can manage group of the day" ON group_of_the_day FOR ALL U
 
 -- Function to auto-select group of the day based on trending score
 CREATE OR REPLACE FUNCTION select_group_of_the_day()
-RETURNS UUID LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS UUID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 DECLARE
     selected_id UUID;
     today DATE := CURRENT_DATE;
@@ -174,7 +174,7 @@ CREATE POLICY "Anyone can read review votes" ON review_votes FOR SELECT USING (t
 CREATE POLICY "Auth users can vote on reviews" ON review_votes FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 CREATE OR REPLACE FUNCTION increment_review_helpful(p_review_id UUID)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 BEGIN
     UPDATE reviews SET helpful_count = COALESCE(helpful_count, 0) + 1 WHERE id = p_review_id;
 END;
@@ -200,7 +200,7 @@ CREATE POLICY "Auth users can create interactions" ON group_interactions FOR INS
 
 -- Co-occurrence recommendation function
 CREATE OR REPLACE FUNCTION get_similar_groups_by_users(p_group_id UUID, p_limit INT DEFAULT 6)
-RETURNS TABLE(group_id UUID, score BIGINT) LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS TABLE(group_id UUID, score BIGINT) LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 BEGIN
     RETURN QUERY
     SELECT gi2.group_id, COUNT(*) AS score
@@ -225,7 +225,7 @@ RETURNS TABLE(
     total_reviews BIGINT,
     avg_rating NUMERIC,
     avg_trust_score NUMERIC
-) LANGUAGE plpgsql SECURITY DEFINER AS $$
+) LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 BEGIN
     RETURN QUERY
     SELECT
@@ -281,7 +281,7 @@ CREATE POLICY "Users can read own referral events" ON referral_events FOR SELECT
 
 -- Referral bonus function: awards 50 GMX to both referrer and referred user
 CREATE OR REPLACE FUNCTION award_referral_bonus(p_referrer_uid UUID, p_referred_uid UUID, p_code TEXT)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 BEGIN
     -- Award 50 GXP to referrer
     UPDATE users SET gxp = COALESCE(gxp, 0) + 50 WHERE id = p_referrer_uid;
@@ -294,21 +294,21 @@ $$;
 
 -- Increment functions for referral tracking
 CREATE OR REPLACE FUNCTION increment_referral_clicks(p_code TEXT)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 BEGIN
     UPDATE referral_codes SET clicks = clicks + 1 WHERE code = p_code;
 END;
 $$;
 
 CREATE OR REPLACE FUNCTION increment_referral_signups(p_code TEXT)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 BEGIN
     UPDATE referral_codes SET signups = signups + 1 WHERE code = p_code;
 END;
 $$;
 
 CREATE OR REPLACE FUNCTION increment_referral_purchases(p_code TEXT)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 BEGIN
     UPDATE referral_codes SET purchases = purchases + 1 WHERE code = p_code;
 END;

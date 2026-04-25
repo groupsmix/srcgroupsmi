@@ -17,7 +17,7 @@
  * back to an isolate-local state so a KV outage never blocks AI calls.
  */
 
-import { WorkerEnv } from './types';
+import type { WorkerEnv } from './types';
 
 /** Consecutive failures (within a rolling window) before the breaker opens. */
 const FAILURE_THRESHOLD = 5;

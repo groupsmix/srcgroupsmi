@@ -5,7 +5,7 @@
  * Returns the authenticated user object or null if verification fails.
  */
 
-import { WorkerEnv, SupabaseUser, SupabaseProfile } from './types';
+import type { WorkerEnv, SupabaseUser, SupabaseProfile } from './types';
 
 export interface AuthResult {
     user: SupabaseUser;
