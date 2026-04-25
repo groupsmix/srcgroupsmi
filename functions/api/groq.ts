@@ -421,7 +421,10 @@ function streamToClient(aiRes: Response, hdrs: Record<string, string>, moderatio
     const encoder = new TextEncoder();
 
     (async () => {
-        if (!aiRes.body) return;
+        if (!aiRes.body) {
+            await writer.close();
+            return;
+        }
         const reader = aiRes.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
