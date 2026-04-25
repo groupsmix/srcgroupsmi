@@ -81,7 +81,7 @@ jobs:
   #    show up (e.g. `ci / CI (Node.js)`), which never matches a
   #    required context literally named `ci`. These wrappers fix that.
   ci-status:
-    name: ci
+    name: ciExpected
     needs: [ci]
     if: always()
     runs-on: ubuntu-latest
@@ -92,7 +92,7 @@ jobs:
             exit 1
           fi
   quality-status:
-    name: quality
+    name: qualityExpected
     needs: [quality]
     if: always()
     runs-on: ubuntu-latest
@@ -103,7 +103,7 @@ jobs:
             exit 1
           fi
   build-status:
-    name: build
+    name: buildExpected
     needs: [build]
     if: always()
     runs-on: ubuntu-latest
@@ -114,7 +114,7 @@ jobs:
             exit 1
           fi
   security-status:
-    name: security
+    name: securityExpected
     needs: [security]
     if: always()
     runs-on: ubuntu-latest
@@ -122,6 +122,17 @@ jobs:
       - run: |
           if [ "${{ needs.security.result }}" != "success" ]; then
             echo "security reusable workflow result: ${{ needs.security.result }}"
+            exit 1
+          fi
+  e2e-status:
+    name: e2eExpected
+    needs: [e2e]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [ "${{ needs.e2e.result }}" != "success" ]; then
+            echo "e2e job result: ${{ needs.e2e.result }}"
             exit 1
           fi
 
