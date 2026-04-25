@@ -107,7 +107,7 @@ export async function shouldAttempt(env: WorkerEnv, provider: string): Promise<b
     if (state.state === 'open') {
         if (now >= state.nextTry) {
             // Transition to half-open: allow exactly one probe.
-            const next = { ...state, state: 'half' };
+            const next: BreakerState = { state: 'half', failures: state.failures, openedAt: state.openedAt, nextTry: state.nextTry };
             await writeState(kv, provider, next);
             return true;
         }

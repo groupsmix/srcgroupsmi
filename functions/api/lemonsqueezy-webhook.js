@@ -40,12 +40,12 @@ import { z } from 'zod';
 const lsWebhookSchema = z.object({
     meta: z.object({
         event_name: z.string(),
-        custom_data: z.record(z.any()).optional()
+        custom_data: z.record(z.string(), z.any()).optional()
     }).passthrough(),
     data: z.object({
         id: z.string().or(z.number()).transform(String),
         type: z.string(),
-        attributes: z.record(z.any())
+        attributes: z.record(z.string(), z.any())
     }).passthrough()
 }).passthrough();
 

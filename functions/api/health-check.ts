@@ -143,7 +143,7 @@ export async function onRequest(context: PagesContext): Promise<Response> {
     const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
 
     const kvStore = context.env?.RATE_LIMIT_KV || null;
-    const allowed = await checkRateLimit(ip, 'health', HEALTH_CHECK_LIMIT, kvStore);
+    const allowed = await checkRateLimit(ip, 'health', HEALTH_CHECK_LIMIT, kvStore || undefined);
     if (!allowed) {
         return new Response(
             JSON.stringify({ ok: false, error: 'Too many requests. Try again later.' }),
@@ -157,7 +157,7 @@ export async function onRequest(context: PagesContext): Promise<Response> {
         const validation = healthCheckSchema.safeParse(rawBody);
         if (!validation.success) {
             return new Response(
-                JSON.stringify({ ok: false, error: validation.error.errors[0].message }),
+                JSON.stringify({ ok: false, error: validation.error.issues[0].message }),
                 { status: 400, headers: corsHeaders(origin) }
             );
         }

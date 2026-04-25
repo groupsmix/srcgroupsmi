@@ -127,7 +127,7 @@ export async function onRequest(context) {
 
     const validation = prefsSchema.safeParse(body);
     if (!validation.success) {
-        return errorResponse('Validation failed: ' + validation.error.errors.map(e => e.message).join(', '), 400, origin);
+        return errorResponse('Validation failed: ' + validation.error.issues.map(e => e.message).join(', '), 400, origin);
     }
     body = validation.data;
 
