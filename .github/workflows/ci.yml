@@ -54,6 +54,77 @@ jobs:
       run-codeql: true
       severity-threshold: high
 
+  # ── E2E Staging Gate ──────────────────────────────────────────────
+  e2e:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+      - name: Run Playwright tests
+        run: npx playwright test
+        env:
+          BASE_URL: https://staging.groupsmix.com
+          CI: true
+
+  # ── Summary jobs that publish a check named exactly like the
+  #    branch-protection required context. Reusable-workflow callers
+  #    do NOT emit a parent check_run of their own — only nested jobs
+  #    show up (e.g. `ci / CI (Node.js)`), which never matches a
+  #    required context literally named `ci`. These wrappers fix that.
+  ci-status:
+    name: ci
+    needs: [ci]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [ "${{ needs.ci.result }}" != "success" ]; then
+            echo "ci reusable workflow result: ${{ needs.ci.result }}"
+            exit 1
+          fi
+  quality-status:
+    name: quality
+    needs: [quality]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [ "${{ needs.quality.result }}" != "success" ]; then
+            echo "quality reusable workflow result: ${{ needs.quality.result }}"
+            exit 1
+          fi
+  build-status:
+    name: build
+    needs: [build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "build reusable workflow result: ${{ needs.build.result }}"
+            exit 1
+          fi
+  security-status:
+    name: security
+    needs: [security]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [ "${{ needs.security.result }}" != "success" ]; then
+            echo "security reusable workflow result: ${{ needs.security.result }}"
+            exit 1
+          fi
+
   # ── Auto-label PRs (shared) ─────────────────────────────────────
   label:
     if: github.event_name == 'pull_request'
