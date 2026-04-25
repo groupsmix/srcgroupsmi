@@ -421,7 +421,10 @@ function streamToClient(aiRes: Response, hdrs: Record<string, string>, moderatio
     const encoder = new TextEncoder();
 
     (async () => {
-        if (!aiRes.body) return;
+        if (!aiRes.body) {
+            await writer.close();
+            return;
+        }
         const reader = aiRes.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -575,7 +578,7 @@ export async function onRequest(context: PagesContext): Promise<Response> {
 
     const validation = groqRequestSchema.safeParse(body);
     if (!validation.success) {
-        const errors = validation.error.issues.map(e => `${e.path.join('.')}: ${e.message}`);
+        const errors = validation.error.issues.map((e: any) => `${e.path.join('.')}: ${e.message}`);
         return new Response(
             JSON.stringify({ ok: false, error: 'Validation failed', details: errors }),
             { status: 400, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }

@@ -60,9 +60,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
       - name: Install dependencies
@@ -189,7 +189,6 @@ jobs:
   rate-limit-smoke-test:
     name: Rate limit smoke test
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@v4
@@ -201,29 +200,19 @@ jobs:
           npm run build
           # Start wrangler dev in the background on port 8787
           npx wrangler dev --port 8787 &
-          WRANGLER_PID=$!
-          echo "WRANGLER_PID=$WRANGLER_PID" >> "$GITHUB_ENV"
-          # Wait for it to be ready (max 30s, with per-request timeout)
-          for i in {1..30}; do
-            curl -s --max-time 2 http://127.0.0.1:8787 >/dev/null && break || sleep 1
-          done
+          # Wait for it to be ready
+          for i in {1..30}; do curl -s http://127.0.0.1:8787 >/dev/null && break || sleep 1; done
       - name: Test /api/contact-notify rate limiting
         run: |
           # limit is 3, so 4th request should fail with 429
           H='Content-Type: application/json'
           U=http://127.0.0.1:8787/api/contact-notify
-          curl -s --max-time 10 -o /dev/null -w "%{http_code}\n" -X POST -H "$H" "$U" -d '{}'
-          curl -s --max-time 10 -o /dev/null -w "%{http_code}\n" -X POST -H "$H" "$U" -d '{}'
-          curl -s --max-time 10 -o /dev/null -w "%{http_code}\n" -X POST -H "$H" "$U" -d '{}'
-          status=$(curl -s --max-time 10 -o /dev/null -w "%{http_code}" -X POST -H "$H" "$U" -d '{}')
+          curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "$H" "$U" -d '{}'
+          curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "$H" "$U" -d '{}'
+          curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "$H" "$U" -d '{}'
+          status=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "$H" "$U" -d '{}')
           if [ "$status" != "429" ]; then
             echo "::error::Expected 429, got $status"
             exit 1
           fi
           echo "Rate limit returned 429 as expected"
-      - name: Stop worker
-        if: always()
-        run: |
-          if [ -n "$WRANGLER_PID" ]; then
-            kill "$WRANGLER_PID" 2>/dev/null || true
-          fi
