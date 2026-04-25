@@ -7,7 +7,7 @@
  *
  *   - Static output from `astro build` is served directly from the
  *     `ASSETS` binding (see wrangler.toml `[assets] directory = "./dist"`).
- *   - `/api/*`, `/gm-ctrl-x7`, and `/sitemap.xml` are dispatched to the
+ *   - `/api/*` and `/sitemap.xml` are dispatched to the
  *     same `onRequest` / `onRequestPost` / `onRequestGet` / `onRequestOptions`
  *     exports the Pages runtime used to call.
  *   - Scheduled cron invocations fan out to the corresponding endpoint
@@ -254,7 +254,8 @@ async function runCron(cronSpec, env, ctx) {
     const init = { method: job.method, headers };
     if (job.body !== undefined) init.body = job.body;
 
-    const request = new Request(`https://groupsmix.com${job.path}`, init);
+    const siteUrl = env.PUBLIC_SITE_URL || 'https://groupsmix.com';
+    const request = new Request(`${siteUrl}${job.path}`, init);
     const handler = pickHandler(module, job.method);
     if (!handler) {
         console.error('cron: no handler export for', job.path, job.method);

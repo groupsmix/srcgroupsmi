@@ -40,6 +40,40 @@ jobs:
       node-version: "22"
       package-manager: npm
 
+  # ── SBOM / Provenance / Audit ────────────────────────────────────
+  sbom:
+    needs: [build]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        run: npm ci
+      - name: npm audit
+        run: npm audit --audit-level=high
+      - name: Generate SBOM
+        run: |
+          npx @cyclonedx/cyclonedx-npm --output-format JSON --output-file bom.json
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: bom.json
+      - name: Guard against hardcoded Supabase refs
+        run: |
+          bad_files=$(grep -lr "hmlqppacanpxmrfdlkec" dist/ || true)
+          if [ -n "$bad_files" ]; then
+            echo "::error::Hardcoded Supabase ref found in dist/: $bad_files"
+            exit 1
+          fi
+
   # ── Security audit (shared) ──────────────────────────────────────
   security:
     permissions:
@@ -235,9 +269,9 @@ jobs:
           fi
           echo "Rate limit returned 429 as expected"
 
-  # ── Custom: RLS Coverage ───────────────────────────────────────
+  # ── Custom: RLS Coverage & Schema Snapshot ───────────────────────
   rls-coverage:
-    name: RLS Coverage
+    name: Database CI Checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -269,5 +303,12 @@ jobs:
           if [ -n "$bad_files" ]; then
             echo "::error::USING (true) found without '-- AUDIT: public' marker in:"
             echo "$bad_files"
+            exit 1
+          fi
+      - name: Verify schema.sql is up to date
+        run: |
+          supabase db dump --local > supabase/schema.sql
+          if ! git diff --exit-code supabase/schema.sql; then
+            echo "::error::supabase/schema.sql is out of date. Please run 'supabase db dump --local > supabase/schema.sql' and commit the changes."
             exit 1
           fi

@@ -9,27 +9,9 @@ error budgets see [`docs/slos.md`](./docs/slos.md); for the expected
 Cloudflare bindings and env vars see [`wrangler.toml`](./wrangler.toml)
 and [`.env.example`](./.env.example).
 
-> **Platform migration note (pre-launch):** GroupsMix was migrated from
-> Cloudflare **Pages** to Cloudflare **Workers + Static Assets** while
-> still pre-launch. The authoritative edge config is now
-> [`wrangler.toml`](./wrangler.toml) and the Worker entry is
-> [`src/worker.js`](./src/worker.js). Wherever the text below says
-> "Cloudflare Pages → `gm-prod`", read it as "Cloudflare **Workers &
-> Pages** → `groupsmix` Worker". Wherever it says "Functions
-> invocation logs" / "Functions → Invocation logs", read it as the
-> Worker's **Logs** tab (or `wrangler tail` from a shell). Secret and
-> environment-variable management moved from the Pages project's
-> Settings → Environment variables into the Worker's Settings →
-> Variables (or `wrangler secret put <NAME>`). Cron Triggers moved
-> from the Pages dashboard into `wrangler.toml` `[triggers].crons`
-> and are dispatched by the Worker's `scheduled` handler. A follow-up
-> pass to rewrite the dashboard paths throughout this file is
-> tracked; the procedures themselves are unchanged.
-
-All commands below assume `gm-prod` is the prod Cloudflare project
-(now a Worker, previously a Pages project) and `gm-prod-supabase` is
-the prod Supabase project. Substitute the real slugs from your
-1Password / ops vault if they differ.
+All commands below assume `groupsmix` is the prod Cloudflare Worker project
+and `gm-prod-supabase` is the prod Supabase project. Substitute the real slugs 
+from your 1Password / ops vault if they differ.
 
 ---
 
@@ -50,15 +32,14 @@ the prod Supabase project. Substitute the real slugs from your
 
 ### Primary dashboards
 
-- **Cloudflare Pages** → `gm-prod` project: deploys, Functions
-  invocation logs, error rate.
+- **Cloudflare Workers** → `groupsmix` project: deploys, Worker Logs, error rate.
 - `gm-ctrl-x7` endpoint and `functions/gm-ctrl-x7.js` have been retired and replaced by `/admin/*`. The server-side admin gate logic now protects `/admin/*` directly via `src/worker.js`.
 - **Cloudflare Analytics** → zone `groupsmix.com`: edge status codes,
   cache hit ratio, bot score distribution.
 - **Supabase** → `gm-prod-supabase`: Database → Reports (connections,
   slow queries), Auth → Logs, Storage usage.
 - **Sentry** → projects `groupsmix-web` (browser) and
-  `groupsmix-edge` (Pages Functions); see
+  `groupsmix-edge` (Worker); see
   [`docs/observability.md`](./docs/observability.md). Alert-rule spec
   in [`docs/sentry-alerts.md`](./docs/sentry-alerts.md).
 - **Axiom** → dataset `cloudflare-pages-groupsmix`, fed by Cloudflare
@@ -87,7 +68,7 @@ the prod Supabase project. Substitute the real slugs from your
    and the Supabase status page
    (<https://status.supabase.com>). If upstream is red, note the
    incident and proceed to [§2.6](#26-upstream-outage-cloudflare-or-supabase).
-4. Check for recent deploys in Cloudflare Pages — if a deploy in the
+4. Check for recent deploys in Cloudflare Workers — if a deploy in the
    last 30 minutes correlates with the regression, prepare to roll
    back per [§6.2](#62-rollback).
 5. Post an initial status to the status page (if a user-facing
@@ -100,7 +81,7 @@ the prod Supabase project. Substitute the real slugs from your
 **Symptom:** SLO-S1 burning, Cloudflare analytics shows rising 5xx,
 external probe RED.
 
-1. In Cloudflare Pages → `gm-prod` → Functions → Invocation logs,
+1. In Cloudflare Workers → `groupsmix` → Logs,
    filter by `Outcome != 'ok'` and pick a recent failing invocation.
    The per-invocation logs show the thrown exception.
 2. Sentry `groupsmix-edge` will have the same error grouped; use the
@@ -116,7 +97,7 @@ external probe RED.
 
 ### 2.2 API error rate spike on a single endpoint
 
-1. Identify the endpoint in Cloudflare Pages → Invocation logs.
+1. Identify the endpoint in Cloudflare Workers → Logs.
 2. `rg <endpoint>` in `functions/api/` to find the handler.
 3. For payment endpoints (`lemonsqueezy-webhook`, `coins-wallet`):
    treat as **SEV-1** until you have confirmed no double-credit /
@@ -137,13 +118,13 @@ external probe RED.
 
 ### 2.3 Cron job failing (SLO-C1 burn)
 
-1. Find which job: Pages → Invocation logs filtered by the endpoint
+1. Find which job: Workers → Logs filtered by the endpoint
    path (`/api/compute-feed`, `/api/purge-deleted`,
    `/api/newsletter-digest`, `/api/article-schedule`).
 2. If the job is returning `503` with
    `"error":"Service not configured"` — `CRON_SECRET` is missing or
    the Supabase env vars are missing. Re-apply them in
-   Pages → Settings → Environment variables.
+   Workers → Settings → Variables.
 3. If the job is returning `401` — the scheduler is not sending
    `X-Cron-Secret`, or the rotated secret didn't propagate. See
    [§5.1](#51-rotate-cron_secret).
@@ -212,8 +193,7 @@ While maintenance mode is on:
 - API surfaces refuse user-mutating requests with a consistent 503.
 - Read-only browsing of cached pages continues (Cloudflare serves
   stale `Cache-Control` content).
-- Cron jobs still run unless paused — pause them in the Pages
-  dashboard if they will exacerbate the incident.
+- Cron jobs still run unless paused — pause them in `wrangler.toml` or the dashboard if they will exacerbate the incident.
 
 ## 4. Manual cron invocation
 
@@ -262,8 +242,8 @@ A `compute-feed` run can take 30–90 seconds; `purge-deleted` and
 
 ## 5. Secret rotation
 
-All secrets live in Cloudflare Pages → `gm-prod` → Settings →
-Environment variables, as **Encrypted** values. Rotation is always a
+All secrets live in Cloudflare Workers → `groupsmix` → Settings → Variables,
+as **Encrypted** values (or via `wrangler secret put`). Rotation is always a
 two-commit dance: set the new secret with an alternate name first,
 flip the consumer, retire the old secret.
 
@@ -271,9 +251,7 @@ flip the consumer, retire the old secret.
 
 1. Generate a new value (32 random bytes, URL-safe base64):
    `openssl rand -base64 32 | tr '+/' '-_' | tr -d '='`.
-2. Add `CRON_SECRET_NEXT` with the new value in the Pages dashboard
-   for both Production and Preview. Redeploy (Pages → Deployments →
-   Retry latest).
+2. Add `CRON_SECRET_NEXT` with the new value. Redeploy.
 3. Update every scheduler (the external cron caller, whatever
    fan-out service dispatches to `/api/*`) to send the new value.
 4. In `functions/api/_shared` add a temporary shim that accepts
@@ -286,8 +264,8 @@ flip the consumer, retire the old secret.
 
 1. In LemonSqueezy dashboard → Webhooks, click the target endpoint
    and generate a new signing secret. Copy the value.
-2. In Cloudflare Pages, add the new value under a second variable
-   `LEMONSQUEEZY_WEBHOOK_SECRET_NEXT`.
+2. Add the new value under a second variable
+   `LEMONSQUEEZY_WEBHOOK_SECRET_NEXT` via `wrangler secret put`.
 3. Update `functions/api/_shared/webhook-verify.js` to accept either
    secret (signature valid under old OR new) and redeploy.
 4. Update the LemonSqueezy webhook to use only the new secret.
@@ -302,7 +280,7 @@ Requires Supabase dashboard → Project Settings → API → Generate new
 `service_role` key. Generating a new key **invalidates the old one
 immediately**, so coordinate:
 
-1. In Cloudflare Pages, add the new value under a second variable
+1. Add the new value under a second variable
    `SUPABASE_SERVICE_KEY_NEXT` and redeploy a shim that reads the
    `_NEXT` first.
 2. Click "Generate new key" in Supabase.

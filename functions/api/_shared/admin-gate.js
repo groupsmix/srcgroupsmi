@@ -1,3 +1,5 @@
+import { logError, logWarn } from './log.js';
+
 /**
  * Cloudflare Pages Function — Server-side admin gate for /admin/*
  *
@@ -5,6 +7,7 @@
  * 1. A valid Supabase auth token exists in the request cookies
  * 2. The JWT is verified server-side against Supabase Auth
  * 3. The authenticated user has role = 'admin' (or 'moderator') in the users table
+ * 4. CSRF protection for state-changing requests (POST/PUT/DELETE/PATCH)
  *
  * If any check fails, the user is redirected to the homepage.
  * The admin HTML is NEVER served to unauthenticated or non-admin users.
@@ -172,10 +175,29 @@ export async function onRequest(context) {
     const SUPABASE_URL = env && env.SUPABASE_URL;
     const SUPABASE_ANON_KEY = env && env.SUPABASE_ANON_KEY;
 
+    // ─────────────────────────────────────────────────────────────
+    // CSRF Protection
+    // ─────────────────────────────────────────────────────────────
+    if (request.method !== 'GET' && request.method !== 'HEAD' && request.method !== 'OPTIONS') {
+        const origin = request.headers.get('Origin');
+        const expectedOrigin = env.PUBLIC_SITE_URL || 'https://groupsmix.com';
+        
+        if (origin !== expectedOrigin) {
+            logWarn('admin-gate: CSRF Origin mismatch', { expectedOrigin, actualOrigin: origin });
+            return new Response('Forbidden: Invalid Origin', { status: 403 });
+        }
+        
+        const csrfToken = request.headers.get('X-CSRF-Token');
+        if (!csrfToken) {
+            logWarn('admin-gate: Missing CSRF token on mutation request');
+            return new Response('Forbidden: Missing CSRF Token', { status: 403 });
+        }
+    }
+
     // Fail closed: without Supabase config we cannot verify anything,
     // so refuse to serve the admin page.
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-        console.error('admin-gate: SUPABASE_URL or SUPABASE_ANON_KEY not configured — refusing to serve admin page');
+        logError('admin-gate', 'SUPABASE_URL or SUPABASE_ANON_KEY not configured — refusing to serve admin page');
         return redirectHome(request);
     }
 

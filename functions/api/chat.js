@@ -27,13 +27,42 @@ import { logAiAudit } from './_shared/ai-audit.js';
 import { checkAndConsumeQuota, quotaExceededResponse } from './_shared/ai-quota.js';
 
 /* ── OpenRouter free models (fallback chain) ─────────────────── */
-const OPENROUTER_MODELS = [
+const DEFAULT_OPENROUTER_MODELS = [
     'google/gemma-3-27b-it:free',
     'google/gemma-3-12b-it:free',
     'meta-llama/llama-3.3-70b-instruct:free',
     'mistralai/mistral-small-3.1-24b-instruct:free',
     'nousresearch/hermes-3-llama-3.1-405b:free'
 ];
+
+async function getOpenRouterModels(env) {
+    if (!env?.STORE_KV) return DEFAULT_OPENROUTER_MODELS;
+    try {
+        const cached = await env.STORE_KV.get('openrouter_free_models', 'json');
+        if (cached && Array.isArray(cached) && cached.length > 0) {
+            return cached;
+        }
+        
+        // Fetch fresh if missing or expired (cached by cron/cold start)
+        const res = await fetch('https://openrouter.ai/api/v1/models');
+        if (res.ok) {
+            const data = await res.json();
+            // Filter for free chat models
+            const freeModels = data.data
+                .filter(m => m.pricing?.prompt === "0" && m.pricing?.completion === "0" && !m.id.includes('vision'))
+                .map(m => m.id)
+                .slice(0, 10); // Take top 10
+            
+            if (freeModels.length > 0) {
+                await env.STORE_KV.put('openrouter_free_models', JSON.stringify(freeModels), { expirationTtl: 1800 }); // 30 min
+                return freeModels;
+            }
+        }
+    } catch (err) {
+        // Ignore errors and fallback to default
+    }
+    return DEFAULT_OPENROUTER_MODELS;
+}
 
 /* ── GroupsMix Knowledge Base (System Prompt) ────────────────── */
 const SYSTEM_PROMPT = `You are GroupsMix Assistant — a concise, smart chatbot on GroupsMix.com.
@@ -251,7 +280,11 @@ export async function onRequest(context) {
             return null;
         }
         let anyFailure = false;
-        for (const model of OPENROUTER_MODELS) {
+        let successfulModel = false;
+        
+        const models = await getOpenRouterModels(env);
+        
+        for (const model of models) {
             try {
                 const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                     method: 'POST',

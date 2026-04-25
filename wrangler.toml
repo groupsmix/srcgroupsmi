@@ -191,6 +191,10 @@ head_sampling_rate = 0.1
 name = "groupsmix-staging"
 route = { pattern = "staging.groupsmix.com/*", zone_name = "groupsmix.com" }
 
+[env.staging.observability]
+enabled = true
+head_sampling_rate = 1.0
+
 [[env.staging.kv_namespaces]]
 binding    = "STORE_KV"
 id         = "staging_store_kv_id"

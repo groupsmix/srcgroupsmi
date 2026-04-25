@@ -33,7 +33,8 @@ const computeSchema = z.object({
     hours: z.number().int().positive().optional().default(6),
     min_co_occurrence: z.number().int().positive().optional().default(2),
     decay_factor: z.number().positive().max(1).optional().default(0.95),
-    inactive_days: z.number().int().positive().optional().default(7)
+    inactive_days: z.number().int().positive().optional().default(7),
+    limit: z.number().int().positive().optional().default(5000)
 }).passthrough();
 
 function corsHeaders(origin) {
@@ -230,13 +231,18 @@ export async function onRequest(context) {
     const minCoOccurrence = body.min_co_occurrence;
     const decayFactor = body.decay_factor;
     const inactiveDays = body.inactive_days;
+    const limit = body.limit;
 
     try {
         const results = [];
         const totalStart = Date.now();
 
+        // Warning: This passes p_limit to RPCs. The RPCs in Postgres must be
+        // updated to accept and enforce p_limit. If they don't, this param is ignored.
         if (job === 'trending' || job === 'all') {
-            results.push(await runTrending(supabaseUrl, supabaseKey, hours));
+            const resGroups = await callRpc(supabaseUrl, supabaseKey, 'compute_trending_scores_groups', { p_hours: hours, p_limit: limit });
+            const resArticles = await callRpc(supabaseUrl, supabaseKey, 'compute_trending_scores_articles', { p_hours: hours, p_limit: limit });
+            results.push({ job: 'trending', groups_updated: resGroups, articles_updated: resArticles });
         }
 
         if (job === 'collaborative' || job === 'all') {
