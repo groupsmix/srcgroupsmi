@@ -222,13 +222,13 @@ function buildPagesContext(request, env, ctx) {
  */
 const CRON_DISPATCH = {
     // Feed algorithm — trending scores, every 30 minutes
-    '*/30 * * * *': { path: '/api/compute-feed', method: 'POST', body: '{}' },
-    // Scheduled article publishing — every 5 minutes
-    '*/5 * * * *':  { path: '/api/article-schedule', method: 'GET' },
+    '*/30 * * * *': { path: '/api/compute-feed', method: 'POST', body: '{}', secretKey: 'CRON_SECRET_FEED' },
+    // Scheduled article publishing — every 15 minutes
+    '*/15 * * * *':  { path: '/api/article-schedule', method: 'GET', secretKey: 'CRON_SECRET_SCHEDULE' },
     // Weekly newsletter digest — Mondays at 13:00 UTC
-    '0 13 * * 1':   { path: '/api/newsletter-digest', method: 'GET' },
+    '0 13 * * 1':   { path: '/api/newsletter-digest', method: 'GET', secretKey: 'CRON_SECRET_NEWSLETTER' },
     // Hard-delete soft-deleted users past their grace window — 03:17 UTC daily
-    '17 3 * * *':   { path: '/api/purge-deleted', method: 'POST', body: '{}' }
+    '17 3 * * *':   { path: '/api/purge-deleted', method: 'POST', body: '{}', secretKey: 'CRON_SECRET_PURGE' }
 };
 
 async function runCron(cronSpec, env, ctx) {
@@ -245,7 +245,8 @@ async function runCron(cronSpec, env, ctx) {
     }
 
     const headers = {
-        'X-Cron-Secret': env.CRON_SECRET || '',
+        'X-Cron-Secret': env[job.secretKey] || env.CRON_SECRET || '',
+        'X-Cron-Internal': 'true',
         'Content-Type': 'application/json',
         'User-Agent': 'groupsmix-worker-cron/1.0'
     };

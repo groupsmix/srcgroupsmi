@@ -75,15 +75,20 @@ export function detectPlatform(parsedUrl: URL): string {
  * Returns true if the hostname is safe (a public domain name).
  */
 export function isSafeHostname(hostname: string): boolean {
-    // Reject IPv6 literals like [::1]
-    if (hostname.startsWith('[')) return false;
+    // Reject trailing dots which bypass simple DNS resolution logic
+    if (hostname.endsWith('.')) return false;
+
+    // Reject IPv6 literals (bracketed or bare)
+    if (hostname.includes(':') || hostname.startsWith('[')) return false;
 
     // Reject IPv4 literals (all-digit dotted notation)
     if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) return false;
 
-    // Reject localhost variants
+    // Reject localhost variants, AWS metadata IP, and .internal / .local domains
     const lower = hostname.toLowerCase();
     if (lower === 'localhost' || lower.endsWith('.localhost')) return false;
+    if (lower.endsWith('.local') || lower.endsWith('.internal')) return false;
+    if (lower === '0.0.0.0' || lower === '169.254.169.254') return false;
 
     return true;
 }

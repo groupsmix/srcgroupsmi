@@ -208,12 +208,14 @@ to confirm the PITR path actually works — the logical dump monthly
 drill does NOT cover the Supabase-side restore mechanism.
 
 ### 6.3 Annual full DR drill
-
+ 
 Once per year, run the full cutover procedure from
 [`../DISASTER_RECOVERY.md §4`](../DISASTER_RECOVERY.md) against a
 pre-prod Pages project. The only differences from a real cutover:
 maintenance mode stays off on the real prod project, and the final
 step (env-var swap) happens on the pre-prod project instead.
+
+**ACTION REQUIRED:** The engineering team must maintain a recurring calendar invite for the first week of November every year, titled "GroupsMix Annual DR Drill". This calendar event must include a link to this document and the `DISASTER_RECOVERY.md` runbook. Ensure the event is owned by a team alias, not an individual, to survive employee turnover.
 
 ## 7. Follow-ups
 

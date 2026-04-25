@@ -79,8 +79,35 @@ function getProjectRef(supabaseUrl) {
 /**
  * Verify the access token with Supabase Auth server
  * and check admin role in the users table.
+ * Caches the result in KV for 30 seconds to prevent
+ * excessive Supabase calls on every admin page load.
  */
-async function verifyAdmin(accessToken, supabaseUrl, supabaseAnonKey) {
+async function verifyAdmin(accessToken, env) {
+    const supabaseUrl = env.SUPABASE_URL;
+    const supabaseAnonKey = env.SUPABASE_ANON_KEY;
+    const kv = env.STORE_KV;
+
+    // Hash the JWT to produce a fixed-size KV key (Cloudflare KV keys
+    // are limited to 512 bytes; Supabase JWTs can exceed that).
+    let cacheKey;
+    try {
+        const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(accessToken));
+        const hex = [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join('');
+        cacheKey = 'admin_role:' + hex;
+    } catch {
+        cacheKey = null;
+    }
+
+    if (kv && cacheKey) {
+        try {
+            const cached = await kv.get(cacheKey);
+            if (cached === 'true') return true;
+            if (cached === 'false') return false;
+        } catch {
+            // KV read failed — proceed without cache
+        }
+    }
+
     // Step 1: Verify token with Supabase Auth (getUser endpoint)
     const userRes = await fetch(supabaseUrl + '/auth/v1/user', {
         headers: {
@@ -89,10 +116,16 @@ async function verifyAdmin(accessToken, supabaseUrl, supabaseAnonKey) {
         }
     });
 
-    if (!userRes.ok) return false;
+    if (!userRes.ok) {
+        if (kv && cacheKey) try { await kv.put(cacheKey, 'false', { expirationTtl: 30 }); } catch { /* ignore */ }
+        return false;
+    }
 
     const userData = await userRes.json();
-    if (!userData || !userData.id) return false;
+    if (!userData || !userData.id) {
+        if (kv && cacheKey) try { await kv.put(cacheKey, 'false', { expirationTtl: 30 }); } catch { /* ignore */ }
+        return false;
+    }
 
     // Step 2: Check the user's role in the users table via PostgREST
     const roleRes = await fetch(
@@ -106,12 +139,26 @@ async function verifyAdmin(accessToken, supabaseUrl, supabaseAnonKey) {
         }
     );
 
-    if (!roleRes.ok) return false;
+    if (!roleRes.ok) {
+        if (kv && cacheKey) try { await kv.put(cacheKey, 'false', { expirationTtl: 30 }); } catch { /* ignore */ }
+        return false;
+    }
 
     const rows = await roleRes.json();
-    if (!Array.isArray(rows) || rows.length === 0) return false;
+    if (!Array.isArray(rows) || rows.length === 0) {
+        if (kv && cacheKey) try { await kv.put(cacheKey, 'false', { expirationTtl: 30 }); } catch { /* ignore */ }
+        return false;
+    }
 
-    return rows[0].role === 'admin' || rows[0].role === 'moderator';
+    const isAdmin = rows[0].role === 'admin' || rows[0].role === 'moderator';
+    
+    // Cache the result for 30 seconds to speed up subsequent loads
+    // while keeping the demotion TOCTOU window minimal.
+    if (kv && cacheKey) {
+        try { await kv.put(cacheKey, isAdmin ? 'true' : 'false', { expirationTtl: 30 }); } catch { /* ignore */ }
+    }
+    
+    return isAdmin;
 }
 
 function redirectHome(request) {
@@ -121,11 +168,6 @@ function redirectHome(request) {
 
 export async function onRequest(context) {
     const { request, next, env } = context;
-
-    // Only gate GET requests to the admin page
-    if (request.method !== 'GET') {
-        return next();
-    }
 
     const SUPABASE_URL = env && env.SUPABASE_URL;
     const SUPABASE_ANON_KEY = env && env.SUPABASE_ANON_KEY;
@@ -154,7 +196,7 @@ export async function onRequest(context) {
     }
 
     try {
-        const isAdmin = await verifyAdmin(accessToken, SUPABASE_URL, SUPABASE_ANON_KEY);
+        const isAdmin = await verifyAdmin(accessToken, env);
         if (!isAdmin) {
             return redirectHome(request);
         }
