@@ -72,7 +72,7 @@ export async function onRequest(context: PagesContext): Promise<Response> {
     } catch (err) {
         if (err instanceof z.ZodError) {
             return new Response(
-                JSON.stringify({ ok: false, errors: err.errors.map(e => e.message) }),
+                JSON.stringify({ ok: false, errors: err.issues.map((e: any) => e.message) }),
                 { status: 400, headers: corsHeaders(origin) }
             );
         }
@@ -89,7 +89,7 @@ export async function onRequest(context: PagesContext): Promise<Response> {
     // 1. Rate limit check (persistent via KV when available, in-memory fallback)
     const kvStore = env?.RATE_LIMIT_KV || null;
     const limit = RATE_LIMITS[action] || RATE_LIMITS.default;
-    const allowed = await checkRateLimit(ip, action, limit, kvStore);
+    const allowed = await checkRateLimit(ip, action, limit, kvStore || undefined);
     if (!allowed) {
         return new Response(
             JSON.stringify({ ok: false, errors: ['Too many requests. Please try again later.'], code: 'RATE_LIMITED' }),
@@ -112,7 +112,7 @@ export async function onRequest(context: PagesContext): Promise<Response> {
         const secretKey = env?.TURNSTILE_SECRET_KEY || '';
         const turnstileResult = await verifyTurnstile(body.turnstileToken, secretKey, ip);
         if (!turnstileResult.success) {
-            errors.push(turnstileResult.error);
+            errors.push(turnstileResult.error || 'Turnstile verification failed');
         }
     }
 

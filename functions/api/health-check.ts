@@ -148,7 +148,7 @@ export async function onRequest(context: PagesContext): Promise<Response> {
     const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
 
     const kvStore = context.env?.RATE_LIMIT_KV || null;
-    const allowed = await checkRateLimit(ip, 'health', HEALTH_CHECK_LIMIT, kvStore);
+    const allowed = await checkRateLimit(ip, 'health', HEALTH_CHECK_LIMIT, kvStore || undefined);
     if (!allowed) {
         return new Response(
             JSON.stringify({ ok: false, error: 'Too many requests. Try again later.' }),
