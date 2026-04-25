@@ -12,8 +12,8 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors';
-import { checkRateLimit, RateLimitConfig } from './_shared/rate-limit';
-import { PagesContext } from './_shared/types';
+import { checkRateLimit, type RateLimitConfig } from './_shared/rate-limit';
+import type { PagesContext } from './_shared/types';
 import { z } from 'zod';
 
 const healthCheckSchema = z.object({

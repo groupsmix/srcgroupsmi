@@ -9,7 +9,7 @@ function renderHeader() {
     if (!header) return;
     const isLoggedIn = Auth.isLoggedIn();
     const user = Auth.getUser();
-    const unread = user?.unread_notifications || 0;
+    const _unread = user?.unread_notifications || 0;
     const _displayName = Security.sanitize(user?.display_name || 'User').slice(0, 16);
     const photoUrl = user?.photo_url || '';
     const avatarInitial = (user?.display_name || 'U').charAt(0).toUpperCase();

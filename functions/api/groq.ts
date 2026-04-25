@@ -23,7 +23,7 @@ import { shouldAttempt, recordSuccess, recordFailure } from './_shared/circuit-b
 import { logAiAudit } from './_shared/ai-audit';
 import { checkAndConsumeQuota, quotaExceededResponse } from './_shared/ai-quota';
 
-import { WorkerEnv, PagesContext } from './_shared/types';
+import type { WorkerEnv, PagesContext } from './_shared/types';
 
 /* ── Supported languages ─────────────────────────────────────── */
 const SUPPORTED_LANGUAGES = {

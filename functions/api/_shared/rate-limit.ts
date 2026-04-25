@@ -10,7 +10,7 @@
  * KV TTL: matches the rate limit window (auto-expiry)
  */
 
-import { WorkerEnv } from './types';
+import type { WorkerEnv } from './types';
 
 /* ── In-memory fallback (per isolate, resets on cold start) ── */
 const ipBuckets = new Map<string, number[]>();

@@ -152,7 +152,7 @@ export async function onRequest(context) {
 
     const password = body.password;
     const turnstileToken = body.turnstileToken || '';
-    const confirm = body.confirm;
+    const _confirm = body.confirm;
 
     const captcha = await verifyTurnstile(turnstileToken, env?.TURNSTILE_SECRET_KEY, ip);
     if (!captcha.success) {

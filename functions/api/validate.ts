@@ -17,11 +17,11 @@
  */
 
 import { z } from 'zod';
-import { checkRateLimit, RateLimitConfig } from './_shared/rate-limit';
+import { checkRateLimit, type RateLimitConfig } from './_shared/rate-limit';
 import { validateEmail } from './_shared/email-validator';
 import { verifyTurnstile } from './_shared/turnstile';
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors';
-import { PagesContext } from './_shared/types';
+import type { PagesContext } from './_shared/types';
 
 function corsHeaders(origin: string | null): Record<string, string> {
     return _corsHeaders(origin, { 'Content-Type': 'application/json' });
