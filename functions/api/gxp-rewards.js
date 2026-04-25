@@ -1,3 +1,4 @@
+import { logError, logWarn } from "./_shared/log.js";
 /**
  * /api/gxp-rewards — Award GXP (Writer XP) for various events
  *
@@ -171,7 +172,7 @@ export async function onRequest(context) {
 
         if (!rpcRes.ok) {
             const errText = await rpcRes.text();
-            console.error('award_writer_xp RPC error:', rpcRes.status, errText);
+            logError('award_writer_xp RPC error:', errText, { status: rpcRes.status });
             return new Response(JSON.stringify({ ok: false, error: 'Failed to award XP' }), {
                 status: 500, headers: corsHeaders(origin)
             });

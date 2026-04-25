@@ -1,3 +1,4 @@
+-- AUDIT: public
 -- =============================================
 -- Migration 016: Advanced Article Features
 -- Article Series, Inline Polls, Reading Lists,

@@ -1,3 +1,4 @@
+-- AUDIT: public
 -- =============================================
 -- Migration 024: Platform Features
 -- Reading Analytics, Scheduled Publishing, Version History,

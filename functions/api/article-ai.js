@@ -1,3 +1,4 @@
+import { logError, logWarn } from "./_shared/log.js";
 /**
  * Cloudflare Worker Function — article-ai.js
  * AI endpoint for article-specific tasks using Groq API
@@ -251,7 +252,7 @@ export async function onRequestPost(context) {
         if (!groqResponse.ok) {
             await recordFailure(env, providerName);
             const errText = await groqResponse.text();
-            console.error('Groq API error:', groqResponse.status, errText);
+            logError('Groq API error:', errText, { status: groqResponse.status });
             return new Response(JSON.stringify({ error: 'AI service error', details: groqResponse.status }), {
                 status: 502,
                 headers: corsHeaders

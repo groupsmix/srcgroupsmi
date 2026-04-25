@@ -1,3 +1,4 @@
+import { logError, logWarn } from './_shared/log.js';
 /**
  * /api/push-subscribe — Push Notification Subscription Handler
  *
@@ -103,7 +104,7 @@ export async function onRequest(context) {
 
         if (!res.ok) {
             const errText = await res.text();
-            console.error('Push subscribe error:', res.status, errText);
+            logError('Push subscribe error:', errText, { status: res.status });
             return errorResponse('Failed to save subscription', 500, origin);
         }
 

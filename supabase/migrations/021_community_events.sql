@@ -1,3 +1,4 @@
+-- AUDIT: public
 -- ═══════════════════════════════════════════════════════════════
 -- Migration 021: Community Events / Meetups Board
 -- Group owners can post events, users can discover and RSVP.

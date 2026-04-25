@@ -1,3 +1,4 @@
+-- AUDIT: public
 -- =============================================
 -- Migration 014: Articles Social Platform
 -- Transforms Articles into a full social content platform

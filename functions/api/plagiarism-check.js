@@ -1,3 +1,4 @@
+import { logError, logWarn } from './_shared/log.js';
 /**
  * /api/plagiarism-check — AI-Powered Plagiarism Detection
  *
@@ -144,7 +145,7 @@ export async function onRequest(context) {
 
         if (!res.ok) {
             const errText = await res.text();
-            console.error('fetch hashes error:', res.status, errText);
+            logError('fetch hashes error:', errText, { status: res.status });
             return new Response(
                 JSON.stringify({ ok: true, similarity: 0, matches: [], message: 'Could not check existing content' }),
                 { status: 200, headers: corsHeaders(origin) }

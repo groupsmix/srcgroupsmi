@@ -1,3 +1,4 @@
+import { logError, logWarn } from './_shared/log.js';
 /**
  * /api/article-analytics — Author Reading Analytics
  *
@@ -64,7 +65,7 @@ export async function onRequest(context) {
 
             if (!res.ok) {
                 const errText = await res.text();
-                console.error('record_article_view_daily error:', res.status, errText);
+                logError('record_article_view_daily error:', errText, { status: res.status });
             }
 
             return new Response(
@@ -94,7 +95,7 @@ export async function onRequest(context) {
 
             if (!res.ok) {
                 const errText = await res.text();
-                console.error('get_author_analytics error:', res.status, errText);
+                logError('get_author_analytics error:', errText, { status: res.status });
                 return new Response(
                     JSON.stringify({ ok: false, error: 'Failed to fetch analytics' }),
                     { status: 500, headers: corsHeaders(origin) }

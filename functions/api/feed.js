@@ -1,3 +1,4 @@
+import { logError, logWarn } from './_shared/log.js';
 /**
  * /api/feed — Personalized Smart Feed API
  *
@@ -50,7 +51,7 @@ async function callRpc(supabaseUrl, supabaseKey, fnName, params) {
 
     if (!res.ok) {
         const errText = await res.text();
-        console.error('RPC ' + fnName + ' error:', res.status, errText);
+        logError('RPC ' + fnName + ' error:', errText, { status: res.status });
         return null;
     }
 

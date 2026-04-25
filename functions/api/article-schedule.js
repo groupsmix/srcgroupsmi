@@ -1,3 +1,4 @@
+import { logError, logWarn } from './_shared/log.js';
 /**
  * /api/article-schedule — Scheduled Publishing
  *
@@ -87,7 +88,7 @@ export async function onRequest(context) {
 
             if (!res.ok) {
                 const errText = await res.text();
-                console.error('publish_scheduled_articles error:', res.status, errText);
+                logError('publish_scheduled_articles error:', errText, { status: res.status });
                 context.waitUntil(captureEdgeException(env, new Error('publish_scheduled_articles RPC failed: ' + errText), {
                     request: request,
                     tags: { endpoint: 'article-schedule', mode: 'cron' }
@@ -173,7 +174,7 @@ export async function onRequest(context) {
 
             if (!res.ok) {
                 const errText = await res.text();
-                console.error('schedule article error:', res.status, errText);
+                logError('schedule article error:', errText, { status: res.status });
                 return new Response(
                     JSON.stringify({ ok: false, error: 'Failed to schedule article' }),
                     { status: 500, headers: corsHeaders(origin) }

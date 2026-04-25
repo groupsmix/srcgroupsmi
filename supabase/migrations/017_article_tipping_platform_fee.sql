@@ -1,3 +1,4 @@
+-- AUDIT: public
 -- =============================================
 -- Migration 017: Article Tipping with Platform Fee
 -- Adds 20% platform fee to tips, tip stats on articles,

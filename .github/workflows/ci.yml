@@ -171,6 +171,24 @@ jobs:
           fi
           echo "No context.params found in server code"
 
+  # ── Custom: Reject raw PII logging ───────────────────────────────
+  no-raw-pii-logging:
+    name: Reject raw PII logging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Check for console.error/warn with raw payload/body/errText
+        run: |
+          echo "Checking for raw PII logging in server code ..."
+          files=$(grep -E -r "console\.(error|warn)\(.*(body|payload|errText).*\)" functions/ --include="*.js" --include="*.ts" -l 2>/dev/null || true)
+          if [ -n "$files" ]; then
+            echo "::error::console.error/warn found logging raw body/payload/errText. Use logError/logWarn from _shared/log.js instead:"
+            echo "$files"
+            exit 1
+          fi
+          echo "No raw PII logging found"
+
   # ── Custom: every SECURITY DEFINER function must pin search_path ─
   # SECURITY DEFINER bodies run as the function owner. If search_path
   # is not pinned, a caller can plant shadow objects in another schema
@@ -216,3 +234,40 @@ jobs:
             exit 1
           fi
           echo "Rate limit returned 429 as expected"
+
+  # ── Custom: RLS Coverage ───────────────────────────────────────
+  rls-coverage:
+    name: RLS Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start Supabase and apply migrations
+        run: supabase start
+      - name: Verify all public tables have RLS enabled
+        run: |
+          supabase db query "
+          DO \$\$
+          DECLARE r RECORD;
+          BEGIN
+              FOR r IN
+                  SELECT n.nspname, c.relname
+                  FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                  WHERE c.relkind='r' AND n.nspname='public' AND c.relrowsecurity=false
+              LOOP
+                  RAISE EXCEPTION 'RLS missing on %.%', r.nspname, r.relname;
+              END LOOP;
+          END \$\$;
+          "
+      - name: Guard against USING (true) policies without explicit AUDIT marker
+        run: |
+          # Fails if any migration file has 'USING (true)' without '-- AUDIT: public'
+          bad_files=$(grep -ilR "USING (true)" supabase/migrations/ | xargs grep -iL -e "-- AUDIT: public" || true)
+          if [ -n "$bad_files" ]; then
+            echo "::error::USING (true) found without '-- AUDIT: public' marker in:"
+            echo "$bad_files"
+            exit 1
+          fi

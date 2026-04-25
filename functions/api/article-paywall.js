@@ -1,3 +1,4 @@
+import { logError, logWarn } from './_shared/log.js';
 /**
  * /api/article-paywall — Article Monetization
  *
@@ -74,7 +75,7 @@ export async function onRequest(context) {
 
                 if (!res.ok) {
                     const errText = await res.text();
-                    console.error('purchase_article error:', res.status, errText);
+                    logError('purchase_article error:', errText, { status: res.status });
                     return errorResponse('Purchase failed', 500, origin);
                 }
 

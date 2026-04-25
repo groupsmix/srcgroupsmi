@@ -1,3 +1,4 @@
+-- AUDIT: public
 -- =============================================
 -- Migration 018: Smart Feed Algorithm System
 -- Content Deduplication, Collaborative Filtering,

@@ -1,3 +1,4 @@
+-- AUDIT: public
 -- ═══════════════════════════════════════════════════════════════
 -- Migration 017: Growth Features
 -- Embeddable widgets, link analytics, group of the day,

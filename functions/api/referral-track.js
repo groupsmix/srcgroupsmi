@@ -1,3 +1,4 @@
+import { logError, logWarn } from "./_shared/log.js";
 /**
  * /api/referral-track — Referral Event Tracker
  *
@@ -140,7 +141,7 @@ export async function onRequest(context) {
 
         if (!insertRes.ok) {
             const errText = await insertRes.text();
-            console.error('Referral event insert error:', insertRes.status, errText);
+            logError('Referral event insert error:', errText, { status: insertRes.status });
             return new Response(
                 JSON.stringify({ ok: false, error: 'Failed to track referral' }),
                 { status: 500, headers: corsHeaders(origin) }
