@@ -14,7 +14,7 @@ on:
 jobs:
   # ── Lint + Test (shared) ──────────────────────────────────────────
   ci:
-    uses: groupsmix/shared-workflows/.github/workflows/ci.yml@f00e708ee62dff63b0aecfc5d390dee6e21acd28 # pinned to groupsmix/shared-workflows main @ 2026-04 (workflow_call required:false fix)
+    uses: groupsmix/shared-workflows/.github/workflows/ci.yml@aa5599efbc6637f3c2024419982fee2785105280 # pinned to groupsmix/shared-workflows main @ 2026-04 (empty if-body fix)
     with:
       language: node
       node-version: "22"
@@ -22,7 +22,7 @@ jobs:
 
   # ── Type-check + Formatter (shared) ──────────────────────────────
   quality:
-    uses: groupsmix/shared-workflows/.github/workflows/code-quality.yml@f00e708ee62dff63b0aecfc5d390dee6e21acd28 # pinned to groupsmix/shared-workflows main @ 2026-04 (workflow_call required:false fix)
+    uses: groupsmix/shared-workflows/.github/workflows/code-quality.yml@aa5599efbc6637f3c2024419982fee2785105280 # pinned to groupsmix/shared-workflows main @ 2026-04 (empty if-body fix)
     with:
       language: node
       node-version: "22"
@@ -34,7 +34,7 @@ jobs:
   # ── Astro build (shared) ─────────────────────────────────────────
   build:
     needs: [ci, quality]
-    uses: groupsmix/shared-workflows/.github/workflows/build.yml@f00e708ee62dff63b0aecfc5d390dee6e21acd28 # pinned to groupsmix/shared-workflows main @ 2026-04 (workflow_call required:false fix)
+    uses: groupsmix/shared-workflows/.github/workflows/build.yml@aa5599efbc6637f3c2024419982fee2785105280 # pinned to groupsmix/shared-workflows main @ 2026-04 (empty if-body fix)
     with:
       language: node
       node-version: "22"
@@ -46,7 +46,7 @@ jobs:
       actions: read
       contents: read
       security-events: write
-    uses: groupsmix/shared-workflows/.github/workflows/security.yml@f00e708ee62dff63b0aecfc5d390dee6e21acd28 # pinned to groupsmix/shared-workflows main @ 2026-04 (workflow_call required:false fix)
+    uses: groupsmix/shared-workflows/.github/workflows/security.yml@aa5599efbc6637f3c2024419982fee2785105280 # pinned to groupsmix/shared-workflows main @ 2026-04 (empty if-body fix)
     with:
       language: node
       node-version: "22"
@@ -81,7 +81,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    uses: groupsmix/shared-workflows/.github/workflows/label.yml@f00e708ee62dff63b0aecfc5d390dee6e21acd28 # pinned to groupsmix/shared-workflows main @ 2026-04 (workflow_call required:false fix)
+    uses: groupsmix/shared-workflows/.github/workflows/label.yml@aa5599efbc6637f3c2024419982fee2785105280 # pinned to groupsmix/shared-workflows main @ 2026-04 (empty if-body fix)
     with:
       use-default-config: true
 
