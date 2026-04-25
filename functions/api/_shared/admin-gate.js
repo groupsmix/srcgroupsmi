@@ -87,12 +87,25 @@ async function verifyAdmin(accessToken, env) {
     const supabaseAnonKey = env.SUPABASE_ANON_KEY;
     const kv = env.STORE_KV;
 
-    // Check KV cache first to avoid 2x Supabase roundtrips on every request
-    const cacheKey = 'admin_role:' + accessToken;
-    if (kv) {
-        const cached = await kv.get(cacheKey);
-        if (cached === 'true') return true;
-        if (cached === 'false') return false;
+    // Hash the JWT to produce a fixed-size KV key (Cloudflare KV keys
+    // are limited to 512 bytes; Supabase JWTs can exceed that).
+    let cacheKey;
+    try {
+        const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(accessToken));
+        const hex = [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join('');
+        cacheKey = 'admin_role:' + hex;
+    } catch {
+        cacheKey = null;
+    }
+
+    if (kv && cacheKey) {
+        try {
+            const cached = await kv.get(cacheKey);
+            if (cached === 'true') return true;
+            if (cached === 'false') return false;
+        } catch {
+            // KV read failed — proceed without cache
+        }
     }
 
     // Step 1: Verify token with Supabase Auth (getUser endpoint)
@@ -104,13 +117,13 @@ async function verifyAdmin(accessToken, env) {
     });
 
     if (!userRes.ok) {
-        if (kv) await kv.put(cacheKey, 'false', { expirationTtl: 30 });
+        if (kv && cacheKey) try { await kv.put(cacheKey, 'false', { expirationTtl: 30 }); } catch { /* ignore */ }
         return false;
     }
 
     const userData = await userRes.json();
     if (!userData || !userData.id) {
-        if (kv) await kv.put(cacheKey, 'false', { expirationTtl: 30 });
+        if (kv && cacheKey) try { await kv.put(cacheKey, 'false', { expirationTtl: 30 }); } catch { /* ignore */ }
         return false;
     }
 
@@ -127,13 +140,13 @@ async function verifyAdmin(accessToken, env) {
     );
 
     if (!roleRes.ok) {
-        if (kv) await kv.put(cacheKey, 'false', { expirationTtl: 30 });
+        if (kv && cacheKey) try { await kv.put(cacheKey, 'false', { expirationTtl: 30 }); } catch { /* ignore */ }
         return false;
     }
 
     const rows = await roleRes.json();
     if (!Array.isArray(rows) || rows.length === 0) {
-        if (kv) await kv.put(cacheKey, 'false', { expirationTtl: 30 });
+        if (kv && cacheKey) try { await kv.put(cacheKey, 'false', { expirationTtl: 30 }); } catch { /* ignore */ }
         return false;
     }
 
@@ -141,8 +154,8 @@ async function verifyAdmin(accessToken, env) {
     
     // Cache the result for 30 seconds to speed up subsequent loads
     // while keeping the demotion TOCTOU window minimal.
-    if (kv) {
-        await kv.put(cacheKey, isAdmin ? 'true' : 'false', { expirationTtl: 30 });
+    if (kv && cacheKey) {
+        try { await kv.put(cacheKey, isAdmin ? 'true' : 'false', { expirationTtl: 30 }); } catch { /* ignore */ }
     }
     
     return isAdmin;

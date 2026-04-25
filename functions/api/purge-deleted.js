@@ -78,7 +78,7 @@ export async function onRequest(context) {
         return errorResponse('Method not allowed', 405, origin);
     }
 
-    const cronSecret = env?.CRON_SECRET;
+    const cronSecret = env?.CRON_SECRET_PURGE || env?.CRON_SECRET;
     if (!cronSecret) {
         // Fail closed — an unconfigured secret must not become a
         // public "delete everyone" endpoint.
@@ -89,12 +89,6 @@ export async function onRequest(context) {
     const presented = request.headers.get('X-Cron-Secret') || '';
     if (!timingSafeEqualHex(presented, cronSecret)) {
         return errorResponse('Unauthorized', 401, origin);
-    }
-
-    // Ensure request is internal via src/worker.js dispatcher
-    if (request.headers.get('X-Cron-Internal') !== 'true') {
-        console.error('Refused external call to cron endpoint');
-        return errorResponse('Unauthorized origin', 401, origin);
     }
 
     let cfg;

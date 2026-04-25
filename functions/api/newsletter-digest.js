@@ -67,7 +67,7 @@ export async function onRequest(context) {
     // using the service-role key and must never be reachable without
     // the shared CRON_SECRET. Fail closed when the env var is unset.
     if (request.method === 'GET') {
-        const cronSecret = env?.CRON_SECRET;
+        const cronSecret = env?.CRON_SECRET_NEWSLETTER || env?.CRON_SECRET;
         if (!cronSecret) {
             console.error('newsletter-digest: CRON_SECRET not configured');
             return new Response(
@@ -81,12 +81,6 @@ export async function onRequest(context) {
                 JSON.stringify({ ok: false, error: 'Unauthorized' }),
                 { status: 401, headers: corsHeaders(origin) }
             );
-        }
-        if (request.headers.get('X-Cron-Internal') !== 'true') {
-            return new Response(JSON.stringify({ ok: false, error: 'Unauthorized origin' }), {
-                status: 401,
-                headers: corsHeaders(origin)
-            });
         }
     }
 

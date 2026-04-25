@@ -47,6 +47,8 @@ async function checkRateLimit(env, ip, action) {
         const supabaseKey = env.SUPABASE_SERVICE_KEY;
         if (supabaseUrl && supabaseKey) {
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
                 const res = await fetch(supabaseUrl + '/rest/v1/rpc/check_db_rate_limit', {
                     method: 'POST',
                     headers: {
@@ -58,8 +60,10 @@ async function checkRateLimit(env, ip, action) {
                         p_key: `rl:jobs:${ip}:${action}`,
                         p_max_tokens: 15,
                         p_window_seconds: 60
-                    })
+                    }),
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
                 if (res.ok) {
                     const allowed = await res.json();
                     return allowed === true;

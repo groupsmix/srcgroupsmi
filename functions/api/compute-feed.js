@@ -210,14 +210,7 @@ export async function onRequest(context) {
     if (!timingSafeEqualHex(providedSecret, cronSecret)) {
         return jsonResponse({ ok: false, error: 'Unauthorized' }, 401, origin);
     }
-    
-    // Validate that the request came from our internal cron dispatcher,
-    // not an external caller who managed to guess/steal the cron secret.
-    const isInternal = request.headers.get('X-Cron-Internal') === 'true';
-    if (!isInternal) {
-        console.error('Refused external call to cron endpoint');
-        return jsonResponse({ ok: false, error: 'Unauthorized origin' }, 401, origin);
-    }
+
 
     let body;
     try {
