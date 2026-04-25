@@ -9,7 +9,7 @@ on:
 
 jobs:
   stale:
-    uses: groupsmix/shared-workflows/.github/workflows/stale.yml@11d9ced857bec31af2198c798acbb5bfcb7f83da # pinned to groupsmix/shared-workflows main @ 2026-04
+    uses: groupsmix/shared-workflows/.github/workflows/stale.yml@51fb8660b68f03b581204d16201b425fe67e30eb # pinned to groupsmix/shared-workflows main @ 2026-04
     with:
       days-before-stale: 60
       days-before-close: 14
