@@ -14,7 +14,7 @@ on:
 jobs:
   # ── Lint + Test (shared) ──────────────────────────────────────────
   ci:
-    uses: groupsmix/shared-workflows/.github/workflows/ci.yml@94b3071 # pinned to groupsmix/shared-workflows main
+    uses: groupsmix/shared-workflows/.github/workflows/ci.yml@51fb8660b68f03b581204d16201b425fe67e30eb # pinned to groupsmix/shared-workflows main
     with:
       language: node
       node-version: "22"
@@ -22,7 +22,7 @@ jobs:
 
   # ── Type-check + Formatter (shared) ──────────────────────────────
   quality:
-    uses: groupsmix/shared-workflows/.github/workflows/code-quality.yml@94b3071 # pinned to groupsmix/shared-workflows main
+    uses: groupsmix/shared-workflows/.github/workflows/code-quality.yml@51fb8660b68f03b581204d16201b425fe67e30eb # pinned to groupsmix/shared-workflows main
     with:
       language: node
       node-version: "22"
@@ -34,7 +34,7 @@ jobs:
   # ── Astro build (shared) ─────────────────────────────────────────
   build:
     needs: [ci, quality]
-    uses: groupsmix/shared-workflows/.github/workflows/build.yml@94b3071 # pinned to groupsmix/shared-workflows main
+    uses: groupsmix/shared-workflows/.github/workflows/build.yml@51fb8660b68f03b581204d16201b425fe67e30eb # pinned to groupsmix/shared-workflows main
     with:
       language: node
       node-version: "22"
@@ -42,7 +42,7 @@ jobs:
 
   # ── Security audit (shared) ──────────────────────────────────────
   security:
-    uses: groupsmix/shared-workflows/.github/workflows/security.yml@94b3071 # pinned to groupsmix/shared-workflows main
+    uses: groupsmix/shared-workflows/.github/workflows/security.yml@51fb8660b68f03b581204d16201b425fe67e30eb # pinned to groupsmix/shared-workflows main
     with:
       language: node
       node-version: "22"
@@ -74,7 +74,7 @@ jobs:
   # ── Auto-label PRs (shared) ─────────────────────────────────────
   label:
     if: github.event_name == 'pull_request'
-    uses: groupsmix/shared-workflows/.github/workflows/label.yml@94b3071 # pinned to groupsmix/shared-workflows main
+    uses: groupsmix/shared-workflows/.github/workflows/label.yml@51fb8660b68f03b581204d16201b425fe67e30eb # pinned to groupsmix/shared-workflows main
     with:
       use-default-config: true
 
