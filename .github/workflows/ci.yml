@@ -42,6 +42,10 @@ jobs:
 
   # ── Security audit (shared) ──────────────────────────────────────
   security:
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
     uses: groupsmix/shared-workflows/.github/workflows/security.yml@f00e708ee62dff63b0aecfc5d390dee6e21acd28 # pinned to groupsmix/shared-workflows main @ 2026-04 (workflow_call required:false fix)
     with:
       language: node
@@ -74,6 +78,9 @@ jobs:
   # ── Auto-label PRs (shared) ─────────────────────────────────────
   label:
     if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
     uses: groupsmix/shared-workflows/.github/workflows/label.yml@f00e708ee62dff63b0aecfc5d390dee6e21acd28 # pinned to groupsmix/shared-workflows main @ 2026-04 (workflow_call required:false fix)
     with:
       use-default-config: true
