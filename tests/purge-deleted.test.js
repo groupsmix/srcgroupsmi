@@ -58,7 +58,7 @@ describe('POST /api/purge-deleted', () => {
             return jsonResponse({}, { status: 204 });
         });
         const res = await onRequest({
-            request: makeRequest({ 'X-Cron-Secret': 's3cret' }, { limit: 10 }),
+            request: makeRequest({ 'X-Cron-Secret': 's3cret', 'X-Cron-Internal': 'true' }, { limit: 10 }),
             env: { ...BASE_ENV, CRON_SECRET: 's3cret' }
         });
         expect(res.status).toBe(200);

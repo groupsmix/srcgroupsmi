@@ -78,7 +78,7 @@ export async function onRequest(context) {
         return errorResponse('Method not allowed', 405, origin);
     }
 
-    const cronSecret = env?.CRON_SECRET;
+    const cronSecret = env?.CRON_SECRET_PURGE || env?.CRON_SECRET;
     if (!cronSecret) {
         // Fail closed — an unconfigured secret must not become a
         // public "delete everyone" endpoint.

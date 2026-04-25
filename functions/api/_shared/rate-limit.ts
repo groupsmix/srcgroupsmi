@@ -10,7 +10,7 @@
  * KV TTL: matches the rate limit window (auto-expiry)
  */
 
-import { WorkerEnv } from './types';
+import type { WorkerEnv } from './types';
 
 /* ── In-memory fallback (per isolate, resets on cold start) ── */
 const ipBuckets = new Map<string, number[]>();
@@ -88,7 +88,6 @@ async function checkRateLimitKV(ip: string, action: string, limit: RateLimitConf
         if (rollbackIdx !== -1) localBucket.splice(rollbackIdx, 1);
         ipBuckets.set(localKey, localBucket);
         return false;
-    }
     }
 
     recent.push(now);

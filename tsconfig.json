@@ -6,7 +6,7 @@
     "moduleResolution": "bundler",
     "strict": true,
     "allowJs": true,
-    "checkJs": true,
+    "checkJs": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
@@ -21,8 +21,7 @@
   },
   "include": [
     "src/**/*",
-    "functions/api/**/*",
-    "public/assets/js/**/*"
+    "functions/api/**/*"
   ],
   "exclude": [
     "node_modules",

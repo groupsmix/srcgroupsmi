@@ -12,8 +12,8 @@
  */
 
 import { corsHeaders as _corsHeaders, handlePreflight } from './_shared/cors';
-import { checkRateLimit, RateLimitConfig } from './_shared/rate-limit';
-import { PagesContext } from './_shared/types';
+import { checkRateLimit, type RateLimitConfig } from './_shared/rate-limit';
+import type { PagesContext } from './_shared/types';
 import { z } from 'zod';
 
 const healthCheckSchema = z.object({
@@ -75,15 +75,20 @@ export function detectPlatform(parsedUrl: URL): string {
  * Returns true if the hostname is safe (a public domain name).
  */
 export function isSafeHostname(hostname: string): boolean {
-    // Reject IPv6 literals like [::1]
-    if (hostname.startsWith('[')) return false;
+    // Reject trailing dots which bypass simple DNS resolution logic
+    if (hostname.endsWith('.')) return false;
+
+    // Reject IPv6 literals (bracketed or bare)
+    if (hostname.includes(':') || hostname.startsWith('[')) return false;
 
     // Reject IPv4 literals (all-digit dotted notation)
     if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) return false;
 
-    // Reject localhost variants
+    // Reject localhost variants, AWS metadata IP, and .internal / .local domains
     const lower = hostname.toLowerCase();
     if (lower === 'localhost' || lower.endsWith('.localhost')) return false;
+    if (lower.endsWith('.local') || lower.endsWith('.internal')) return false;
+    if (lower === '0.0.0.0' || lower === '169.254.169.254') return false;
 
     return true;
 }
@@ -143,7 +148,7 @@ export async function onRequest(context: PagesContext): Promise<Response> {
     const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
 
     const kvStore = context.env?.RATE_LIMIT_KV || null;
-    const allowed = await checkRateLimit(ip, 'health', HEALTH_CHECK_LIMIT, kvStore);
+    const allowed = await checkRateLimit(ip, 'health', HEALTH_CHECK_LIMIT, kvStore || undefined);
     if (!allowed) {
         return new Response(
             JSON.stringify({ ok: false, error: 'Too many requests. Try again later.' }),
@@ -157,7 +162,7 @@ export async function onRequest(context: PagesContext): Promise<Response> {
         const validation = healthCheckSchema.safeParse(rawBody);
         if (!validation.success) {
             return new Response(
-                JSON.stringify({ ok: false, error: validation.error.errors[0].message }),
+                JSON.stringify({ ok: false, error: validation.error.issues[0].message }),
                 { status: 400, headers: corsHeaders(origin) }
             );
         }

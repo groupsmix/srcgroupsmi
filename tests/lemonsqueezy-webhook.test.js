@@ -122,7 +122,16 @@ describe('onRequest (webhook fail-closed behaviour)', () => {
     });
 
     it('rejects (not 503) when the signature is valid but payload is empty', async () => {
-        const body = '{"meta":{"event_name":"noop"},"data":{"id":"x","type":"orders","attributes":{}}}';
+        const body = JSON.stringify({
+            meta: {
+                event_name: 'noop'
+            },
+            data: {
+                id: 'x',
+                type: 'orders',
+                attributes: {}
+            }
+        });
         const sig = await hmacHex('secret', body);
         const res = await onRequest({
             request: makeRequest(body, { 'X-Signature': sig }),
@@ -151,7 +160,7 @@ const ORDER_BODY = JSON.stringify({
             user_email: 'buyer@example.com',
             total: 500,
             currency: 'USD',
-            first_order_item: { product_id: 42, variant_id: 7, product_name: 'Popular' },
+            first_order_item: { product_id: '42', variant_id: '7', product_name: 'Popular' },
             urls: { receipt: 'https://ls.example/r' }
         }
     }
@@ -263,7 +272,7 @@ describe('B-2 ignore-duplicates + dup logging', () => {
                     user_email: 'b@x',
                     total: 500,
                     currency: 'USD',
-                    first_order_item: { product_id: 42, variant_id: 7 }
+                    first_order_item: { product_id: '42', variant_id: '7' }
                 }
             }
         });
@@ -386,6 +395,62 @@ describe('B-4 dead-letter queue on handler errors', () => {
         // provider retry can actually succeed.
         expect(kv.put).not.toHaveBeenCalled();
         expect(kv.delete).toHaveBeenCalled();
+    });
+});
+
+describe('Refund Flow constraints', () => {
+    let fetchMock;
+    afterEach(() => { fetchMock?.restore(); });
+
+    it('throws error and DLQs when user has insufficient coin balance to refund', async () => {
+        fetchMock = installFetchMock([
+            {
+                // Sync order
+                match: (c) => c.url.includes('/rest/v1/purchases?order_id=eq.999') && c.method === 'PATCH',
+                respond: () => new Response('[]', { status: 200 })
+            },
+            {
+                // Find original transaction
+                match: (c) => c.url.includes('/rest/v1/wallet_transactions') && c.method === 'GET',
+                respond: () => new Response(JSON.stringify([{ amount: 100, user_id: 'auth-123' }]), { status: 200 })
+            },
+            {
+                // Debit coins fails because of negative balance constraint
+                match: (c) => c.url.includes('/rest/v1/rpc/debit_coins'),
+                respond: () => new Response('negative balance constraint violated', { status: 400 })
+            },
+            {
+                // DLQ insert
+                match: (c) => c.url.includes('/rest/v1/webhook_dead_letters') && c.method === 'POST',
+                respond: () => new Response('', { status: 201 })
+            }
+        ]);
+
+        const REFUND_BODY = JSON.stringify({
+            meta: { event_name: 'order_refunded' },
+            data: { id: '999', type: 'orders', attributes: {} }
+        });
+
+        const sig = await hmacHex(SECRET, REFUND_BODY);
+        const kv = makeKv();
+        const res = await onRequest({
+            request: makeRequest(REFUND_BODY, { 'X-Signature': sig, 'X-Event-Name': 'order_refunded' }),
+            env: {
+                LEMONSQUEEZY_WEBHOOK_SECRET: SECRET,
+                STORE_KV: kv,
+                SUPABASE_URL: 'https://db.example',
+                SUPABASE_SERVICE_KEY: 'service-role'
+            }
+        });
+        
+        // It must return 500 to LemonSqueezy so they retry the webhook,
+        // and must write to the DLQ so operators know a refund failed.
+        expect(res.status).toBe(500);
+
+        const dlqCall = fetchMock.calls.find(c => c.url.includes('/rest/v1/webhook_dead_letters'));
+        expect(dlqCall).toBeDefined();
+        const dlqBody = JSON.parse(dlqCall.body);
+        expect(String(dlqBody.error)).toContain('Refund failed: unable to debit 100 coins');
     });
 });
 

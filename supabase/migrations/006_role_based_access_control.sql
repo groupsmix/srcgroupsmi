@@ -96,6 +96,16 @@ BEGIN
         RAISE EXCEPTION 'Cannot change your own role';
     END IF;
 
+    -- Prevent the last admin from being demoted (race-condition safe via table lock)
+    IF p_new_role != 'admin' THEN
+        -- Lock the users table in SHARE ROW EXCLUSIVE mode to prevent concurrent demotions
+        LOCK TABLE users IN SHARE ROW EXCLUSIVE MODE;
+        
+        IF (SELECT COUNT(*) FROM users WHERE role = 'admin') <= 1 THEN
+            RAISE EXCEPTION 'Cannot demote the last remaining admin';
+        END IF;
+    END IF;
+
     -- Update the role
     UPDATE users SET role = p_new_role WHERE id = p_user_id;
 END;

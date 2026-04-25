@@ -21,7 +21,7 @@
 -- ───────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION credit_coins_from_order(payload JSONB)
 RETURNS JSONB
-LANGUAGE plpgsql SECURITY DEFINER AS $$
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 DECLARE
     v_order_id   TEXT;
     v_product_id TEXT;

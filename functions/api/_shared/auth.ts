@@ -5,7 +5,7 @@
  * Returns the authenticated user object or null if verification fails.
  */
 
-import { WorkerEnv, SupabaseUser, SupabaseProfile } from './types';
+import type { WorkerEnv, SupabaseUser, SupabaseProfile } from './types';
 
 export interface AuthResult {
     user: SupabaseUser;
@@ -88,7 +88,7 @@ export async function verifyToken(accessToken: string | null, env?: WorkerEnv): 
 
         if (!res.ok) return null;
 
-        const user = await res.json();
+        const user = await res.json() as SupabaseUser;
         if (!user || !user.id) return null;
 
         return user;

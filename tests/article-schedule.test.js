@@ -59,7 +59,7 @@ describe('/api/article-schedule cron gate (H-7)', () => {
             return new Response('{}', { status: 204 });
         });
         const res = await onRequest({
-            request: makeRequest('GET', { 'X-Cron-Secret': 's3cret' }),
+            request: makeRequest('GET', { 'X-Cron-Secret': 's3cret', 'X-Cron-Internal': 'true' }),
             env: { ...BASE_ENV, CRON_SECRET: 's3cret' }
         });
         expect(res.status).toBe(200);

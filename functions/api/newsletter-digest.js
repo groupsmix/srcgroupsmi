@@ -67,7 +67,7 @@ export async function onRequest(context) {
     // using the service-role key and must never be reachable without
     // the shared CRON_SECRET. Fail closed when the env var is unset.
     if (request.method === 'GET') {
-        const cronSecret = env?.CRON_SECRET;
+        const cronSecret = env?.CRON_SECRET_NEWSLETTER || env?.CRON_SECRET;
         if (!cronSecret) {
             console.error('newsletter-digest: CRON_SECRET not configured');
             return new Response(
@@ -136,7 +136,7 @@ export async function onRequest(context) {
                 const validation = previewSchema.safeParse(rawBody);
                 if (!validation.success) {
                     return new Response(
-                        JSON.stringify({ ok: false, error: 'Validation failed', details: validation.error.errors }),
+                        JSON.stringify({ ok: false, error: 'Validation failed', details: validation.error.issues }),
                         { status: 400, headers: corsHeaders(origin) }
                     );
                 }

@@ -43,7 +43,7 @@ export async function onRequest(context) {
     // the service-role key and must never be reachable without the
     // shared CRON_SECRET. Fail closed when the env var is unset.
     if (request.method === 'GET') {
-        const cronSecret = env?.CRON_SECRET;
+        const cronSecret = env?.CRON_SECRET_SCHEDULE || env?.CRON_SECRET;
         if (!cronSecret) {
             console.error('article-schedule: CRON_SECRET not configured');
             return new Response(
@@ -58,6 +58,7 @@ export async function onRequest(context) {
                 { status: 401, headers: corsHeaders(origin) }
             );
         }
+
     }
 
     const supabaseUrl = env?.SUPABASE_URL;
@@ -78,22 +79,6 @@ export async function onRequest(context) {
 
     try {
         if (request.method === 'GET') {
-            // Cron: publish scheduled articles. Fail closed — require CRON_SECRET.
-            const cronSecret = env?.CRON_SECRET;
-            if (!cronSecret) {
-                return new Response(
-                    JSON.stringify({ ok: false, error: 'Cron secret not configured' }),
-                    { status: 503, headers: corsHeaders(origin) }
-                );
-            }
-            const providedSecret = request.headers.get('X-Cron-Secret') || '';
-            if (!timingSafeEqualHex(cronSecret, providedSecret)) {
-                return new Response(
-                    JSON.stringify({ ok: false, error: 'Unauthorized' }),
-                    { status: 401, headers: corsHeaders(origin) }
-                );
-            }
-
             const res = await fetch(supabaseUrl + '/rest/v1/rpc/publish_scheduled_articles', {
                 method: 'POST',
                 headers,
@@ -130,7 +115,7 @@ export async function onRequest(context) {
                 const validation = scheduleSchema.safeParse(rawBody);
                 if (!validation.success) {
                     return new Response(
-                        JSON.stringify({ ok: false, error: 'Validation failed', details: validation.error.errors }),
+                        JSON.stringify({ ok: false, error: 'Validation failed', details: validation.error.issues }),
                         { status: 400, headers: corsHeaders(origin) }
                     );
                 }

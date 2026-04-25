@@ -23,7 +23,7 @@ import { shouldAttempt, recordSuccess, recordFailure } from './_shared/circuit-b
 import { logAiAudit } from './_shared/ai-audit';
 import { checkAndConsumeQuota, quotaExceededResponse } from './_shared/ai-quota';
 
-import { WorkerEnv, PagesContext } from './_shared/types';
+import type { WorkerEnv, PagesContext } from './_shared/types';
 
 /* ── Supported languages ─────────────────────────────────────── */
 const SUPPORTED_LANGUAGES = {
@@ -299,7 +299,7 @@ async function callOpenRouter(env: WorkerEnv, apiKey: string, messages: any[], m
         console.warn('OpenRouter breaker open, skipping');
         return { res: null, model: '', skipped: true };
     }
-    const models = OPENROUTER_MODELS[category] || OPENROUTER_MODELS.creative;
+    const models = OPENROUTER_MODELS[category as keyof typeof OPENROUTER_MODELS] || OPENROUTER_MODELS.creative;
     let anyFailure = false;
     for (const model of models) {
         try {
@@ -421,6 +421,7 @@ function streamToClient(aiRes: Response, hdrs: Record<string, string>, moderatio
     const encoder = new TextEncoder();
 
     (async () => {
+        if (!aiRes.body) return;
         const reader = aiRes.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -436,13 +437,13 @@ function streamToClient(aiRes: Response, hdrs: Record<string, string>, moderatio
                     setTimeout(() => resolve({ idle: true }), STREAM_IDLE_TIMEOUT_MS);
                 });
                 const chunk = await Promise.race([reader.read(), idleTimer]);
-                if (chunk && chunk.idle) {
+                if (chunk && (chunk as any).idle) {
                     idleTimedOut = true;
                     try { await reader.cancel('idle-timeout'); } catch (_e) { /* noop */ }
                     await writer.write(encoder.encode('data: ' + JSON.stringify({ error: 'stream_idle_timeout' }) + '\n\n'));
                     break;
                 }
-                const { done, value } = chunk;
+                const { done, value } = chunk as any;
                 if (done) break;
 
                 buffer += decoder.decode(value, { stream: true });
@@ -574,7 +575,7 @@ export async function onRequest(context: PagesContext): Promise<Response> {
 
     const validation = groqRequestSchema.safeParse(body);
     if (!validation.success) {
-        const errors = validation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`);
+        const errors = validation.error.issues.map(e => `${e.path.join('.')}: ${e.message}`);
         return new Response(
             JSON.stringify({ ok: false, error: 'Validation failed', details: errors }),
             { status: 400, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
