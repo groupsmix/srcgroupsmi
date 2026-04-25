@@ -75,6 +75,56 @@ jobs:
           BASE_URL: https://staging.groupsmix.com
           CI: true
 
+  # ── Summary jobs that publish a check named exactly like the
+  #    branch-protection required context. Reusable-workflow callers
+  #    do NOT emit a parent check_run of their own — only nested jobs
+  #    show up (e.g. `ci / CI (Node.js)`), which never matches a
+  #    required context literally named `ci`. These wrappers fix that.
+  ci-status:
+    name: ci
+    needs: [ci]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [ "${{ needs.ci.result }}" != "success" ]; then
+            echo "ci reusable workflow result: ${{ needs.ci.result }}"
+            exit 1
+          fi
+  quality-status:
+    name: quality
+    needs: [quality]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [ "${{ needs.quality.result }}" != "success" ]; then
+            echo "quality reusable workflow result: ${{ needs.quality.result }}"
+            exit 1
+          fi
+  build-status:
+    name: build
+    needs: [build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "build reusable workflow result: ${{ needs.build.result }}"
+            exit 1
+          fi
+  security-status:
+    name: security
+    needs: [security]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [ "${{ needs.security.result }}" != "success" ]; then
+            echo "security reusable workflow result: ${{ needs.security.result }}"
+            exit 1
+          fi
+
   # ── Auto-label PRs (shared) ─────────────────────────────────────
   label:
     if: github.event_name == 'pull_request'
