@@ -84,13 +84,22 @@ const _Security = {
      * Returns { valid: boolean, errors: string[] }
      * Requirements: min 8 chars, uppercase, lowercase, digit, special char.
      */
-    validatePassword(password) {
+    async validatePassword(password) {
         const errors = [];
         if (typeof password !== 'string' || password.length < 8) errors.push('Password must be at least 8 characters');
         if (password && !/[A-Z]/.test(password)) errors.push('Must contain an uppercase letter');
         if (password && !/[a-z]/.test(password)) errors.push('Must contain a lowercase letter');
         if (password && !/[0-9]/.test(password)) errors.push('Must contain a number');
         if (password && !/[^A-Za-z0-9]/.test(password)) errors.push('Must contain a special character (!@#$%^&*...)');
+        
+        // P2.27: HIBP check on signup
+        if (errors.length === 0) {
+            const isPwned = await this.checkPwnedPassword(password);
+            if (isPwned) {
+                errors.push('This password has appeared in a known data breach. Please choose a different one.');
+            }
+        }
+        
         return { valid: errors.length === 0, errors: errors };
     },
 
@@ -119,36 +128,45 @@ const _Security = {
     },
 
     /**
-     * Check if password has been compromised using Have I Been Pwned API (k-Anonymity)
+     * Hash string to SHA-1 (async)
+     */
+    async _sha1(str) {
+        const buffer = new TextEncoder().encode(str);
+        const hash = await crypto.subtle.digest('SHA-1', buffer);
+        return Array.from(new Uint8Array(hash))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+    },
+
+    /**
+     * Check Have I Been Pwned API using k-Anonymity
+     * Only sends first 5 characters of SHA-1 hash to our proxy endpoint
      */
     async checkPwnedPassword(password) {
         if (!password) return false;
         try {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(password);
-            const hashBuffer = await crypto.subtle.digest('SHA-1', data);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-            
-            const prefix = hashHex.slice(0, 5);
-            const suffix = hashHex.slice(5);
-            
-            const response = await fetch('https://api.pwnedpasswords.com/range/' + prefix);
-            if (!response.ok) return false; // Fail open
-            
+            const hash = (await this._sha1(password)).toUpperCase();
+            const prefix = hash.slice(0, 5);
+            const suffix = hash.slice(5);
+
+            const response = await fetch('/api/check-pwned?prefix=' + prefix);
+            if (!response.ok) return false; // Fail open if API is down
+
             const text = await response.text();
-            const hashes = text.split('\n');
+            const lines = text.split('\n');
             
-            for (let i = 0; i < hashes.length; i++) {
-                const line = hashes[i].trim();
-                if (line.startsWith(suffix)) {
-                    return true; // Password is compromised
+            for (const line of lines) {
+                const [hashSuffix, countStr] = line.trim().split(':');
+                if (hashSuffix === suffix) {
+                    const count = parseInt(countStr, 10);
+                    // Flag if breached more than 10 times
+                    return count > 10;
                 }
             }
             return false;
         } catch (e) {
-            console.warn('HIBP check failed:', e);
-            return false; // Fail open if API is unreachable
+            console.error('Pwned check error:', e);
+            return false; // Fail open on error
         }
     },
 

@@ -1,3 +1,4 @@
+-- AUDIT: public
 -- =============================================
 -- Migration 015: Fuel the Community
 -- Complete gamification, virtual currency, tipping,

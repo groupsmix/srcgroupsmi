@@ -1,3 +1,4 @@
+import { logError, logWarn } from './_shared/log.js';
 /**
  * /api/coins-wallet — Wallet Operations API
  *
@@ -473,7 +474,7 @@ async function handlePost(request, env, user, origin) {
 
                 if (!wRes.ok) {
                     const errText = await wRes.text();
-                    console.error('Withdrawal RPC error:', errText);
+                    logError('Withdrawal RPC error:', errText);
                     return errorResponse('Failed to create withdrawal request', 500, origin);
                 }
 
@@ -519,7 +520,7 @@ async function handlePost(request, env, user, origin) {
 
                 if (!escrowRes2.ok) {
                     const errText = await escrowRes2.text();
-                    console.error('Escrow RPC error:', errText);
+                    logError('Escrow RPC error:', errText);
                     return errorResponse('Failed to create escrow', 500, origin);
                 }
 

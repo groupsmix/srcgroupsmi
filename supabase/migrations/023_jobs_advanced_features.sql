@@ -214,3 +214,17 @@ BEGIN
     RETURN expired_count;
 END;
 $$ LANGUAGE plpgsql;
+
+-- ── Enable RLS ──────────────────────────────────────────────────
+ALTER TABLE job_alerts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE job_applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE employer_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_resumes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE salary_insights ENABLE ROW LEVEL SECURITY;
+ALTER TABLE job_boosts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE job_referral_bounties ENABLE ROW LEVEL SECURITY;
+ALTER TABLE job_referrals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE interview_slots ENABLE ROW LEVEL SECURITY;
+
+-- Default policies to fail-closed
+-- Access must be granted via specific policies

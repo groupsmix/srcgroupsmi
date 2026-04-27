@@ -1,3 +1,4 @@
+import { logError, logWarn } from './_shared/log.js';
 /**
  * /api/article-revisions — Version History / Revisions
  *
@@ -63,7 +64,7 @@ export async function onRequest(context) {
 
             if (!res.ok) {
                 const errText = await res.text();
-                console.error('get_article_revisions error:', res.status, errText);
+                logError('get_article_revisions error:', errText, { status: res.status });
                 return new Response(
                     JSON.stringify({ ok: false, error: 'Failed to fetch revisions' }),
                     { status: 500, headers: corsHeaders(origin) }
@@ -107,7 +108,7 @@ export async function onRequest(context) {
 
                 if (!res.ok) {
                     const errText = await res.text();
-                    console.error('save_article_revision error:', res.status, errText);
+                    logError('save_article_revision error:', errText, { status: res.status });
                     return new Response(
                         JSON.stringify({ ok: false, error: 'Failed to save revision' }),
                         { status: 500, headers: corsHeaders(origin) }
@@ -137,7 +138,7 @@ export async function onRequest(context) {
 
                 if (!res.ok) {
                     const errText = await res.text();
-                    console.error('restore_article_revision error:', res.status, errText);
+                    logError('restore_article_revision error:', errText, { status: res.status });
                     return new Response(
                         JSON.stringify({ ok: false, error: 'Failed to restore revision' }),
                         { status: 500, headers: corsHeaders(origin) }

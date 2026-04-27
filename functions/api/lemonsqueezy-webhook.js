@@ -1,3 +1,4 @@
+import { logError, logWarn } from './_shared/log.js';
 /**
  * /api/lemonsqueezy-webhook — LemonSqueezy Webhook Handler
  *
@@ -35,6 +36,7 @@
  */
 
 import { verifyHmacSignature } from './_shared/webhook-verify.js';
+import { captureEdgeException } from './_shared/sentry.js';
 import { z } from 'zod';
 
 const lsWebhookSchema = z.object({
@@ -136,7 +138,7 @@ async function writeDeadLetter(env, entry) {
         });
         if (!res.ok) {
             const errText = await res.text();
-            console.error('webhook_dead_letters insert failed:', res.status, errText);
+            logError('webhook_dead_letters insert failed:', errText, { status: res.status });
         }
     } catch (err) {
         console.error('writeDeadLetter error:', err);
@@ -333,7 +335,7 @@ async function handleCoinRefund(env, payload) {
 
     if (!debitRes.ok) {
         const errText = await debitRes.text();
-        console.error('Failed to debit coins for refund:', errText);
+        logError('Failed to debit coins for refund:', errText);
         throw new Error(`Refund failed: unable to debit ${coinsToDebit} coins from user ${userId}. Reason: ${errText}`);
     } else {
         console.info('Debited', coinsToDebit, 'coins from user', userId, 'for refund on order', orderId);
@@ -570,6 +572,13 @@ export async function onRequest(context) {
         return jsonResponse({ ok: false, error: 'Webhook signing secret not configured' }, 503);
     }
 
+    const supabaseUrl = env?.SUPABASE_URL;
+    const supabaseKey = env?.SUPABASE_SERVICE_KEY;
+    if (!supabaseUrl || !supabaseKey) {
+        context.waitUntil(captureEdgeException(env, new Error('Webhook: Supabase not configured')));
+        return new Response('Service Unavailable', { status: 503 });
+    }
+
     // Read raw body for signature verification
     const rawBody = await request.text();
 
@@ -586,7 +595,7 @@ export async function onRequest(context) {
         const rawJson = JSON.parse(rawBody);
         const validation = lsWebhookSchema.safeParse(rawJson);
         if (!validation.success) {
-            console.error('Invalid LemonSqueezy payload schema:', validation.error);
+            logError('Invalid LemonSqueezy payload schema:', validation.error);
             return jsonResponse({ ok: false, error: 'Validation failed' }, 400);
         }
         payload = validation.data;

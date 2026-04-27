@@ -1,3 +1,4 @@
+import { logError, logWarn } from './_shared/log.js';
 /**
  * /api/newsletter-subscribe — Newsletter Subscription Handler
  *
@@ -118,7 +119,7 @@ export async function onRequest(context) {
 
             if (!res.ok) {
                 const errText = await res.text();
-                console.error('Unsubscribe error:', res.status, errText);
+                logError('Unsubscribe error:', errText, { status: res.status });
                 return new Response(
                     JSON.stringify({ ok: false, error: 'Failed to unsubscribe' }),
                     { status: 500, headers: corsHeaders(origin) }
@@ -154,7 +155,7 @@ export async function onRequest(context) {
 
         if (!res.ok) {
             const errText = await res.text();
-            console.error('Subscribe error:', res.status, errText);
+            logError('Subscribe error:', errText, { status: res.status });
 
             // Check for duplicate (unique constraint)
             if (res.status === 409 || errText.includes('duplicate')) {

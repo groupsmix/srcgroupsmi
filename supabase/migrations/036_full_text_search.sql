@@ -32,12 +32,13 @@ DECLARE
     v_exists BOOLEAN;
 BEGIN
     -- Check for exact URL match or very similar name in either pending or approved
+    -- Lowered similarity threshold from 0.8 to 0.6 per audit finding P3.39
     SELECT EXISTS (
         SELECT 1 FROM pending 
-        WHERE link = p_url OR similarity(name, p_name) > 0.8
+        WHERE link = p_url OR similarity(name, p_name) > 0.6
         UNION ALL
         SELECT 1 FROM approved 
-        WHERE link = p_url OR similarity(name, p_name) > 0.8
+        WHERE link = p_url OR similarity(name, p_name) > 0.6
     ) INTO v_exists;
     
     RETURN v_exists;

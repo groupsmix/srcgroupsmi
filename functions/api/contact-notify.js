@@ -1,3 +1,4 @@
+import { logError, logWarn } from './_shared/log.js';
 /**
  * /api/contact-notify — Persist + email notify for contact form submissions
  *
@@ -63,7 +64,7 @@ async function persistSubmission(env, payload) {
         clearTimeout(timeoutId);
         if (!res.ok) {
             const errText = await res.text();
-            console.error('contact-notify: persist failed', res.status, errText);
+            logError('contact-notify: persist failed', errText, { status: res.status });
             return { ok: false, id: null, err: 'persist_failed' };
         }
         const rows = await res.json();

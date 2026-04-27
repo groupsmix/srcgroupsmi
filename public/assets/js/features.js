@@ -851,7 +851,11 @@ const ABTesting = {
                     if (variantData && variantData.content) {
                         var elements = document.querySelectorAll(test.element_selector);
                         elements.forEach(function(el) {
-                            el.innerHTML = variantData.content;
+                            if (typeof DOMPurify !== 'undefined') {
+                                el.innerHTML = DOMPurify.sanitize(variantData.content);
+                            } else {
+                                el.innerHTML = Security.sanitize(variantData.content);
+                            }
                         });
                     }
                 }

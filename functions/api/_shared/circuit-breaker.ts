@@ -87,6 +87,26 @@ function getKv(env: WorkerEnv | null | undefined): KVNamespace | null {
     return env && env.RATE_LIMIT_KV ? env.RATE_LIMIT_KV : null;
 }
 
+function getThreshold(env: WorkerEnv, provider: string): number {
+    const key = `AI_BREAKER_THRESHOLD_${provider.toUpperCase()}`;
+    const val = env?.[key as keyof WorkerEnv];
+    if (val) {
+        const parsed = parseInt(val as string, 10);
+        if (!isNaN(parsed) && parsed > 0) return parsed;
+    }
+    return FAILURE_THRESHOLD;
+}
+
+function getCooldownMs(env: WorkerEnv, provider: string): number {
+    const key = `AI_BREAKER_COOLDOWN_${provider.toUpperCase()}`;
+    const val = env?.[key as keyof WorkerEnv];
+    if (val) {
+        const parsed = parseInt(val as string, 10);
+        if (!isNaN(parsed) && parsed > 0) return parsed;
+    }
+    return OPEN_COOLDOWN_MS;
+}
+
 /**
  * Decide whether a provider should be attempted right now.
  *
@@ -103,6 +123,7 @@ export async function shouldAttempt(env: WorkerEnv, provider: string): Promise<b
     const kv = getKv(env);
     const state = await readState(kv, provider);
     const now = Date.now();
+    const cooldownMs = getCooldownMs(env, provider);
 
     if (state.state === 'open') {
         if (now >= state.nextTry) {
@@ -144,24 +165,26 @@ export async function recordFailure(env: WorkerEnv, provider: string): Promise<v
     const kv = getKv(env);
     const prev = await readState(kv, provider);
     const now = Date.now();
+    const threshold = getThreshold(env, provider);
+    const cooldownMs = getCooldownMs(env, provider);
 
     if (prev.state === 'half') {
         await writeState(kv, provider, {
             state: 'open',
             failures: pruneFailures(prev.failures, now).concat(now),
             openedAt: now,
-            nextTry: now + OPEN_COOLDOWN_MS
+            nextTry: now + cooldownMs
         });
         return;
     }
 
     const failures = pruneFailures(prev.failures, now).concat(now);
-    if (failures.length >= FAILURE_THRESHOLD) {
+    if (failures.length >= threshold) {
         await writeState(kv, provider, {
             state: 'open',
             failures,
             openedAt: now,
-            nextTry: now + OPEN_COOLDOWN_MS
+            nextTry: now + cooldownMs
         });
         return;
     }

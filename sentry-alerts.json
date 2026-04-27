@@ -1,0 +1,24 @@
+[
+  {
+    "name": "High Error Rate in Edge Functions",
+    "conditions": [
+      {
+        "id": "sentry.rules.conditions.event_frequency.EventFrequencyCondition",
+        "value": 100,
+        "interval": "1h"
+      }
+    ],
+    "actions": [
+      {
+        "id": "sentry.rules.actions.notify_event_service.NotifyEventServiceAction",
+        "service": "mail",
+        "targetType": "Team",
+        "targetIdentifier": "backend"
+      }
+    ],
+    "actionMatch": "all",
+    "filterMatch": "all",
+    "frequency": 60,
+    "environment": "production"
+  }
+]

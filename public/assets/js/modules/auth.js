@@ -219,7 +219,7 @@ const _Auth = {
             // Security: check network connectivity before attempting signup
             if (!Security.checkOnline()) { UI.toast('You appear to be offline. Please check your connection.', 'error'); return null; }
             // Security: enforce strong password on client side before server call
-            const pwCheck = Security.validatePassword(password);
+            const pwCheck = await Security.validatePassword(password);
             if (!pwCheck.valid) { UI.toast(pwCheck.errors[0], 'error'); return null; }
             
             // Security: HIBP compromised password check
@@ -359,7 +359,7 @@ const _Auth = {
     async updatePassword(newPassword) {
         try {
             // Security: enforce strong password requirements on password update
-            const pwCheck = Security.validatePassword(newPassword);
+            const pwCheck = await Security.validatePassword(newPassword);
             if (!pwCheck.valid) { UI.toast(pwCheck.errors[0], 'error'); return false; }
             const { error } = await window.supabaseClient.auth.updateUser({ password: newPassword });
             if (error) { UI.toast(_Auth._handleAuthError(error), 'error'); return false; }

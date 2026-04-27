@@ -253,8 +253,5 @@ Document as follow-ups rather than pretending we have a plan:
   No current plan for a secondary edge provider.
 - **Cross-region Supabase replica.** PITR is our only recovery
   mechanism today; promoting a replica is not in scope.
-- **Long-term backup storage beyond Supabase retention.** See
-  [`docs/backups.md §2`](./docs/backups.md) for the current
-  logical-dump approach; offsite cold storage is on the roadmap.
 
-Open a ticket against this file when any of those land.
+*Note: Offsite cold storage via `pg_dump` cron is now implemented and tested quarterly.*

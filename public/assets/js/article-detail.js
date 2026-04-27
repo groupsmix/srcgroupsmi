@@ -225,26 +225,15 @@ const _ArticleDetail = {
     // ═══════════════════════════════════════
     _sanitizeContent(html) {
         if (!html) return '';
-        try {
-            var doc = new DOMParser().parseFromString(html, 'text/html');
-            doc.querySelectorAll('script, iframe, object, embed, form, link[rel="import"]').forEach(function (el) { el.remove(); });
-            doc.querySelectorAll('*').forEach(function (el) {
-                Array.from(el.attributes).forEach(function (attr) {
-                    if (attr.name.startsWith('on') || (typeof attr.value === 'string' && attr.value.trim().toLowerCase().startsWith('javascript:'))) {
-                        el.removeAttribute(attr.name);
-                    }
-                });
-                if (el.hasAttribute('href') && el.getAttribute('href').trim().toLowerCase().startsWith('javascript:')) {
-                    el.removeAttribute('href');
-                }
-                if (el.hasAttribute('src') && el.getAttribute('src').trim().toLowerCase().startsWith('javascript:')) {
-                    el.removeAttribute('src');
-                }
+        if (typeof DOMPurify !== 'undefined') {
+            return DOMPurify.sanitize(html, {
+                USE_PROFILES: { html: true },
+                ADD_TAGS: ['iframe'],
+                ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling']
             });
-            return doc.body.innerHTML;
-        } catch (_e) {
-            return Security.sanitize(html);
         }
+        // Fallback if DOMPurify failed to load
+        return Security.sanitize(html);
     },
 
     // ═══════════════════════════════════════

@@ -118,6 +118,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </div>
     
 <Fragment slot="scripts">
+<script src="/assets/vendor/purify.min.js" is:inline></script>
 <script is:inline>
         document.addEventListener('DOMContentLoaded', async () => {
             await Auth.waitForAuth();

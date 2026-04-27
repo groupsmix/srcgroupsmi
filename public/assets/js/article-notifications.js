@@ -63,7 +63,7 @@ const ArticleNotifications = {
 
             // Close panel on outside click
             document.addEventListener('click', (e) => {
-                if (this._panelOpen && this._panelEl && !this._panelEl.contains(e.target) && e.target !== bell) {
+                if (this._panelOpen && this._panelEl && !this._panelEl.contains(e.target) && !bell.contains(e.target)) {
                     this._closePanel();
                 }
             });

@@ -6,6 +6,7 @@
  */
 
 import type { WorkerEnv, SupabaseUser, SupabaseProfile } from './types';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 
 export interface AuthResult {
     user: SupabaseUser;
@@ -14,6 +15,108 @@ export interface AuthResult {
 
 export interface AuthWithOwnershipResult extends AuthResult {
     internalUserId: string;
+}
+
+// Map of JWKS instances to reuse across invocations for the same URL
+const jwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
+
+/**
+ * Get or create the JWKS verifier for a given Supabase URL.
+ */
+function getJwks(supabaseUrl: string) {
+    const jwksUrl = new URL('/auth/v1/.well-known/jwks.json', supabaseUrl).href;
+    let jwks = jwksCache.get(jwksUrl);
+    if (!jwks) {
+        jwks = createRemoteJWKSet(new URL(jwksUrl));
+        jwksCache.set(jwksUrl, jwks);
+    }
+    return jwks;
+}
+
+/**
+ * Fast JWT verification using local JWKS and KV cache.
+ * Replaces the slow round-trip to Supabase /auth/v1/user.
+ */
+export async function verifyTokenFast(token: string, env?: WorkerEnv): Promise<SupabaseUser | null> {
+    if (!token) return null;
+
+    const url = env?.SUPABASE_URL;
+    if (!url) {
+        console.error('verifyTokenFast: SUPABASE_URL not configured');
+        return null;
+    }
+
+    try {
+        // Hash token for KV cache lookup
+        const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+        const hashHex = Array.from(new Uint8Array(hashBuffer))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+        
+        const cacheKey = `auth_token_user:${hashHex}`;
+        const kv = env.STORE_KV;
+
+        // 1. Try to load user from fast KV cache
+        if (kv) {
+            try {
+                const cached = await kv.get(cacheKey, 'json');
+                if (cached) {
+                    const user = cached as SupabaseUser;
+                    
+                    // Check revocation
+                    const isRevoked = await kv.get(`auth_revocation:${user.id}`);
+                    if (isRevoked) {
+                        return null; // Token revoked (e.g. banned or role changed)
+                    }
+                    
+                    return user;
+                }
+            } catch (err) {
+                // Ignore KV read errors and fallback to local verify
+            }
+        }
+
+        // 2. Local JWT Signature Verification via JWKS
+        const jwks = getJwks(url);
+        const { payload } = await jwtVerify(token, jwks, {
+            issuer: url,
+            audience: 'authenticated'
+        });
+
+        const authId = payload.sub;
+        if (!authId) return null;
+
+        // Check revocation immediately after verification
+        if (kv) {
+            const isRevoked = await kv.get(`auth_revocation:${authId}`);
+            if (isRevoked) return null;
+        }
+
+        const user: SupabaseUser = {
+            id: authId,
+            aud: payload.aud as string,
+            role: payload.role as string,
+            email: payload.email as string,
+            app_metadata: payload.app_metadata as any || {},
+            user_metadata: payload.user_metadata as any || {},
+            created_at: '',
+            updated_at: ''
+        };
+
+        // 3. Write successful verification to KV cache (120s TTL)
+        if (kv) {
+            try {
+                await kv.put(cacheKey, JSON.stringify(user), { expirationTtl: 120 });
+            } catch (err) {
+                // Ignore KV write errors
+            }
+        }
+
+        return user;
+    } catch (err: any) {
+        console.error('verifyTokenFast error:', err.message || err);
+        return null;
+    }
 }
 
 /**
@@ -121,7 +224,7 @@ export async function requireAuth(request: Request, env: WorkerEnv, headers: Rec
         );
     }
 
-    const user = await verifyToken(token, env);
+    const user = await verifyTokenFast(token, env);
     if (!user) {
         return new Response(
             JSON.stringify({ ok: false, error: 'Invalid or expired token' }),
@@ -174,9 +277,9 @@ export async function requireAuthWithOwnership(request: Request, env: WorkerEnv,
         if (profiles && profiles.length > 0) {
             internalUserId = profiles[0].id;
             if (env?.STORE_KV) {
-                // Cache for 300 seconds (5 minutes)
-                await env.STORE_KV.put(kvKey, internalUserId, { expirationTtl: 300 });
-            }
+        // Cache for 60 seconds (down from 300)
+        await env.STORE_KV.put(kvKey, internalUserId, { expirationTtl: 60 });
+    }
         }
     }
 

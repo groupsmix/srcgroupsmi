@@ -1,0 +1,7 @@
+{
+  "name": "GroupsMix Worker Trace Logpush",
+  "logpull_options": "fields=ClientIP,ClientRequestHost,ClientRequestMethod,ClientRequestURI,EdgeEndTimestamp,EdgeResponseBytes,EdgeResponseStatus,EdgeStartTimestamp,RayID,WorkerCPUTime,WorkerStatus,WorkerSubrequest,WorkerSubrequestCount&timestamps=rfc3339",
+  "destination_conf": "s3://groupsmix-logs/workers?region=us-east-1",
+  "dataset": "workers_trace_events",
+  "enabled": true
+}

@@ -1,3 +1,4 @@
+import { logError, logWarn } from './_shared/log.js';
 /**
  * /api/analytics-event — Analytics Event Logger
  *
@@ -112,7 +113,7 @@ export async function onRequest(context) {
 
         if (!res.ok) {
             const errText = await res.text();
-            console.error('Analytics event insert error:', res.status, errText);
+            logError('Analytics event insert error:', errText, { status: res.status });
             // Don't return error to client — analytics should be silent
             return new Response(
                 JSON.stringify({ ok: true }),

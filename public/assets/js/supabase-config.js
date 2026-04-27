@@ -1,5 +1,5 @@
-const SUPABASE_URL = 'https://hmlqppacanpxmrfdlkec.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtbHFwcGFjYW5weG1yZmRsa2VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDkxMTUsImV4cCI6MjA4NzkyNTExNX0.xRDweHu4st7Hk--lQyLYlRU5ufUsXWbArvsIjVznr9o';
+const SUPABASE_URL = window.GM_ENV?.PUBLIC_SUPABASE_URL || '{{SUPABASE_URL}}';
+const SUPABASE_ANON_KEY = window.GM_ENV?.PUBLIC_SUPABASE_ANON_KEY || '{{SUPABASE_ANON_KEY}}';
 
 (function initSupabase() {
     if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {

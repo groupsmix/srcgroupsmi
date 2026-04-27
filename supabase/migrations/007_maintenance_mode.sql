@@ -1,3 +1,4 @@
+-- AUDIT: public
 -- ═══════════════════════════════════════════════════════════
 -- Migration 007: Maintenance Mode System
 -- Creates site_settings table for maintenance mode controls

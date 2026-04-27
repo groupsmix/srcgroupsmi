@@ -549,7 +549,8 @@ const _ArticleEditor = {
         const seriesOrderInput = document.getElementById('meta-series-order');
         const visibilitySelect = document.getElementById('meta-visibility');
 
-        const content = this._quill ? this._quill.root.innerHTML : '';
+        const rawContent = this._quill ? this._quill.root.innerHTML : '';
+        const content = (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(rawContent) : Security.sanitize(rawContent);
         const plainText = this._quill ? this._quill.getText().trim() : '';
         const words = plainText ? plainText.split(/\s+/).length : 0;
 

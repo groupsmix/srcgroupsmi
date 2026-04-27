@@ -1,3 +1,4 @@
+-- AUDIT: public
 -- ═══════════════════════════════════════════════════════════════
 -- Migration 013: New Features
 -- Newsletter, Wishlist, Referrals, Analytics, A/B Testing,
