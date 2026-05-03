@@ -28,7 +28,7 @@
     "node": ">=22"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.2",
+    "@astrojs/check": "^0.9.9",
     "@biomejs/biome": "^2.4.12",
     "@cloudflare/workers-types": "^4.20260424.1",
     "@playwright/test": "^1.59.1",
